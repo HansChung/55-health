@@ -1,0 +1,206 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #FAF5EC;
+  --bg-deep: #F2E8D5;
+  --surface: #FFFFFF;
+  --surface-warm: #FFF8EE;
+  --surface-card: #FDF6E8;
+
+  --ink-1: #3D2E20;
+  --ink-2: #6B5848;
+  --ink-3: #A89580;
+  --line: #ECDFC8;
+  --line-strong: #D9C4A3;
+
+  --primary: #E8845A;
+  --primary-deep: #C95E36;
+  --primary-soft: #FBE6D4;
+
+  --sage: #7AA779;
+  --sage-soft: #DCEBD8;
+
+  --berry: #C95B6E;
+  --berry-soft: #F7DDE0;
+
+  --gold: #D9A441;
+  --gold-soft: #F7E6BD;
+
+  --fs-xs: 16px;
+  --fs-sm: 18px;
+  --fs-base: 22px;
+  --fs-lg: 26px;
+  --fs-xl: 32px;
+  --fs-2xl: 40px;
+  --fs-3xl: 52px;
+
+  --r-sm: 12px;
+  --r-md: 18px;
+  --r-lg: 24px;
+  --r-xl: 32px;
+  --r-pill: 999px;
+
+  --shadow-sm: 0 2px 4px rgba(75, 50, 30, 0.05);
+  --shadow-md: 0 6px 16px rgba(75, 50, 30, 0.08);
+  --shadow-lg: 0 12px 32px rgba(75, 50, 30, 0.10);
+}
+
+:root[data-fs="lg"] {
+  --fs-xs: 18px;
+  --fs-sm: 20px;
+  --fs-base: 26px;
+  --fs-lg: 30px;
+  --fs-xl: 36px;
+  --fs-2xl: 46px;
+  --fs-3xl: 60px;
+}
+
+:root[data-contrast="high"] {
+  --bg: #FFF9EE;
+  --ink-1: #1A0F05;
+  --ink-2: #2E1F10;
+  --line: #B89770;
+  --line-strong: #6B4F2B;
+  --primary: #B8421A;
+  --primary-deep: #8C2D0E;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: "Noto Sans TC", "PingFang TC", "Heiti TC", system-ui, sans-serif;
+  color: var(--ink-1);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "palt";
+}
+
+button {
+  font-family: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+  padding: 0;
+}
+
+.app-root {
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  height: 100dvh;
+  background: var(--bg);
+  color: var(--ink-1);
+  font-size: var(--fs-base);
+  line-height: 1.5;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-root::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 600px 400px at 20% 0%, rgba(232, 132, 90, 0.07), transparent 60%),
+    radial-gradient(ellipse 500px 350px at 100% 100%, rgba(217, 164, 65, 0.06), transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+.app-root > * { position: relative; z-index: 1; }
+
+.safe-top { padding-top: 16px; }
+.safe-bottom { padding-bottom: 100px; }
+
+.scroll-area::-webkit-scrollbar { width: 0; height: 0; }
+.scroll-area { scrollbar-width: none; }
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  border-radius: var(--r-pill);
+  padding: 18px 32px;
+  min-height: 60px;
+  box-shadow: 0 6px 0 var(--primary-deep), 0 10px 20px rgba(201, 94, 54, 0.25);
+  transition: transform 0.12s, box-shadow 0.12s;
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.btn-primary:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 var(--primary-deep), 0 4px 10px rgba(201, 94, 54, 0.2);
+}
+
+.btn-ghost {
+  background: var(--surface);
+  color: var(--ink-1);
+  font-weight: 600;
+  font-size: var(--fs-base);
+  border-radius: var(--r-pill);
+  padding: 16px 28px;
+  min-height: 56px;
+  border: 2px solid var(--line-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  padding: 22px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--line);
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes pulse-ring {
+  0% { transform: scale(0.92); opacity: 0.8; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+@keyframes blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes wave {
+  0%, 100% { height: 18%; }
+  50% { height: 80%; }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.fade-up { animation: fade-up 0.4s ease both; }
+.pop { animation: pop 0.45s cubic-bezier(.34,1.56,.64,1) both; }
