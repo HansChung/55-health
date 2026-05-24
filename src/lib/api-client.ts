@@ -49,6 +49,13 @@ export const api = {
       quota: { used: number; limit: number; tier: string };
     }>("/api/ai/realtime-session", { method: "POST" }),
 
+  // Profile
+  getProfile: () =>
+    apiFetch<{ profile: ProfileData }>("/api/profile"),
+
+  updateProfile: (patch: Partial<ProfileData>) =>
+    apiFetch<{ profile: ProfileData }>("/api/profile", { method: "PATCH", json: patch }),
+
   // Meals
   listMeals: (days = 7) =>
     apiFetch<{ meals: MealRecord[] }>(`/api/meals?days=${days}`),
@@ -81,6 +88,23 @@ export const api = {
 };
 
 // ─────── Types ───────
+export interface ProfileData {
+  id: string;
+  display_name: string | null;
+  age: number | null;
+  gender: "male" | "female" | "other" | null;
+  height_cm: number | null;
+  weight_kg: number | null;
+  calorie_goal: number;
+  voice_tone: "warm" | "strict" | "grandchild";
+  font_scale: "base" | "lg";
+  high_contrast: boolean;
+  chronic_conditions: string[];
+  medications: { name: string; dose?: string; time?: string }[];
+  subscription_tier: "free" | "basic" | "pro";
+  is_admin: boolean;
+}
+
 export interface MealRecord {
   id: string;
   user_id: string;

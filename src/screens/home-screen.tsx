@@ -11,6 +11,7 @@ interface HomeScreenProps {
   meals: Meal[];
   calories: number;
   calorieGoal: number;
+  displayName?: string | null;
   onCamera: () => void;
   onVoice: () => void;
   onMeal: () => void;
@@ -18,17 +19,44 @@ interface HomeScreenProps {
   onExercise: () => void;
 }
 
-export function HomeScreen({ meals, calories, calorieGoal, onCamera, onVoice, onMeal, onSuggestion, onExercise }: HomeScreenProps) {
+const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
+
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 11) return "早安";
+  if (h < 18) return "午安";
+  return "晚安";
+}
+
+function getDateLabel(): string {
+  const d = new Date();
+  return `${d.getMonth() + 1}月${d.getDate()}日　星期${WEEKDAYS[d.getDay()]}`;
+}
+
+export function HomeScreen({ meals, calories, calorieGoal, displayName, onCamera, onVoice, onMeal, onSuggestion, onExercise }: HomeScreenProps) {
+  // 從餐點計算今日營養
+  const totals = meals.reduce(
+    (s, m) => {
+      s.cal += m.cal || 0;
+      return s;
+    },
+    { cal: 0 }
+  );
+  // TODO: 真實 protein/carb/fat 要從 API 拿到（meals 物件目前沒這欄）
+  const proteinG = Math.round(totals.cal * 0.05);  // 粗估
+  const carbG = Math.round(totals.cal * 0.13);
+  const fatG = Math.round(totals.cal * 0.025);
+
   return (
     <div className="scroll-area" style={{ flex: 1, overflowY: "auto", paddingBottom: 120 }}>
       <div style={{ padding: "8px 24px 12px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
             <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", marginBottom: 4 }}>
-              5月19日　星期一
+              {getDateLabel()}
             </div>
             <h1 style={{ fontSize: "var(--fs-2xl)", fontWeight: 800, margin: 0, letterSpacing: "-0.5px" }}>
-              早安，王奶奶
+              {getGreeting()}，{displayName || "您"}
             </h1>
           </div>
           <button style={{
@@ -53,9 +81,9 @@ export function HomeScreen({ meals, calories, calorieGoal, onCamera, onVoice, on
             <CalorieRing value={calories} max={calorieGoal} />
           </div>
           <div style={{ display: "flex", gap: 20, paddingTop: 4 }}>
-            <MacroBar label="蛋白質" value={42} max={65} color="linear-gradient(90deg, #E8845A, #F4B58E)" />
-            <MacroBar label="醣類" value={158} max={220} color="linear-gradient(90deg, #D9A441, #F0CB72)" />
-            <MacroBar label="脂肪" value={38} max={55} color="linear-gradient(90deg, #7AA779, #A3C4A0)" />
+            <MacroBar label="蛋白質" value={proteinG} max={65} color="linear-gradient(90deg, #E8845A, #F4B58E)" />
+            <MacroBar label="醣類" value={carbG} max={220} color="linear-gradient(90deg, #D9A441, #F0CB72)" />
+            <MacroBar label="脂肪" value={fatG} max={55} color="linear-gradient(90deg, #7AA779, #A3C4A0)" />
           </div>
         </div>
       </div>
@@ -81,7 +109,9 @@ export function HomeScreen({ meals, calories, calorieGoal, onCamera, onVoice, on
               </span>
             </div>
             <div style={{ fontSize: "var(--fs-base)", fontWeight: 600, color: "var(--ink-1)", marginBottom: 4, lineHeight: 1.45 }}>
-              早餐很棒！下午可以吃個水果補充維他命C 🍊
+              {meals.some(m => m.logged)
+                ? "今天已開始記錄，加油繼續！🍊"
+                : "拍張早餐照片就能開始記錄囉！📸"}
             </div>
             <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", display: "flex", alignItems: "center", gap: 4 }}>
               點開看詳細 <Icon name="chevronR" size={16} />
@@ -141,8 +171,8 @@ export function HomeScreen({ meals, calories, calorieGoal, onCamera, onVoice, on
           }}>
             <span style={{ fontSize: 24 }}>🚶</span>
           </div>
-          <div style={{ fontSize: "var(--fs-base)", fontWeight: 700 }}>散步 40 分</div>
-          <div style={{ fontSize: "var(--fs-sm)", color: "#4F7A4E", fontWeight: 600 }}>已達標 ✓</div>
+          <div style={{ fontSize: "var(--fs-base)", fontWeight: 700 }}>記錄運動</div>
+          <div style={{ fontSize: "var(--fs-sm)", color: "#4F7A4E", fontWeight: 600 }}>散步、太極等</div>
         </button>
       </div>
     </div>

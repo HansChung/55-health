@@ -11,35 +11,114 @@ interface CameraScreenProps {
   onCapture: (result: FoodAnalysisResult, photoDataUrl: string) => void;
 }
 
+type Stage = "init" | "ready" | "analyzing" | "error";
+
 export function CameraScreen({ onClose, onCapture }: CameraScreenProps) {
-  const [stage, setStage] = useState<"aim" | "analyzing" | "error">("aim");
+  const [stage, setStage] = useState<Stage>("init");
   const [errorMsg, setErrorMsg] = useState("");
-  const [tipIdx, setTipIdx] = useState(0);
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
+  const [tipIdx, setTipIdx] = useState(0);
+  const [cameraReady, setCameraReady] = useState(false);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const tips = ["對準餐盤", "光線充足會更準", "可以拍多樣食物"];
 
+  // 啟動攝影機
   useEffect(() => {
-    if (stage !== "aim") return;
+    let mounted = true;
+
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" }, // 優先後鏡頭
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: false,
+        });
+        if (!mounted) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+        }
+        setCameraReady(true);
+        setStage("ready");
+      } catch (err: unknown) {
+        if (!mounted) return;
+        const msg = err instanceof Error ? err.message : String(err);
+        // 用戶拒絕、無攝影機等
+        setErrorMsg(msg.includes("Permission") || msg.includes("NotAllowed")
+          ? "需要相機權限才能拍照，請到瀏覽器設定開啟"
+          : "無法開啟相機：" + msg);
+        // 退化方案：直接打開檔案選擇
+        setStage("ready");
+      }
+    }
+
+    startCamera();
+    return () => {
+      mounted = false;
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+    };
+  }, []);
+
+  // Tips 輪播
+  useEffect(() => {
+    if (stage !== "ready") return;
     const t = setInterval(() => setTipIdx((i) => (i + 1) % tips.length), 2500);
     return () => clearInterval(t);
   }, [stage]);
 
-  const handleShutter = () => fileInputRef.current?.click();
+  const captureFromVideo = () => {
+    if (!videoRef.current || !cameraReady) return null;
+    const video = videoRef.current;
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(video, 0, 0);
+    return canvas.toDataURL("image/jpeg", 0.85);
+  };
+
+  const handleShutter = async () => {
+    let dataUrl: string | null = null;
+
+    if (cameraReady) {
+      dataUrl = captureFromVideo();
+    }
+
+    if (!dataUrl) {
+      // 退化：開檔案選擇器
+      fileInputRef.current?.click();
+      return;
+    }
+
+    await analyzePhoto(dataUrl);
+  };
 
   const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const dataUrl = await fileToDataUrl(file);
+    await analyzePhoto(dataUrl);
+  };
 
+  const analyzePhoto = async (dataUrl: string) => {
+    setPhotoDataUrl(dataUrl);
     setStage("analyzing");
+    streamRef.current?.getTracks().forEach((t) => t.stop()); // 停 stream 省電
 
     try {
-      const dataUrl = await fileToDataUrl(file);
-      setPhotoDataUrl(dataUrl);
       const base64 = dataUrl.split(",")[1];
-      const mimeType = file.type || "image/jpeg";
-
-      const { result } = await api.analyzeFood(base64, mimeType);
+      const { result } = await api.analyzeFood(base64, "image/jpeg");
       onCapture(result, dataUrl);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "辨識失敗";
@@ -49,6 +128,14 @@ export function CameraScreen({ onClose, onCapture }: CameraScreenProps) {
       else setErrorMsg(msg);
       setStage("error");
     }
+  };
+
+  const retake = () => {
+    setStage("init");
+    setPhotoDataUrl(null);
+    setErrorMsg("");
+    // 重新啟動相機
+    window.location.reload();
   };
 
   return (
@@ -61,35 +148,56 @@ export function CameraScreen({ onClose, onCapture }: CameraScreenProps) {
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         onChange={handleFileSelected}
         style={{ display: "none" }}
       />
 
+      {/* 影像區 */}
       <div style={{
         flex: 1, position: "relative", overflow: "hidden",
-        background: photoDataUrl
-          ? `#000 url(${photoDataUrl}) center/cover no-repeat`
-          : `radial-gradient(ellipse 70% 60% at 50% 55%, #D67340 0%, #8C4521 40%, #2A1409 90%)`,
+        background: "#0E0905",
       }}>
-        {!photoDataUrl && (
+        {/* 真實攝影機畫面 */}
+        <video
+          ref={videoRef}
+          playsInline
+          muted
+          autoPlay
+          style={{
+            width: "100%", height: "100%", objectFit: "cover",
+            display: photoDataUrl ? "none" : "block",
+          }}
+        />
+
+        {/* 已拍照的預覽 */}
+        {photoDataUrl && (
+          <img
+            src={photoDataUrl}
+            alt="captured"
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        )}
+
+        {/* 初始化中 */}
+        {stage === "init" && !errorMsg && (
           <div style={{
-            position: "absolute", left: "50%", top: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 280, height: 280, borderRadius: "50%",
-            background: "radial-gradient(circle at 35% 30%, #FBE8C6 0%, #E0BC85 60%, #B8924C 100%)",
-            boxShadow: "0 30px 60px rgba(0,0,0,0.5)",
-            opacity: stage === "analyzing" ? 0.55 : 1,
+            position: "absolute", inset: 0,
+            background: "rgba(14,9,5,0.8)",
+            display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center", gap: 16,
+            color: "#fff",
           }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, padding: 28 }}>
-              <div style={{ width: 90, height: 90, borderRadius: "50%", background: "radial-gradient(circle at 30% 30%, #F5F0E0, #D4C8A4)" }} />
-              <div style={{ width: 90, height: 80, borderRadius: "40%", background: "radial-gradient(circle at 30% 30%, #C95E36, #8C3A1C)" }} />
-              <div style={{ width: 90, height: 80, borderRadius: "50%", background: "radial-gradient(circle at 40% 30%, #7AA779, #4F7A4E)" }} />
-              <div style={{ width: 90, height: 90, borderRadius: 12, background: "repeating-linear-gradient(0deg, #E8C97A 0 6px, #D0AC55 6px 12px)" }} />
-            </div>
+            <div style={{
+              width: 40, height: 40, borderRadius: "50%",
+              border: "3px solid rgba(255,255,255,0.3)",
+              borderTopColor: "#fff",
+              animation: "spin 0.8s linear infinite",
+            }} />
+            <div style={{ fontSize: "var(--fs-base)" }}>啟動相機中…</div>
           </div>
         )}
 
+        {/* 上方按鈕列 */}
         <div style={{
           position: "absolute", top: 16, left: 16, right: 16,
           display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -101,7 +209,7 @@ export function CameraScreen({ onClose, onCapture }: CameraScreenProps) {
           }}>
             <Icon name="x" size={28} color="#fff" stroke={2.5} />
           </button>
-          {stage === "aim" && (
+          {stage === "ready" && (
             <div className="fade-up" key={tipIdx} style={{
               background: "rgba(0,0,0,0.55)", backdropFilter: "blur(10px)",
               borderRadius: 999, padding: "10px 18px",
@@ -115,6 +223,23 @@ export function CameraScreen({ onClose, onCapture }: CameraScreenProps) {
           <div style={{ width: 52 }} />
         </div>
 
+        {/* 取景框（四個角）*/}
+        {stage === "ready" && !photoDataUrl && (
+          <>
+            {(["tl", "tr", "bl", "br"] as const).map((p) => {
+              const m = 40;
+              const styles: Record<string, React.CSSProperties> = {
+                tl: { top: m, left: m, borderTop: "4px solid #fff", borderLeft: "4px solid #fff", borderRadius: "8px 0 0 0" },
+                tr: { top: m, right: m, borderTop: "4px solid #fff", borderRight: "4px solid #fff", borderRadius: "0 8px 0 0" },
+                bl: { bottom: m + 80, left: m, borderBottom: "4px solid #fff", borderLeft: "4px solid #fff", borderRadius: "0 0 0 8px" },
+                br: { bottom: m + 80, right: m, borderBottom: "4px solid #fff", borderRight: "4px solid #fff", borderRadius: "0 0 8px 0" },
+              };
+              return <div key={p} style={{ position: "absolute", width: 36, height: 36, ...styles[p] }} />;
+            })}
+          </>
+        )}
+
+        {/* 分析中 */}
         {stage === "analyzing" && (
           <div style={{
             position: "absolute", inset: 0,
@@ -144,6 +269,7 @@ export function CameraScreen({ onClose, onCapture }: CameraScreenProps) {
           </div>
         )}
 
+        {/* 錯誤 */}
         {stage === "error" && (
           <div style={{
             position: "absolute", inset: 0,
@@ -155,20 +281,48 @@ export function CameraScreen({ onClose, onCapture }: CameraScreenProps) {
             <div style={{ fontSize: 64 }}>😔</div>
             <h2 style={{ color: "#fff", fontSize: "var(--fs-xl)", margin: 0 }}>辨識失敗</h2>
             <p style={{ color: "rgba(255,255,255,0.8)", margin: 0 }}>{errorMsg}</p>
-            <button
-              className="btn-primary"
-              onClick={() => { setStage("aim"); setPhotoDataUrl(null); setErrorMsg(""); }}
-              style={{ marginTop: 12 }}
-            >再試一次</button>
+            <button className="btn-primary" onClick={retake} style={{ marginTop: 12 }}>
+              再試一次
+            </button>
+          </div>
+        )}
+
+        {/* 相機權限被拒，顯示 fallback */}
+        {errorMsg && stage === "ready" && !photoDataUrl && (
+          <div style={{
+            position: "absolute", top: 80, left: 24, right: 24,
+            background: "rgba(0,0,0,0.7)", color: "#fff",
+            padding: 16, borderRadius: 12, fontSize: "var(--fs-sm)",
+            textAlign: "center",
+          }}>
+            {errorMsg}<br />
+            <span style={{ color: "#F4B58E" }}>請點下方按鈕從相簿選照片</span>
           </div>
         )}
       </div>
 
+      {/* 底部控制列 */}
       <div style={{
-        background: "#0E0905", padding: "24px 24px 40px",
-        display: "flex", alignItems: "center", justifyContent: "center",
+        background: "#0E0905", padding: "20px 24px 36px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
-        <button onClick={handleShutter} disabled={stage !== "aim"} style={{
+        {/* 左：從相簿選 */}
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={stage === "analyzing"}
+          style={{
+            width: 56, height: 56, borderRadius: 14,
+            background: "rgba(255,255,255,0.1)",
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            color: "#fff", fontSize: 10, gap: 2,
+          }}
+        >
+          <Icon name="book" size={24} color="#fff" />
+          <span>相簿</span>
+        </button>
+
+        {/* 中：拍照 */}
+        <button onClick={handleShutter} disabled={stage !== "ready"} style={{
           width: 92, height: 92, borderRadius: "50%",
           background: "#fff",
           border: "5px solid rgba(255,255,255,0.3)",
@@ -176,12 +330,28 @@ export function CameraScreen({ onClose, onCapture }: CameraScreenProps) {
           display: "flex", alignItems: "center", justifyContent: "center",
           transform: stage === "analyzing" ? "scale(0.85)" : "scale(1)",
           transition: "transform 0.15s",
+          opacity: stage === "ready" ? 1 : 0.6,
         }}>
           <div style={{
             width: 68, height: 68, borderRadius: "50%",
             background: stage === "analyzing" ? "var(--primary)" : "#fff",
             border: "2px solid var(--primary)",
           }} />
+        </button>
+
+        {/* 右：切換前後鏡頭 */}
+        <button
+          onClick={() => switchCamera(streamRef, videoRef)}
+          disabled={stage !== "ready" || !cameraReady}
+          style={{
+            width: 56, height: 56, borderRadius: 14,
+            background: "rgba(255,255,255,0.1)",
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            color: "#fff", fontSize: 10, gap: 2,
+          }}
+        >
+          <Icon name="refresh" size={24} color="#fff" />
+          <span>翻轉</span>
         </button>
       </div>
     </div>
@@ -195,4 +365,29 @@ function fileToDataUrl(file: File): Promise<string> {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+async function switchCamera(
+  streamRef: React.MutableRefObject<MediaStream | null>,
+  videoRef: React.RefObject<HTMLVideoElement | null>
+) {
+  const currentTrack = streamRef.current?.getVideoTracks()[0];
+  const currentFacing = currentTrack?.getSettings().facingMode;
+  const newFacing = currentFacing === "user" ? "environment" : "user";
+
+  streamRef.current?.getTracks().forEach((t) => t.stop());
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: newFacing } },
+      audio: false,
+    });
+    streamRef.current = stream;
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream;
+      await videoRef.current.play();
+    }
+  } catch (e) {
+    console.error("switch camera failed", e);
+  }
 }

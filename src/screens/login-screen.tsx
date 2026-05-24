@@ -137,16 +137,16 @@ export function LoginScreen({ onDone }: LoginScreenProps) {
               輸入驗證碼
             </h1>
             <p style={{ fontSize: "var(--fs-base)", color: "var(--ink-2)", margin: 0 }}>
-              剛剛傳到 <strong style={{ color: "var(--ink-1)" }}>{email}</strong> 的 6 位數字
+              剛剛傳到 <strong style={{ color: "var(--ink-1)" }}>{email}</strong> 的驗證碼
             </p>
 
             <input
               type="text"
               inputMode="numeric"
-              maxLength={6}
+              maxLength={8}
               value={otp}
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-              placeholder="000000"
+              placeholder="輸入驗證碼"
               autoFocus
               style={{
                 width: "100%",
@@ -158,7 +158,7 @@ export function LoginScreen({ onDone }: LoginScreenProps) {
                 textAlign: "center",
                 fontSize: "var(--fs-3xl)", fontWeight: 800,
                 color: "var(--primary-deep)",
-                letterSpacing: "12px",
+                letterSpacing: "8px",
                 outline: "none",
                 fontFamily: "ui-monospace, monospace",
               }}

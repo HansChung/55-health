@@ -43,8 +43,10 @@ export function VoiceScreen({ onClose, voiceTone = "warm" }: VoiceScreenProps) {
   }, []);
 
   const handleMicPress = async () => {
-    if (state === "connecting" || state === "listening" || state === "speaking") return;
+    // 連線中不能按
+    if (state === "connecting") return;
 
+    // 已連線中（聽中 / 想中 / 說話中）→ 按下去就斷線
     if (clientRef.current) {
       clientRef.current.close();
       clientRef.current = null;

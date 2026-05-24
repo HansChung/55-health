@@ -3,10 +3,11 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { checkUserQuota } from "@/lib/ai/usage-tracker";
 
 /**
- * 產生 OpenAI Realtime API ephemeral token
+ * 產生 OpenAI Realtime API GA ephemeral client_secret
  * 前端用這個 token 直接連 WebRTC，不會暴露 master API key
  *
- * 文件：https://platform.openai.com/docs/api-reference/realtime-sessions
+ * 文件：https://platform.openai.com/docs/api-reference/realtime-sessions/create
+ * GA endpoint: POST /v1/realtime/client_secrets
  */
 export async function POST(req: NextRequest) {
   // 1. 認證
@@ -38,26 +39,33 @@ export async function POST(req: NextRequest) {
   const tone = profile?.voice_tone ?? "warm";
   const instructions = buildInstructions(tone, profile);
 
-  // 4. 跟 OpenAI 換 ephemeral key
+  // 4. 跟 OpenAI 換 ephemeral key（GA endpoint）
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "OPENAI_API_KEY 未設定" }, { status: 500 });
   }
 
-  const model = process.env.OPENAI_REALTIME_MODEL || "gpt-realtime-2";
+  const model = process.env.OPENAI_REALTIME_MODEL || "gpt-realtime";
 
   try {
-    const response = await fetch("https://api.openai.com/v1/realtime/sessions", {
+    const response = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model,
-        voice: "shimmer",
-        instructions,
-        input_audio_transcription: { model: "whisper-1" },
+        session: {
+          type: "realtime",
+          model,
+          instructions,
+          audio: {
+            output: { voice: "shimmer" },
+            input: {
+              transcription: { model: "whisper-1" },
+            },
+          },
+        },
       }),
     });
 
@@ -69,9 +77,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const session = await response.json();
+    const data = await response.json();
+    // GA 回傳格式：{ value: "ek_...", expires_at, session: {...} }
+    // 把它包成前端期待的格式：{ session: { client_secret: { value }, id } }
     return NextResponse.json({
-      session,
+      session: {
+        client_secret: { value: data.value },
+        id: data.session?.id ?? "",
+        model,
+      },
       quota: { used: quota.used, limit: quota.limit, tier: quota.tier },
     });
   } catch (error: unknown) {

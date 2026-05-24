@@ -2,6 +2,7 @@
 
 import { Icon } from "@/components/icons";
 import { Subpage } from "@/lib/types";
+import { useAuth } from "@/hooks/use-auth";
 
 interface ProfileScreenProps {
   onSubpage: (page: Subpage) => void;
@@ -55,6 +56,27 @@ function Row({ icon, iconColor, label, value, arrow, onClick }: {
 }
 
 export function ProfileScreen({ onSubpage }: ProfileScreenProps) {
+  const { user, profile, signOut } = useAuth();
+
+  const name = profile?.display_name ?? user?.email?.split("@")[0] ?? "用戶";
+  const initial = name.charAt(0).toUpperCase();
+  const subtitle = [
+    profile?.age ? `${profile.age} 歲` : null,
+    profile?.gender === "male" ? "男性" : profile?.gender === "female" ? "女性" : null,
+  ].filter(Boolean).join("　·　");
+
+  const memberDays = user?.created_at
+    ? Math.max(1, Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000))
+    : 0;
+
+  const conditions = profile?.chronic_conditions ?? [];
+  const conditionLabel = conditions.length > 0
+    ? conditions.map(labelCondition).join("、")
+    : "尚未設定";
+
+  const tier = profile?.subscription_tier ?? "free";
+  const tierLabel = ({ free: "免費版", basic: "標準版", pro: "專業版" } as const)[tier];
+
   return (
     <div className="scroll-area" style={{ flex: 1, overflowY: "auto", paddingBottom: 120 }}>
       <div style={{ padding: "8px 24px 16px" }}>
@@ -77,38 +99,72 @@ export function ProfileScreen({ onSubpage }: ProfileScreenProps) {
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 38, fontWeight: 700, color: "var(--primary-deep)",
             boxShadow: "var(--shadow-sm)",
-          }}>王</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: "var(--fs-lg)", fontWeight: 700 }}>王月霞</div>
-            <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
-              62 歲　·　女性
+          }}>{initial}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: "var(--fs-lg)", fontWeight: 700 }}>{name}</div>
+            <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {user?.email}
             </div>
             <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
-              已使用 28 天
+              {subtitle || "尚未設定個人資料"}　·　已使用 {memberDays} 天
             </div>
           </div>
-          <button style={{ padding: 10 }}>
+          <button style={{ padding: 10 }} onClick={() => onSubpage("edit-profile")}>
             <Icon name="pencil" size={26} color="var(--ink-2)" />
           </button>
         </div>
       </div>
 
       <Section title="健康狀況">
-        <Row icon="heart" iconColor="var(--berry)" label="慢性病與用藥" value="高血壓、糖尿病前期" arrow onClick={() => onSubpage("chronic")} />
-        <Row icon="target" iconColor="var(--primary)" label="今日目標" value="1,800 大卡　·　減重" arrow />
-        <Row icon="flame" iconColor="var(--gold)" label="運動記錄" value="今天 40 分鐘" arrow onClick={() => onSubpage("exercise")} />
+        <Row icon="heart" iconColor="var(--berry)" label="慢性病與用藥" value={conditionLabel} arrow onClick={() => onSubpage("chronic")} />
+        <Row icon="target" iconColor="var(--primary)" label="今日目標" value={`${profile?.calorie_goal ?? 1800} 大卡`} arrow />
+        <Row icon="flame" iconColor="var(--gold)" label="運動記錄" value="查看詳細" arrow onClick={() => onSubpage("exercise")} />
+      </Section>
+
+      <Section title="訂閱方案">
+        <Row icon="sparkle" iconColor="var(--primary)" label="目前方案" value={tierLabel} arrow onClick={() => window.location.href = "/pricing"} />
       </Section>
 
       <Section title="使用設定">
-        <Row icon="sun" iconColor="var(--gold)" label="字級大小" value="加大" arrow onClick={() => onSubpage("font")} />
-        <Row icon="bell" iconColor="var(--primary)" label="提醒通知" value="9 項已開啟" arrow onClick={() => onSubpage("notif")} />
-        <Row icon="user" iconColor="var(--sage)" label="家人共享" value="2 位家人已連結" arrow onClick={() => onSubpage("family")} />
-        <Row icon="settings" iconColor="var(--ink-2)" label="更多設定" value="" arrow />
+        <Row icon="sun" iconColor="var(--gold)" label="字級大小" value={profile?.font_scale === "lg" ? "超大" : "加大"} arrow onClick={() => onSubpage("font")} />
+        <Row icon="bell" iconColor="var(--primary)" label="提醒通知" value="設定提醒" arrow onClick={() => onSubpage("notif")} />
+        <Row icon="user" iconColor="var(--sage)" label="家人共享" value="邀請家人" arrow onClick={() => onSubpage("family")} />
+        {profile?.is_admin && (
+          <Row icon="settings" iconColor="var(--ink-2)" label="管理後台" value="Admin Dashboard" arrow onClick={() => window.location.href = "/admin"} />
+        )}
       </Section>
+
+      <div style={{ padding: "24px 24px 0" }}>
+        <button
+          onClick={async () => { if (confirm("確定要登出？")) { await signOut(); window.location.reload(); } }}
+          style={{
+            width: "100%", padding: "14px",
+            background: "var(--surface)",
+            border: "1px solid var(--line)",
+            borderRadius: "var(--r-lg)",
+            color: "var(--berry)",
+            fontSize: "var(--fs-base)", fontWeight: 600,
+          }}
+        >登出</button>
+      </div>
 
       <div style={{ padding: "16px 24px 0", fontSize: "var(--fs-xs)", color: "var(--ink-3)", textAlign: "center" }}>
         暖暖 v1.0　·　由 Gemini Pro + GPT realtime 提供
       </div>
     </div>
   );
+}
+
+function labelCondition(id: string): string {
+  const map: Record<string, string> = {
+    hypertension: "高血壓",
+    diabetes: "糖尿病",
+    prediabetes: "糖尿病前期",
+    cholesterol: "高血脂",
+    gout: "痛風",
+    kidney: "腎臟病",
+    osteoporosis: "骨質疏鬆",
+    none: "無",
+  };
+  return map[id] ?? id;
 }

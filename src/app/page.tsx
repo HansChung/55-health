@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Tab, Modal, Subpage, FontScale, Meal, FoodResult } from "@/lib/types";
-import { DEFAULT_MEALS, MOCK_RESULT } from "@/lib/mock-data";
+import { MOCK_RESULT } from "@/lib/mock-data";
 import { BottomNav } from "@/components/bottom-nav";
 import { HomeScreen } from "@/screens/home-screen";
 import { HistoryScreen } from "@/screens/history-screen";
@@ -18,9 +18,11 @@ import { FamilyShareScreen } from "@/screens/family-share-screen";
 import { NotificationScreen } from "@/screens/notification-screen";
 import { ExerciseScreen } from "@/screens/exercise-screen";
 import { FontSizeScreen } from "@/screens/font-size-screen";
+import { EditProfileScreen } from "@/screens/edit-profile-screen";
 import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/lib/api-client";
 import type { FoodAnalysisResult } from "@/lib/ai/gemini";
+import { mergeMealsWithSlots, guessMealType } from "@/lib/meal-utils";
 
 export default function Page() {
   const { user, profile, loading } = useAuth();
@@ -44,29 +46,26 @@ export default function Page() {
   const [modal, setModal] = useState<Modal>(null);
   const [subpage, setSubpage] = useState<Subpage>(null);
 
-  const [meals, setMeals] = useState<Meal[]>(DEFAULT_MEALS);
+  // 預設空的 3 餐 slots（不要再用假資料）
+  const [meals, setMeals] = useState<Meal[]>(() => mergeMealsWithSlots([]));
   const [pendingResult, setPendingResult] = useState<FoodResult | null>(null);
-  const [pendingPhoto, setPendingPhoto] = useState<string | null>(null);
 
   const totalCal = meals.reduce((s, m) => s + (m.cal || 0), 0);
   const calorieGoal = profile?.calorie_goal ?? 1800;
 
-  // 載入真實餐點
+  const reloadMeals = async () => {
+    try {
+      const { meals: dbMeals } = await api.listMeals(1);
+      setMeals(mergeMealsWithSlots(dbMeals));
+    } catch (e) {
+      console.error("載入餐點失敗:", e);
+    }
+  };
+
+  // 載入真實餐點（永遠覆蓋，空的就是空的）
   useEffect(() => {
     if (!user) return;
-    api.listMeals(1).then(({ meals: dbMeals }) => {
-      if (dbMeals.length > 0) {
-        setMeals(dbMeals.map((m) => ({
-          name: ({ breakfast: "早餐", lunch: "午餐", dinner: "晚餐", snack: "點心" } as const)[m.meal_type],
-          time: new Date(m.eaten_at).toTimeString().substring(0, 5),
-          items: m.items.map((it) => it.name).join("、"),
-          cal: m.total_cal,
-          color: m.items[0]?.color ?? "#E8845A",
-          photo: m.items[0]?.emoji ?? "🍱",
-          logged: true,
-        })));
-      }
-    }).catch(console.error);
+    reloadMeals();
   }, [user]);
 
   // 強制登入
@@ -76,7 +75,14 @@ export default function Page() {
     }
   }, [loading, user, modal]);
 
-  const handleCapture = (result: FoodAnalysisResult, photoDataUrl: string) => {
+  // 登入成功後關閉登入 modal
+  useEffect(() => {
+    if (user && modal === "login") {
+      setModal(null);
+    }
+  }, [user, modal]);
+
+  const handleCapture = (result: FoodAnalysisResult) => {
     const foodResult: FoodResult = {
       cal: result.total.cal,
       protein: result.total.protein,
@@ -91,7 +97,6 @@ export default function Page() {
       })),
     };
     setPendingResult(foodResult);
-    setPendingPhoto(photoDataUrl);
     setModal("result");
   };
 
@@ -99,11 +104,8 @@ export default function Page() {
     if (pendingResult) {
       try {
         const now = new Date();
-        const hour = now.getHours();
-        const mealType =
-          hour < 10 ? "breakfast" : hour < 14 ? "lunch" : hour < 17 ? "snack" : "dinner";
         await api.createMeal({
-          meal_type: mealType,
+          meal_type: guessMealType(now),
           items: pendingResult.items,
           total_cal: adj.cal,
           protein_g: adj.protein,
@@ -111,25 +113,13 @@ export default function Page() {
           fat_g: adj.fat,
           eaten_at: now.toISOString(),
         });
-        // Reload from DB
-        const { meals: fresh } = await api.listMeals(1);
-        if (fresh.length > 0) {
-          setMeals(fresh.map((m) => ({
-            name: ({ breakfast: "早餐", lunch: "午餐", dinner: "晚餐", snack: "點心" } as const)[m.meal_type],
-            time: new Date(m.eaten_at).toTimeString().substring(0, 5),
-            items: m.items.map((it) => it.name).join("、"),
-            cal: m.total_cal,
-            color: m.items[0]?.color ?? "#E8845A",
-            photo: m.items[0]?.emoji ?? "🍱",
-            logged: true,
-          })));
-        }
+        await reloadMeals();
       } catch (e) {
         console.error("Save meal failed:", e);
+        alert("儲存失敗，請再試一次");
       }
     }
     setPendingResult(null);
-    setPendingPhoto(null);
     setModal(null);
     setTab("home");
   };
@@ -150,6 +140,7 @@ export default function Page() {
             meals={meals}
             calories={totalCal}
             calorieGoal={calorieGoal}
+            displayName={profile?.display_name}
             onCamera={() => setModal("camera")}
             onVoice={() => setModal("voice")}
             onMeal={() => setModal("result")}
@@ -165,6 +156,13 @@ export default function Page() {
         <BottomNav tab={tab} setTab={setTab} onCamera={() => setModal("camera")} onVoice={() => setModal("voice")} />
       )}
 
+      {subpage === "edit-profile" && (
+        <EditProfileScreen
+          onBack={() => setSubpage(null)}
+          profile={profile}
+          onSaved={() => window.location.reload()}
+        />
+      )}
       {subpage === "chronic" && <ChronicDiseaseScreen onBack={() => setSubpage(null)} />}
       {subpage === "family" && <FamilyShareScreen onBack={() => setSubpage(null)} />}
       {subpage === "notif" && <NotificationScreen onBack={() => setSubpage(null)} />}

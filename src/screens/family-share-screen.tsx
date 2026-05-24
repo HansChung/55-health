@@ -80,11 +80,8 @@ function InviteModal({ onClose }: { onClose: () => void }) {
 
 export function FamilyShareScreen({ onBack }: FamilyShareScreenProps) {
   const [showInvite, setShowInvite] = useState(false);
-  const family = [
-    { name: "王志明", rel: "兒子", status: "已連結", avatar: "志", color: "#7AA779", view: "所有資料" },
-    { name: "王雅雯", rel: "女兒", status: "已連結", avatar: "雅", color: "#E8845A", view: "健康警示" },
-    { name: "王小華", rel: "孫女", status: "已邀請", avatar: "華", color: "#D9A441", view: "—" },
-  ];
+  // TODO: 之後從 /api/family-links 載入
+  const family: { name: string; rel: string; status: string; avatar: string; color: string; view: string }[] = [];
 
   return (
     <SubPage
@@ -124,6 +121,19 @@ export function FamilyShareScreen({ onBack }: FamilyShareScreenProps) {
       <div style={{ fontSize: "var(--fs-sm)", fontWeight: 700, color: "var(--ink-2)", marginBottom: 12 }}>
         已連結的家人
       </div>
+      {family.length === 0 && (
+        <div style={{
+          background: "var(--surface)", borderRadius: "var(--r-lg)",
+          padding: 30, textAlign: "center", marginBottom: 28,
+          border: "1px dashed var(--line-strong)",
+        }}>
+          <div style={{ fontSize: 40, marginBottom: 8 }}>👨‍👩‍👧</div>
+          <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
+            還沒有連結的家人<br />
+            點下方「邀請家人」開始分享
+          </div>
+        </div>
+      )}
       <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 28 }}>
         {family.map((f, i) => (
           <div key={i} style={{

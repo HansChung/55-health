@@ -18,10 +18,16 @@ export const PRICING = {
   },
 
   // OpenAI Realtime
-  "gpt-realtime-2": {
+  "gpt-realtime": {
     input: 5.0 / 1_000_000,
     output: 20.0 / 1_000_000,
     audio_input: 0.06 / 60,  // $0.06 per minute → per second
+    audio_output: 0.24 / 60,
+  },
+  "gpt-realtime-2": {
+    input: 5.0 / 1_000_000,
+    output: 20.0 / 1_000_000,
+    audio_input: 0.06 / 60,
     audio_output: 0.24 / 60,
   },
   "gpt-4o-mini": {

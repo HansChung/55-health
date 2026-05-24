@@ -23,7 +23,7 @@ export class RealtimeClient {
   private assistantBuffer = "";
   private model: string;
 
-  constructor(callbacks: RealtimeClientCallbacks = {}, model = "gpt-realtime-2") {
+  constructor(callbacks: RealtimeClientCallbacks = {}, model = "gpt-realtime") {
     this.callbacks = callbacks;
     this.model = model;
   }
@@ -53,17 +53,37 @@ export class RealtimeClient {
       const offer = await this.pc.createOffer();
       await this.pc.setLocalDescription(offer);
 
-      const baseUrl = "https://api.openai.com/v1/realtime";
-      const sdpResp = await fetch(`${baseUrl}?model=${this.model}`, {
-        method: "POST",
-        body: offer.sdp,
-        headers: {
-          Authorization: `Bearer ${ephemeralKey}`,
-          "Content-Type": "application/sdp",
-        },
-      });
+      // 試 GA endpoint，失敗就 fallback 到 beta endpoint
+      const endpoints = [
+        `https://api.openai.com/v1/realtime/calls?model=${this.model}`,
+        `https://api.openai.com/v1/realtime?model=${this.model}`,
+      ];
 
-      if (!sdpResp.ok) throw new Error("WebRTC handshake 失敗");
+      let sdpResp: Response | null = null;
+      const errors: string[] = [];
+
+      for (const url of endpoints) {
+        const resp = await fetch(url, {
+          method: "POST",
+          body: offer.sdp,
+          headers: {
+            Authorization: `Bearer ${ephemeralKey}`,
+            "Content-Type": "application/sdp",
+          },
+        });
+        if (resp.ok) {
+          sdpResp = resp;
+          console.log("[realtime] connected via", url);
+          break;
+        }
+        const errBody = await resp.text();
+        errors.push(`${url} → ${resp.status}: ${errBody.substring(0, 150)}`);
+        console.error("[realtime] endpoint failed:", url, resp.status, errBody);
+      }
+
+      if (!sdpResp) {
+        throw new Error("WebRTC handshake 全部失敗：" + errors.join(" | "));
+      }
 
       const answer = { type: "answer" as const, sdp: await sdpResp.text() };
       await this.pc.setRemoteDescription(answer);
