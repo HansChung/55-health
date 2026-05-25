@@ -49,6 +49,7 @@ export default function Page() {
   // 預設空的 3 餐 slots（不要再用假資料）
   const [meals, setMeals] = useState<Meal[]>(() => mergeMealsWithSlots([]));
   const [pendingResult, setPendingResult] = useState<FoodResult | null>(null);
+  const [pendingPhoto, setPendingPhoto] = useState<string | null>(null);
 
   const totalCal = meals.reduce((s, m) => s + (m.cal || 0), 0);
   const calorieGoal = profile?.calorie_goal ?? 1800;
@@ -82,7 +83,7 @@ export default function Page() {
     }
   }, [user, modal]);
 
-  const handleCapture = (result: FoodAnalysisResult) => {
+  const handleCapture = (result: FoodAnalysisResult, photoDataUrl: string) => {
     const foodResult: FoodResult = {
       cal: result.total.cal,
       protein: result.total.protein,
@@ -97,6 +98,7 @@ export default function Page() {
       })),
     };
     setPendingResult(foodResult);
+    setPendingPhoto(photoDataUrl);
     setModal("result");
   };
 
@@ -120,6 +122,7 @@ export default function Page() {
       }
     }
     setPendingResult(null);
+    setPendingPhoto(null);
     setModal(null);
     setTab("home");
   };
@@ -186,7 +189,8 @@ export default function Page() {
       {modal === "result" && (
         <ResultScreen
           result={pendingResult ?? MOCK_RESULT}
-          onClose={() => { setModal(null); setPendingResult(null); }}
+          photoDataUrl={pendingPhoto}
+          onClose={() => { setModal(null); setPendingResult(null); setPendingPhoto(null); }}
           onSave={handleSaveMeal}
         />
       )}

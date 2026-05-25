@@ -9,11 +9,12 @@ import { MacroBar } from "@/components/macro-bar";
 
 interface ResultScreenProps {
   result: FoodResult;
+  photoDataUrl?: string | null;
   onClose: () => void;
   onSave: (adjusted: { cal: number; protein: number; carb: number; fat: number }) => void;
 }
 
-export function ResultScreen({ result, onClose, onSave }: ResultScreenProps) {
+export function ResultScreen({ result, photoDataUrl, onClose, onSave }: ResultScreenProps) {
   const [portion, setPortion] = useState(1);
   const adjusted = {
     cal: Math.round(result.cal * portion),
@@ -30,21 +31,25 @@ export function ResultScreen({ result, onClose, onSave }: ResultScreenProps) {
     }}>
       <div style={{
         height: 240, position: "relative", overflow: "hidden",
-        background: "radial-gradient(ellipse 70% 60% at 50% 55%, #D67340 0%, #8C4521 60%, #4A2510 100%)",
+        background: photoDataUrl
+          ? `#000 url(${photoDataUrl}) center/cover no-repeat`
+          : "radial-gradient(ellipse 70% 60% at 50% 55%, #D67340 0%, #8C4521 60%, #4A2510 100%)",
       }}>
-        <div style={{
-          position: "absolute", left: "50%", top: "52%",
-          transform: "translate(-50%, -50%)",
-          width: 200, height: 200, borderRadius: "50%",
-          background: "radial-gradient(circle at 35% 30%, #FBE8C6 0%, #E0BC85 60%, #B8924C 100%)",
-          boxShadow: "0 20px 40px rgba(0,0,0,0.4)",
-          display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, padding: 24,
-        }}>
-          <div style={{ borderRadius: "50%", background: "radial-gradient(circle at 30% 30%, #F5F0E0, #D4C8A4)" }} />
-          <div style={{ borderRadius: "50%", background: "radial-gradient(circle at 30% 30%, #C95E36, #8C3A1C)" }} />
-          <div style={{ borderRadius: "50%", background: "radial-gradient(circle at 40% 30%, #7AA779, #4F7A4E)" }} />
-          <div style={{ borderRadius: 10, background: "repeating-linear-gradient(0deg, #E8C97A 0 5px, #D0AC55 5px 10px)" }} />
-        </div>
+        {!photoDataUrl && (
+          <div style={{
+            position: "absolute", left: "50%", top: "52%",
+            transform: "translate(-50%, -50%)",
+            width: 200, height: 200, borderRadius: "50%",
+            background: "radial-gradient(circle at 35% 30%, #FBE8C6 0%, #E0BC85 60%, #B8924C 100%)",
+            boxShadow: "0 20px 40px rgba(0,0,0,0.4)",
+            display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, padding: 24,
+          }}>
+            <div style={{ borderRadius: "50%", background: "radial-gradient(circle at 30% 30%, #F5F0E0, #D4C8A4)" }} />
+            <div style={{ borderRadius: "50%", background: "radial-gradient(circle at 30% 30%, #C95E36, #8C3A1C)" }} />
+            <div style={{ borderRadius: "50%", background: "radial-gradient(circle at 40% 30%, #7AA779, #4F7A4E)" }} />
+            <div style={{ borderRadius: 10, background: "repeating-linear-gradient(0deg, #E8C97A 0 5px, #D0AC55 5px 10px)" }} />
+          </div>
+        )}
         <button onClick={onClose} style={{
           position: "absolute", top: 16, left: 16,
           width: 48, height: 48, borderRadius: "50%",
@@ -70,7 +75,7 @@ export function ResultScreen({ result, onClose, onSave }: ResultScreenProps) {
           <Mascot size={56} mood="happy" />
           <SpeechBubble tone="orange">
             <div style={{ fontSize: "var(--fs-base)", fontWeight: 700, marginBottom: 4 }}>
-              我看到了 4 樣食物
+              我看到了 {result.items.length} 樣食物
             </div>
             <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
               如果認錯了，可以點下面修改喔
