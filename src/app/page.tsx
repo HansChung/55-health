@@ -27,6 +27,16 @@ import { mergeMealsWithSlots, guessMealType } from "@/lib/meal-utils";
 export default function Page() {
   const { user, profile, loading } = useAuth();
 
+  // 如果用戶被 OAuth provider 丟回 /?code=xxx，自動轉到 /auth/callback
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get("code");
+    if (code && window.location.pathname === "/") {
+      window.location.replace(`/auth/callback?code=${code}`);
+    }
+  }, []);
+
   const [fontScale, setFontScale] = useState<FontScale>("base");
   const [highContrast, setHighContrast] = useState(false);
 
