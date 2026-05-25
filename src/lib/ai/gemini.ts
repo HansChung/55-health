@@ -49,7 +49,7 @@ export async function analyzeFoodImage(
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
 
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-pro";
+  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
   const genAI = new GoogleGenerativeAI(apiKey);
   const generativeModel = genAI.getGenerativeModel({
     model,

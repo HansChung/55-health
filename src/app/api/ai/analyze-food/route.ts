@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     await trackAiUsage({
       userId: user.id,
       service: "gemini_vision",
-      model: process.env.GEMINI_MODEL || "gemini-2.5-pro",
+      model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
       endpoint: "/api/ai/analyze-food",
       success: false,
       errorMessage: msg,
