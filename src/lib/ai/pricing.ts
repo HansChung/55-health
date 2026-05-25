@@ -3,14 +3,18 @@
  * 來源：各家官方定價，請定期更新
  */
 export const PRICING = {
-  // Google Gemini
+  // Google Gemini（免費額度耗盡後的計費）
   "gemini-2.5-pro": {
-    input: 1.25 / 1_000_000,   // $1.25 / 1M input tokens
-    output: 10.0 / 1_000_000,  // $10 / 1M output tokens
-  },
-  "gemini-3.1-pro": {
     input: 1.25 / 1_000_000,
     output: 10.0 / 1_000_000,
+  },
+  "gemini-2.5-flash": {
+    input: 0.30 / 1_000_000,    // 比 pro 便宜很多
+    output: 2.50 / 1_000_000,
+  },
+  "gemini-2.5-flash-lite": {
+    input: 0.10 / 1_000_000,
+    output: 0.40 / 1_000_000,
   },
   "gemini-1.5-flash": {
     input: 0.075 / 1_000_000,
