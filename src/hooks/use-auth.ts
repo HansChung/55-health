@@ -27,36 +27,61 @@ export function useAuth() {
   useEffect(() => {
     let mounted = true;
 
-    async function loadInitial() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!mounted) return;
-      setUser(user);
-      if (user) await loadProfile(user.id);
-      setLoading(false);
+    async function loadProfile(userId: string) {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", userId)
+          .single();
+        if (error) {
+          console.error("[useAuth] loadProfile error:", error);
+          return;
+        }
+        if (mounted && data) setProfile(data as AppProfile);
+      } catch (e) {
+        console.error("[useAuth] loadProfile threw:", e);
+      }
     }
 
-    async function loadProfile(userId: string) {
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
-      if (mounted && data) setProfile(data as AppProfile);
+    async function loadInitial() {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) console.error("[useAuth] getUser error:", error);
+        if (!mounted) return;
+        setUser(user);
+        if (user) await loadProfile(user.id);
+      } catch (e) {
+        console.error("[useAuth] loadInitial threw:", e);
+      } finally {
+        if (mounted) setLoading(false); // 不管成功失敗都要結束 loading
+      }
     }
 
     loadInitial();
 
+    // 5 秒後強制結束 loading（防呆，避免永遠卡住）
+    const timeout = setTimeout(() => {
+      if (mounted) {
+        console.warn("[useAuth] loadInitial timeout - forcing loading=false");
+        setLoading(false);
+      }
+    }, 5000);
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
+        console.log("[useAuth] auth event:", event, "user:", session?.user?.email);
         if (!mounted) return;
         setUser(session?.user ?? null);
         if (session?.user) await loadProfile(session.user.id);
         else setProfile(null);
+        setLoading(false);
       }
     );
 
     return () => {
       mounted = false;
+      clearTimeout(timeout);
       subscription.unsubscribe();
     };
   }, []);
