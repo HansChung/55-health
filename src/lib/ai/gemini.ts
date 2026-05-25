@@ -49,7 +49,12 @@ export async function analyzeFoodImage(
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
 
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  // 強制使用 flash（2.5-pro 免費額度=0，避免 env var 錯設）
+  let model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  if (model === "gemini-2.5-pro") {
+    console.warn("[gemini] GEMINI_MODEL was set to gemini-2.5-pro, forcing to gemini-2.5-flash (免費版無 pro 額度)");
+    model = "gemini-2.5-flash";
+  }
   const genAI = new GoogleGenerativeAI(apiKey);
   const generativeModel = genAI.getGenerativeModel({
     model,
