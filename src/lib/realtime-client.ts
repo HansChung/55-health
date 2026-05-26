@@ -53,38 +53,25 @@ export class RealtimeClient {
       const offer = await this.pc.createOffer();
       await this.pc.setLocalDescription(offer);
 
-      // 試 GA endpoint，失敗就 fallback 到 beta endpoint
-      const endpoints = [
-        `https://api.openai.com/v1/realtime/calls?model=${this.model}`,
-        `https://api.openai.com/v1/realtime?model=${this.model}`,
-      ];
+      // OpenAI Realtime WebRTC：直接連 /v1/realtime（瀏覽器 SDP exchange）
+      // /v1/realtime/calls 不支援 CORS，不能在瀏覽器用
+      const url = `https://api.openai.com/v1/realtime?model=${this.model}`;
+      const sdpResp = await fetch(url, {
+        method: "POST",
+        body: offer.sdp,
+        headers: {
+          Authorization: `Bearer ${ephemeralKey}`,
+          "Content-Type": "application/sdp",
+        },
+      });
 
-      let sdpResp: Response | null = null;
-      const errors: string[] = [];
-
-      for (const url of endpoints) {
-        const resp = await fetch(url, {
-          method: "POST",
-          body: offer.sdp,
-          headers: {
-            Authorization: `Bearer ${ephemeralKey}`,
-            "Content-Type": "application/sdp",
-          },
-        });
-        if (resp.ok) {
-          sdpResp = resp;
-          console.log("[realtime] connected via", url);
-          break;
-        }
-        const errBody = await resp.text();
-        errors.push(`${url} → ${resp.status}: ${errBody.substring(0, 150)}`);
-        console.error("[realtime] endpoint failed:", url, resp.status, errBody);
+      if (!sdpResp.ok) {
+        const errBody = await sdpResp.text();
+        console.error("[realtime] handshake failed:", sdpResp.status, errBody);
+        throw new Error(`WebRTC 連線失敗 (${sdpResp.status}): ${errBody.substring(0, 200)}`);
       }
 
-      if (!sdpResp) {
-        throw new Error("WebRTC handshake 全部失敗：" + errors.join(" | "));
-      }
-
+      console.log("[realtime] connected via", url);
       const answer = { type: "answer" as const, sdp: await sdpResp.text() };
       await this.pc.setRemoteDescription(answer);
     } catch (err) {
