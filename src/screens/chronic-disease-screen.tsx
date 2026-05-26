@@ -8,6 +8,7 @@ import { api } from "@/lib/api-client";
 
 interface ChronicDiseaseScreenProps {
   onBack: () => void;
+  onScanPrescription?: () => void;
 }
 
 const CONDITIONS = [
@@ -21,7 +22,7 @@ const CONDITIONS = [
   { id: "none", label: "都沒有", icon: "🙂", tip: "保持健康習慣" },
 ];
 
-export function ChronicDiseaseScreen({ onBack }: ChronicDiseaseScreenProps) {
+export function ChronicDiseaseScreen({ onBack, onScanPrescription }: ChronicDiseaseScreenProps) {
   const [selected, setSelected] = useState<string[]>([]);
   const [meds, setMeds] = useState<{ name: string; dose: string; time: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -156,9 +157,40 @@ export function ChronicDiseaseScreen({ onBack }: ChronicDiseaseScreenProps) {
               display: "flex", alignItems: "center", gap: 4,
             }}>
               <Icon name="plus" size={18} color="var(--primary-deep)" stroke={2.5} />
-              {showAddMed ? "取消" : "新增藥物"}
+              {showAddMed ? "取消" : "手動新增"}
             </button>
           </div>
+
+          {/* 拍藥袋（AI 辨識）大按鈕 */}
+          {onScanPrescription && (
+            <button
+              onClick={onScanPrescription}
+              style={{
+                width: "100%", padding: "16px 18px", marginBottom: 12,
+                background: "linear-gradient(135deg, #FBE6D4, #F7E6BD)",
+                border: "2px solid var(--gold-soft)",
+                borderRadius: 16,
+                display: "flex", alignItems: "center", gap: 14,
+                cursor: "pointer", textAlign: "left",
+              }}
+            >
+              <div style={{
+                width: 48, height: 48, borderRadius: 12,
+                background: "var(--berry-soft)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 28, flexShrink: 0,
+              }}>💊</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: "var(--fs-base)", fontWeight: 700, color: "var(--berry)" }}>
+                  📸 拍藥袋自動辨識
+                </div>
+                <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
+                  AI 幫您看藥名、用法、注意事項
+                </div>
+              </div>
+              <Icon name="chevronR" size={22} color="var(--ink-3)" />
+            </button>
+          )}
 
           {showAddMed && (
             <div style={{

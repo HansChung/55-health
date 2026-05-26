@@ -79,6 +79,12 @@ export const api = {
   deleteMetric: (id: string) =>
     apiFetch<{ ok: true }>(`/api/health-metrics/${id}`, { method: "DELETE" }),
 
+  analyzePrescription: (imageBase64: string, mimeType?: string) =>
+    apiFetch<{ result: PrescriptionResult }>("/api/ai/analyze-prescription", {
+      method: "POST",
+      json: { imageBase64, mimeType },
+    }),
+
   // Profile
   getProfile: () =>
     apiFetch<{ profile: ProfileData }>("/api/profile"),
@@ -160,6 +166,21 @@ export interface FamilyPermissions {
   alerts?: boolean;
   diary?: boolean;
   voice?: boolean;
+}
+
+export interface PrescriptionResult {
+  medications: {
+    name: string;
+    english_name?: string | null;
+    dose?: string | null;
+    frequency?: string | null;
+    timing?: string | null;
+    duration?: string | null;
+    purpose?: string | null;
+    warnings?: string[] | null;
+    side_effects?: string[] | null;
+  }[];
+  summary?: string;
 }
 
 export interface HealthMetric {
