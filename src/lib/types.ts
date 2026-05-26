@@ -35,7 +35,7 @@ export interface TranscriptMessage {
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 export type Tab = "home" | "history" | "profile";
 export type Modal = "camera" | "result" | "voice" | "suggestion" | "onboarding" | "login" | null;
-export type Subpage = "chronic" | "family" | "notif" | "exercise" | "font" | "edit-profile" | null;
+export type Subpage = "chronic" | "family" | "notif" | "exercise" | "font" | "edit-profile" | "health-metrics" | null;
 export type MascotMood = "happy" | "thinking" | "sleeping" | "excited";
 export type FontScale = "base" | "lg";
 export type VoiceTone = "warm" | "strict" | "grandchild";

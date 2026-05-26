@@ -118,6 +118,7 @@ export function ProfileScreen({ onSubpage }: ProfileScreenProps) {
       <Section title="健康狀況">
         <Row icon="heart" iconColor="var(--berry)" label="慢性病與用藥" value={conditionLabel} arrow onClick={() => onSubpage("chronic")} />
         <Row icon="target" iconColor="var(--primary)" label="今日目標" value={`${profile?.calorie_goal ?? 1800} 大卡`} arrow />
+        <Row icon="heart" iconColor="#7AA779" label="體重 / 血壓 / 血糖" value="健康數值追蹤" arrow onClick={() => onSubpage("health-metrics")} />
         <Row icon="flame" iconColor="var(--gold)" label="運動記錄" value="查看詳細" arrow onClick={() => onSubpage("exercise")} />
       </Section>
 

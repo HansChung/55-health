@@ -19,6 +19,7 @@ import { NotificationScreen } from "@/screens/notification-screen";
 import { ExerciseScreen } from "@/screens/exercise-screen";
 import { FontSizeScreen } from "@/screens/font-size-screen";
 import { EditProfileScreen } from "@/screens/edit-profile-screen";
+import { HealthMetricsScreen } from "@/screens/health-metrics-screen";
 import { MealDetailSheet } from "@/screens/meal-detail-sheet";
 import { PhotoSourceSheet } from "@/components/photo-source-sheet";
 import type { MealRecord, AiSuggestion } from "@/lib/api-client";
@@ -317,6 +318,7 @@ export default function Page() {
           }}
         />
       )}
+      {subpage === "health-metrics" && <HealthMetricsScreen onBack={() => setSubpage(null)} />}
       {subpage === "chronic" && <ChronicDiseaseScreen onBack={() => setSubpage(null)} />}
       {subpage === "family" && <FamilyShareScreen onBack={() => setSubpage(null)} />}
       {subpage === "notif" && <NotificationScreen onBack={() => setSubpage(null)} />}

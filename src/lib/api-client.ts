@@ -65,6 +65,20 @@ export const api = {
   removeFamily: (id: string) =>
     apiFetch<{ ok: true }>(`/api/family/${id}`, { method: "DELETE" }),
 
+  // Health metrics
+  listMetrics: (type?: "weight" | "blood_pressure" | "blood_glucose", days = 30) => {
+    const params = new URLSearchParams();
+    if (type) params.set("type", type);
+    params.set("days", String(days));
+    return apiFetch<{ metrics: HealthMetric[] }>(`/api/health-metrics?${params}`);
+  },
+
+  createMetric: (input: Partial<HealthMetric>) =>
+    apiFetch<{ metric: HealthMetric }>("/api/health-metrics", { method: "POST", json: input }),
+
+  deleteMetric: (id: string) =>
+    apiFetch<{ ok: true }>(`/api/health-metrics/${id}`, { method: "DELETE" }),
+
   // Profile
   getProfile: () =>
     apiFetch<{ profile: ProfileData }>("/api/profile"),
@@ -146,6 +160,20 @@ export interface FamilyPermissions {
   alerts?: boolean;
   diary?: boolean;
   voice?: boolean;
+}
+
+export interface HealthMetric {
+  id: string;
+  user_id: string;
+  metric_type: "weight" | "blood_pressure" | "blood_glucose";
+  measured_at: string;
+  weight_kg: number | null;
+  systolic: number | null;
+  diastolic: number | null;
+  pulse: number | null;
+  glucose_mg_dl: number | null;
+  glucose_context: "fasting" | "before_meal" | "after_meal" | "bedtime" | null;
+  notes: string | null;
 }
 
 export interface FamilyLink {
