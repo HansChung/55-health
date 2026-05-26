@@ -235,6 +235,9 @@ export default function Page() {
       time: now.toTimeString().substring(0, 5),
       items: items.map((it) => it.name).join("、"),
       cal: adj.cal,
+      protein: adj.protein,
+      carb: adj.carb,
+      fat: adj.fat,
       color: items[0]?.color ?? "#E8845A",
       photo: items[0]?.emoji ?? "🍱",
       logged: true,
@@ -267,6 +270,7 @@ export default function Page() {
         photo_url: photoUrl ?? undefined,
       });
       reloadMeals().catch(console.error);
+      loadSuggestion(true).catch(console.error);
     } catch (e) {
       console.error("Save meal failed:", e);
       alert("儲存失敗，請再試一次：" + (e as Error).message);

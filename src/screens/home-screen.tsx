@@ -40,14 +40,16 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
   const totals = meals.reduce(
     (s, m) => {
       s.cal += m.cal || 0;
+      s.protein += m.protein || 0;
+      s.carb += m.carb || 0;
+      s.fat += m.fat || 0;
       return s;
     },
-    { cal: 0 }
+    { cal: 0, protein: 0, carb: 0, fat: 0 }
   );
-  // TODO: 真實 protein/carb/fat 要從 API 拿到（meals 物件目前沒這欄）
-  const proteinG = Math.round(totals.cal * 0.05);  // 粗估
-  const carbG = Math.round(totals.cal * 0.13);
-  const fatG = Math.round(totals.cal * 0.025);
+  const proteinG = Math.round(totals.protein);
+  const carbG = Math.round(totals.carb);
+  const fatG = Math.round(totals.fat);
 
   return (
     <div className="scroll-area" style={{ flex: 1, overflowY: "auto", paddingBottom: 120 }}>

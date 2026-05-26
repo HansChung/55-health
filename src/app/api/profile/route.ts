@@ -17,6 +17,12 @@ const PatchSchema = z.object({
     name: z.string(),
     dose: z.string().optional(),
     time: z.string().optional(),
+    english_name: z.string().optional(),
+    purpose: z.string().optional(),
+    warnings: z.array(z.string()).optional(),
+    side_effects: z.array(z.string()).optional(),
+    added_at: z.string().optional(),
+    photo_url: z.string().optional(),
   })).optional(),
   notification_settings: z.record(z.string(), z.any()).optional(),
 });

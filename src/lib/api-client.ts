@@ -139,10 +139,22 @@ export interface ProfileData {
   font_scale: "base" | "lg";
   high_contrast: boolean;
   chronic_conditions: string[];
-  medications: { name: string; dose?: string; time?: string }[];
+  medications: ProfileMedication[];
   notification_settings?: NotificationSettings;
   subscription_tier: "free" | "basic" | "pro";
   is_admin: boolean;
+}
+
+export interface ProfileMedication {
+  name: string;
+  dose?: string;
+  time?: string;
+  english_name?: string;
+  purpose?: string;
+  warnings?: string[];
+  side_effects?: string[];
+  added_at?: string;
+  photo_url?: string;
 }
 
 export interface NotificationSettings {

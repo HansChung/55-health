@@ -35,7 +35,11 @@ export function ChronicDiseaseScreen({ onBack, onScanPrescription }: ChronicDise
     api.getProfile()
       .then(({ profile }) => {
         setSelected(profile.chronic_conditions ?? []);
-        setMeds(profile.medications ?? []);
+        setMeds((profile.medications ?? []).map((med) => ({
+          name: med.name,
+          dose: med.dose ?? "",
+          time: med.time ?? "",
+        })));
       })
       .catch(console.error)
       .finally(() => setLoading(false));

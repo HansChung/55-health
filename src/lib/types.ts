@@ -3,6 +3,9 @@ export interface Meal {
   time: string;
   items: string;
   cal: number;
+  protein?: number;
+  carb?: number;
+  fat?: number;
   color: string;
   photo: string;        // emoji（fallback）
   photoUrl?: string | null; // 真實照片 URL
