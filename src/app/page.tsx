@@ -26,6 +26,7 @@ import { useAuth, type AppProfile } from "@/hooks/use-auth";
 import { api } from "@/lib/api-client";
 import type { FoodAnalysisResult } from "@/lib/ai/gemini";
 import { mergeMealsWithSlots, guessMealType } from "@/lib/meal-utils";
+import { compressImage } from "@/lib/image-utils";
 import type { FoodItem } from "@/lib/types";
 
 export default function Page() {
@@ -171,15 +172,13 @@ export default function Page() {
     setShowPhotoSource(false);
     setAnalyzing(true);
     try {
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+      // 壓縮成 1280px 邊長 + JPEG 85%（避免大圖造成 data URL 過大、無法顯示）
+      const dataUrl = await compressImage(file, { maxSide: 1280, quality: 0.85 });
+      console.log("[upload] compressed size:", Math.round(dataUrl.length / 1024), "KB");
+
       const base64 = dataUrl.split(",")[1];
-      const { result } = await api.analyzeFood(base64, file.type || "image/jpeg");
-      // 先關掉 analyzing overlay 再開 result 視窗，避免遮罩蓋住照片
+      const { result } = await api.analyzeFood(base64, "image/jpeg");
+      // 先關掉 analyzing overlay 再開 result 視窗
       setAnalyzing(false);
       handleCapture(result, dataUrl);
     } catch (err: unknown) {

@@ -79,12 +79,17 @@ export function CameraScreen({ onClose, onCapture }: CameraScreenProps) {
   const captureFromVideo = () => {
     if (!videoRef.current || !cameraReady) return null;
     const video = videoRef.current;
+    // 縮到長邊最多 1280px，避免大圖
+    const longest = Math.max(video.videoWidth, video.videoHeight);
+    const scale = longest > 1280 ? 1280 / longest : 1;
+    const w = Math.round(video.videoWidth * scale);
+    const h = Math.round(video.videoHeight * scale);
     const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = w;
+    canvas.height = h;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-    ctx.drawImage(video, 0, 0);
+    ctx.drawImage(video, 0, 0, w, h);
     return canvas.toDataURL("image/jpeg", 0.85);
   };
 
