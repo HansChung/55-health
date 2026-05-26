@@ -9,7 +9,7 @@ import type { AppProfile } from "@/hooks/use-auth";
 interface EditProfileScreenProps {
   onBack: () => void;
   profile: AppProfile | null;
-  onSaved: () => void;
+  onSaved: (updated?: unknown) => void;  // 接收 API 回傳的新 profile
 }
 
 export function EditProfileScreen({ onBack, profile, onSaved }: EditProfileScreenProps) {
@@ -33,9 +33,7 @@ export function EditProfileScreen({ onBack, profile, onSaved }: EditProfileScree
         voice_tone: voiceTone,
       });
       console.log("[edit-profile] saved:", updated);
-      onSaved();      // 觸發 useAuth 重新載入
-      // 稍等一下讓 refreshProfile 把新資料抓回來
-      await new Promise((r) => setTimeout(r, 300));
+      onSaved(updated);  // 把新 profile 傳回給 page.tsx
       onBack();
     } catch (e) {
       console.error("[edit-profile] save failed:", e);

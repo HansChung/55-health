@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 
@@ -22,30 +22,45 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<AppProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [refreshCounter, setRefreshCounter] = useState(0);
   const supabase = createSupabaseBrowser();
 
-  const refreshProfile = () => setRefreshCounter((c) => c + 1);
+  // 主動拉一次 profile（外部呼叫 refreshProfile 用）
+  const fetchProfile = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+      if (error) {
+        console.error("[useAuth] fetchProfile error:", error);
+        return null;
+      }
+      return data as AppProfile;
+    } catch (e) {
+      console.error("[useAuth] fetchProfile threw:", e);
+      return null;
+    }
+  }, [supabase]);
+
+  // 外部呼叫：重新從 DB 拉 profile（不重 mount）
+  const refreshProfile = useCallback(async () => {
+    if (!user) return;
+    const fresh = await fetchProfile(user.id);
+    if (fresh) {
+      console.log("[useAuth] refreshProfile: got", fresh.display_name);
+      setProfile(fresh);
+    }
+  }, [user, fetchProfile]);
+
+  // 外部呼叫：直接設定 profile（編輯後立刻更新 UI）
+  const setProfileDirectly = useCallback((p: AppProfile) => {
+    console.log("[useAuth] setProfileDirectly:", p.display_name);
+    setProfile(p);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
-
-    async function loadProfile(userId: string) {
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", userId)
-          .single();
-        if (error) {
-          console.error("[useAuth] loadProfile error:", error);
-          return;
-        }
-        if (mounted && data) setProfile(data as AppProfile);
-      } catch (e) {
-        console.error("[useAuth] loadProfile threw:", e);
-      }
-    }
 
     async function loadInitial() {
       try {
@@ -53,17 +68,19 @@ export function useAuth() {
         if (error) console.error("[useAuth] getUser error:", error);
         if (!mounted) return;
         setUser(user);
-        if (user) await loadProfile(user.id);
+        if (user) {
+          const p = await fetchProfile(user.id);
+          if (mounted && p) setProfile(p);
+        }
       } catch (e) {
         console.error("[useAuth] loadInitial threw:", e);
       } finally {
-        if (mounted) setLoading(false); // 不管成功失敗都要結束 loading
+        if (mounted) setLoading(false);
       }
     }
 
     loadInitial();
 
-    // 5 秒後強制結束 loading（防呆，避免永遠卡住）
     const timeout = setTimeout(() => {
       if (mounted) {
         console.warn("[useAuth] loadInitial timeout - forcing loading=false");
@@ -76,8 +93,12 @@ export function useAuth() {
         console.log("[useAuth] auth event:", event, "user:", session?.user?.email);
         if (!mounted) return;
         setUser(session?.user ?? null);
-        if (session?.user) await loadProfile(session.user.id);
-        else setProfile(null);
+        if (session?.user) {
+          const p = await fetchProfile(session.user.id);
+          if (mounted && p) setProfile(p);
+        } else {
+          setProfile(null);
+        }
         setLoading(false);
       }
     );
@@ -87,7 +108,7 @@ export function useAuth() {
       clearTimeout(timeout);
       subscription.unsubscribe();
     };
-  }, [refreshCounter]);
+  }, []);  // ← 只跑一次，不依賴 refreshCounter
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -95,5 +116,9 @@ export function useAuth() {
     setProfile(null);
   };
 
-  return { user, profile, loading, signOut, supabase, refreshProfile };
+  return {
+    user, profile, loading, signOut, supabase,
+    refreshProfile,
+    setProfileDirectly,
+  };
 }

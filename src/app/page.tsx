@@ -21,13 +21,13 @@ import { FontSizeScreen } from "@/screens/font-size-screen";
 import { EditProfileScreen } from "@/screens/edit-profile-screen";
 import { MealDetailSheet } from "@/screens/meal-detail-sheet";
 import type { MealRecord, AiSuggestion } from "@/lib/api-client";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, type AppProfile } from "@/hooks/use-auth";
 import { api } from "@/lib/api-client";
 import type { FoodAnalysisResult } from "@/lib/ai/gemini";
 import { mergeMealsWithSlots, guessMealType } from "@/lib/meal-utils";
 
 export default function Page() {
-  const { user, profile, loading, refreshProfile } = useAuth();
+  const { user, profile, loading, refreshProfile, setProfileDirectly } = useAuth();
 
   // 如果用戶被 OAuth provider 丟回 /?code=xxx，自動轉到 /auth/callback
   useEffect(() => {
@@ -248,7 +248,11 @@ export default function Page() {
         <EditProfileScreen
           onBack={() => setSubpage(null)}
           profile={profile}
-          onSaved={() => refreshProfile()}
+          onSaved={(updated) => {
+            // 直接把 API 回傳的新 profile 塞進 state（不用等 refetch）
+            if (updated) setProfileDirectly(updated as AppProfile);
+            else refreshProfile();
+          }}
         />
       )}
       {subpage === "chronic" && <ChronicDiseaseScreen onBack={() => setSubpage(null)} />}
