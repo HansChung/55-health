@@ -183,11 +183,12 @@ export default function Page() {
       handleCapture(result, dataUrl);
     } catch (err: unknown) {
       setAnalyzing(false);
+      console.error("[handleFileUpload] error:", err);
       const status = (err as { status?: number })?.status;
-      const msg = err instanceof Error ? err.message : "辨識失敗";
+      const msg = err instanceof Error ? err.message : String(err);
       if (status === 429) alert("本月拍照次數已用完，請升級方案");
       else if (status === 401) alert("請先登入");
-      else alert("辨識失敗：" + msg);
+      else alert("辨識失敗：\n" + msg);
     }
   };
 
