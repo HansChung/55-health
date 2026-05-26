@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 
@@ -18,13 +18,24 @@ export interface AppProfile {
   is_admin: boolean;
 }
 
-export function useAuth() {
+interface AuthContextType {
+  user: User | null;
+  profile: AppProfile | null;
+  loading: boolean;
+  signOut: () => Promise<void>;
+  supabase: ReturnType<typeof createSupabaseBrowser>;
+  refreshProfile: () => Promise<void>;
+  setProfileDirectly: (p: AppProfile) => void;
+}
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<AppProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createSupabaseBrowser();
+  const [supabase] = useState(() => createSupabaseBrowser());
 
-  // 主動拉一次 profile（外部呼叫 refreshProfile 用）
   const fetchProfile = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -33,29 +44,27 @@ export function useAuth() {
         .eq("id", userId)
         .single();
       if (error) {
-        console.error("[useAuth] fetchProfile error:", error);
+        console.error("[auth] fetchProfile error:", error);
         return null;
       }
       return data as AppProfile;
     } catch (e) {
-      console.error("[useAuth] fetchProfile threw:", e);
+      console.error("[auth] fetchProfile threw:", e);
       return null;
     }
   }, [supabase]);
 
-  // 外部呼叫：重新從 DB 拉 profile（不重 mount）
   const refreshProfile = useCallback(async () => {
     if (!user) return;
     const fresh = await fetchProfile(user.id);
     if (fresh) {
-      console.log("[useAuth] refreshProfile: got", fresh.display_name);
+      console.log("[auth] refreshProfile:", fresh.display_name);
       setProfile(fresh);
     }
   }, [user, fetchProfile]);
 
-  // 外部呼叫：直接設定 profile（編輯後立刻更新 UI）
   const setProfileDirectly = useCallback((p: AppProfile) => {
-    console.log("[useAuth] setProfileDirectly:", p.display_name);
+    console.log("[auth] setProfileDirectly:", p.display_name);
     setProfile(p);
   }, []);
 
@@ -64,16 +73,17 @@ export function useAuth() {
 
     async function loadInitial() {
       try {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if (error) console.error("[useAuth] getUser error:", error);
+        // getSession 是 local 讀取，不會 hang
+        const { data: { session } } = await supabase.auth.getSession();
+        const u = session?.user ?? null;
         if (!mounted) return;
-        setUser(user);
-        if (user) {
-          const p = await fetchProfile(user.id);
+        setUser(u);
+        if (u) {
+          const p = await fetchProfile(u.id);
           if (mounted && p) setProfile(p);
         }
       } catch (e) {
-        console.error("[useAuth] loadInitial threw:", e);
+        console.error("[auth] loadInitial threw:", e);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -83,14 +93,14 @@ export function useAuth() {
 
     const timeout = setTimeout(() => {
       if (mounted) {
-        console.warn("[useAuth] loadInitial timeout - forcing loading=false");
+        console.warn("[auth] loadInitial timeout - forcing loading=false");
         setLoading(false);
       }
-    }, 5000);
+    }, 8000);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log("[useAuth] auth event:", event, "user:", session?.user?.email);
+        console.log("[auth] event:", event, "user:", session?.user?.email);
         if (!mounted) return;
         setUser(session?.user ?? null);
         if (session?.user) {
@@ -108,7 +118,7 @@ export function useAuth() {
       clearTimeout(timeout);
       subscription.unsubscribe();
     };
-  }, []);  // ← 只跑一次，不依賴 refreshCounter
+  }, [supabase, fetchProfile]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -116,9 +126,19 @@ export function useAuth() {
     setProfile(null);
   };
 
-  return {
-    user, profile, loading, signOut, supabase,
-    refreshProfile,
-    setProfileDirectly,
-  };
+  return (
+    <AuthContext.Provider
+      value={{ user, profile, loading, signOut, supabase, refreshProfile, setProfileDirectly }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth(): AuthContextType {
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
+    throw new Error("useAuth must be used inside <AuthProvider>");
+  }
+  return ctx;
 }
