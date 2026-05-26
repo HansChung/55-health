@@ -23,6 +23,7 @@ export interface FoodResult {
   carb: number;
   fat: number;
   items: FoodItem[];
+  tip?: string;  // Gemini 給的健康提醒
 }
 
 export interface TranscriptMessage {

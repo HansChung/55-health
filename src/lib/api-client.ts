@@ -63,6 +63,9 @@ export const api = {
   createMeal: (meal: Partial<MealRecord>) =>
     apiFetch<{ meal: MealRecord }>("/api/meals", { method: "POST", json: meal }),
 
+  deleteMeal: (id: string) =>
+    apiFetch<{ ok: true }>(`/api/meals/${id}`, { method: "DELETE" }),
+
   // Exercises
   listExercises: (days = 7) =>
     apiFetch<{ exercises: ExerciseRecord[] }>(`/api/exercises?days=${days}`),

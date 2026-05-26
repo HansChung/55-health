@@ -19,6 +19,8 @@ import { NotificationScreen } from "@/screens/notification-screen";
 import { ExerciseScreen } from "@/screens/exercise-screen";
 import { FontSizeScreen } from "@/screens/font-size-screen";
 import { EditProfileScreen } from "@/screens/edit-profile-screen";
+import { MealDetailSheet } from "@/screens/meal-detail-sheet";
+import type { MealRecord } from "@/lib/api-client";
 import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/lib/api-client";
 import type { FoodAnalysisResult } from "@/lib/ai/gemini";
@@ -58,8 +60,10 @@ export default function Page() {
 
   // 預設空的 3 餐 slots（不要再用假資料）
   const [meals, setMeals] = useState<Meal[]>(() => mergeMealsWithSlots([]));
+  const [todayDbMeals, setTodayDbMeals] = useState<MealRecord[]>([]); // 真實 DB 紀錄，給 detail 用
   const [pendingResult, setPendingResult] = useState<FoodResult | null>(null);
   const [pendingPhoto, setPendingPhoto] = useState<string | null>(null);
+  const [selectedMeal, setSelectedMeal] = useState<MealRecord | null>(null);
 
   const totalCal = meals.reduce((s, m) => s + (m.cal || 0), 0);
   const calorieGoal = profile?.calorie_goal ?? 1800;
@@ -67,9 +71,30 @@ export default function Page() {
   const reloadMeals = async () => {
     try {
       const { meals: dbMeals } = await api.listMeals(1);
+      setTodayDbMeals(dbMeals);
       setMeals(mergeMealsWithSlots(dbMeals));
     } catch (e) {
       console.error("載入餐點失敗:", e);
+    }
+  };
+
+  const openMealDetail = (mealType: string) => {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const found = todayDbMeals.find(
+      (m) => m.meal_type === mealType && new Date(m.eaten_at) >= todayStart
+    );
+    if (found) setSelectedMeal(found);
+  };
+
+  const handleDeleteMeal = async () => {
+    if (!selectedMeal) return;
+    try {
+      await api.deleteMeal(selectedMeal.id);
+      setSelectedMeal(null);
+      await reloadMeals();
+    } catch (e) {
+      alert("刪除失敗：" + (e as Error).message);
     }
   };
 
@@ -106,6 +131,7 @@ export default function Page() {
         emoji: it.emoji,
         color: it.color,
       })),
+      tip: result.tip,
     };
     setPendingResult(foodResult);
     setPendingPhoto(photoDataUrl);
@@ -183,7 +209,7 @@ export default function Page() {
             displayName={profile?.display_name}
             onCamera={() => setModal("camera")}
             onVoice={() => setModal("voice")}
-            onMeal={() => { /* TODO: show real meal detail, not mock */ }}
+            onMeal={(mealType) => openMealDetail(mealType)}
             onSuggestion={() => setModal("suggestion")}
             onExercise={() => setSubpage("exercise")}
           />
@@ -238,6 +264,14 @@ export default function Page() {
         />
       )}
       {modal === "suggestion" && <SuggestionSheet onClose={() => setModal(null)} />}
+
+      {selectedMeal && (
+        <MealDetailSheet
+          meal={selectedMeal}
+          onClose={() => setSelectedMeal(null)}
+          onDelete={handleDeleteMeal}
+        />
+      )}
     </div>
   );
 }

@@ -14,7 +14,7 @@ interface HomeScreenProps {
   displayName?: string | null;
   onCamera: () => void;
   onVoice: () => void;
-  onMeal: () => void;
+  onMeal: (mealType: string) => void;
   onSuggestion: () => void;
   onExercise: () => void;
 }
@@ -128,9 +128,16 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, onCamera
           </span>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {meals.map((m, i) => (
-            <MealRow key={i} meal={m} onClick={() => m.logged ? onMeal() : onCamera()} />
-          ))}
+          {meals.map((m, i) => {
+            const mealType = ["breakfast", "lunch", "dinner"][i] ?? "snack";
+            return (
+              <MealRow
+                key={i}
+                meal={m}
+                onClick={() => m.logged ? onMeal(mealType) : onCamera()}
+              />
+            );
+          })}
         </div>
       </div>
 

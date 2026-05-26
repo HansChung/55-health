@@ -161,7 +161,7 @@ export function ResultScreen({ result, photoDataUrl, onClose, onSave }: ResultSc
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: "var(--fs-sm)", color: "#4F7A4E", fontWeight: 700, marginBottom: 4 }}>健康提醒</div>
             <div style={{ fontSize: "var(--fs-base)", color: "var(--ink-1)", lineHeight: 1.5 }}>
-              這餐蔬菜不錯！記得多喝水，份量剛好不會太多。
+              {result.tip || "記得均衡飲食，多喝水。"}
             </div>
           </div>
         </div>
