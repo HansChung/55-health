@@ -31,23 +31,34 @@ export function ResultScreen({ result, photoDataUrl, onClose, onSave }: ResultSc
     }}>
       <div style={{
         height: 240, position: "relative", overflow: "hidden",
-        background: photoDataUrl
-          ? `#000 url(${photoDataUrl}) center/cover no-repeat`
-          : "radial-gradient(ellipse 70% 60% at 50% 55%, #D67340 0%, #8C4521 60%, #4A2510 100%)",
+        background: "#0E0905",
       }}>
-        {!photoDataUrl && (
+        {photoDataUrl ? (
+          <img
+            src={photoDataUrl}
+            alt="您的食物"
+            style={{
+              width: "100%", height: "100%", objectFit: "cover",
+            }}
+          />
+        ) : (
           <div style={{
-            position: "absolute", left: "50%", top: "52%",
-            transform: "translate(-50%, -50%)",
-            width: 200, height: 200, borderRadius: "50%",
-            background: "radial-gradient(circle at 35% 30%, #FBE8C6 0%, #E0BC85 60%, #B8924C 100%)",
-            boxShadow: "0 20px 40px rgba(0,0,0,0.4)",
-            display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, padding: 24,
+            position: "absolute", inset: 0,
+            background: "radial-gradient(ellipse 70% 60% at 50% 55%, #D67340 0%, #8C4521 60%, #4A2510 100%)",
           }}>
-            <div style={{ borderRadius: "50%", background: "radial-gradient(circle at 30% 30%, #F5F0E0, #D4C8A4)" }} />
-            <div style={{ borderRadius: "50%", background: "radial-gradient(circle at 30% 30%, #C95E36, #8C3A1C)" }} />
-            <div style={{ borderRadius: "50%", background: "radial-gradient(circle at 40% 30%, #7AA779, #4F7A4E)" }} />
-            <div style={{ borderRadius: 10, background: "repeating-linear-gradient(0deg, #E8C97A 0 5px, #D0AC55 5px 10px)" }} />
+            <div style={{
+              position: "absolute", left: "50%", top: "52%",
+              transform: "translate(-50%, -50%)",
+              width: 200, height: 200, borderRadius: "50%",
+              background: "radial-gradient(circle at 35% 30%, #FBE8C6 0%, #E0BC85 60%, #B8924C 100%)",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.4)",
+              display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, padding: 24,
+            }}>
+              <div style={{ borderRadius: "50%", background: "radial-gradient(circle at 30% 30%, #F5F0E0, #D4C8A4)" }} />
+              <div style={{ borderRadius: "50%", background: "radial-gradient(circle at 30% 30%, #C95E36, #8C3A1C)" }} />
+              <div style={{ borderRadius: "50%", background: "radial-gradient(circle at 40% 30%, #7AA779, #4F7A4E)" }} />
+              <div style={{ borderRadius: 10, background: "repeating-linear-gradient(0deg, #E8C97A 0 5px, #D0AC55 5px 10px)" }} />
+            </div>
           </div>
         )}
         <button onClick={onClose} style={{
@@ -173,7 +184,7 @@ export function ResultScreen({ result, photoDataUrl, onClose, onSave }: ResultSc
         background: "linear-gradient(180deg, transparent, var(--bg) 30%)",
         display: "flex", gap: 12,
       }}>
-        <button className="btn-ghost" style={{ flex: 1 }}>稍後修改</button>
+        <button className="btn-ghost" style={{ flex: 1 }} onClick={onClose}>稍後再說</button>
         <button className="btn-primary" style={{ flex: 2 }} onClick={() => onSave(adjusted)}>
           <Icon name="check" size={26} color="#fff" stroke={3} />
           確認儲存
