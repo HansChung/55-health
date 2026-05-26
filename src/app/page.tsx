@@ -26,6 +26,7 @@ import { useAuth, type AppProfile } from "@/hooks/use-auth";
 import { api } from "@/lib/api-client";
 import type { FoodAnalysisResult } from "@/lib/ai/gemini";
 import { mergeMealsWithSlots, guessMealType } from "@/lib/meal-utils";
+import type { FoodItem } from "@/lib/types";
 
 export default function Page() {
   const { user, profile, loading, refreshProfile, setProfileDirectly } = useAuth();
@@ -211,7 +212,10 @@ export default function Page() {
     setModal("result");
   };
 
-  const handleSaveMeal = async (adj: { cal: number; protein: number; carb: number; fat: number }) => {
+  const handleSaveMeal = async (adj: {
+    cal: number; protein: number; carb: number; fat: number;
+    items?: FoodItem[];
+  }) => {
     if (!pendingResult) {
       setModal(null);
       return;
@@ -219,7 +223,8 @@ export default function Page() {
 
     const now = new Date();
     const mealType = guessMealType(now);
-    const items = pendingResult.items;
+    // 用編輯後的 items（fallback 到原始 AI 結果）
+    const items = adj.items ?? pendingResult.items;
 
     // 1. 立刻關掉視窗 + 樂觀更新本地餐點（用戶不用等）
     const optimisticMeal: Meal = {
@@ -362,7 +367,8 @@ export default function Page() {
         />
       )}
 
-      {analyzing && (
+      {/* 只在 result modal 還沒開時才顯示 analyzing overlay */}
+      {analyzing && modal !== "result" && (
         <div style={{
           position: "absolute", inset: 0, zIndex: 80,
           background: "rgba(14,9,5,0.7)", backdropFilter: "blur(4px)",

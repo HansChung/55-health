@@ -11,7 +11,13 @@ interface ResultScreenProps {
   result: FoodResult;
   photoDataUrl?: string | null;
   onClose: () => void;
-  onSave: (adjusted: { cal: number; protein: number; carb: number; fat: number }) => void;
+  onSave: (adjusted: {
+    cal: number;
+    protein: number;
+    carb: number;
+    fat: number;
+    items: FoodItem[]; // 編輯後的食物清單
+  }) => void;
 }
 
 export function ResultScreen({ result, photoDataUrl, onClose, onSave }: ResultScreenProps) {
@@ -209,7 +215,7 @@ export function ResultScreen({ result, photoDataUrl, onClose, onSave }: ResultSc
         display: "flex", gap: 12,
       }}>
         <button className="btn-ghost" style={{ flex: 1 }} onClick={onClose}>取消</button>
-        <button className="btn-primary" style={{ flex: 2 }} onClick={() => onSave(adjusted)}>
+        <button className="btn-primary" style={{ flex: 2 }} onClick={() => onSave({ ...adjusted, items })}>
           <Icon name="check" size={26} color="#fff" stroke={3} />
           確認儲存
         </button>
