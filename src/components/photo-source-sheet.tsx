@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef } from "react";
 import { Icon } from "./icons";
 
 interface PhotoSourceSheetProps {
@@ -11,11 +10,8 @@ interface PhotoSourceSheetProps {
 
 /**
  * Action sheet：讓用戶選擇用相機拍 OR 從相簿/檔案上傳
- * 像 iOS 的彈出選單，從底部出現
  */
 export function PhotoSourceSheet({ onClose, onCamera, onFile }: PhotoSourceSheetProps) {
-  const fileRef = useRef<HTMLInputElement>(null);
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (f) onFile(f);
@@ -30,14 +26,6 @@ export function PhotoSourceSheet({ onClose, onCamera, onFile }: PhotoSourceSheet
         display: "flex", alignItems: "flex-end",
       }}
     >
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileChange}
-        style={{ display: "none" }}
-      />
-
       <div
         onClick={(e) => e.stopPropagation()}
         className="fade-up"
@@ -90,18 +78,29 @@ export function PhotoSourceSheet({ onClose, onCamera, onFile }: PhotoSourceSheet
             <Icon name="chevronR" size={22} color="var(--ink-3)" />
           </button>
 
-          {/* 上傳檔案 */}
-          <button
-            onClick={() => fileRef.current?.click()}
+          {/* 上傳檔案 — 用 label 包住才能在 iOS Safari 穩定觸發 */}
+          <label
             style={{
+              display: "flex",
               width: "100%", padding: "18px 20px",
               background: "var(--surface)",
               border: "2px solid var(--line)",
               borderRadius: 16,
-              display: "flex", alignItems: "center", gap: 16,
+              alignItems: "center", gap: 16,
               textAlign: "left", cursor: "pointer",
             }}
           >
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              style={{
+                position: "absolute",
+                width: 1, height: 1,
+                opacity: 0,
+                pointerEvents: "none",
+              }}
+            />
             <div style={{
               width: 56, height: 56, borderRadius: 14,
               background: "var(--sage-soft)",
@@ -117,7 +116,7 @@ export function PhotoSourceSheet({ onClose, onCamera, onFile }: PhotoSourceSheet
               </div>
             </div>
             <Icon name="chevronR" size={22} color="var(--ink-3)" />
-          </button>
+          </label>
         </div>
 
         <button

@@ -22,6 +22,22 @@ export function SuggestionSheet({ onClose, initial }: SuggestionSheetProps) {
       .finally(() => setLoading(false));
   }, [initial]);
 
+  const regenerate = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const { suggestion } = await api.getSuggestion();
+      setSuggestion(suggestion);
+      // 同時清掉首頁的快取，下次刷新會抓新的
+      if (typeof window !== "undefined") {
+        try { localStorage.removeItem("nuannuan_suggestion_v1"); } catch {}
+      }
+    } catch (e) {
+      setError((e as Error).message);
+    }
+    setLoading(false);
+  };
+
   return (
     <div
       onClick={onClose}
@@ -120,9 +136,26 @@ export function SuggestionSheet({ onClose, initial }: SuggestionSheetProps) {
               </>
             )}
 
-            <button className="btn-primary" style={{ width: "100%" }} onClick={onClose}>
-              知道了，謝謝暖暖
-            </button>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={regenerate}
+                disabled={loading}
+                style={{
+                  flex: 1, padding: "16px",
+                  background: "var(--surface)",
+                  border: "2px solid var(--line-strong)",
+                  borderRadius: 999,
+                  fontSize: "var(--fs-base)", fontWeight: 700,
+                  color: "var(--ink-1)",
+                  opacity: loading ? 0.5 : 1,
+                }}
+              >
+                🔄 換個建議
+              </button>
+              <button className="btn-primary" style={{ flex: 2 }} onClick={onClose}>
+                知道了
+              </button>
+            </div>
           </>
         )}
       </div>
