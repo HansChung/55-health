@@ -178,15 +178,17 @@ export default function Page() {
       });
       const base64 = dataUrl.split(",")[1];
       const { result } = await api.analyzeFood(base64, file.type || "image/jpeg");
+      // 先關掉 analyzing overlay 再開 result 視窗，避免遮罩蓋住照片
+      setAnalyzing(false);
       handleCapture(result, dataUrl);
     } catch (err: unknown) {
+      setAnalyzing(false);
       const status = (err as { status?: number })?.status;
       const msg = err instanceof Error ? err.message : "辨識失敗";
       if (status === 429) alert("本月拍照次數已用完，請升級方案");
       else if (status === 401) alert("請先登入");
       else alert("辨識失敗：" + msg);
     }
-    setAnalyzing(false);
   };
 
   const handleCapture = (result: FoodAnalysisResult, photoDataUrl: string) => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FoodResult } from "@/lib/types";
+import { FoodResult, FoodItem } from "@/lib/types";
 import { Icon } from "@/components/icons";
 import { Mascot } from "@/components/mascot";
 import { SpeechBubble } from "@/components/speech-bubble";
@@ -16,11 +16,27 @@ interface ResultScreenProps {
 
 export function ResultScreen({ result, photoDataUrl, onClose, onSave }: ResultScreenProps) {
   const [portion, setPortion] = useState(1);
+  const [items, setItems] = useState<FoodItem[]>(result.items);
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+
+  // 重新計算總熱量（根據編輯後的項目）
+  const itemsTotalCal = items.reduce((s, it) => s + (it.cal || 0), 0);
+  // 等比例調整營養素（用 AI 給的原始比例）
+  const ratio = result.cal > 0 ? itemsTotalCal / result.cal : 1;
   const adjusted = {
-    cal: Math.round(result.cal * portion),
-    protein: Math.round(result.protein * portion),
-    carb: Math.round(result.carb * portion),
-    fat: Math.round(result.fat * portion),
+    cal: Math.round(itemsTotalCal * portion),
+    protein: Math.round(result.protein * ratio * portion),
+    carb: Math.round(result.carb * ratio * portion),
+    fat: Math.round(result.fat * ratio * portion),
+  };
+
+  const updateItem = (idx: number, patch: Partial<FoodItem>) => {
+    setItems((arr) => arr.map((it, i) => i === idx ? { ...it, ...patch } : it));
+  };
+
+  const removeItem = (idx: number) => {
+    setItems((arr) => arr.filter((_, i) => i !== idx));
+    setEditingIdx(null);
   };
 
   return (
@@ -29,6 +45,7 @@ export function ResultScreen({ result, photoDataUrl, onClose, onSave }: ResultSc
       background: "var(--bg)",
       display: "flex", flexDirection: "column",
     }}>
+      {/* 頂部照片區 */}
       <div style={{
         height: 240, position: "relative", overflow: "hidden",
         background: "#0E0905",
@@ -37,9 +54,7 @@ export function ResultScreen({ result, photoDataUrl, onClose, onSave }: ResultSc
           <img
             src={photoDataUrl}
             alt="您的食物"
-            style={{
-              width: "100%", height: "100%", objectFit: "cover",
-            }}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
         ) : (
           <div style={{
@@ -69,16 +84,6 @@ export function ResultScreen({ result, photoDataUrl, onClose, onSave }: ResultSc
         }}>
           <Icon name="chevronL" size={26} color="#fff" stroke={2.5} />
         </button>
-        <button style={{
-          position: "absolute", top: 16, right: 16,
-          background: "rgba(0,0,0,0.5)", backdropFilter: "blur(10px)",
-          padding: "10px 18px", borderRadius: 999,
-          fontSize: "var(--fs-sm)", color: "#fff", fontWeight: 600,
-          display: "flex", alignItems: "center", gap: 6,
-        }}>
-          <Icon name="refresh" size={20} color="#fff" />
-          重拍
-        </button>
       </div>
 
       <div className="scroll-area" style={{ flex: 1, overflowY: "auto", padding: "20px 24px 140px" }}>
@@ -86,36 +91,53 @@ export function ResultScreen({ result, photoDataUrl, onClose, onSave }: ResultSc
           <Mascot size={56} mood="happy" />
           <SpeechBubble tone="orange">
             <div style={{ fontSize: "var(--fs-base)", fontWeight: 700, marginBottom: 4 }}>
-              我看到了 {result.items.length} 樣食物
+              我看到了 {items.length} 樣食物
             </div>
             <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
-              如果認錯了，可以點下面修改喔
+              如果認錯了，點下面「修改」可以改名稱、卡路里
             </div>
           </SpeechBubble>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
-          {result.items.map((it, i) => (
+          {items.map((it, i) => (
             <div key={i} style={{
               background: "var(--surface)",
               borderRadius: 16, padding: "14px 16px",
               border: "1px solid var(--line)",
-              display: "flex", alignItems: "center", gap: 14,
             }}>
-              <div style={{
-                width: 44, height: 44, borderRadius: 12,
-                background: it.color, flexShrink: 0,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 22,
-              }}>{it.emoji}</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: "var(--fs-base)", fontWeight: 700 }}>{it.name}</div>
-                <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>{it.amount}　·　{it.cal} 大卡</div>
-              </div>
-              <button style={{
-                color: "var(--primary-deep)", fontSize: "var(--fs-sm)", fontWeight: 600,
-                padding: "6px 12px",
-              }}>修改</button>
+              {editingIdx === i ? (
+                <ItemEditor
+                  item={it}
+                  onChange={(patch) => updateItem(i, patch)}
+                  onDone={() => setEditingIdx(null)}
+                  onRemove={() => removeItem(i)}
+                />
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 12,
+                    background: it.color, flexShrink: 0,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 22,
+                  }}>{it.emoji}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: "var(--fs-base)", fontWeight: 700 }}>{it.name}</div>
+                    <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
+                      {it.amount}　·　{it.cal} 大卡
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setEditingIdx(i)}
+                    style={{
+                      color: "var(--primary-deep)", fontSize: "var(--fs-sm)", fontWeight: 600,
+                      padding: "8px 14px", borderRadius: 999,
+                      background: "var(--primary-soft)",
+                      border: "none", cursor: "pointer",
+                    }}
+                  >修改</button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -155,27 +177,29 @@ export function ResultScreen({ result, photoDataUrl, onClose, onSave }: ResultSc
           </div>
         </div>
 
-        <div style={{
-          background: "var(--sage-soft)",
-          borderRadius: "var(--r-lg)",
-          padding: 18,
-          border: "1px solid #B5D2B0",
-          display: "flex", gap: 12, alignItems: "flex-start",
-        }}>
+        {result.tip && (
           <div style={{
-            width: 40, height: 40, borderRadius: "50%",
-            background: "var(--sage)", flexShrink: 0,
-            display: "flex", alignItems: "center", justifyContent: "center",
+            background: "var(--sage-soft)",
+            borderRadius: "var(--r-lg)",
+            padding: 18,
+            border: "1px solid #B5D2B0",
+            display: "flex", gap: 12, alignItems: "flex-start",
           }}>
-            <Icon name="leaf" size={22} color="#fff" />
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: "var(--fs-sm)", color: "#4F7A4E", fontWeight: 700, marginBottom: 4 }}>健康提醒</div>
-            <div style={{ fontSize: "var(--fs-base)", color: "var(--ink-1)", lineHeight: 1.5 }}>
-              {result.tip || "記得均衡飲食，多喝水。"}
+            <div style={{
+              width: 40, height: 40, borderRadius: "50%",
+              background: "var(--sage)", flexShrink: 0,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <Icon name="leaf" size={22} color="#fff" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: "var(--fs-sm)", color: "#4F7A4E", fontWeight: 700, marginBottom: 4 }}>健康提醒</div>
+              <div style={{ fontSize: "var(--fs-base)", color: "var(--ink-1)", lineHeight: 1.5 }}>
+                {result.tip}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div style={{
@@ -184,11 +208,99 @@ export function ResultScreen({ result, photoDataUrl, onClose, onSave }: ResultSc
         background: "linear-gradient(180deg, transparent, var(--bg) 30%)",
         display: "flex", gap: 12,
       }}>
-        <button className="btn-ghost" style={{ flex: 1 }} onClick={onClose}>稍後再說</button>
+        <button className="btn-ghost" style={{ flex: 1 }} onClick={onClose}>取消</button>
         <button className="btn-primary" style={{ flex: 2 }} onClick={() => onSave(adjusted)}>
           <Icon name="check" size={26} color="#fff" stroke={3} />
           確認儲存
         </button>
+      </div>
+    </div>
+  );
+}
+
+/** 食物項目編輯 inline 表單 */
+function ItemEditor({ item, onChange, onDone, onRemove }: {
+  item: FoodItem;
+  onChange: (patch: Partial<FoodItem>) => void;
+  onDone: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <div style={{
+          width: 44, height: 44, borderRadius: 12,
+          background: item.color, flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 22,
+        }}>{item.emoji}</div>
+        <input
+          value={item.name}
+          onChange={(e) => onChange({ name: e.target.value })}
+          placeholder="食物名稱"
+          style={{
+            flex: 1, padding: "10px 12px",
+            border: "2px solid var(--line-strong)", borderRadius: 10,
+            fontSize: "var(--fs-base)", fontWeight: 600,
+            outline: "none", fontFamily: "inherit",
+          }}
+        />
+      </div>
+
+      <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ flex: 1 }}>
+          <label style={{ fontSize: "var(--fs-xs)", color: "var(--ink-2)", display: "block", marginBottom: 4 }}>
+            份量
+          </label>
+          <input
+            value={item.amount}
+            onChange={(e) => onChange({ amount: e.target.value })}
+            placeholder="一份"
+            style={{
+              width: "100%", padding: "10px 12px",
+              border: "1px solid var(--line-strong)", borderRadius: 10,
+              fontSize: "var(--fs-sm)",
+              outline: "none", fontFamily: "inherit",
+            }}
+          />
+        </div>
+        <div style={{ flex: 1 }}>
+          <label style={{ fontSize: "var(--fs-xs)", color: "var(--ink-2)", display: "block", marginBottom: 4 }}>
+            熱量（卡）
+          </label>
+          <input
+            type="number"
+            inputMode="numeric"
+            value={item.cal}
+            onChange={(e) => onChange({ cal: Number(e.target.value) || 0 })}
+            style={{
+              width: "100%", padding: "10px 12px",
+              border: "1px solid var(--line-strong)", borderRadius: 10,
+              fontSize: "var(--fs-sm)",
+              outline: "none", fontFamily: "inherit",
+            }}
+          />
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+        <button
+          onClick={onRemove}
+          style={{
+            padding: "10px 14px", background: "transparent",
+            color: "var(--berry)", border: "1px solid var(--berry-soft)",
+            borderRadius: 999, fontSize: "var(--fs-sm)", fontWeight: 600,
+          }}
+        >🗑 刪除</button>
+        <button
+          onClick={onDone}
+          style={{
+            flex: 1, padding: "10px 14px",
+            background: "var(--primary)", color: "#fff",
+            border: "none", borderRadius: 999,
+            fontSize: "var(--fs-sm)", fontWeight: 700,
+          }}
+        >完成</button>
       </div>
     </div>
   );
