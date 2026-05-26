@@ -16,21 +16,34 @@ export async function compressImage(
 
   console.log("[compressImage] file:", file.name, file.type, Math.round(file.size / 1024), "KB");
 
-  // 偵測常見不支援格式
+  // 偵測 HEIC/HEIF → 自動轉成 JPEG（iPhone 預設格式）
   const isHeic = file.type === "image/heic" || file.type === "image/heif" ||
     file.name.toLowerCase().endsWith(".heic") || file.name.toLowerCase().endsWith(".heif");
-  if (isHeic) {
-    throw new Error("瀏覽器不支援 iPhone 的 HEIC 格式。請到 iPhone 設定 → 相機 → 格式 → 改為「相容性最高」（拍出 JPG），或先轉檔。");
-  }
 
-  if (!file.type.startsWith("image/")) {
+  let workingFile: File | Blob = file;
+  if (isHeic) {
+    console.log("[compressImage] HEIC 偵測，自動轉換中...");
+    try {
+      const heic2any = (await import("heic2any")).default;
+      const converted = await heic2any({
+        blob: file,
+        toType: "image/jpeg",
+        quality: 0.9,
+      });
+      workingFile = Array.isArray(converted) ? converted[0] : converted;
+      console.log("[compressImage] HEIC 轉換完成，新大小:", Math.round((workingFile as Blob).size / 1024), "KB");
+    } catch (e) {
+      console.error("[compressImage] HEIC 轉換失敗:", e);
+      throw new Error("HEIC 格式轉檔失敗，請改選 JPG 照片");
+    }
+  } else if (!file.type.startsWith("image/")) {
     throw new Error("檔案類型不是圖片：" + (file.type || "未知"));
   }
 
   // 先讀進來
   let dataUrl: string;
   try {
-    dataUrl = await readAsDataURL(file);
+    dataUrl = await readAsDataURL(workingFile);
   } catch (e) {
     throw new Error("讀取檔案失敗，可能檔案損壞");
   }
@@ -64,7 +77,7 @@ export async function compressImage(
   }
 }
 
-function readAsDataURL(file: File): Promise<string> {
+function readAsDataURL(file: File | Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);

@@ -16,6 +16,7 @@
     "@google/generative-ai": "^0.24.1",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.1",
+    "heic2any": "^0.0.4",
     "next": "^15.3.3",
     "openai": "^6.38.0",
     "react": "^19.1.0",
