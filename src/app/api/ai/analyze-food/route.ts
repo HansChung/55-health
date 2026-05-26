@@ -75,6 +75,13 @@ export async function POST(req: NextRequest) {
       success: false,
       errorMessage: msg,
     });
-    return NextResponse.json({ error: "AI 分析失敗：" + msg }, { status: 500 });
+    // 對 429 配額錯誤回友善訊息
+    if (msg.includes("429") || msg.includes("quota") || msg.includes("exceeded")) {
+      return NextResponse.json(
+        { error: "今日 AI 辨識次數已達上限，請明天再試或升級方案" },
+        { status: 429 }
+      );
+    }
+    return NextResponse.json({ error: "AI 分析失敗：" + msg.substring(0, 100) }, { status: 500 });
   }
 }
