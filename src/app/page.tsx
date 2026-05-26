@@ -20,6 +20,7 @@ import { ExerciseScreen } from "@/screens/exercise-screen";
 import { FontSizeScreen } from "@/screens/font-size-screen";
 import { EditProfileScreen } from "@/screens/edit-profile-screen";
 import { MealDetailSheet } from "@/screens/meal-detail-sheet";
+import { PhotoSourceSheet } from "@/components/photo-source-sheet";
 import type { MealRecord, AiSuggestion } from "@/lib/api-client";
 import { useAuth, type AppProfile } from "@/hooks/use-auth";
 import { api } from "@/lib/api-client";
@@ -66,6 +67,8 @@ export default function Page() {
   const [selectedMeal, setSelectedMeal] = useState<MealRecord | null>(null);
   const [suggestion, setSuggestion] = useState<AiSuggestion | null>(null);
   const [suggestionLoading, setSuggestionLoading] = useState(false);
+  const [showPhotoSource, setShowPhotoSource] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
 
   const totalCal = meals.reduce((s, m) => s + (m.cal || 0), 0);
   const calorieGoal = profile?.calorie_goal ?? 1800;
@@ -137,6 +140,30 @@ export default function Page() {
       setModal(null);
     }
   }, [user, modal]);
+
+  // 從相簿選的檔案 → 直接呼叫 AI 分析（不開相機畫面）
+  const handleFileUpload = async (file: File) => {
+    setShowPhotoSource(false);
+    setAnalyzing(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const base64 = dataUrl.split(",")[1];
+      const { result } = await api.analyzeFood(base64, file.type || "image/jpeg");
+      handleCapture(result, dataUrl);
+    } catch (err: unknown) {
+      const status = (err as { status?: number })?.status;
+      const msg = err instanceof Error ? err.message : "辨識失敗";
+      if (status === 429) alert("本月拍照次數已用完，請升級方案");
+      else if (status === 401) alert("請先登入");
+      else alert("辨識失敗：" + msg);
+    }
+    setAnalyzing(false);
+  };
 
   const handleCapture = (result: FoodAnalysisResult, photoDataUrl: string) => {
     const foodResult: FoodResult = {
@@ -229,7 +256,7 @@ export default function Page() {
             displayName={profile?.display_name}
             suggestion={suggestion}
             suggestionLoading={suggestionLoading}
-            onCamera={() => setModal("camera")}
+            onCamera={() => setShowPhotoSource(true)}
             onVoice={() => setModal("voice")}
             onMeal={(mealType) => openMealDetail(mealType)}
             onSuggestion={() => setModal("suggestion")}
@@ -241,7 +268,7 @@ export default function Page() {
       </div>
 
       {!modal && !subpage && (
-        <BottomNav tab={tab} setTab={setTab} onCamera={() => setModal("camera")} onVoice={() => setModal("voice")} />
+        <BottomNav tab={tab} setTab={setTab} onCamera={() => setShowPhotoSource(true)} onVoice={() => setModal("voice")} />
       )}
 
       {subpage === "edit-profile" && (
@@ -299,6 +326,33 @@ export default function Page() {
           onClose={() => setSelectedMeal(null)}
           onDelete={handleDeleteMeal}
         />
+      )}
+
+      {showPhotoSource && (
+        <PhotoSourceSheet
+          onClose={() => setShowPhotoSource(false)}
+          onCamera={() => setModal("camera")}
+          onFile={handleFileUpload}
+        />
+      )}
+
+      {analyzing && (
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 80,
+          background: "rgba(14,9,5,0.7)", backdropFilter: "blur(4px)",
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", gap: 24,
+        }}>
+          <div style={{
+            width: 48, height: 48, borderRadius: "50%",
+            border: "4px solid rgba(255,255,255,0.3)",
+            borderTopColor: "#fff",
+            animation: "spin 0.8s linear infinite",
+          }} />
+          <div style={{ color: "#fff", fontSize: "var(--fs-base)", fontWeight: 600 }}>
+            AI 正在看您吃了什麼…
+          </div>
+        </div>
       )}
     </div>
   );
