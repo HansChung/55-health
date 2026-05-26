@@ -53,15 +53,14 @@ export class RealtimeClient {
       const offer = await this.pc.createOffer();
       await this.pc.setLocalDescription(offer);
 
-      // OpenAI Realtime WebRTC：直接連 /v1/realtime（瀏覽器 SDP exchange）
-      // /v1/realtime/calls 不支援 CORS，不能在瀏覽器用
-      const url = `https://api.openai.com/v1/realtime?model=${this.model}`;
-      const sdpResp = await fetch(url, {
+      // OpenAI Realtime 不允許瀏覽器直接 CORS，所以走我們的 /api/ai/realtime-sdp proxy
+      const sdpResp = await fetch("/api/ai/realtime-sdp", {
         method: "POST",
         body: offer.sdp,
         headers: {
-          Authorization: `Bearer ${ephemeralKey}`,
           "Content-Type": "application/sdp",
+          "x-ephemeral-key": ephemeralKey,
+          "x-model": this.model,
         },
       });
 
@@ -71,7 +70,7 @@ export class RealtimeClient {
         throw new Error(`WebRTC 連線失敗 (${sdpResp.status}): ${errBody.substring(0, 200)}`);
       }
 
-      console.log("[realtime] connected via", url);
+      console.log("[realtime] connected via proxy");
       const answer = { type: "answer" as const, sdp: await sdpResp.text() };
       await this.pc.setRemoteDescription(answer);
     } catch (err) {
