@@ -93,10 +93,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    let loadedByEvent = false;
     loadInitial();
 
     const timeout = setTimeout(() => {
-      if (mounted) {
+      // 如果 auth event 已成功載入就靜默結束，不再報警
+      if (mounted && !loadedByEvent) {
         console.warn("[auth] loadInitial timeout - forcing loading=false");
         setLoading(false);
       }
@@ -114,6 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setProfile(null);
         }
         setLoading(false);
+        loadedByEvent = true;
       }
     );
 
