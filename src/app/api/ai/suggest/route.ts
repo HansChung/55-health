@@ -64,7 +64,7 @@ ${meals?.length
   if (!apiKey) return NextResponse.json({ error: "GEMINI_API_KEY 未設定" }, { status: 500 });
 
   try {
-    const model = "gemini-2.5-flash"; // 文字建議用 flash 夠用
+    const model = "gemini-2.5-flash-lite"; // 文字建議用 lite 即可，額度更大（15k/day）
     const genAI = new GoogleGenerativeAI(apiKey);
     const m = genAI.getGenerativeModel({
       model,

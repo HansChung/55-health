@@ -109,15 +109,39 @@ export default function Page() {
     reloadMeals();
   }, [user]);
 
-  // 載入 AI 建議（用戶登入後 + 餐點變動時）
-  const loadSuggestion = async () => {
+  // 載入 AI 建議（有 localStorage 快取，1 小時內不重複呼叫）
+  const SUGGEST_CACHE_KEY = "nuannuan_suggestion_v1";
+  const SUGGEST_CACHE_MS = 60 * 60 * 1000; // 1 小時
+
+  const loadSuggestion = async (force = false) => {
     if (!user) return;
+
+    // 先看 localStorage 快取
+    if (!force && typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem(SUGGEST_CACHE_KEY);
+        if (cached) {
+          const { suggestion, ts, userId } = JSON.parse(cached);
+          if (userId === user.id && Date.now() - ts < SUGGEST_CACHE_MS) {
+            setSuggestion(suggestion);
+            return; // 用快取，不打 API
+          }
+        }
+      } catch {}
+    }
+
     setSuggestionLoading(true);
     try {
       const { suggestion } = await api.getSuggestion();
       setSuggestion(suggestion);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(SUGGEST_CACHE_KEY, JSON.stringify({
+          suggestion, ts: Date.now(), userId: user.id,
+        }));
+      }
     } catch (e) {
-      console.error("loadSuggestion failed:", e);
+      console.warn("loadSuggestion failed (fallback to default):", (e as Error).message);
+      // 不顯示錯誤給用戶，畫面會 fallback 到預設訊息
     }
     setSuggestionLoading(false);
   };
