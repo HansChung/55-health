@@ -58,12 +58,20 @@ export async function checkUserQuota(
 ): Promise<{ allowed: boolean; used: number; limit: number; tier: string }> {
   const supabase = createSupabaseAdmin();
 
-  // 1. 取得用戶訂閱方案
+  // 1. 取得用戶訂閱方案 + 是否管理員
   const { data: profile } = await supabase
     .from("profiles")
-    .select("subscription_tier, subscription_expires_at")
+    .select("subscription_tier, subscription_expires_at, is_admin")
     .eq("id", userId)
     .single();
+
+  // 管理員 + ADMIN_EMAILS 白名單 → 不限制
+  const { data: { user } } = await supabase.auth.admin.getUserById(userId);
+  const adminEmails = (process.env.ADMIN_EMAILS ?? "").split(",").map((s) => s.trim());
+  const isAdmin = profile?.is_admin || (user?.email && adminEmails.includes(user.email));
+  if (isAdmin) {
+    return { allowed: true, used: 0, limit: 99999, tier: "admin" };
+  }
 
   const tier = profile?.subscription_tier ?? "free";
 
