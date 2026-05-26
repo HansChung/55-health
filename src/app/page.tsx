@@ -183,12 +183,12 @@ export default function Page() {
             displayName={profile?.display_name}
             onCamera={() => setModal("camera")}
             onVoice={() => setModal("voice")}
-            onMeal={() => setModal("result")}
+            onMeal={() => { /* TODO: show real meal detail, not mock */ }}
             onSuggestion={() => setModal("suggestion")}
             onExercise={() => setSubpage("exercise")}
           />
         )}
-        {tab === "history" && <HistoryScreen onMeal={() => setModal("result")} />}
+        {tab === "history" && <HistoryScreen onMeal={() => { /* TODO: show real meal detail */ }} />}
         {tab === "profile" && <ProfileScreen onSubpage={setSubpage} />}
       </div>
 
@@ -223,9 +223,9 @@ export default function Page() {
           onCapture={handleCapture}
         />
       )}
-      {modal === "result" && (
+      {modal === "result" && pendingResult && (
         <ResultScreen
-          result={pendingResult ?? MOCK_RESULT}
+          result={pendingResult}
           photoDataUrl={pendingPhoto}
           onClose={() => { setModal(null); setPendingResult(null); setPendingPhoto(null); }}
           onSave={handleSaveMeal}
