@@ -120,6 +120,7 @@ export function ProfileScreen({ onSubpage }: ProfileScreenProps) {
         <Row icon="target" iconColor="var(--primary)" label="今日目標" value={`${profile?.calorie_goal ?? 1800} 大卡`} arrow />
         <Row icon="heart" iconColor="#7AA779" label="體重 / 血壓 / 血糖" value="健康數值追蹤" arrow onClick={() => onSubpage("health-metrics")} />
         <Row icon="flame" iconColor="var(--gold)" label="運動記錄" value="查看詳細" arrow onClick={() => onSubpage("exercise")} />
+        <Row icon="book" iconColor="var(--primary-deep)" label="每週健康報告" value="查看本週摘要" arrow onClick={() => onSubpage("weekly-report")} />
       </Section>
 
       <Section title="訂閱方案">

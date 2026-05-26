@@ -28,6 +28,16 @@ export async function POST(req: NextRequest) {
       { status: 429 }
     );
   }
+  const maxSeconds = Math.min(180, Math.floor(quota.remainingSeconds ?? quota.limit * 60));
+  if (maxSeconds <= 0) {
+    return NextResponse.json(
+      {
+        error: "本月語音對話分鐘已用完",
+        quota: { used: quota.used, limit: quota.limit, tier: quota.tier },
+      },
+      { status: 429 }
+    );
+  }
 
   // 3. 取得用戶設定（決定語氣）
   const { data: profile } = await supabase
@@ -87,6 +97,7 @@ export async function POST(req: NextRequest) {
         model,
       },
       quota: { used: quota.used, limit: quota.limit, tier: quota.tier },
+      max_seconds: maxSeconds,
     });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);

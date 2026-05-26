@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Tab, Modal, Subpage, FontScale, Meal, FoodResult } from "@/lib/types";
+import { Tab, Modal, Subpage, FontScale, Meal, FoodResult, MealType } from "@/lib/types";
 import { MOCK_RESULT } from "@/lib/mock-data";
 import { BottomNav } from "@/components/bottom-nav";
 import { HomeScreen } from "@/screens/home-screen";
@@ -21,6 +21,7 @@ import { FontSizeScreen } from "@/screens/font-size-screen";
 import { EditProfileScreen } from "@/screens/edit-profile-screen";
 import { HealthMetricsScreen } from "@/screens/health-metrics-screen";
 import { PrescriptionScanScreen } from "@/screens/prescription-scan-screen";
+import { WeeklyReportScreen } from "@/screens/weekly-report-screen";
 import { MealDetailSheet } from "@/screens/meal-detail-sheet";
 import { PhotoSourceSheet } from "@/components/photo-source-sheet";
 import type { MealRecord, AiSuggestion } from "@/lib/api-client";
@@ -67,6 +68,7 @@ export default function Page() {
   // 預設空的 3 餐 slots（不要再用假資料）
   const [meals, setMeals] = useState<Meal[]>(() => mergeMealsWithSlots([]));
   const [todayDbMeals, setTodayDbMeals] = useState<MealRecord[]>([]); // 真實 DB 紀錄，給 detail 用
+  const [recentDbMeals, setRecentDbMeals] = useState<MealRecord[]>([]);
   const [pendingResult, setPendingResult] = useState<FoodResult | null>(null);
   const [pendingPhoto, setPendingPhoto] = useState<string | null>(null);
   const [selectedMeal, setSelectedMeal] = useState<MealRecord | null>(null);
@@ -80,8 +82,10 @@ export default function Page() {
 
   const reloadMeals = async () => {
     try {
-      const { meals: dbMeals } = await api.listMeals(1);
-      setTodayDbMeals(dbMeals);
+      const { meals: dbMeals } = await api.listMeals(7);
+      const todayMeals = dbMeals.filter((m) => isSameLocalDay(new Date(m.eaten_at), new Date()));
+      setRecentDbMeals(dbMeals);
+      setTodayDbMeals(todayMeals);
       setMeals(mergeMealsWithSlots(dbMeals));
     } catch (e) {
       console.error("載入餐點失敗:", e);
@@ -95,6 +99,40 @@ export default function Page() {
       (m) => m.meal_type === mealType && new Date(m.eaten_at) >= todayStart
     );
     if (found) setSelectedMeal(found);
+  };
+
+  const yesterdayMealsByType = recentDbMeals.reduce((acc, meal) => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (isSameLocalDay(new Date(meal.eaten_at), yesterday)) {
+      acc[meal.meal_type] = meal;
+    }
+    return acc;
+  }, {} as Partial<Record<MealType, MealRecord>>);
+
+  const handleRepeatYesterdayMeal = async (mealType: MealType) => {
+    const source = yesterdayMealsByType[mealType];
+    if (!source) return;
+
+    const now = new Date();
+    try {
+      await api.createMeal({
+        meal_type: mealType,
+        items: source.items,
+        total_cal: source.total_cal,
+        protein_g: source.protein_g,
+        carb_g: source.carb_g,
+        fat_g: source.fat_g,
+        portion: source.portion,
+        notes: source.notes ?? undefined,
+        photo_url: source.photo_url ?? undefined,
+        eaten_at: now.toISOString(),
+      });
+      await reloadMeals();
+      loadSuggestion(true).catch(console.error);
+    } catch (e) {
+      alert("複製昨天餐點失敗：" + (e as Error).message);
+    }
   };
 
   const handleDeleteMeal = async () => {
@@ -302,6 +340,8 @@ export default function Page() {
             onMeal={(mealType) => openMealDetail(mealType)}
             onSuggestion={() => setModal("suggestion")}
             onExercise={() => setSubpage("exercise")}
+            repeatMeals={yesterdayMealsByType}
+            onRepeatMeal={handleRepeatYesterdayMeal}
           />
         )}
         {tab === "history" && <HistoryScreen onMeal={(meal) => setSelectedMeal(meal)} />}
@@ -324,6 +364,7 @@ export default function Page() {
         />
       )}
       {subpage === "health-metrics" && <HealthMetricsScreen onBack={() => setSubpage(null)} />}
+      {subpage === "weekly-report" && <WeeklyReportScreen onBack={() => setSubpage(null)} />}
       {subpage === "prescription" && <PrescriptionScanScreen onBack={() => setSubpage("chronic")} />}
       {subpage === "chronic" && (
         <ChronicDiseaseScreen
@@ -404,5 +445,13 @@ export default function Page() {
         </div>
       )}
     </div>
+  );
+}
+
+function isSameLocalDay(a: Date, b: Date) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
   );
 }

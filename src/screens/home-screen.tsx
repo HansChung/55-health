@@ -1,6 +1,7 @@
 "use client";
 
-import { Meal } from "@/lib/types";
+import { Meal, MealType } from "@/lib/types";
+import type { MealRecord } from "@/lib/api-client";
 import { Icon } from "@/components/icons";
 import { Mascot } from "@/components/mascot";
 import { CalorieRing } from "@/components/calorie-ring";
@@ -19,6 +20,8 @@ interface HomeScreenProps {
   onMeal: (mealType: string) => void;
   onSuggestion: () => void;
   onExercise: () => void;
+  repeatMeals?: Partial<Record<MealType, MealRecord>>;
+  onRepeatMeal?: (mealType: MealType) => void;
 }
 
 const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
@@ -35,7 +38,7 @@ function getDateLabel(): string {
   return `${d.getMonth() + 1}月${d.getDate()}日　星期${WEEKDAYS[d.getDay()]}`;
 }
 
-export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, onCamera, onVoice, onMeal, onSuggestion, onExercise }: HomeScreenProps) {
+export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal }: HomeScreenProps) {
   // 從餐點計算今日營養
   const totals = meals.reduce(
     (s, m) => {
@@ -136,12 +139,14 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {meals.map((m, i) => {
-            const mealType = ["breakfast", "lunch", "dinner"][i] ?? "snack";
+            const mealType = (["breakfast", "lunch", "dinner"] as MealType[])[i] ?? "snack";
             return (
               <MealRow
                 key={i}
                 meal={m}
+                repeatMeal={repeatMeals[mealType]}
                 onClick={() => m.logged ? onMeal(mealType) : onCamera()}
+                onRepeat={() => onRepeatMeal?.(mealType)}
               />
             );
           })}
@@ -193,31 +198,61 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
   );
 }
 
-function MealRow({ meal, onClick }: { meal: Meal; onClick: () => void }) {
+function MealRow({ meal, repeatMeal, onClick, onRepeat }: {
+  meal: Meal;
+  repeatMeal?: MealRecord;
+  onClick: () => void;
+  onRepeat?: () => void;
+}) {
   if (!meal.logged) {
     return (
-      <button onClick={onClick} style={{
-        width: "100%", textAlign: "left",
+      <div style={{
+        width: "100%",
         background: "var(--surface)",
         borderRadius: "var(--r-lg)",
         padding: 18,
         border: "1px dashed var(--line-strong)",
-        display: "flex", gap: 16, alignItems: "center",
+        display: "flex", gap: 14, alignItems: "center",
       }}>
-        <div style={{
-          width: 64, height: 64, borderRadius: 14,
-          background: "var(--bg-deep)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          flexShrink: 0,
+        <button onClick={onClick} style={{
+          flex: 1, minWidth: 0, textAlign: "left",
+          display: "flex", gap: 16, alignItems: "center",
+          background: "transparent",
         }}>
-          <Icon name="plus" size={32} color="var(--ink-3)" stroke={2.5} />
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: "var(--fs-base)", fontWeight: 700, color: "var(--ink-1)" }}>{meal.name}</div>
-          <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>還沒記錄　·　拍張照吧</div>
-        </div>
-        <Icon name="camera" size={28} color="var(--primary)" />
-      </button>
+          <div style={{
+            width: 64, height: 64, borderRadius: 14,
+            background: "var(--bg-deep)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
+          }}>
+            <Icon name="plus" size={32} color="var(--ink-3)" stroke={2.5} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: "var(--fs-base)", fontWeight: 700, color: "var(--ink-1)" }}>{meal.name}</div>
+            <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
+              還沒記錄　·　拍張照吧
+            </div>
+          </div>
+          <Icon name="camera" size={28} color="var(--primary)" />
+        </button>
+        {repeatMeal && onRepeat && (
+          <button
+            onClick={onRepeat}
+            style={{
+              flexShrink: 0,
+              borderRadius: 999,
+              padding: "10px 12px",
+              background: "var(--surface-warm)",
+              border: "1px solid var(--gold-soft)",
+              color: "var(--primary-deep)",
+              fontSize: "var(--fs-sm)",
+              fontWeight: 700,
+            }}
+          >
+            跟昨天一樣
+          </button>
+        )}
+      </div>
     );
   }
   return (

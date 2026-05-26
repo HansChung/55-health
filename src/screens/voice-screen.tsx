@@ -30,7 +30,15 @@ export function VoiceScreen({ onClose, voiceTone = "warm" }: VoiceScreenProps) {
   const [state, setState] = useState<"connecting" | "idle" | "listening" | "thinking" | "speaking" | "error">("idle");
   const [transcript, setTranscript] = useState<TranscriptMessage[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [maxSeconds, setMaxSeconds] = useState(180);
+  const [quotaText, setQuotaText] = useState("");
   const clientRef = useRef<RealtimeClient | null>(null);
+  const startedAtRef = useRef<number | null>(null);
+  const maxSecondsRef = useRef(180);
+  const usageReportedRef = useRef(false);
+  const activeModelRef = useRef("gpt-realtime");
+  const activeSessionIdRef = useRef("");
 
   const toneIntros: Record<VoiceTone, string> = {
     warm: "按一下開始跟我說話",
@@ -38,9 +46,56 @@ export function VoiceScreen({ onClose, voiceTone = "warm" }: VoiceScreenProps) {
     grandchild: "按一下，跟小孫子說話！",
   };
 
+  const reportUsage = async (reason: "manual" | "time_limit" | "close" | "unload" | "error") => {
+    if (usageReportedRef.current || !startedAtRef.current) return;
+    const seconds = Math.min(
+      maxSecondsRef.current,
+      Math.max(1, Math.ceil((Date.now() - startedAtRef.current) / 1000))
+    );
+    usageReportedRef.current = true;
+    try {
+      await api.trackRealtimeUsage({
+        seconds,
+        model: activeModelRef.current,
+        session_id: activeSessionIdRef.current || undefined,
+        reason,
+      });
+    } catch (e) {
+      console.error("[voice] usage tracking failed:", e);
+    }
+  };
+
+  const stopSession = async (reason: "manual" | "time_limit" | "close" | "unload" | "error" = "manual") => {
+    const client = clientRef.current;
+    clientRef.current = null;
+    client?.close();
+    await reportUsage(reason);
+    startedAtRef.current = null;
+    setElapsedSeconds(0);
+    setState("idle");
+  };
+
   useEffect(() => {
-    return () => clientRef.current?.close();
+    return () => {
+      if (clientRef.current) {
+        void stopSession("unload");
+      }
+    };
   }, []);
+
+  useEffect(() => {
+    if (!clientRef.current || !startedAtRef.current) return;
+    const timer = window.setInterval(() => {
+      if (!startedAtRef.current) return;
+      const elapsed = Math.floor((Date.now() - startedAtRef.current) / 1000);
+      setElapsedSeconds(elapsed);
+      if (elapsed >= maxSecondsRef.current) {
+        setErrorMsg("這次語音已達 3 分鐘上限，暖暖先幫您暫停一下");
+        void stopSession("time_limit");
+      }
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [state]);
 
   const handleMicPress = async () => {
     // 連線中不能按
@@ -48,20 +103,29 @@ export function VoiceScreen({ onClose, voiceTone = "warm" }: VoiceScreenProps) {
 
     // 已連線中（聽中 / 想中 / 說話中）→ 按下去就斷線
     if (clientRef.current) {
-      clientRef.current.close();
-      clientRef.current = null;
-      setState("idle");
+      await stopSession("manual");
       return;
     }
 
     setState("connecting");
 
     try {
-      const { session } = await api.createRealtimeSession();
+      const { session, quota, max_seconds } = await api.createRealtimeSession();
       const ephemeralKey = session.client_secret.value;
+      const sessionMax = Math.max(1, Math.min(180, max_seconds));
+      maxSecondsRef.current = sessionMax;
+      setMaxSeconds(sessionMax);
+      setQuotaText(`本月已用 ${quota.used}/${quota.limit} 分鐘`);
+      activeModelRef.current = session.model ?? "gpt-realtime";
+      activeSessionIdRef.current = session.id ?? "";
+      usageReportedRef.current = false;
 
       const client = new RealtimeClient({
-        onConnected: () => setState("listening"),
+        onConnected: () => {
+          startedAtRef.current = Date.now();
+          setElapsedSeconds(0);
+          setState("listening");
+        },
         onUserTranscript: (text) => {
           setTranscript((t) => [...t, { role: "user", text }]);
           setState("thinking");
@@ -81,8 +145,11 @@ export function VoiceScreen({ onClose, voiceTone = "warm" }: VoiceScreenProps) {
         onError: (err) => {
           setErrorMsg(err.message);
           setState("error");
+          void reportUsage("error");
         },
-        onClose: () => setState("idle"),
+        onClose: () => {
+          if (clientRef.current) setState("idle");
+        },
       });
 
       clientRef.current = client;
@@ -97,6 +164,8 @@ export function VoiceScreen({ onClose, voiceTone = "warm" }: VoiceScreenProps) {
 
   const mascotMood = state === "thinking" ? "thinking" as const : state === "speaking" ? "excited" as const : "happy" as const;
   const isActive = state === "listening" || state === "speaking" || state === "thinking" || state === "connecting";
+  const remainingSeconds = Math.max(0, maxSeconds - elapsedSeconds);
+  const timerLabel = `${Math.floor(remainingSeconds / 60)}:${String(remainingSeconds % 60).padStart(2, "0")}`;
 
   return (
     <div style={{
@@ -108,7 +177,7 @@ export function VoiceScreen({ onClose, voiceTone = "warm" }: VoiceScreenProps) {
       display: "flex", flexDirection: "column",
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "24px 20px 12px" }}>
-        <button onClick={() => { clientRef.current?.close(); onClose(); }} style={{
+        <button onClick={() => { void stopSession("close").finally(onClose); }} style={{
           width: 48, height: 48, borderRadius: "50%",
           background: "var(--surface)", border: "1px solid var(--line)",
           display: "flex", alignItems: "center", justifyContent: "center",
@@ -140,6 +209,12 @@ export function VoiceScreen({ onClose, voiceTone = "warm" }: VoiceScreenProps) {
           {state === "speaking" && <><WaveformDots /> 暖暖正在說</>}
           {state === "error" && <>{errorMsg}</>}
         </div>
+        {(isActive || quotaText) && (
+          <div style={{ marginTop: 8, fontSize: "var(--fs-sm)", color: "var(--ink-2)", textAlign: "center" }}>
+            {isActive ? `本次剩 ${timerLabel}` : quotaText}
+            {quotaText && isActive ? `　·　${quotaText}` : ""}
+          </div>
+        )}
       </div>
 
       <div className="scroll-area" style={{

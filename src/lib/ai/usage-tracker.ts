@@ -55,7 +55,14 @@ export async function trackAiUsage(params: TrackUsageParams) {
 export async function checkUserQuota(
   userId: string,
   service: "photo" | "voice"
-): Promise<{ allowed: boolean; used: number; limit: number; tier: string }> {
+): Promise<{
+  allowed: boolean;
+  used: number;
+  limit: number;
+  tier: string;
+  usedSeconds?: number;
+  remainingSeconds?: number;
+}> {
   const supabase = createSupabaseAdmin();
 
   // 1. 取得用戶訂閱方案 + 是否管理員
@@ -112,7 +119,15 @@ export async function checkUserQuota(
         0
       ) ?? 0;
     const usedMinutes = Math.ceil(totalSeconds / 60);
-    const limit = plan?.ai_voice_minutes ?? 5;
-    return { allowed: usedMinutes < limit, used: usedMinutes, limit, tier };
+    const limit = plan?.ai_voice_minutes ?? 2;
+    const limitSeconds = limit * 60;
+    return {
+      allowed: totalSeconds < limitSeconds,
+      used: usedMinutes,
+      limit,
+      tier,
+      usedSeconds: totalSeconds,
+      remainingSeconds: Math.max(0, limitSeconds - totalSeconds),
+    };
   }
 }

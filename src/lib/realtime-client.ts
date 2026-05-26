@@ -22,6 +22,7 @@ export class RealtimeClient {
   private callbacks: RealtimeClientCallbacks;
   private assistantBuffer = "";
   private model: string;
+  private closed = true;
 
   constructor(callbacks: RealtimeClientCallbacks = {}, model = "gpt-realtime") {
     this.callbacks = callbacks;
@@ -30,6 +31,7 @@ export class RealtimeClient {
 
   async connect(ephemeralKey: string) {
     try {
+      this.closed = false;
       this.pc = new RTCPeerConnection();
 
       this.audioEl = document.createElement("audio");
@@ -115,10 +117,16 @@ export class RealtimeClient {
   }
 
   close() {
+    if (this.closed) return;
+    this.closed = true;
     this.localStream?.getTracks().forEach((t) => t.stop());
     this.dc?.close();
     this.pc?.close();
     this.audioEl?.remove();
+    this.localStream = null;
+    this.dc = null;
+    this.pc = null;
+    this.audioEl = null;
     this.callbacks.onClose?.();
   }
 }

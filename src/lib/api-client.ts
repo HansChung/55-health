@@ -45,9 +45,16 @@ export const api = {
 
   createRealtimeSession: () =>
     apiFetch<{
-      session: { client_secret: { value: string }; id: string };
+      session: { client_secret: { value: string }; id: string; model?: string };
       quota: { used: number; limit: number; tier: string };
+      max_seconds: number;
     }>("/api/ai/realtime-session", { method: "POST" }),
+
+  trackRealtimeUsage: (input: { seconds: number; model?: string; session_id?: string; reason?: "manual" | "time_limit" | "close" | "unload" | "error" }) =>
+    apiFetch<{ ok: true; id: string; seconds: number; cost_usd: number }>("/api/ai/realtime-usage", {
+      method: "POST",
+      json: input,
+    }),
 
   getSuggestion: () =>
     apiFetch<{ suggestion: AiSuggestion }>("/api/ai/suggest"),
@@ -78,6 +85,9 @@ export const api = {
 
   deleteMetric: (id: string) =>
     apiFetch<{ ok: true }>(`/api/health-metrics/${id}`, { method: "DELETE" }),
+
+  getWeeklyReport: () =>
+    apiFetch<{ report: WeeklyReport }>("/api/reports/weekly"),
 
   analyzePrescription: (imageBase64: string, mimeType?: string) =>
     apiFetch<{ result: PrescriptionResult }>("/api/ai/analyze-prescription", {
@@ -207,6 +217,29 @@ export interface HealthMetric {
   glucose_mg_dl: number | null;
   glucose_context: "fasting" | "before_meal" | "after_meal" | "bedtime" | null;
   notes: string | null;
+}
+
+export interface WeeklyReport {
+  range: { from: string; to: string };
+  meals: {
+    days_logged: number;
+    meals_count: number;
+    total_calories: number;
+    avg_calories: number;
+    protein_g: number;
+    carb_g: number;
+    fat_g: number;
+  };
+  exercise: {
+    minutes: number;
+    kcal_burned: number;
+  };
+  health: {
+    weight: { latest: number | null; change: number | null } | null;
+    blood_pressure: { systolic: number | null; diastolic: number | null; status: string } | null;
+    blood_glucose: { value: number | null; status: string } | null;
+  };
+  tips: string[];
 }
 
 export interface FamilyLink {
