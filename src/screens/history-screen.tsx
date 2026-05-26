@@ -131,12 +131,23 @@ export function HistoryScreen({ onMeal }: HistoryScreenProps) {
                   display: "flex", alignItems: "center", gap: 14,
                   boxShadow: "var(--shadow-sm)",
                 }}>
-                  <div style={{
-                    width: 56, height: 56, borderRadius: 12,
-                    background: (m.items[0]?.color ?? "#E8845A") + "22",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 28, flexShrink: 0,
-                  }}>{m.items[0]?.emoji ?? "🍽"}</div>
+                  {m.photo_url ? (
+                    <img
+                      src={m.photo_url}
+                      alt={m.items.map((it) => it.name).join("、")}
+                      style={{
+                        width: 56, height: 56, borderRadius: 12,
+                        objectFit: "cover", flexShrink: 0,
+                      }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: 56, height: 56, borderRadius: 12,
+                      background: (m.items[0]?.color ?? "#E8845A") + "22",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 28, flexShrink: 0,
+                    }}>{m.items[0]?.emoji ?? "🍽"}</div>
+                  )}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
                       {MEAL_LABEL[m.meal_type]}　·　{m.eaten_at.substring(11, 16)}

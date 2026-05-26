@@ -40,6 +40,7 @@ export function mergeMealsWithSlots(dbMeals: MealRecord[]): Meal[] {
         cal: db.total_cal,
         color: db.items[0]?.color ?? MEAL_COLOR[type],
         photo: db.items[0]?.emoji ?? "🍱",
+        photoUrl: db.photo_url,
         logged: true,
       };
     }

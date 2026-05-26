@@ -228,7 +228,18 @@ function MealRow({ meal, onClick }: { meal: Meal; onClick: () => void }) {
       display: "flex", gap: 16, alignItems: "center",
       boxShadow: "var(--shadow-sm)",
     }}>
-      <FoodPlaceholder label={meal.photo} size={72} radius={14} color={meal.color} />
+      {meal.photoUrl ? (
+        <img
+          src={meal.photoUrl}
+          alt={meal.items}
+          style={{
+            width: 72, height: 72, borderRadius: 14,
+            objectFit: "cover", flexShrink: 0,
+          }}
+        />
+      ) : (
+        <FoodPlaceholder label={meal.photo} size={72} radius={14} color={meal.color} />
+      )}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", marginBottom: 2 }}>
           {meal.name}　·　{meal.time}

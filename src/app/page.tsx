@@ -27,6 +27,7 @@ import { api } from "@/lib/api-client";
 import type { FoodAnalysisResult } from "@/lib/ai/gemini";
 import { mergeMealsWithSlots, guessMealType } from "@/lib/meal-utils";
 import { compressImage } from "@/lib/image-utils";
+import { uploadMealPhoto } from "@/lib/upload-photo";
 import type { FoodItem } from "@/lib/types";
 
 export default function Page() {
@@ -223,8 +224,8 @@ export default function Page() {
 
     const now = new Date();
     const mealType = guessMealType(now);
-    // 用編輯後的 items（fallback 到原始 AI 結果）
     const items = adj.items ?? pendingResult.items;
+    const photoToUpload = pendingPhoto; // 在 setPendingPhoto(null) 之前抓住
 
     // 1. 立刻關掉視窗 + 樂觀更新本地餐點（用戶不用等）
     const optimisticMeal: Meal = {
@@ -247,8 +248,12 @@ export default function Page() {
     setModal(null);
     setTab("home");
 
-    // 2. 背景送 API（不擋 UI）
+    // 2. 背景：先上傳照片到 Storage → 再存餐點記錄
     try {
+      let photoUrl: string | null = null;
+      if (photoToUpload && user) {
+        photoUrl = await uploadMealPhoto(user.id, photoToUpload);
+      }
       await api.createMeal({
         meal_type: mealType,
         items,
@@ -257,13 +262,12 @@ export default function Page() {
         carb_g: adj.carb,
         fat_g: adj.fat,
         eaten_at: now.toISOString(),
+        photo_url: photoUrl ?? undefined,
       });
-      // 3. 成功後背景重新載入（同步真實 ID 等）
       reloadMeals().catch(console.error);
     } catch (e) {
       console.error("Save meal failed:", e);
       alert("儲存失敗，請再試一次：" + (e as Error).message);
-      // 失敗則重新載入回到真實狀態
       reloadMeals().catch(console.error);
     }
   };

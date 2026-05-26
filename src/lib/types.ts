@@ -4,7 +4,8 @@ export interface Meal {
   items: string;
   cal: number;
   color: string;
-  photo: string;
+  photo: string;        // emoji（fallback）
+  photoUrl?: string | null; // 真實照片 URL
   logged: boolean;
   emoji?: string;
 }

@@ -166,7 +166,7 @@ export interface MealRecord {
   user_id: string;
   meal_type: "breakfast" | "lunch" | "dinner" | "snack";
   eaten_at: string;
-  photo_url: string | null;
+  photo_url?: string | null;
   items: { name: string; amount?: string; cal: number; emoji?: string; color?: string }[];
   total_cal: number;
   protein_g: number;
