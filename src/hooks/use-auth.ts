@@ -22,7 +22,10 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<AppProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshCounter, setRefreshCounter] = useState(0);
   const supabase = createSupabaseBrowser();
+
+  const refreshProfile = () => setRefreshCounter((c) => c + 1);
 
   useEffect(() => {
     let mounted = true;
@@ -84,7 +87,7 @@ export function useAuth() {
       clearTimeout(timeout);
       subscription.unsubscribe();
     };
-  }, []);
+  }, [refreshCounter]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -92,5 +95,5 @@ export function useAuth() {
     setProfile(null);
   };
 
-  return { user, profile, loading, signOut, supabase };
+  return { user, profile, loading, signOut, supabase, refreshProfile };
 }

@@ -27,7 +27,7 @@ import type { FoodAnalysisResult } from "@/lib/ai/gemini";
 import { mergeMealsWithSlots, guessMealType } from "@/lib/meal-utils";
 
 export default function Page() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, refreshProfile } = useAuth();
 
   // 如果用戶被 OAuth provider 丟回 /?code=xxx，自動轉到 /auth/callback
   useEffect(() => {
@@ -236,7 +236,7 @@ export default function Page() {
             onExercise={() => setSubpage("exercise")}
           />
         )}
-        {tab === "history" && <HistoryScreen onMeal={() => { /* TODO: show real meal detail */ }} />}
+        {tab === "history" && <HistoryScreen onMeal={(meal) => setSelectedMeal(meal)} />}
         {tab === "profile" && <ProfileScreen onSubpage={setSubpage} />}
       </div>
 
@@ -248,7 +248,7 @@ export default function Page() {
         <EditProfileScreen
           onBack={() => setSubpage(null)}
           profile={profile}
-          onSaved={() => window.location.reload()}
+          onSaved={() => refreshProfile()}
         />
       )}
       {subpage === "chronic" && <ChronicDiseaseScreen onBack={() => setSubpage(null)} />}

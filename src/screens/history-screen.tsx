@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { api, type MealRecord } from "@/lib/api-client";
 
 interface HistoryScreenProps {
-  onMeal: () => void;
+  onMeal: (meal: MealRecord) => void;
 }
 
 const MEAL_LABEL: Record<string, string> = {
@@ -123,7 +123,7 @@ export function HistoryScreen({ onMeal }: HistoryScreenProps) {
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {day.meals.map((m) => (
-                <button key={m.id} onClick={onMeal} style={{
+                <button key={m.id} onClick={() => onMeal(m)} style={{
                   textAlign: "left",
                   background: "var(--surface)",
                   borderRadius: 16, padding: 14,

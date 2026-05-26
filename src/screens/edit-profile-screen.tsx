@@ -25,16 +25,20 @@ export function EditProfileScreen({ onBack, profile, onSaved }: EditProfileScree
     setSaving(true);
     setError("");
     try {
-      await api.updateProfile({
+      const { profile: updated } = await api.updateProfile({
         display_name: displayName || undefined,
         age: age ? Number(age) : null,
         gender: gender || null,
         calorie_goal: Number(calorieGoal),
         voice_tone: voiceTone,
       });
-      onSaved();
+      console.log("[edit-profile] saved:", updated);
+      onSaved();      // 觸發 useAuth 重新載入
+      // 稍等一下讓 refreshProfile 把新資料抓回來
+      await new Promise((r) => setTimeout(r, 300));
       onBack();
     } catch (e) {
+      console.error("[edit-profile] save failed:", e);
       setError((e as Error).message);
     }
     setSaving(false);
