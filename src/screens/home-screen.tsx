@@ -12,6 +12,8 @@ interface HomeScreenProps {
   calories: number;
   calorieGoal: number;
   displayName?: string | null;
+  suggestion?: { headline: string } | null;
+  suggestionLoading?: boolean;
   onCamera: () => void;
   onVoice: () => void;
   onMeal: (mealType: string) => void;
@@ -33,7 +35,7 @@ function getDateLabel(): string {
   return `${d.getMonth() + 1}月${d.getDate()}日　星期${WEEKDAYS[d.getDay()]}`;
 }
 
-export function HomeScreen({ meals, calories, calorieGoal, displayName, onCamera, onVoice, onMeal, onSuggestion, onExercise }: HomeScreenProps) {
+export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, onCamera, onVoice, onMeal, onSuggestion, onExercise }: HomeScreenProps) {
   // 從餐點計算今日營養
   const totals = meals.reduce(
     (s, m) => {
@@ -109,9 +111,12 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, onCamera
               </span>
             </div>
             <div style={{ fontSize: "var(--fs-base)", fontWeight: 600, color: "var(--ink-1)", marginBottom: 4, lineHeight: 1.45 }}>
-              {meals.some(m => m.logged)
-                ? "今天已開始記錄，加油繼續！🍊"
-                : "拍張早餐照片就能開始記錄囉！📸"}
+              {suggestionLoading
+                ? "暖暖在想…"
+                : suggestion?.headline
+                ?? (meals.some(m => m.logged)
+                  ? "今天已開始記錄，加油繼續！🍊"
+                  : "拍張早餐照片就能開始記錄囉！📸")}
             </div>
             <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", display: "flex", alignItems: "center", gap: 4 }}>
               點開看詳細 <Icon name="chevronR" size={16} />

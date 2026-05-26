@@ -18,6 +18,7 @@ const PatchSchema = z.object({
     dose: z.string().optional(),
     time: z.string().optional(),
   })).optional(),
+  notification_settings: z.record(z.string(), z.any()).optional(),
 });
 
 export async function GET() {

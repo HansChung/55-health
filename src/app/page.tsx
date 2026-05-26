@@ -20,7 +20,7 @@ import { ExerciseScreen } from "@/screens/exercise-screen";
 import { FontSizeScreen } from "@/screens/font-size-screen";
 import { EditProfileScreen } from "@/screens/edit-profile-screen";
 import { MealDetailSheet } from "@/screens/meal-detail-sheet";
-import type { MealRecord } from "@/lib/api-client";
+import type { MealRecord, AiSuggestion } from "@/lib/api-client";
 import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/lib/api-client";
 import type { FoodAnalysisResult } from "@/lib/ai/gemini";
@@ -64,6 +64,8 @@ export default function Page() {
   const [pendingResult, setPendingResult] = useState<FoodResult | null>(null);
   const [pendingPhoto, setPendingPhoto] = useState<string | null>(null);
   const [selectedMeal, setSelectedMeal] = useState<MealRecord | null>(null);
+  const [suggestion, setSuggestion] = useState<AiSuggestion | null>(null);
+  const [suggestionLoading, setSuggestionLoading] = useState(false);
 
   const totalCal = meals.reduce((s, m) => s + (m.cal || 0), 0);
   const calorieGoal = profile?.calorie_goal ?? 1800;
@@ -102,6 +104,24 @@ export default function Page() {
   useEffect(() => {
     if (!user) return;
     reloadMeals();
+  }, [user]);
+
+  // 載入 AI 建議（用戶登入後 + 餐點變動時）
+  const loadSuggestion = async () => {
+    if (!user) return;
+    setSuggestionLoading(true);
+    try {
+      const { suggestion } = await api.getSuggestion();
+      setSuggestion(suggestion);
+    } catch (e) {
+      console.error("loadSuggestion failed:", e);
+    }
+    setSuggestionLoading(false);
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    loadSuggestion();
   }, [user]);
 
   // 強制登入
@@ -207,6 +227,8 @@ export default function Page() {
             calories={totalCal}
             calorieGoal={calorieGoal}
             displayName={profile?.display_name}
+            suggestion={suggestion}
+            suggestionLoading={suggestionLoading}
             onCamera={() => setModal("camera")}
             onVoice={() => setModal("voice")}
             onMeal={(mealType) => openMealDetail(mealType)}
@@ -263,7 +285,9 @@ export default function Page() {
           voiceTone={profile?.voice_tone ?? "warm"}
         />
       )}
-      {modal === "suggestion" && <SuggestionSheet onClose={() => setModal(null)} />}
+      {modal === "suggestion" && (
+        <SuggestionSheet onClose={() => setModal(null)} initial={suggestion} />
+      )}
 
       {selectedMeal && (
         <MealDetailSheet

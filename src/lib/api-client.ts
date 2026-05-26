@@ -49,6 +49,22 @@ export const api = {
       quota: { used: number; limit: number; tier: string };
     }>("/api/ai/realtime-session", { method: "POST" }),
 
+  getSuggestion: () =>
+    apiFetch<{ suggestion: AiSuggestion }>("/api/ai/suggest"),
+
+  // Family
+  listFamily: () =>
+    apiFetch<{ family: FamilyLink[] }>("/api/family"),
+
+  inviteFamily: (input: { family_name: string; relationship: string; permissions?: FamilyPermissions }) =>
+    apiFetch<{ link: FamilyLink }>("/api/family", { method: "POST", json: input }),
+
+  updateFamily: (id: string, patch: { permissions?: FamilyPermissions; status?: "pending" | "accepted" | "revoked" }) =>
+    apiFetch<{ link: FamilyLink }>(`/api/family/${id}`, { method: "PATCH", json: patch }),
+
+  removeFamily: (id: string) =>
+    apiFetch<{ ok: true }>(`/api/family/${id}`, { method: "DELETE" }),
+
   // Profile
   getProfile: () =>
     apiFetch<{ profile: ProfileData }>("/api/profile"),
@@ -104,8 +120,45 @@ export interface ProfileData {
   high_contrast: boolean;
   chronic_conditions: string[];
   medications: { name: string; dose?: string; time?: string }[];
+  notification_settings?: NotificationSettings;
   subscription_tier: "free" | "basic" | "pro";
   is_admin: boolean;
+}
+
+export interface NotificationSettings {
+  meal_breakfast?: { on: boolean; time: string };
+  meal_lunch?: { on: boolean; time: string };
+  meal_dinner?: { on: boolean; time: string };
+  water?: { on: boolean; interval_hours: number };
+  walk?: { on: boolean; time: string };
+  blood_pressure?: { on: boolean; times: string[] };
+  family_alerts?: { on: boolean };
+}
+
+export interface AiSuggestion {
+  headline: string;
+  reason: string;
+  recommendations: { name: string; emoji: string; cal: number; color: string }[];
+}
+
+export interface FamilyPermissions {
+  calories?: boolean;
+  alerts?: boolean;
+  diary?: boolean;
+  voice?: boolean;
+}
+
+export interface FamilyLink {
+  id: string;
+  owner_id: string;
+  family_user_id: string | null;
+  family_name: string;
+  relationship: string;
+  invite_code: string | null;
+  invite_expires_at: string | null;
+  permissions: FamilyPermissions;
+  status: "pending" | "accepted" | "revoked";
+  created_at: string;
 }
 
 export interface MealRecord {
