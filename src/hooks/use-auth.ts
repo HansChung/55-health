@@ -36,23 +36,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [supabase] = useState(() => createSupabaseBrowser());
 
-  const fetchProfile = useCallback(async (userId: string) => {
+  const fetchProfile = useCallback(async (_userId: string): Promise<AppProfile | null> => {
+    // 改用 server API：繞過 client RLS 問題，更穩
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
-      if (error) {
-        console.error("[auth] fetchProfile error:", error);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const res = await fetch("/api/profile", {
+        credentials: "include",
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      if (!res.ok) {
+        console.error("[auth] fetchProfile HTTP", res.status);
         return null;
       }
-      return data as AppProfile;
+      const json = await res.json();
+      return json.profile as AppProfile;
     } catch (e) {
       console.error("[auth] fetchProfile threw:", e);
       return null;
     }
-  }, [supabase]);
+  }, []);
 
   const refreshProfile = useCallback(async () => {
     if (!user) return;
