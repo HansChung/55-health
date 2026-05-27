@@ -20,7 +20,6 @@ export function inferMedicationReminderTimes(text: string): string[] {
 }
 
 export function isTakenToday(med: ProfileMedication, now = new Date()): boolean {
-  if (med.taken_today) return true;
   if (!med.last_taken_at) return false;
   return isSameLocalDay(new Date(med.last_taken_at), now);
 }

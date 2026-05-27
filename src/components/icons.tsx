@@ -26,6 +26,7 @@ const ICON_PATHS: Record<string, string> = {
   pencil: '<path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/>',
   target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
   leaf: '<path d="M5 19c8 0 14-6 14-14C9 5 5 11 5 19z M5 19l5-5"/>',
+  lock: '<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
 };
 
 interface IconProps {

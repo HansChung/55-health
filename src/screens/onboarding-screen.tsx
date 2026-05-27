@@ -27,6 +27,24 @@ export function OnboardingScreen({ onDone }: OnboardingScreenProps) {
       mood: "happy",
       title: "可以跟我聊聊",
       body: "不會打字也沒關係，按住麥克風跟我說話就可以了。",
+      cta: "繼續",
+    },
+    {
+      mood: "thinking",
+      title: "用藥和常吃更省力",
+      body: "可以設定用藥提醒，也能把常吃餐點存起來，下次一鍵加入。",
+      cta: "繼續",
+    },
+    {
+      mood: "excited",
+      title: "家人也能看重點",
+      body: "專業版可整理每週健康報告，產生適合貼到 LINE 給家人的摘要。",
+      cta: "繼續",
+    },
+    {
+      mood: "happy",
+      title: "提醒和合作推薦",
+      body: "暖暖會標示健康提醒與合作推薦，合作活動都會清楚註明，不會當成醫療建議。",
       cta: "開始使用",
     },
   ];

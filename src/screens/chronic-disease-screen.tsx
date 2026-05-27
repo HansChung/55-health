@@ -5,12 +5,15 @@ import { Icon } from "@/components/icons";
 import { Mascot } from "@/components/mascot";
 import { SubPage } from "@/components/sub-page";
 import { Toggle } from "@/components/toggle";
+import { LockedFeatureCard } from "@/components/locked-feature-card";
 import { api, type ProfileMedication } from "@/lib/api-client";
+import { hasFeature, type SubscriptionTier } from "@/lib/feature-gates";
 import { inferMedicationReminderTimes, isTakenToday } from "@/lib/medication-utils";
 
 interface ChronicDiseaseScreenProps {
   onBack: () => void;
   onScanPrescription?: () => void;
+  tier: SubscriptionTier;
 }
 
 const CONDITIONS = [
@@ -24,7 +27,7 @@ const CONDITIONS = [
   { id: "none", label: "都沒有", icon: "🙂", tip: "保持健康習慣" },
 ];
 
-export function ChronicDiseaseScreen({ onBack, onScanPrescription }: ChronicDiseaseScreenProps) {
+export function ChronicDiseaseScreen({ onBack, onScanPrescription, tier }: ChronicDiseaseScreenProps) {
   const [selected, setSelected] = useState<string[]>([]);
   const [meds, setMeds] = useState<ProfileMedication[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +35,7 @@ export function ChronicDiseaseScreen({ onBack, onScanPrescription }: ChronicDise
   const [newMedName, setNewMedName] = useState("");
   const [newMedDose, setNewMedDose] = useState("");
   const [showAddMed, setShowAddMed] = useState(false);
+  const canUseMedicationReminders = hasFeature(tier, "medication_reminders");
 
   useEffect(() => {
     api.getProfile()
@@ -61,9 +65,10 @@ export function ChronicDiseaseScreen({ onBack, onScanPrescription }: ChronicDise
       name: newMedName.trim(),
       dose: text,
       time: text,
-      reminder_enabled: true,
-      reminder_times: inferMedicationReminderTimes(text),
+      reminder_enabled: canUseMedicationReminders,
+      reminder_times: canUseMedicationReminders ? inferMedicationReminderTimes(text) : [],
       taken_today: false,
+      added_at: new Date().toISOString(),
     }]);
     setNewMedName("");
     setNewMedDose("");
@@ -181,8 +186,19 @@ export function ChronicDiseaseScreen({ onBack, onScanPrescription }: ChronicDise
             </button>
           </div>
 
+          {!canUseMedicationReminders && (
+            <div style={{ marginBottom: 12 }}>
+              <LockedFeatureCard
+                feature="medication_reminders"
+                title="用藥提醒"
+                description="可先記錄慢性病與藥物名稱；升級標準版後，才能設定提醒時間與標記今天已吃。"
+                compact
+              />
+            </div>
+          )}
+
           {/* 拍藥袋（AI 辨識）大按鈕 */}
-          {onScanPrescription && (
+          {onScanPrescription && hasFeature(tier, "ai_photo") && (
             <button
               onClick={onScanPrescription}
               style={{
@@ -268,6 +284,12 @@ export function ChronicDiseaseScreen({ onBack, onScanPrescription }: ChronicDise
                 </div>
 
                 <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--line)" }}>
+                  {!canUseMedicationReminders ? (
+                    <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
+                      用藥提醒需升級標準版後使用。
+                    </div>
+                  ) : (
+                    <>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                     <div>
                       <div style={{ fontSize: "var(--fs-sm)", fontWeight: 700 }}>用藥提醒</div>
@@ -306,6 +328,8 @@ export function ChronicDiseaseScreen({ onBack, onScanPrescription }: ChronicDise
                       </button>
                     </div>
                   )}
+                    </>
+                  )}
                 </div>
               </div>
             ))}
@@ -333,6 +357,6 @@ function normalizeMedication(med: ProfileMedication): ProfileMedication {
     reminder_times: med.reminder_times?.length
       ? med.reminder_times
       : inferMedicationReminderTimes(reminderText),
-    taken_today: med.taken_today ?? false,
+    taken_today: isTakenToday(med),
   };
 }

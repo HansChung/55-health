@@ -3,9 +3,11 @@
 import { Icon } from "@/components/icons";
 import { Subpage } from "@/lib/types";
 import { useAuth } from "@/hooks/use-auth";
+import { tierLabel } from "@/lib/feature-gates";
 
 interface ProfileScreenProps {
   onSubpage: (page: Subpage) => void;
+  onOnboarding: () => void;
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -55,7 +57,7 @@ function Row({ icon, iconColor, label, value, arrow, onClick }: {
   );
 }
 
-export function ProfileScreen({ onSubpage }: ProfileScreenProps) {
+export function ProfileScreen({ onSubpage, onOnboarding }: ProfileScreenProps) {
   const { user, profile, signOut } = useAuth();
 
   const name = profile?.display_name ?? user?.email?.split("@")[0] ?? "用戶";
@@ -75,7 +77,7 @@ export function ProfileScreen({ onSubpage }: ProfileScreenProps) {
     : "尚未設定";
 
   const tier = profile?.subscription_tier ?? "free";
-  const tierLabel = ({ free: "免費版", basic: "標準版", pro: "專業版" } as const)[tier];
+  const currentTierLabel = tierLabel(tier);
 
   return (
     <div className="scroll-area" style={{ flex: 1, overflowY: "auto", paddingBottom: 120 }}>
@@ -124,13 +126,14 @@ export function ProfileScreen({ onSubpage }: ProfileScreenProps) {
       </Section>
 
       <Section title="訂閱方案">
-        <Row icon="sparkle" iconColor="var(--primary)" label="目前方案" value={tierLabel} arrow onClick={() => window.location.href = "/pricing"} />
+        <Row icon="sparkle" iconColor="var(--primary)" label="目前方案" value={currentTierLabel} arrow onClick={() => window.location.href = "/pricing"} />
       </Section>
 
       <Section title="使用設定">
         <Row icon="sun" iconColor="var(--gold)" label="字級大小" value={profile?.font_scale === "lg" ? "超大" : "加大"} arrow onClick={() => onSubpage("font")} />
         <Row icon="bell" iconColor="var(--primary)" label="提醒通知" value="設定提醒" arrow onClick={() => onSubpage("notif")} />
         <Row icon="user" iconColor="var(--sage)" label="家人共享" value="邀請家人" arrow onClick={() => onSubpage("family")} />
+        <Row icon="book" iconColor="var(--gold)" label="重新看教學" value="熟悉新功能" arrow onClick={onOnboarding} />
         {profile?.is_admin && (
           <Row icon="settings" iconColor="var(--ink-2)" label="管理後台" value="Admin Dashboard" arrow onClick={() => window.location.href = "/admin"} />
         )}

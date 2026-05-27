@@ -8,6 +8,8 @@ import { Mascot } from "@/components/mascot";
 import { CalorieRing } from "@/components/calorie-ring";
 import { MacroBar } from "@/components/macro-bar";
 import { FoodPlaceholder } from "@/components/food-placeholder";
+import { LockedFeatureCard } from "@/components/locked-feature-card";
+import { hasFeature, type SubscriptionTier } from "@/lib/feature-gates";
 
 interface HomeScreenProps {
   meals: Meal[];
@@ -16,6 +18,7 @@ interface HomeScreenProps {
   displayName?: string | null;
   suggestion?: { headline: string } | null;
   suggestionLoading?: boolean;
+  subscriptionTier: SubscriptionTier;
   onCamera: () => void;
   onVoice: () => void;
   onMeal: (mealType: string) => void;
@@ -26,6 +29,7 @@ interface HomeScreenProps {
   medicationReminders?: { med: ProfileMedication; time: string }[];
   onTakeMedication?: (medication: ProfileMedication) => void;
   healthAlerts?: HealthAlert[];
+  onAlertsCenter?: () => void;
   favoriteMeals?: FavoriteMeal[];
   onPickFavorite?: (mealType: MealType) => void;
   partnerCampaigns?: PartnerCampaign[];
@@ -46,7 +50,7 @@ function getDateLabel(): string {
   return `${d.getMonth() + 1}月${d.getDate()}日　星期${WEEKDAYS[d.getDay()]}`;
 }
 
-export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick }: HomeScreenProps) {
+export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick }: HomeScreenProps) {
   // 從餐點計算今日營養
   const totals = meals.reduce(
     (s, m) => {
@@ -74,18 +78,20 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
               {getGreeting()}，{displayName || "您"}
             </h1>
           </div>
-          <button style={{
+          <button onClick={onAlertsCenter} style={{
             width: 52, height: 52, borderRadius: "50%",
             background: "var(--surface)", border: "1px solid var(--line)",
             display: "flex", alignItems: "center", justifyContent: "center",
             boxShadow: "var(--shadow-sm)", position: "relative",
           }}>
             <Icon name="bell" size={26} color="var(--ink-1)" />
-            <span style={{
-              position: "absolute", top: 10, right: 12,
-              width: 10, height: 10, borderRadius: "50%",
-              background: "var(--primary)", border: "2px solid var(--surface)",
-            }} />
+            {(healthAlerts.length > 0 || medicationReminders.length > 0) && (
+              <span style={{
+                position: "absolute", top: 10, right: 12,
+                width: 10, height: 10, borderRadius: "50%",
+                background: "var(--primary)", border: "2px solid var(--surface)",
+              }} />
+            )}
           </button>
         </div>
       </div>
@@ -179,12 +185,31 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
         </div>
       )}
 
+      {!hasFeature(subscriptionTier, "medication_reminders") && (
+        <div style={{ padding: "18px 24px 0" }}>
+          <LockedFeatureCard
+            feature="medication_reminders"
+            title="用藥提醒"
+            description="升級標準版後，可記錄藥物時間並在首頁提醒今天還沒吃的藥。"
+            compact
+          />
+        </div>
+      )}
+
       {healthAlerts.length > 0 && (
         <div style={{ padding: "18px 24px 0" }}>
           <div className="card" style={{ padding: 18 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
               <Icon name="bell" size={20} color="var(--primary-deep)" />
-              <div style={{ fontSize: "var(--fs-base)", fontWeight: 800 }}>暖暖提醒</div>
+              <div style={{ fontSize: "var(--fs-base)", fontWeight: 800, flex: 1 }}>暖暖提醒</div>
+              {hasFeature(subscriptionTier, "alerts_center") && (
+                <button
+                  onClick={onAlertsCenter}
+                  style={{ fontSize: "var(--fs-xs)", color: "var(--primary-deep)", fontWeight: 800 }}
+                >
+                  查看全部
+                </button>
+              )}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {healthAlerts.map((alert, index) => (
@@ -203,6 +228,17 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {!hasFeature(subscriptionTier, "health_alerts") && (
+        <div style={{ padding: "18px 24px 0" }}>
+          <LockedFeatureCard
+            feature="health_alerts"
+            title="暖暖提醒"
+            description="升級標準版後，可看到血壓、血糖、用藥與餐點狀態提醒。"
+            compact
+          />
         </div>
       )}
 
@@ -256,6 +292,17 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
         </div>
       )}
 
+      {!hasFeature(subscriptionTier, "partner_offers") && (
+        <div style={{ padding: "18px 24px 0" }}>
+          <LockedFeatureCard
+            feature="partner_offers"
+            title="在地好康與合作優惠"
+            description="升級專業版後，可看到適合您的健康友善合作活動與優惠。"
+            compact
+          />
+        </div>
+      )}
+
       <div style={{ padding: "24px 24px 0" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
           <h2 style={{ fontSize: "var(--fs-lg)", fontWeight: 700, margin: 0 }}>今天吃了什麼</h2>
@@ -272,6 +319,7 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
                 meal={m}
                 repeatMeal={repeatMeals[mealType]}
                 hasFavorite={favoriteMeals.some((favorite) => favorite.meal_type === mealType)}
+                canUseFavorite={hasFeature(subscriptionTier, "favorite_meals")}
                 onClick={() => m.logged ? onMeal(mealType) : onCamera()}
                 onRepeat={() => onRepeatMeal?.(mealType)}
                 onPickFavorite={() => onPickFavorite?.(mealType)}
@@ -326,10 +374,11 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
   );
 }
 
-function MealRow({ meal, repeatMeal, hasFavorite, onClick, onRepeat, onPickFavorite }: {
+function MealRow({ meal, repeatMeal, hasFavorite, canUseFavorite, onClick, onRepeat, onPickFavorite }: {
   meal: Meal;
   repeatMeal?: MealRecord;
   hasFavorite?: boolean;
+  canUseFavorite?: boolean;
   onClick: () => void;
   onRepeat?: () => void;
   onPickFavorite?: () => void;
@@ -382,7 +431,7 @@ function MealRow({ meal, repeatMeal, hasFavorite, onClick, onRepeat, onPickFavor
             跟昨天一樣
           </button>
         )}
-        {hasFavorite && onPickFavorite && (
+        {hasFavorite && onPickFavorite && canUseFavorite && (
           <button
             onClick={onPickFavorite}
             style={{

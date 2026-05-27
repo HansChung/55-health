@@ -22,6 +22,7 @@ import { EditProfileScreen } from "@/screens/edit-profile-screen";
 import { HealthMetricsScreen } from "@/screens/health-metrics-screen";
 import { PrescriptionScanScreen } from "@/screens/prescription-scan-screen";
 import { WeeklyReportScreen } from "@/screens/weekly-report-screen";
+import { AlertsCenterScreen } from "@/screens/alerts-center-screen";
 import { MealDetailSheet } from "@/screens/meal-detail-sheet";
 import { PhotoSourceSheet } from "@/components/photo-source-sheet";
 import type { MealRecord, AiSuggestion, ProfileMedication, HealthMetric, FavoriteMeal, PartnerCampaign } from "@/lib/api-client";
@@ -34,6 +35,7 @@ import { uploadMealPhoto } from "@/lib/upload-photo";
 import type { FoodItem } from "@/lib/types";
 import { getPendingMedicationReminders, isSameLocalDay } from "@/lib/medication-utils";
 import { generateHealthAlerts } from "@/lib/health-alerts";
+import { hasFeature, requiredTierLabel, type FeatureKey, type SubscriptionTier } from "@/lib/feature-gates";
 
 export default function Page() {
   const { user, profile, loading, refreshProfile, setProfileDirectly } = useAuth();
@@ -85,12 +87,25 @@ export default function Page() {
 
   const totalCal = meals.reduce((s, m) => s + (m.cal || 0), 0);
   const calorieGoal = profile?.calorie_goal ?? 1800;
-  const medicationReminders = getPendingMedicationReminders(profile?.medications ?? []).slice(0, 3);
-  const healthAlerts = generateHealthAlerts({
+  const tier = (profile?.subscription_tier ?? "free") as SubscriptionTier;
+  const medicationReminders = hasFeature(tier, "medication_reminders")
+    ? getPendingMedicationReminders(profile?.medications ?? []).slice(0, 3)
+    : [];
+  const allHealthAlerts = generateHealthAlerts({
     meals: recentDbMeals,
     metrics: recentMetrics,
     medications: profile?.medications ?? [],
   });
+  const healthAlerts = hasFeature(tier, "health_alerts") ? allHealthAlerts.slice(0, 3) : [];
+
+  const requireFeature = (feature: FeatureKey, action: () => void) => {
+    if (hasFeature(tier, feature)) {
+      action();
+      return;
+    }
+    alert(`這是${requiredTierLabel(feature)}功能，升級後就可以使用。`);
+    window.location.href = "/pricing";
+  };
 
   const reloadMeals = async () => {
     try {
@@ -114,6 +129,10 @@ export default function Page() {
   };
 
   const reloadFavoriteMeals = async () => {
+    if (!hasFeature(tier, "favorite_meals")) {
+      setFavoriteMeals([]);
+      return;
+    }
     try {
       const { favorites } = await api.listFavoriteMeals();
       setFavoriteMeals(favorites);
@@ -123,6 +142,10 @@ export default function Page() {
   };
 
   const reloadPartnerCampaigns = async () => {
+    if (!hasFeature(tier, "partner_offers")) {
+      setPartnerCampaigns([]);
+      return;
+    }
     try {
       const { campaigns } = await api.listPartnerCampaigns();
       setPartnerCampaigns(campaigns);
@@ -210,9 +233,13 @@ export default function Page() {
     reloadMetrics();
     reloadFavoriteMeals();
     reloadPartnerCampaigns();
-  }, [user]);
+  }, [user, tier]);
 
   const handleSaveFavoriteMeal = async (meal: MealRecord) => {
+    if (!hasFeature(tier, "favorite_meals")) {
+      requireFeature("favorite_meals", () => {});
+      return;
+    }
     const name = meal.items.map((it) => it.name).join("、").slice(0, 80) || "常吃餐點";
     try {
       await api.createFavoriteMeal({
@@ -232,6 +259,10 @@ export default function Page() {
   };
 
   const handleUseFavoriteMeal = async (favorite: FavoriteMeal) => {
+    if (!hasFeature(tier, "favorite_meals")) {
+      requireFeature("favorite_meals", () => {});
+      return;
+    }
     try {
       await api.createMeal({
         meal_type: favoritePickerMealType ?? favorite.meal_type,
@@ -433,8 +464,9 @@ export default function Page() {
             displayName={profile?.display_name}
             suggestion={suggestion}
             suggestionLoading={suggestionLoading}
-            onCamera={() => setShowPhotoSource(true)}
-            onVoice={() => setModal("voice")}
+            subscriptionTier={tier}
+            onCamera={() => requireFeature("ai_photo", () => setShowPhotoSource(true))}
+            onVoice={() => requireFeature("ai_voice", () => setModal("voice"))}
             onMeal={(mealType) => openMealDetail(mealType)}
             onSuggestion={() => setModal("suggestion")}
             onExercise={() => setSubpage("exercise")}
@@ -443,6 +475,7 @@ export default function Page() {
             medicationReminders={medicationReminders}
             onTakeMedication={handleTakeMedication}
             healthAlerts={healthAlerts}
+            onAlertsCenter={() => setSubpage("alerts-center")}
             favoriteMeals={favoriteMeals}
             onPickFavorite={(mealType) => setFavoritePickerMealType(mealType)}
             partnerCampaigns={partnerCampaigns}
@@ -453,11 +486,24 @@ export default function Page() {
           />
         )}
         {tab === "history" && <HistoryScreen onMeal={(meal) => setSelectedMeal(meal)} />}
-        {tab === "profile" && <ProfileScreen onSubpage={setSubpage} />}
+        {tab === "profile" && (
+          <ProfileScreen
+            onSubpage={(page) => {
+              if (page === "weekly-report") return requireFeature("weekly_report", () => setSubpage(page));
+              setSubpage(page);
+            }}
+            onOnboarding={() => setModal("onboarding")}
+          />
+        )}
       </div>
 
       {!modal && !subpage && (
-        <BottomNav tab={tab} setTab={setTab} onCamera={() => setShowPhotoSource(true)} onVoice={() => setModal("voice")} />
+        <BottomNav
+          tab={tab}
+          setTab={setTab}
+          onCamera={() => requireFeature("ai_photo", () => setShowPhotoSource(true))}
+          onVoice={() => requireFeature("ai_voice", () => setModal("voice"))}
+        />
       )}
 
       {subpage === "edit-profile" && (
@@ -472,12 +518,14 @@ export default function Page() {
         />
       )}
       {subpage === "health-metrics" && <HealthMetricsScreen onBack={() => setSubpage(null)} />}
-      {subpage === "weekly-report" && <WeeklyReportScreen onBack={() => setSubpage(null)} />}
+      {subpage === "weekly-report" && <WeeklyReportScreen tier={tier} onBack={() => setSubpage(null)} />}
+      {subpage === "alerts-center" && <AlertsCenterScreen alerts={allHealthAlerts} tier={tier} onBack={() => setSubpage(null)} />}
       {subpage === "prescription" && <PrescriptionScanScreen onBack={() => setSubpage("chronic")} />}
       {subpage === "chronic" && (
         <ChronicDiseaseScreen
           onBack={() => setSubpage(null)}
           onScanPrescription={() => setSubpage("prescription")}
+          tier={tier}
         />
       )}
       {subpage === "family" && <FamilyShareScreen onBack={() => setSubpage(null)} />}

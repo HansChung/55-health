@@ -27,6 +27,10 @@ export default function PartnerCampaignsPage() {
   };
 
   useEffect(() => { load(); }, []);
+  const totalImpressions = campaigns.reduce((sum, campaign) => sum + (campaign.metrics?.impressions ?? 0), 0);
+  const totalClicks = campaigns.reduce((sum, campaign) => sum + (campaign.metrics?.clicks ?? 0), 0);
+  const activeCampaigns = campaigns.filter((campaign) => campaign.active).length;
+  const totalCtr = formatCtr(totalClicks, totalImpressions);
 
   return (
     <div>
@@ -44,8 +48,24 @@ export default function PartnerCampaignsPage() {
       {error && <div style={{ color: "#fecaca", marginBottom: 12 }}>錯誤：{error}</div>}
       {showForm && <CampaignForm onSaved={() => { setShowForm(false); load(); }} />}
 
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+        gap: 12,
+        marginBottom: 16,
+      }}>
+        <StatCard label="活動數" value={`${campaigns.length}`} hint={`啟用 ${activeCampaigns} 個`} />
+        <StatCard label="總曝光" value={totalImpressions.toLocaleString()} hint="前台顯示次數" />
+        <StatCard label="總點擊" value={totalClicks.toLocaleString()} hint="使用者點進活動" />
+        <StatCard label="整體 CTR" value={totalCtr} hint="點擊 / 曝光" />
+      </div>
+
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {campaigns.map((campaign) => (
+        {campaigns.map((campaign) => {
+          const impressions = campaign.metrics?.impressions ?? 0;
+          const clicks = campaign.metrics?.clicks ?? 0;
+          const ctr = formatCtr(clicks, impressions);
+          return (
           <div key={campaign.id} style={{
             background: "#1e293b", border: "1px solid #334155",
             borderRadius: 12, padding: 18,
@@ -71,8 +91,9 @@ export default function PartnerCampaignsPage() {
                 </div>
               </div>
               <div style={{ textAlign: "right", minWidth: 160 }}>
-                <div style={{ fontSize: 13, color: "#94a3b8" }}>曝光 {campaign.metrics?.impressions ?? 0}</div>
-                <div style={{ fontSize: 13, color: "#94a3b8" }}>點擊 {campaign.metrics?.clicks ?? 0}</div>
+                <div style={{ fontSize: 13, color: "#94a3b8" }}>曝光 {impressions.toLocaleString()}</div>
+                <div style={{ fontSize: 13, color: "#94a3b8" }}>點擊 {clicks.toLocaleString()}</div>
+                <div style={{ fontSize: 18, color: "#fff", fontWeight: 800, marginTop: 6 }}>CTR {ctr}</div>
                 <button
                   onClick={async () => {
                     await api.adminUpdatePartnerCampaign(campaign.id, { active: !campaign.active });
@@ -95,7 +116,8 @@ export default function PartnerCampaignsPage() {
               </div>
             </div>
           </div>
-        ))}
+          );
+        })}
         {campaigns.length === 0 && (
           <div style={{ padding: 32, color: "#64748b", textAlign: "center", background: "#1e293b", borderRadius: 12 }}>
             尚未建立合作活動
@@ -104,6 +126,26 @@ export default function PartnerCampaignsPage() {
       </div>
     </div>
   );
+}
+
+function StatCard({ label, value, hint }: { label: string; value: string; hint: string }) {
+  return (
+    <div style={{
+      background: "#1e293b",
+      border: "1px solid #334155",
+      borderRadius: 12,
+      padding: 16,
+    }}>
+      <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 24, color: "#fff", fontWeight: 800 }}>{value}</div>
+      <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>{hint}</div>
+    </div>
+  );
+}
+
+function formatCtr(clicks: number, impressions: number) {
+  if (impressions <= 0) return "0.0%";
+  return `${((clicks / impressions) * 100).toFixed(1)}%`;
 }
 
 function CampaignForm({ onSaved }: { onSaved: () => void }) {

@@ -188,19 +188,27 @@ function buildFamilySummary(input: {
 }) {
   const summary: string[] = [];
   summary.push(input.mealDays >= 5
-    ? `這週有 ${input.mealDays} 天飲食記錄，記錄習慣維持得不錯。`
-    : `這週飲食記錄 ${input.mealDays} 天，家人可以溫和提醒多記幾餐。`);
+    ? `這週有 ${input.mealDays} 天有飲食記錄，習慣維持得不錯，家人可以給一點鼓勵。`
+    : `這週只有 ${input.mealDays} 天有飲食記錄，家人可以先提醒「拍一張照片就好」，不用一次要求太多。`);
 
   summary.push(input.exerciseMinutes >= 90
-    ? `本週運動共 ${input.exerciseMinutes} 分鐘，活動量有累積。`
-    : `本週運動共 ${input.exerciseMinutes} 分鐘，可以陪他散步或提醒多活動。`);
+    ? `本週運動累積 ${input.exerciseMinutes} 分鐘，活動量有維持，請提醒運動後補水與休息。`
+    : `本週運動累積 ${input.exerciseMinutes} 分鐘，建議家人陪走 10 分鐘，比單純提醒更容易做到。`);
 
   const bpStatus = input.latestBloodPressure ? getBloodPressureStatus(input.latestBloodPressure) : "尚無足夠資料";
   const glucoseStatus = input.latestBloodGlucose ? getGlucoseStatus(input.latestBloodGlucose) : "尚無足夠資料";
-  summary.push(`最近血壓狀態：${bpStatus}；血糖狀態：${glucoseStatus}。`);
+  if (bpStatus === "偏高" || glucoseStatus === "偏高") {
+    summary.push(`最近血壓狀態：${bpStatus}；血糖狀態：${glucoseStatus}。請協助留意是否有按時量測、按時用藥，若持續異常建議諮詢醫師。`);
+  } else {
+    summary.push(`最近血壓狀態：${bpStatus}；血糖狀態：${glucoseStatus}。目前沒有明顯警訊，持續記錄會讓判斷更準。`);
+  }
 
   if (input.mealsCount === 0) {
     summary.push("這週還沒有餐點記錄，建議先協助設定常吃餐點，降低記錄門檻。");
+  } else if (input.mealDays < 4) {
+    summary.push("下週可先設定一個小目標：每天至少記一餐，讓長輩比較沒有壓力。");
+  } else {
+    summary.push("下週可以延續目前節奏，重點放在規律記錄與少鹽、少糖的小調整。");
   }
   return summary;
 }
