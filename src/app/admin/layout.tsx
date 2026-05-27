@@ -9,6 +9,7 @@ const navItems = [
   { href: "/admin", label: "總覽", icon: "📊" },
   { href: "/admin/usage", label: "Token 用量", icon: "💰" },
   { href: "/admin/users", label: "會員管理", icon: "👥" },
+  { href: "/admin/partner-campaigns", label: "合作活動", icon: "🤝" },
   { href: "/admin/api-configs", label: "API 設定", icon: "🔑" },
   { href: "/admin/conversations", label: "對話記錄", icon: "💬" },
 ];

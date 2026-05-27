@@ -8,6 +8,7 @@ interface MealDetailSheetProps {
   meal: MealRecord;
   onClose: () => void;
   onDelete?: () => void;
+  onSaveFavorite?: (meal: MealRecord) => void;
 }
 
 const MEAL_LABEL: Record<string, string> = {
@@ -17,7 +18,7 @@ const MEAL_LABEL: Record<string, string> = {
   snack: "點心",
 };
 
-export function MealDetailSheet({ meal, onClose, onDelete }: MealDetailSheetProps) {
+export function MealDetailSheet({ meal, onClose, onDelete, onSaveFavorite }: MealDetailSheetProps) {
   const eatenAt = new Date(meal.eaten_at);
   const timeLabel = eatenAt.toLocaleString("zh-TW", {
     month: "long",
@@ -119,6 +120,22 @@ export function MealDetailSheet({ meal, onClose, onDelete }: MealDetailSheetProp
             <MacroBar label="脂肪" value={Number(meal.fat_g) || 0} max={55} color="linear-gradient(90deg, #7AA779, #A3C4A0)" />
           </div>
         </div>
+
+        {onSaveFavorite && (
+          <button
+            onClick={() => onSaveFavorite(meal)}
+            style={{
+              width: "100%", padding: 14, marginBottom: 10,
+              background: "var(--primary-soft)",
+              border: "1px solid var(--gold-soft)",
+              borderRadius: 999,
+              color: "var(--primary-deep)",
+              fontSize: "var(--fs-base)", fontWeight: 700,
+            }}
+          >
+            存成常吃餐點
+          </button>
+        )}
 
         {onDelete && (
           <button

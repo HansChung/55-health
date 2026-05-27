@@ -1,7 +1,8 @@
 "use client";
 
 import { Meal, MealType } from "@/lib/types";
-import type { MealRecord } from "@/lib/api-client";
+import type { FavoriteMeal, MealRecord, PartnerCampaign, ProfileMedication } from "@/lib/api-client";
+import type { HealthAlert } from "@/lib/health-alerts";
 import { Icon } from "@/components/icons";
 import { Mascot } from "@/components/mascot";
 import { CalorieRing } from "@/components/calorie-ring";
@@ -22,6 +23,13 @@ interface HomeScreenProps {
   onExercise: () => void;
   repeatMeals?: Partial<Record<MealType, MealRecord>>;
   onRepeatMeal?: (mealType: MealType) => void;
+  medicationReminders?: { med: ProfileMedication; time: string }[];
+  onTakeMedication?: (medication: ProfileMedication) => void;
+  healthAlerts?: HealthAlert[];
+  favoriteMeals?: FavoriteMeal[];
+  onPickFavorite?: (mealType: MealType) => void;
+  partnerCampaigns?: PartnerCampaign[];
+  onPartnerClick?: (campaign: PartnerCampaign) => void;
 }
 
 const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
@@ -38,7 +46,7 @@ function getDateLabel(): string {
   return `${d.getMonth() + 1}月${d.getDate()}日　星期${WEEKDAYS[d.getDay()]}`;
 }
 
-export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal }: HomeScreenProps) {
+export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick }: HomeScreenProps) {
   // 從餐點計算今日營養
   const totals = meals.reduce(
     (s, m) => {
@@ -130,6 +138,124 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
         </button>
       </div>
 
+      {medicationReminders.length > 0 && (
+        <div style={{ padding: "18px 24px 0" }}>
+          <div className="card" style={{ padding: 18, border: "1px solid #F7BFC6", background: "linear-gradient(135deg, #FFF6F7 0%, #FFFFFF 100%)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <span style={{ fontSize: 22 }}>💊</span>
+              <div style={{ fontSize: "var(--fs-base)", fontWeight: 800, color: "var(--berry)" }}>
+                今日用藥提醒
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {medicationReminders.map(({ med, time }, index) => (
+                <div key={`${med.name}-${time}-${index}`} style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  padding: 12, borderRadius: 14,
+                  background: "var(--surface)", border: "1px solid var(--line)",
+                }}>
+                  <div style={{ fontSize: "var(--fs-sm)", fontWeight: 800, color: "var(--primary-deep)", minWidth: 48 }}>
+                    {time}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: "var(--fs-base)", fontWeight: 700 }}>{med.name}</div>
+                    {med.dose && <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-2)" }}>{med.dose}</div>}
+                  </div>
+                  <button
+                    onClick={() => onTakeMedication?.(med)}
+                    style={{
+                      padding: "8px 10px", borderRadius: 999,
+                      background: "var(--sage-soft)", color: "#4F7A4E",
+                      fontSize: "var(--fs-xs)", fontWeight: 800,
+                      border: "1px solid #B5D2B0",
+                    }}
+                  >
+                    已吃
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {healthAlerts.length > 0 && (
+        <div style={{ padding: "18px 24px 0" }}>
+          <div className="card" style={{ padding: 18 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <Icon name="bell" size={20} color="var(--primary-deep)" />
+              <div style={{ fontSize: "var(--fs-base)", fontWeight: 800 }}>暖暖提醒</div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {healthAlerts.map((alert, index) => (
+                <div key={`${alert.title}-${index}`} style={{
+                  padding: 12, borderRadius: 14,
+                  background: alert.level === "warning" ? "#FFF3DF" : "var(--surface-warm)",
+                  border: alert.level === "warning" ? "1px solid var(--gold-soft)" : "1px solid var(--line)",
+                }}>
+                  <div style={{ fontSize: "var(--fs-sm)", fontWeight: 800, color: "var(--primary-deep)", marginBottom: 4 }}>
+                    {alert.title}
+                  </div>
+                  <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.5 }}>
+                    {alert.message}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {partnerCampaigns.length > 0 && (
+        <div style={{ padding: "18px 24px 0" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+            <h2 style={{ fontSize: "var(--fs-lg)", fontWeight: 800, margin: 0 }}>在地好康</h2>
+            <span style={{ fontSize: "var(--fs-xs)", color: "var(--ink-3)" }}>合作推薦</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {partnerCampaigns.map((campaign) => (
+              <button
+                key={campaign.id}
+                onClick={() => onPartnerClick?.(campaign)}
+                style={{
+                  width: "100%", textAlign: "left",
+                  background: "linear-gradient(135deg, #F7E6BD 0%, #FFFFFF 100%)",
+                  borderRadius: "var(--r-lg)", padding: 18,
+                  border: "1px solid var(--gold-soft)",
+                  boxShadow: "var(--shadow-sm)",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                  <div style={{
+                    width: 48, height: 48, borderRadius: 14,
+                    background: "var(--surface)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 24, flexShrink: 0,
+                  }}>
+                    🤝
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: "var(--fs-xs)", color: "var(--primary-deep)", fontWeight: 800, marginBottom: 4 }}>
+                      合作推薦 · {campaign.partner_name}
+                    </div>
+                    <div style={{ fontSize: "var(--fs-base)", fontWeight: 800, color: "var(--ink-1)", marginBottom: 4 }}>
+                      {campaign.title}
+                    </div>
+                    <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.5 }}>
+                      {campaign.description}
+                    </div>
+                    <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-3)", marginTop: 8 }}>
+                      {campaign.disclaimer ?? "合作活動資訊，非醫療建議，請自行評估。"}
+                    </div>
+                  </div>
+                  <Icon name="chevronR" size={22} color="var(--ink-3)" />
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div style={{ padding: "24px 24px 0" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
           <h2 style={{ fontSize: "var(--fs-lg)", fontWeight: 700, margin: 0 }}>今天吃了什麼</h2>
@@ -145,8 +271,10 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
                 key={i}
                 meal={m}
                 repeatMeal={repeatMeals[mealType]}
+                hasFavorite={favoriteMeals.some((favorite) => favorite.meal_type === mealType)}
                 onClick={() => m.logged ? onMeal(mealType) : onCamera()}
                 onRepeat={() => onRepeatMeal?.(mealType)}
+                onPickFavorite={() => onPickFavorite?.(mealType)}
               />
             );
           })}
@@ -198,11 +326,13 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
   );
 }
 
-function MealRow({ meal, repeatMeal, onClick, onRepeat }: {
+function MealRow({ meal, repeatMeal, hasFavorite, onClick, onRepeat, onPickFavorite }: {
   meal: Meal;
   repeatMeal?: MealRecord;
+  hasFavorite?: boolean;
   onClick: () => void;
   onRepeat?: () => void;
+  onPickFavorite?: () => void;
 }) {
   if (!meal.logged) {
     return (
@@ -250,6 +380,23 @@ function MealRow({ meal, repeatMeal, onClick, onRepeat }: {
             }}
           >
             跟昨天一樣
+          </button>
+        )}
+        {hasFavorite && onPickFavorite && (
+          <button
+            onClick={onPickFavorite}
+            style={{
+              flexShrink: 0,
+              borderRadius: 999,
+              padding: "10px 12px",
+              background: "var(--sage-soft)",
+              border: "1px solid #B5D2B0",
+              color: "#4F7A4E",
+              fontSize: "var(--fs-sm)",
+              fontWeight: 700,
+            }}
+          >
+            選常吃
           </button>
         )}
       </div>

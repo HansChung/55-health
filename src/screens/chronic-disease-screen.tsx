@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { Icon } from "@/components/icons";
 import { Mascot } from "@/components/mascot";
 import { SubPage } from "@/components/sub-page";
-import { api } from "@/lib/api-client";
+import { Toggle } from "@/components/toggle";
+import { api, type ProfileMedication } from "@/lib/api-client";
+import { inferMedicationReminderTimes, isTakenToday } from "@/lib/medication-utils";
 
 interface ChronicDiseaseScreenProps {
   onBack: () => void;
@@ -24,7 +26,7 @@ const CONDITIONS = [
 
 export function ChronicDiseaseScreen({ onBack, onScanPrescription }: ChronicDiseaseScreenProps) {
   const [selected, setSelected] = useState<string[]>([]);
-  const [meds, setMeds] = useState<{ name: string; dose: string; time: string }[]>([]);
+  const [meds, setMeds] = useState<ProfileMedication[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [newMedName, setNewMedName] = useState("");
@@ -35,11 +37,7 @@ export function ChronicDiseaseScreen({ onBack, onScanPrescription }: ChronicDise
     api.getProfile()
       .then(({ profile }) => {
         setSelected(profile.chronic_conditions ?? []);
-        setMeds((profile.medications ?? []).map((med) => ({
-          name: med.name,
-          dose: med.dose ?? "",
-          time: med.time ?? "",
-        })));
+        setMeds((profile.medications ?? []).map(normalizeMedication));
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -58,7 +56,15 @@ export function ChronicDiseaseScreen({ onBack, onScanPrescription }: ChronicDise
 
   const addMed = () => {
     if (!newMedName.trim()) return;
-    setMeds([...meds, { name: newMedName.trim(), dose: newMedDose.trim(), time: "" }]);
+    const text = newMedDose.trim();
+    setMeds([...meds, {
+      name: newMedName.trim(),
+      dose: text,
+      time: text,
+      reminder_enabled: true,
+      reminder_times: inferMedicationReminderTimes(text),
+      taken_today: false,
+    }]);
     setNewMedName("");
     setNewMedDose("");
     setShowAddMed(false);
@@ -66,6 +72,16 @@ export function ChronicDiseaseScreen({ onBack, onScanPrescription }: ChronicDise
 
   const removeMed = (idx: number) => {
     setMeds(meds.filter((_, i) => i !== idx));
+  };
+
+  const updateMed = async (idx: number, patch: Partial<ProfileMedication>) => {
+    const next = meds.map((m, i) => i === idx ? { ...m, ...patch } : m);
+    setMeds(next);
+    try {
+      await api.updateProfile({ medications: next });
+    } catch (e) {
+      alert("儲存用藥提醒失敗：" + (e as Error).message);
+    }
   };
 
   const save = async () => {
@@ -234,21 +250,63 @@ export function ChronicDiseaseScreen({ onBack, onScanPrescription }: ChronicDise
               <div key={i} style={{
                 background: "var(--surface)", borderRadius: 16, padding: 16,
                 border: "1px solid var(--line)",
-                display: "flex", alignItems: "center", gap: 14,
               }}>
-                <div style={{
-                  width: 48, height: 48, borderRadius: 12,
-                  background: "var(--berry-soft)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 24, flexShrink: 0,
-                }}>💊</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: "var(--fs-base)", fontWeight: 700 }}>{m.name}</div>
-                  {m.dose && <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>{m.dose}</div>}
+                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                  <div style={{
+                    width: 48, height: 48, borderRadius: 12,
+                    background: "var(--berry-soft)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 24, flexShrink: 0,
+                  }}>💊</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: "var(--fs-base)", fontWeight: 700 }}>{m.name}</div>
+                    {m.dose && <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>{m.dose}</div>}
+                  </div>
+                  <button onClick={() => removeMed(i)} style={{ padding: 8 }}>
+                    <Icon name="x" size={20} color="var(--ink-3)" stroke={2.5} />
+                  </button>
                 </div>
-                <button onClick={() => removeMed(i)} style={{ padding: 8 }}>
-                  <Icon name="x" size={20} color="var(--ink-3)" stroke={2.5} />
-                </button>
+
+                <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--line)" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                    <div>
+                      <div style={{ fontSize: "var(--fs-sm)", fontWeight: 700 }}>用藥提醒</div>
+                      <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-2)", marginTop: 2 }}>
+                        {(m.reminder_times ?? []).join("、") || "尚未設定時間"}
+                      </div>
+                    </div>
+                    <Toggle
+                      on={m.reminder_enabled !== false}
+                      onChange={(on) => updateMed(i, { reminder_enabled: on })}
+                    />
+                  </div>
+
+                  {m.reminder_enabled !== false && (
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 10 }}>
+                      <input
+                        type="time"
+                        value={m.reminder_times?.[0] ?? "08:00"}
+                        onChange={(e) => updateMed(i, { reminder_times: [e.target.value] })}
+                        style={{ ...miniInput, width: 120, margin: 0 }}
+                      />
+                      <button
+                        onClick={() => updateMed(i, {
+                          taken_today: true,
+                          last_taken_at: new Date().toISOString(),
+                        })}
+                        style={{
+                          flex: 1, padding: "10px 12px", borderRadius: 10,
+                          background: isTakenToday(m) ? "var(--sage-soft)" : "var(--primary-soft)",
+                          color: isTakenToday(m) ? "#4F7A4E" : "var(--primary-deep)",
+                          fontSize: "var(--fs-sm)", fontWeight: 700,
+                          border: "1px solid var(--line)",
+                        }}
+                      >
+                        {isTakenToday(m) ? "今天已吃" : "標記今天已吃"}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -264,3 +322,17 @@ const miniInput: React.CSSProperties = {
   borderRadius: 8, fontSize: "var(--fs-sm)",
   outline: "none", fontFamily: "inherit",
 };
+
+function normalizeMedication(med: ProfileMedication): ProfileMedication {
+  const reminderText = [med.time, med.dose].filter(Boolean).join(" ");
+  return {
+    ...med,
+    dose: med.dose ?? "",
+    time: med.time ?? "",
+    reminder_enabled: med.reminder_enabled ?? true,
+    reminder_times: med.reminder_times?.length
+      ? med.reminder_times
+      : inferMedicationReminderTimes(reminderText),
+    taken_today: med.taken_today ?? false,
+  };
+}

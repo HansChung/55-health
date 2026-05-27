@@ -24,7 +24,7 @@ import { PrescriptionScanScreen } from "@/screens/prescription-scan-screen";
 import { WeeklyReportScreen } from "@/screens/weekly-report-screen";
 import { MealDetailSheet } from "@/screens/meal-detail-sheet";
 import { PhotoSourceSheet } from "@/components/photo-source-sheet";
-import type { MealRecord, AiSuggestion } from "@/lib/api-client";
+import type { MealRecord, AiSuggestion, ProfileMedication, HealthMetric, FavoriteMeal, PartnerCampaign } from "@/lib/api-client";
 import { useAuth, type AppProfile } from "@/hooks/use-auth";
 import { api } from "@/lib/api-client";
 import type { FoodAnalysisResult } from "@/lib/ai/gemini";
@@ -32,6 +32,8 @@ import { mergeMealsWithSlots, guessMealType } from "@/lib/meal-utils";
 import { compressImage } from "@/lib/image-utils";
 import { uploadMealPhoto } from "@/lib/upload-photo";
 import type { FoodItem } from "@/lib/types";
+import { getPendingMedicationReminders, isSameLocalDay } from "@/lib/medication-utils";
+import { generateHealthAlerts } from "@/lib/health-alerts";
 
 export default function Page() {
   const { user, profile, loading, refreshProfile, setProfileDirectly } = useAuth();
@@ -69,6 +71,10 @@ export default function Page() {
   const [meals, setMeals] = useState<Meal[]>(() => mergeMealsWithSlots([]));
   const [todayDbMeals, setTodayDbMeals] = useState<MealRecord[]>([]); // 真實 DB 紀錄，給 detail 用
   const [recentDbMeals, setRecentDbMeals] = useState<MealRecord[]>([]);
+  const [recentMetrics, setRecentMetrics] = useState<HealthMetric[]>([]);
+  const [favoriteMeals, setFavoriteMeals] = useState<FavoriteMeal[]>([]);
+  const [favoritePickerMealType, setFavoritePickerMealType] = useState<MealType | null>(null);
+  const [partnerCampaigns, setPartnerCampaigns] = useState<PartnerCampaign[]>([]);
   const [pendingResult, setPendingResult] = useState<FoodResult | null>(null);
   const [pendingPhoto, setPendingPhoto] = useState<string | null>(null);
   const [selectedMeal, setSelectedMeal] = useState<MealRecord | null>(null);
@@ -79,6 +85,12 @@ export default function Page() {
 
   const totalCal = meals.reduce((s, m) => s + (m.cal || 0), 0);
   const calorieGoal = profile?.calorie_goal ?? 1800;
+  const medicationReminders = getPendingMedicationReminders(profile?.medications ?? []).slice(0, 3);
+  const healthAlerts = generateHealthAlerts({
+    meals: recentDbMeals,
+    metrics: recentMetrics,
+    medications: profile?.medications ?? [],
+  });
 
   const reloadMeals = async () => {
     try {
@@ -89,6 +101,36 @@ export default function Page() {
       setMeals(mergeMealsWithSlots(dbMeals));
     } catch (e) {
       console.error("載入餐點失敗:", e);
+    }
+  };
+
+  const reloadMetrics = async () => {
+    try {
+      const { metrics } = await api.listMetrics(undefined, 7);
+      setRecentMetrics(metrics);
+    } catch (e) {
+      console.error("載入健康數值失敗:", e);
+    }
+  };
+
+  const reloadFavoriteMeals = async () => {
+    try {
+      const { favorites } = await api.listFavoriteMeals();
+      setFavoriteMeals(favorites);
+    } catch (e) {
+      console.error("載入常吃餐點失敗:", e);
+    }
+  };
+
+  const reloadPartnerCampaigns = async () => {
+    try {
+      const { campaigns } = await api.listPartnerCampaigns();
+      setPartnerCampaigns(campaigns);
+      campaigns.forEach((campaign) => {
+        api.trackPartnerCampaign(campaign.id, "impression").catch(console.error);
+      });
+    } catch (e) {
+      console.error("載入合作活動失敗:", e);
     }
   };
 
@@ -146,11 +188,67 @@ export default function Page() {
     }
   };
 
+  const handleTakeMedication = async (medication: ProfileMedication) => {
+    if (!profile) return;
+    const next = (profile.medications ?? []).map((med) =>
+      med.name === medication.name && med.added_at === medication.added_at
+        ? { ...med, taken_today: true, last_taken_at: new Date().toISOString() }
+        : med
+    );
+    try {
+      const { profile: updated } = await api.updateProfile({ medications: next });
+      setProfileDirectly(updated as AppProfile);
+    } catch (e) {
+      alert("更新用藥狀態失敗：" + (e as Error).message);
+    }
+  };
+
   // 載入真實餐點（永遠覆蓋，空的就是空的）
   useEffect(() => {
     if (!user) return;
     reloadMeals();
+    reloadMetrics();
+    reloadFavoriteMeals();
+    reloadPartnerCampaigns();
   }, [user]);
+
+  const handleSaveFavoriteMeal = async (meal: MealRecord) => {
+    const name = meal.items.map((it) => it.name).join("、").slice(0, 80) || "常吃餐點";
+    try {
+      await api.createFavoriteMeal({
+        name,
+        meal_type: meal.meal_type,
+        items: meal.items,
+        total_cal: meal.total_cal,
+        protein_g: meal.protein_g,
+        carb_g: meal.carb_g,
+        fat_g: meal.fat_g,
+      });
+      await reloadFavoriteMeals();
+      alert("已存成常吃餐點");
+    } catch (e) {
+      alert("儲存常吃餐點失敗：" + (e as Error).message);
+    }
+  };
+
+  const handleUseFavoriteMeal = async (favorite: FavoriteMeal) => {
+    try {
+      await api.createMeal({
+        meal_type: favoritePickerMealType ?? favorite.meal_type,
+        items: favorite.items,
+        total_cal: favorite.total_cal,
+        protein_g: favorite.protein_g,
+        carb_g: favorite.carb_g,
+        fat_g: favorite.fat_g,
+        eaten_at: new Date().toISOString(),
+      });
+      setFavoritePickerMealType(null);
+      await reloadMeals();
+      loadSuggestion(true).catch(console.error);
+    } catch (e) {
+      alert("加入常吃餐點失敗：" + (e as Error).message);
+    }
+  };
 
   // 載入 AI 建議（有 localStorage 快取，1 小時內不重複呼叫）
   const SUGGEST_CACHE_KEY = "nuannuan_suggestion_v1";
@@ -342,6 +440,16 @@ export default function Page() {
             onExercise={() => setSubpage("exercise")}
             repeatMeals={yesterdayMealsByType}
             onRepeatMeal={handleRepeatYesterdayMeal}
+            medicationReminders={medicationReminders}
+            onTakeMedication={handleTakeMedication}
+            healthAlerts={healthAlerts}
+            favoriteMeals={favoriteMeals}
+            onPickFavorite={(mealType) => setFavoritePickerMealType(mealType)}
+            partnerCampaigns={partnerCampaigns}
+            onPartnerClick={(campaign) => {
+              api.trackPartnerCampaign(campaign.id, "click").catch(console.error);
+              if (campaign.cta_url) window.open(campaign.cta_url, "_blank", "noopener,noreferrer");
+            }}
           />
         )}
         {tab === "history" && <HistoryScreen onMeal={(meal) => setSelectedMeal(meal)} />}
@@ -414,6 +522,16 @@ export default function Page() {
           meal={selectedMeal}
           onClose={() => setSelectedMeal(null)}
           onDelete={handleDeleteMeal}
+          onSaveFavorite={handleSaveFavoriteMeal}
+        />
+      )}
+
+      {favoritePickerMealType && (
+        <FavoriteMealPicker
+          mealType={favoritePickerMealType}
+          favorites={favoriteMeals}
+          onClose={() => setFavoritePickerMealType(null)}
+          onSelect={handleUseFavoriteMeal}
         />
       )}
 
@@ -448,10 +566,69 @@ export default function Page() {
   );
 }
 
-function isSameLocalDay(a: Date, b: Date) {
+function FavoriteMealPicker({ mealType, favorites, onClose, onSelect }: {
+  mealType: MealType;
+  favorites: FavoriteMeal[];
+  onClose: () => void;
+  onSelect: (favorite: FavoriteMeal) => void;
+}) {
+  const filtered = favorites.filter((favorite) => favorite.meal_type === mealType);
   return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
+    <div
+      onClick={onClose}
+      style={{
+        position: "absolute", inset: 0, zIndex: 55,
+        background: "rgba(45, 28, 14, 0.5)",
+        display: "flex", alignItems: "flex-end",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="fade-up"
+        style={{
+          width: "100%", background: "var(--bg)",
+          borderRadius: "28px 28px 0 0",
+          padding: "20px 24px 32px",
+          maxHeight: "75%", overflowY: "auto",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <h2 style={{ fontSize: "var(--fs-xl)", margin: 0 }}>選常吃餐點</h2>
+          <button onClick={onClose} style={{ padding: 8 }}>
+            <span style={{ fontSize: 24 }}>×</span>
+          </button>
+        </div>
+        {filtered.length === 0 ? (
+          <div style={{ padding: 24, textAlign: "center", color: "var(--ink-2)" }}>
+            這個餐別還沒有常吃餐點，可以先從餐點詳情存一筆。
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {filtered.map((favorite) => (
+              <button
+                key={favorite.id}
+                onClick={() => onSelect(favorite)}
+                style={{
+                  padding: 16, borderRadius: 16,
+                  background: "var(--surface)", border: "1px solid var(--line)",
+                  textAlign: "left", display: "flex", justifyContent: "space-between", gap: 12,
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: "var(--fs-base)", fontWeight: 800 }}>{favorite.name}</div>
+                  <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", marginTop: 2 }}>
+                    {favorite.items.map((it) => it.name).join("、")}
+                  </div>
+                </div>
+                <div style={{ fontSize: "var(--fs-base)", fontWeight: 800, color: "var(--primary-deep)" }}>
+                  {favorite.total_cal} 卡
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
+

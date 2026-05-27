@@ -98,6 +98,23 @@ export function WeeklyReportScreen({ onBack }: WeeklyReportScreenProps) {
               ))}
             </div>
           </div>
+
+          {report.family_summary && report.family_summary.length > 0 && (
+            <div className="card" style={{ padding: 18 }}>
+              <SectionTitle icon="user" title="給家人的摘要" />
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {report.family_summary.map((line, index) => (
+                  <div key={index} style={{
+                    fontSize: "var(--fs-base)", lineHeight: 1.55,
+                    color: "var(--ink-1)", padding: 12,
+                    background: "var(--surface-warm)", borderRadius: 12,
+                  }}>
+                    {line}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </SubPage>

@@ -23,6 +23,10 @@ const PatchSchema = z.object({
     side_effects: z.array(z.string()).optional(),
     added_at: z.string().optional(),
     photo_url: z.string().optional(),
+    reminder_enabled: z.boolean().optional(),
+    reminder_times: z.array(z.string()).optional(),
+    taken_today: z.boolean().optional(),
+    last_taken_at: z.string().optional(),
   })).optional(),
   notification_settings: z.record(z.string(), z.any()).optional(),
 });

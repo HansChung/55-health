@@ -79,6 +79,13 @@ export async function GET() {
     latestBloodPressure,
     latestBloodGlucose,
   });
+  const familySummary = buildFamilySummary({
+    mealDays: days.size,
+    mealsCount: meals.length,
+    exerciseMinutes,
+    latestBloodPressure,
+    latestBloodGlucose,
+  });
 
   return NextResponse.json({
     report: {
@@ -117,6 +124,7 @@ export async function GET() {
         } : null,
       },
       tips,
+      family_summary: familySummary,
     },
   });
 }
@@ -169,4 +177,30 @@ function buildTips(input: {
   }
   if (tips.length < 3 && input.avgCalories > 0) tips.push(`這週平均每天約 ${input.avgCalories} 大卡，可以對照您的每日目標調整。`);
   return tips.slice(0, 3);
+}
+
+function buildFamilySummary(input: {
+  mealDays: number;
+  mealsCount: number;
+  exerciseMinutes: number;
+  latestBloodPressure: MetricRow | null;
+  latestBloodGlucose: MetricRow | null;
+}) {
+  const summary: string[] = [];
+  summary.push(input.mealDays >= 5
+    ? `這週有 ${input.mealDays} 天飲食記錄，記錄習慣維持得不錯。`
+    : `這週飲食記錄 ${input.mealDays} 天，家人可以溫和提醒多記幾餐。`);
+
+  summary.push(input.exerciseMinutes >= 90
+    ? `本週運動共 ${input.exerciseMinutes} 分鐘，活動量有累積。`
+    : `本週運動共 ${input.exerciseMinutes} 分鐘，可以陪他散步或提醒多活動。`);
+
+  const bpStatus = input.latestBloodPressure ? getBloodPressureStatus(input.latestBloodPressure) : "尚無足夠資料";
+  const glucoseStatus = input.latestBloodGlucose ? getGlucoseStatus(input.latestBloodGlucose) : "尚無足夠資料";
+  summary.push(`最近血壓狀態：${bpStatus}；血糖狀態：${glucoseStatus}。`);
+
+  if (input.mealsCount === 0) {
+    summary.push("這週還沒有餐點記錄，建議先協助設定常吃餐點，降低記錄門檻。");
+  }
+  return summary;
 }

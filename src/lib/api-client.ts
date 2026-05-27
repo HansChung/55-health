@@ -134,6 +134,34 @@ export const api = {
 
   adminListApiConfigs: () =>
     apiFetch<{ configs: ApiConfigRow[] }>("/api/admin/api-configs"),
+
+  adminListPartnerCampaigns: () =>
+    apiFetch<{ campaigns: AdminPartnerCampaign[] }>("/api/admin/partner-campaigns"),
+
+  adminCreatePartnerCampaign: (input: Partial<AdminPartnerCampaign>) =>
+    apiFetch<{ campaign: AdminPartnerCampaign }>("/api/admin/partner-campaigns", { method: "POST", json: input }),
+
+  adminUpdatePartnerCampaign: (id: string, patch: Partial<AdminPartnerCampaign>) =>
+    apiFetch<{ campaign: AdminPartnerCampaign }>(`/api/admin/partner-campaigns/${id}`, { method: "PATCH", json: patch }),
+
+  adminDeletePartnerCampaign: (id: string) =>
+    apiFetch<{ ok: true }>(`/api/admin/partner-campaigns/${id}`, { method: "DELETE" }),
+
+  listPartnerCampaigns: () =>
+    apiFetch<{ campaigns: PartnerCampaign[] }>("/api/partner-campaigns"),
+
+  trackPartnerCampaign: (id: string, event_type: "impression" | "click") =>
+    apiFetch<{ ok: true }>(`/api/partner-campaigns/${id}/track`, { method: "POST", json: { event_type } }),
+
+  // Favorite meals
+  listFavoriteMeals: () =>
+    apiFetch<{ favorites: FavoriteMeal[] }>("/api/favorite-meals"),
+
+  createFavoriteMeal: (input: Partial<FavoriteMeal>) =>
+    apiFetch<{ favorite: FavoriteMeal }>("/api/favorite-meals", { method: "POST", json: input }),
+
+  deleteFavoriteMeal: (id: string) =>
+    apiFetch<{ ok: true }>(`/api/favorite-meals/${id}`, { method: "DELETE" }),
 };
 
 // ─────── Types ───────
@@ -165,6 +193,10 @@ export interface ProfileMedication {
   side_effects?: string[];
   added_at?: string;
   photo_url?: string;
+  reminder_enabled?: boolean;
+  reminder_times?: string[];
+  taken_today?: boolean;
+  last_taken_at?: string;
 }
 
 export interface NotificationSettings {
@@ -240,6 +272,7 @@ export interface WeeklyReport {
     blood_glucose: { value: number | null; status: string } | null;
   };
   tips: string[];
+  family_summary?: string[];
 }
 
 export interface FamilyLink {
@@ -268,6 +301,19 @@ export interface MealRecord {
   fat_g: number;
   portion: number;
   notes: string | null;
+}
+
+export interface FavoriteMeal {
+  id: string;
+  user_id: string;
+  name: string;
+  meal_type: "breakfast" | "lunch" | "dinner" | "snack";
+  items: { name: string; amount?: string; cal: number; emoji?: string; color?: string }[];
+  total_cal: number;
+  protein_g: number;
+  carb_g: number;
+  fat_g: number;
+  created_at: string;
 }
 
 export interface ExerciseRecord {
@@ -306,4 +352,26 @@ export interface ApiConfigRow {
   monthly_budget_usd: number | null;
   notes: string | null;
   updated_at: string;
+}
+
+export interface PartnerCampaign {
+  id: string;
+  title: string;
+  description: string;
+  partner_name: string;
+  cta_label: string | null;
+  cta_url: string | null;
+  image_url: string | null;
+  tags: string[];
+  disclaimer: string | null;
+}
+
+export interface AdminPartnerCampaign extends PartnerCampaign {
+  priority: number;
+  starts_at: string;
+  ends_at: string | null;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+  metrics?: { impressions: number; clicks: number };
 }
