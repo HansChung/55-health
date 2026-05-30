@@ -195,6 +195,10 @@ export const api = {
 
   deleteFavoriteMeal: (id: string) =>
     apiFetch<{ ok: true }>(`/api/favorite-meals/${id}`, { method: "DELETE" }),
+
+  // Achievements
+  getAchievements: () =>
+    apiFetch<AchievementsResponse>("/api/achievements"),
 };
 
 // ─────── Types ───────
@@ -408,6 +412,13 @@ export interface ConversationMessage {
   ai_usage_id: string | null;
   session_id: string | null;
   created_at: string;
+}
+
+export interface AchievementsResponse {
+  stats: import("./achievements").UserStats;
+  achievements: import("./achievements").AchievementProgress[];
+  unlocked_count: number;
+  total_count: number;
 }
 
 export interface PartnerCampaign {

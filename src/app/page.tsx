@@ -23,6 +23,7 @@ import { HealthMetricsScreen } from "@/screens/health-metrics-screen";
 import { PrescriptionScanScreen } from "@/screens/prescription-scan-screen";
 import { WeeklyReportScreen } from "@/screens/weekly-report-screen";
 import { AlertsCenterScreen } from "@/screens/alerts-center-screen";
+import { AchievementsScreen } from "@/screens/achievements-screen";
 import { MealDetailSheet } from "@/screens/meal-detail-sheet";
 import { PhotoSourceSheet } from "@/components/photo-source-sheet";
 import type { MealRecord, AiSuggestion, ProfileMedication, HealthMetric, FavoriteMeal, PartnerCampaign } from "@/lib/api-client";
@@ -522,6 +523,7 @@ export default function Page() {
       {subpage === "health-metrics" && <HealthMetricsScreen onBack={() => setSubpage(null)} />}
       {subpage === "weekly-report" && <WeeklyReportScreen tier={tier} onBack={() => setSubpage(null)} />}
       {subpage === "alerts-center" && <AlertsCenterScreen alerts={allHealthAlerts} tier={tier} onBack={() => setSubpage(null)} />}
+      {subpage === "achievements" && <AchievementsScreen onBack={() => setSubpage(null)} />}
       {subpage === "prescription" && <PrescriptionScanScreen onBack={() => setSubpage("chronic")} />}
       {subpage === "chronic" && (
         <ChronicDiseaseScreen
