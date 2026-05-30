@@ -137,9 +137,9 @@ function done(unlocked: boolean, current: number, target: number, unit: string) 
 export function computeStreaks(dates: string[]): { current: number; longest: number } {
   if (dates.length === 0) return { current: 0, longest: 0 };
 
-  // 取每天一筆（用日期 YYYY-MM-DD key）
+  // 取每天一筆（用「本地」日期 YYYY-MM-DD key，和 App 其他地方一致，避免 UTC 時差算錯）
   const uniqueDays = Array.from(
-    new Set(dates.map((d) => new Date(d).toISOString().substring(0, 10)))
+    new Set(dates.map((d) => localDayKey(new Date(d))))
   ).sort();
 
   let longest = 1;
@@ -157,8 +157,8 @@ export function computeStreaks(dates: string[]): { current: number; longest: num
   }
 
   // 目前連續：從最後一天往回算（包含今天或昨天才算「目前」）
-  const today = new Date().toISOString().substring(0, 10);
-  const yesterday = new Date(Date.now() - 86400000).toISOString().substring(0, 10);
+  const today = localDayKey(new Date());
+  const yesterday = localDayKey(new Date(Date.now() - 86400000));
   const lastDay = uniqueDays[uniqueDays.length - 1];
 
   let current = 0;
@@ -174,4 +174,14 @@ export function computeStreaks(dates: string[]): { current: number; longest: num
   }
 
   return { current, longest };
+}
+
+/**
+ * 取台灣時區（UTC+8）的 YYYY-MM-DD。
+ * 這個函式會在伺服器（Vercel = UTC）執行，不能用 getFullYear/getDate（會拿到 UTC），
+ * 所以固定加 8 小時後讀 UTC 部分，確保算的是台灣的「今天」。
+ */
+function localDayKey(d: Date): string {
+  const taipei = new Date(d.getTime() + 8 * 60 * 60 * 1000);
+  return taipei.toISOString().substring(0, 10);
 }

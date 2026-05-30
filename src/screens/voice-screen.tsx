@@ -12,6 +12,16 @@ interface VoiceScreenProps {
   voiceTone?: VoiceTone;
 }
 
+function generateUuid(): string {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+  // fallback：手動產生合法 UUID v4（後端 z.string().uuid() 才不會擋）
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 function WaveformDots() {
   return (
     <span style={{ display: "inline-flex", gap: 3 }}>
@@ -133,9 +143,8 @@ export function VoiceScreen({ onClose, voiceTone = "warm" }: VoiceScreenProps) {
       activeSessionIdRef.current = session.id ?? "";
       usageReportedRef.current = false;
       // 為這次對話產一個 UUID 當 session_id（OpenAI 的 session.id 不是 UUID 格式）
-      convSessionIdRef.current = typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      // 後端用 z.string().uuid() 驗證，fallback 也必須是合法 UUID v4
+      convSessionIdRef.current = generateUuid();
       lastSavedAssistantRef.current = "";
 
       const client = new RealtimeClient({
