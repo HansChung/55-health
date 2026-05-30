@@ -5,6 +5,7 @@ import { Tab, Modal, Subpage, FontScale, Meal, FoodResult, MealType } from "@/li
 import { MOCK_RESULT } from "@/lib/mock-data";
 import { BottomNav } from "@/components/bottom-nav";
 import { SosButton } from "@/components/sos-button";
+import { AchievementToast } from "@/components/achievement-toast";
 import { HomeScreen } from "@/screens/home-screen";
 import { HistoryScreen } from "@/screens/history-screen";
 import { ProfileScreen } from "@/screens/profile-screen";
@@ -27,7 +28,8 @@ import { AlertsCenterScreen } from "@/screens/alerts-center-screen";
 import { AchievementsScreen } from "@/screens/achievements-screen";
 import { MealDetailSheet } from "@/screens/meal-detail-sheet";
 import { PhotoSourceSheet } from "@/components/photo-source-sheet";
-import type { MealRecord, AiSuggestion, ProfileMedication, HealthMetric, FavoriteMeal, PartnerCampaign } from "@/lib/api-client";
+import type { MealRecord, AiSuggestion, ProfileMedication, HealthMetric, FavoriteMeal, PartnerCampaign, AchievementsResponse } from "@/lib/api-client";
+import type { AchievementProgress } from "@/lib/achievements";
 import { useAuth, type AppProfile } from "@/hooks/use-auth";
 import { api } from "@/lib/api-client";
 import type { FoodAnalysisResult } from "@/lib/ai/gemini";
@@ -79,6 +81,8 @@ export default function Page() {
   const [favoriteMeals, setFavoriteMeals] = useState<FavoriteMeal[]>([]);
   const [favoritePickerMealType, setFavoritePickerMealType] = useState<MealType | null>(null);
   const [partnerCampaigns, setPartnerCampaigns] = useState<PartnerCampaign[]>([]);
+  const [achievements, setAchievements] = useState<AchievementsResponse | null>(null);
+  const [celebration, setCelebration] = useState<AchievementProgress[]>([]);
   const [pendingResult, setPendingResult] = useState<FoodResult | null>(null);
   const [pendingPhoto, setPendingPhoto] = useState<string | null>(null);
   const [selectedMeal, setSelectedMeal] = useState<MealRecord | null>(null);
@@ -156,6 +160,38 @@ export default function Page() {
       });
     } catch (e) {
       console.error("載入合作活動失敗:", e);
+    }
+  };
+
+  const ACHV_SEEN_KEY = "nuannuan_unlocked_v1";
+
+  const reloadAchievements = async () => {
+    if (!user) return;
+    try {
+      const data = await api.getAchievements();
+      setAchievements(data);
+
+      // 偵測「新解鎖」並跳慶祝（第一次載入只建立基準，不慶祝）
+      const unlockedNow = data.achievements.filter((a) => a.unlocked);
+      const unlockedIds = unlockedNow.map((a) => a.achievement.id);
+      if (typeof window !== "undefined") {
+        let seen: string[] | null = null;
+        try {
+          const raw = localStorage.getItem(ACHV_SEEN_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed.userId === user.id && Array.isArray(parsed.ids)) seen = parsed.ids;
+          }
+        } catch {}
+
+        if (seen) {
+          const fresh = unlockedNow.filter((a) => !seen!.includes(a.achievement.id));
+          if (fresh.length > 0) setCelebration(fresh);
+        }
+        localStorage.setItem(ACHV_SEEN_KEY, JSON.stringify({ userId: user.id, ids: unlockedIds }));
+      }
+    } catch (e) {
+      console.error("載入成就失敗:", e);
     }
   };
 
@@ -238,6 +274,13 @@ export default function Page() {
     reloadFavoriteMeals();
     reloadPartnerCampaigns();
   }, [user, tier]);
+
+  // 成就：初次載入、餐點/指標/用藥改變、或關閉子頁面（運動/拍藥袋）時重新計算並偵測新解鎖
+  useEffect(() => {
+    if (!user) return;
+    reloadAchievements();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, recentDbMeals.length, recentMetrics.length, profile?.medications?.length, subpage]);
 
   const handleSaveFavoriteMeal = async (meal: MealRecord) => {
     if (!hasFeature(tier, "favorite_meals")) {
@@ -487,6 +530,13 @@ export default function Page() {
               api.trackPartnerCampaign(campaign.id, "click").catch(console.error);
               if (campaign.cta_url) window.open(campaign.cta_url, "_blank", "noopener,noreferrer");
             }}
+            achievementsSummary={achievements ? {
+              unlockedCount: achievements.unlocked_count,
+              totalCount: achievements.total_count,
+              latestEmoji: achievements.achievements.filter((a) => a.unlocked).slice(-1)[0]?.achievement.emoji,
+              streak: achievements.stats.meal_streak,
+            } : null}
+            onAchievements={() => setSubpage("achievements")}
           />
         )}
         {tab === "history" && <HistoryScreen onMeal={(meal) => setSelectedMeal(meal)} />}
@@ -502,6 +552,10 @@ export default function Page() {
       </div>
 
       {tab === "home" && !modal && !subpage && <SosButton />}
+
+      {celebration.length > 0 && (
+        <AchievementToast unlocked={celebration} onClose={() => setCelebration([])} />
+      )}
 
       {!modal && !subpage && (
         <BottomNav

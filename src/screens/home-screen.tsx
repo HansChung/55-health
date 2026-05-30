@@ -34,6 +34,8 @@ interface HomeScreenProps {
   onPickFavorite?: (mealType: MealType) => void;
   partnerCampaigns?: PartnerCampaign[];
   onPartnerClick?: (campaign: PartnerCampaign) => void;
+  achievementsSummary?: { unlockedCount: number; totalCount: number; latestEmoji?: string; streak?: number } | null;
+  onAchievements?: () => void;
 }
 
 const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
@@ -50,7 +52,7 @@ function getDateLabel(): string {
   return `${d.getMonth() + 1}月${d.getDate()}日　星期${WEEKDAYS[d.getDay()]}`;
 }
 
-export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick }: HomeScreenProps) {
+export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements }: HomeScreenProps) {
   // 從餐點計算今日營養
   const totals = meals.reduce(
     (s, m) => {
@@ -143,6 +145,41 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
           </div>
         </button>
       </div>
+
+      {achievementsSummary && onAchievements && (
+        <div style={{ padding: "18px 24px 0" }}>
+          <button
+            onClick={onAchievements}
+            style={{
+              width: "100%", textAlign: "left",
+              background: "linear-gradient(135deg, #FFF9EF 0%, #FFFFFF 100%)",
+              borderRadius: "var(--r-lg)", padding: 18,
+              border: "1px solid var(--gold-soft)",
+              display: "flex", alignItems: "center", gap: 14,
+              boxShadow: "var(--shadow-sm)",
+            }}
+          >
+            <div style={{
+              width: 52, height: 52, borderRadius: 16,
+              background: "var(--primary-soft)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 28, flexShrink: 0,
+            }}>
+              {achievementsSummary.latestEmoji ?? "🏅"}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: "var(--fs-base)", fontWeight: 800, color: "var(--ink-1)" }}>
+                健康成就
+              </div>
+              <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", marginTop: 2 }}>
+                已解鎖 {achievementsSummary.unlockedCount}/{achievementsSummary.totalCount} 個徽章
+                {achievementsSummary.streak ? `　🔥 連續 ${achievementsSummary.streak} 天` : ""}
+              </div>
+            </div>
+            <Icon name="chevronR" size={20} color="var(--ink-3)" />
+          </button>
+        </div>
+      )}
 
       {medicationReminders.length > 0 && (
         <div style={{ padding: "18px 24px 0" }}>
