@@ -27,6 +27,8 @@ const ICON_PATHS: Record<string, string> = {
   target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
   leaf: '<path d="M5 19c8 0 14-6 14-14C9 5 5 11 5 19z M5 19l5-5"/>',
   lock: '<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+  phone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2z"/>',
+  sos: '<circle cx="12" cy="12" r="9"/><path d="M9 9.5a1.5 1.5 0 0 0-3 0c0 1.5 3 1 3 2.5a1.5 1.5 0 0 1-3 0M18 9.5a1.5 1.5 0 0 0-3 0c0 1.5 3 1 3 2.5a1.5 1.5 0 0 1-3 0M12 9v6"/>',
 };
 
 interface IconProps {

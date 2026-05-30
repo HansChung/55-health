@@ -216,8 +216,14 @@ export interface ProfileData {
   chronic_conditions: string[];
   medications: ProfileMedication[];
   notification_settings?: NotificationSettings;
+  emergency_contact?: EmergencyContact | null;
   subscription_tier: "free" | "basic" | "pro";
   is_admin: boolean;
+}
+
+export interface EmergencyContact {
+  name: string;
+  phone: string;
 }
 
 export interface ProfileMedication {

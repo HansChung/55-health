@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Tab, Modal, Subpage, FontScale, Meal, FoodResult, MealType } from "@/lib/types";
 import { MOCK_RESULT } from "@/lib/mock-data";
 import { BottomNav } from "@/components/bottom-nav";
+import { SosButton } from "@/components/sos-button";
 import { HomeScreen } from "@/screens/home-screen";
 import { HistoryScreen } from "@/screens/history-screen";
 import { ProfileScreen } from "@/screens/profile-screen";
@@ -499,6 +500,8 @@ export default function Page() {
           />
         )}
       </div>
+
+      {tab === "home" && !modal && !subpage && <SosButton />}
 
       {!modal && !subpage && (
         <BottomNav

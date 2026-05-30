@@ -29,6 +29,10 @@ const PatchSchema = z.object({
     last_taken_at: z.string().optional(),
   })).optional(),
   notification_settings: z.record(z.string(), z.any()).optional(),
+  emergency_contact: z.object({
+    name: z.string().min(1).max(50),
+    phone: z.string().min(3).max(30),
+  }).nullable().optional(),
 });
 
 export async function GET() {
