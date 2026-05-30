@@ -72,6 +72,26 @@ export const api = {
   removeFamily: (id: string) =>
     apiFetch<{ ok: true }>(`/api/family/${id}`, { method: "DELETE" }),
 
+  // Conversations（語音對話記錄）
+  listConversations: (params?: { sessionId?: string; days?: number; limit?: number }) => {
+    const q = new URLSearchParams();
+    if (params?.sessionId) q.set("session_id", params.sessionId);
+    if (params?.days) q.set("days", String(params.days));
+    if (params?.limit) q.set("limit", String(params.limit));
+    return apiFetch<{ messages: ConversationMessage[] }>(`/api/conversations?${q}`);
+  },
+
+  logConversation: (input: {
+    role: "user" | "assistant" | "system";
+    content: string;
+    session_id?: string;
+    audio_url?: string | null;
+  }) =>
+    apiFetch<{ message: { id: string; session_id: string | null; created_at: string } }>(
+      "/api/conversations",
+      { method: "POST", json: input }
+    ),
+
   // Health metrics
   listMetrics: (type?: "weight" | "blood_pressure" | "blood_glucose", days = 30) => {
     const params = new URLSearchParams();
@@ -352,6 +372,17 @@ export interface ApiConfigRow {
   monthly_budget_usd: number | null;
   notes: string | null;
   updated_at: string;
+}
+
+export interface ConversationMessage {
+  id: string;
+  user_id: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+  audio_url: string | null;
+  ai_usage_id: string | null;
+  session_id: string | null;
+  created_at: string;
 }
 
 export interface PartnerCampaign {

@@ -39,6 +39,19 @@ export function VoiceScreen({ onClose, voiceTone = "warm" }: VoiceScreenProps) {
   const usageReportedRef = useRef(false);
   const activeModelRef = useRef("gpt-realtime");
   const activeSessionIdRef = useRef("");
+  const convSessionIdRef = useRef<string>("");           // 每次連線一個 UUID（conversations.session_id）
+  const lastSavedAssistantRef = useRef<string>("");       // 避免重複存同一句 AI 回應
+
+  // 寫入一則對話到 DB（fire-and-forget，失敗不影響 UX）
+  const logMessage = (role: "user" | "assistant", content: string) => {
+    const text = content?.trim();
+    if (!text || !convSessionIdRef.current) return;
+    api.logConversation({
+      role,
+      content: text,
+      session_id: convSessionIdRef.current,
+    }).catch((e) => console.warn("[voice] log conversation failed:", e));
+  };
 
   const toneIntros: Record<VoiceTone, string> = {
     warm: "按一下開始跟我說話",
@@ -119,6 +132,11 @@ export function VoiceScreen({ onClose, voiceTone = "warm" }: VoiceScreenProps) {
       activeModelRef.current = session.model ?? "gpt-realtime";
       activeSessionIdRef.current = session.id ?? "";
       usageReportedRef.current = false;
+      // 為這次對話產一個 UUID 當 session_id（OpenAI 的 session.id 不是 UUID 格式）
+      convSessionIdRef.current = typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      lastSavedAssistantRef.current = "";
 
       const client = new RealtimeClient({
         onConnected: () => {
@@ -129,6 +147,7 @@ export function VoiceScreen({ onClose, voiceTone = "warm" }: VoiceScreenProps) {
         onUserTranscript: (text) => {
           setTranscript((t) => [...t, { role: "user", text }]);
           setState("thinking");
+          logMessage("user", text);
         },
         onAssistantStartSpeaking: () => setState("speaking"),
         onAssistantTranscript: (text, isFinal) => {
@@ -139,6 +158,11 @@ export function VoiceScreen({ onClose, voiceTone = "warm" }: VoiceScreenProps) {
             }
             return [...t, { role: "ai", text }];
           });
+          // 只在 isFinal 才存（中間 delta 不存，避免一堆短片段）
+          if (isFinal && text && text !== lastSavedAssistantRef.current) {
+            lastSavedAssistantRef.current = text;
+            logMessage("assistant", text);
+          }
         },
         onAssistantStopSpeaking: () => setState("listening"),
         onListening: (listening) => setState(listening ? "listening" : "thinking"),
