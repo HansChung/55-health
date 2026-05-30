@@ -155,6 +155,19 @@ export const api = {
   adminListApiConfigs: () =>
     apiFetch<{ configs: ApiConfigRow[] }>("/api/admin/api-configs"),
 
+  // Admin: conversations
+  adminListConversationSessions: (params?: { days?: number; limit?: number }) => {
+    const q = new URLSearchParams();
+    if (params?.days) q.set("days", String(params.days));
+    if (params?.limit) q.set("limit", String(params.limit));
+    return apiFetch<{ sessions: AdminConversationSession[] }>(`/api/admin/conversations?${q}`);
+  },
+
+  adminGetConversationSession: (sessionId: string) =>
+    apiFetch<{ messages: ConversationMessage[]; user_email: string | null; user_name: string | null }>(
+      `/api/admin/conversations?session_id=${encodeURIComponent(sessionId)}`
+    ),
+
   adminListPartnerCampaigns: () =>
     apiFetch<{ campaigns: AdminPartnerCampaign[] }>("/api/admin/partner-campaigns"),
 
@@ -362,6 +375,18 @@ export interface AdminUserRow {
   created_at: string;
   meals_count?: number;
   ai_cost_30d?: number;
+}
+
+export interface AdminConversationSession {
+  session_id: string | null;
+  user_id: string;
+  user_email: string | null;
+  user_name: string | null;
+  started_at: string;
+  latest_at: string;
+  message_count: number;
+  user_message_count: number;
+  preview: string;
 }
 
 export interface ApiConfigRow {
