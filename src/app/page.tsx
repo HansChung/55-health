@@ -206,6 +206,8 @@ export default function Page() {
       await api.deleteMeal(selectedMeal.id);
       setSelectedMeal(null);
       await reloadMeals();
+      // 刪除後也重新生成建議（用戶今天吃的內容變了）
+      loadSuggestion(true).catch(console.error);
     } catch (e) {
       alert("刪除失敗：" + (e as Error).message);
     }
