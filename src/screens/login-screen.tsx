@@ -77,13 +77,12 @@ export function LoginScreen({ onDone }: LoginScreenProps) {
             justifyContent: "center", alignItems: "center",
             padding: "32px 32px 0", textAlign: "center",
           }}>
-            <Mascot size={140} mood="happy" />
-            <h1 style={{ fontSize: "var(--fs-2xl)", fontWeight: 800, margin: "24px 0 12px" }}>
+            <Mascot size={120} mood="happy" />
+            <h1 style={{ fontSize: "var(--fs-2xl)", fontWeight: 800, margin: "20px 0 8px" }}>
               歡迎使用暖暖
             </h1>
             <p style={{ fontSize: "var(--fs-base)", color: "var(--ink-2)", margin: 0, lineHeight: 1.5, maxWidth: 320 }}>
-              用 Google 帳號一鍵登入<br />
-              不需要記密碼、不用驗證碼
+              第一次使用會自動建立帳號
             </p>
 
             {error && (
@@ -95,7 +94,8 @@ export function LoginScreen({ onDone }: LoginScreenProps) {
             )}
           </div>
 
-          <div style={{ padding: "32px 24px 40px", display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ padding: "24px 24px 32px", display: "flex", flexDirection: "column", gap: 14 }}>
+            {/* Google 登入 */}
             <button
               onClick={signInWithGoogle}
               disabled={loading}
@@ -120,12 +120,58 @@ export function LoginScreen({ onDone }: LoginScreenProps) {
               {loading ? "登入中…" : "用 Google 帳號登入"}
             </button>
 
+            {/* 分隔線 */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: 12,
+              margin: "4px 0", color: "var(--ink-3)", fontSize: "var(--fs-sm)",
+            }}>
+              <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
+              <span>或</span>
+              <div style={{ flex: 1, height: 1, background: "var(--line)" }} />
+            </div>
+
+            {/* Email 輸入 */}
+            <input
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="輸入您的 Email"
+              style={{
+                width: "100%", padding: "18px 20px",
+                background: "var(--surface)",
+                border: "2px solid var(--line-strong)",
+                borderRadius: "var(--r-pill)",
+                fontSize: "var(--fs-base)", fontWeight: 500,
+                color: "var(--ink-1)",
+                outline: "none", textAlign: "center",
+              }}
+            />
+
+            <button
+              onClick={sendOtp}
+              disabled={loading || !email.includes("@")}
+              style={{
+                width: "100%", padding: "18px",
+                background: "var(--primary)",
+                border: "none",
+                borderRadius: "var(--r-pill)",
+                fontSize: "var(--fs-base)", fontWeight: 700,
+                color: "#fff",
+                cursor: "pointer",
+                opacity: loading || !email.includes("@") ? 0.5 : 1,
+                boxShadow: "var(--shadow-sm)",
+              }}
+            >
+              {loading ? "傳送中…" : "用 Email 收驗證碼登入"}
+            </button>
+
             <p style={{
               fontSize: "var(--fs-xs)", color: "var(--ink-3)", textAlign: "center",
-              margin: 0, lineHeight: 1.5,
+              margin: "4px 0 0", lineHeight: 1.5,
             }}>
-              第一次使用會自動建立帳號<br />
-              不用另外註冊
+              我們會寄一組 6 位數驗證碼到您的信箱
             </p>
           </div>
         </>
