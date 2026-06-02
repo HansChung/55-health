@@ -1,0 +1,58 @@
+<!--
+  Supabase Email Template: Invite user (家人/朋友邀請)
+  貼到 Authentication → Emails → Templates → Invite user
+  Subject: 【暖暖】有人邀請您加入暖暖
+-->
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>邀請您加入暖暖</title>
+</head>
+<body style="margin:0;padding:0;background:#FAF5EC;font-family:'PingFang TC','Noto Sans TC','Microsoft JhengHei',sans-serif;color:#3D2E20;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#FAF5EC;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:480px;background:#FFFFFF;border-radius:24px;box-shadow:0 4px 20px rgba(0,0,0,0.06);overflow:hidden;">
+          <tr>
+            <td style="background:linear-gradient(135deg,#FFD4A8 0%,#E8845A 100%);padding:40px 32px;text-align:center;">
+              <div style="font-size:48px;line-height:1;margin-bottom:8px;">💌</div>
+              <h1 style="margin:0;color:#FFFFFF;font-size:26px;font-weight:800;letter-spacing:1px;">您被邀請加入暖暖</h1>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:36px 32px 24px;text-align:center;">
+              <h2 style="margin:0 0 12px;font-size:22px;font-weight:700;color:#3D2E20;">一起照顧健康吧 ❤️</h2>
+              <p style="margin:0 0 24px;font-size:16px;color:#6B5848;line-height:1.6;">
+                有家人或朋友邀請您加入<br>
+                <strong style="color:#C95E36;">暖暖健康管家</strong><br>
+                點下面的按鈕完成註冊
+              </p>
+
+              <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:18px 48px;background:#E8845A;color:#FFFFFF;text-decoration:none;font-size:17px;font-weight:700;border-radius:999px;box-shadow:0 4px 12px rgba(232,132,90,0.3);margin:8px 0 24px;">
+                立即加入暖暖
+              </a>
+
+              <p style="margin:0;font-size:13px;color:#A89580;line-height:1.6;">
+                如果按鈕無法點擊，請複製下面網址貼到瀏覽器：<br>
+                <span style="word-break:break-all;color:#6B5848;">{{ .ConfirmationURL }}</span>
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="border-top:1px solid #F2E8D5;padding:24px 32px;text-align:center;background:#FAF5EC;">
+              <p style="margin:0 0 4px;font-size:13px;color:#6B5848;">暖暖團隊敬上 ❤️</p>
+              <p style="margin:0;font-size:12px;color:#A89580;">
+                <a href="https://nuan55.com" style="color:#A89580;text-decoration:none;">nuan55.com</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
