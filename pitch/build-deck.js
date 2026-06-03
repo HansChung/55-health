@@ -370,7 +370,125 @@ function addIconCircle(slide, x, y, size, emoji, bgColor) {
 }
 
 // ============================================================
-// SLIDE 5: 合作模式 - 3 種方案對照
+// SLIDE 5: 差異化 - Gemini vs 暖暖（為什麼不直接用 Gemini？）
+// ============================================================
+{
+  const s = pres.addSlide();
+  s.background = { color: C.cream };
+
+  // 頂部小標
+  s.addText("DIFFERENTIATION   |   為什麼不直接用 Gemini / ChatGPT？", {
+    x: 0.6, y: 0.35, w: 9, h: 0.3,
+    fontSize: 11, fontFace: FONT.body, charSpacing: 4,
+    color: C.deep, bold: true, margin: 0,
+  });
+
+  // 主標金句（很重要 → 加大）
+  s.addText("Gemini 是引擎，暖暖是整台車", {
+    x: 0.6, y: 0.7, w: 9, h: 0.65,
+    fontSize: 30, fontFace: FONT.header, bold: true,
+    color: C.ink1, margin: 0,
+  });
+
+  // 副標解釋
+  s.addText("引擎再強，沒有方向盤、座椅、安全氣囊 — 長輩不會開、也不敢開", {
+    x: 0.6, y: 1.35, w: 9, h: 0.3,
+    fontSize: 13, fontFace: FONT.body, italic: true,
+    color: C.ink2, margin: 0,
+  });
+
+  // 對照表標題列
+  const colY = 1.85;
+  // 左欄 header（Gemini）
+  s.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+    x: 0.6, y: colY, w: 4.4, h: 0.45,
+    fill: { color: C.ink3 }, line: { color: C.ink3, width: 0 },
+    rectRadius: 0.08,
+  });
+  s.addText("直接用 Gemini", {
+    x: 0.6, y: colY, w: 4.4, h: 0.45,
+    fontSize: 14, fontFace: FONT.body, bold: true,
+    color: C.white, align: "center", valign: "middle", margin: 0,
+  });
+
+  // 右欄 header（暖暖）
+  s.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+    x: 5.2, y: colY, w: 4.2, h: 0.45,
+    fill: { color: C.deep }, line: { color: C.deep, width: 0 },
+    rectRadius: 0.08,
+  });
+  s.addText("🐻  用暖暖", {
+    x: 5.2, y: colY, w: 4.2, h: 0.45,
+    fontSize: 14, fontFace: FONT.body, bold: true,
+    color: C.white, align: "center", valign: "middle", margin: 0,
+  });
+
+  // 對照 4 列（左 vs 右）
+  const rows = [
+    { label: "怎麼操作", gemini: "打字下 prompt、上傳", nuan: "拍一下、按確認" },
+    { label: "歷史紀錄", gemini: "❌  沒辦法存", nuan: "✅  自動進飲食日記 + 趨勢圖" },
+    { label: "個人化", gemini: "每次從零，不記得你慢性病", nuan: "✅  記得高血壓 → 客製建議" },
+    { label: "家人共享", gemini: "❌  完全沒有", nuan: "✅  子女遠端看吃藥/飲食" },
+  ];
+
+  const rowH = 0.6;
+  const rowStartY = 2.45;
+  rows.forEach((r, i) => {
+    const y = rowStartY + i * (rowH + 0.05);
+
+    // 左欄背景（Gemini）
+    s.addShape(pres.shapes.RECTANGLE, {
+      x: 0.6, y, w: 4.4, h: rowH,
+      fill: { color: C.white }, line: { color: C.line, width: 1 },
+    });
+    // 右欄背景（暖暖）強調色
+    s.addShape(pres.shapes.RECTANGLE, {
+      x: 5.2, y, w: 4.2, h: rowH,
+      fill: { color: "FDF1E8" }, line: { color: C.primary, width: 1 },
+    });
+
+    // 場景標籤（中間浮動小色塊）
+    s.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+      x: 4.45, y: y + (rowH - 0.32) / 2, w: 1.1, h: 0.32,
+      fill: { color: C.ink1 }, line: { color: C.ink1, width: 0 },
+      rectRadius: 0.16,
+    });
+    s.addText(r.label, {
+      x: 4.45, y: y + (rowH - 0.32) / 2, w: 1.1, h: 0.32,
+      fontSize: 10, fontFace: FONT.body, bold: true,
+      color: C.white, align: "center", valign: "middle", margin: 0,
+    });
+
+    // 左欄文字
+    s.addText(r.gemini, {
+      x: 0.8, y, w: 3.5, h: rowH,
+      fontSize: 12, fontFace: FONT.body,
+      color: C.ink2, valign: "middle", margin: 0,
+    });
+
+    // 右欄文字
+    s.addText(r.nuan, {
+      x: 5.7, y, w: 3.5, h: rowH,
+      fontSize: 12, fontFace: FONT.body, bold: true,
+      color: C.ink1, valign: "middle", margin: 0,
+    });
+  });
+
+  // 底部結論條
+  s.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+    x: 0.6, y: 5.0, w: 8.8, h: 0.55,
+    fill: { color: C.ink1 }, line: { color: C.ink1, width: 0 },
+    rectRadius: 0.12,
+  });
+  s.addText("暖暖的護城河不是 AI 模型 — 是「把 AI 用對的 6 個月 know-how」", {
+    x: 0.6, y: 5.0, w: 8.8, h: 0.55,
+    fontSize: 13, fontFace: FONT.body, bold: true,
+    color: C.white, align: "center", valign: "middle", margin: 0,
+  });
+}
+
+// ============================================================
+// SLIDE 6: 合作模式 - 3 種方案對照
 // ============================================================
 {
   const s = pres.addSlide();
@@ -496,7 +614,7 @@ function addIconCircle(slide, x, y, size, emoji, bgColor) {
 }
 
 // ============================================================
-// SLIDE 6: 對你的好處 + Next Step
+// SLIDE 7: 對你的好處 + Next Step
 // ============================================================
 {
   const s = pres.addSlide();
