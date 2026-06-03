@@ -635,7 +635,115 @@ function addIconCircle(slide, x, y, size, emoji, bgColor) {
 }
 
 // ============================================================
-// SLIDE 7: 對你的好處 + Next Step
+// SLIDE 7: 主動守護願景（已上線 + 未來藍圖）
+// ============================================================
+{
+  const s = pres.addSlide();
+  s.background = { color: C.ink1 }; // 深色 → 跟 demo 頁呼應，做為「願景」的視覺高潮
+
+  // 暈染裝飾
+  s.addShape(pres.shapes.OVAL, {
+    x: -2.5, y: 2.5, w: 7, h: 7,
+    fill: { color: C.deep, transparency: 80 },
+    line: { color: C.deep, width: 0 },
+  });
+  s.addShape(pres.shapes.OVAL, {
+    x: 7, y: -2.5, w: 6, h: 6,
+    fill: { color: C.primary, transparency: 82 },
+    line: { color: C.primary, width: 0 },
+  });
+
+  // 頂部小標
+  s.addText("VISION   |   不只記錄，而是主動守護", {
+    x: 0.6, y: 0.4, w: 9, h: 0.3,
+    fontSize: 11, fontFace: FONT.body, charSpacing: 4,
+    color: C.primary, bold: true, margin: 0,
+  });
+
+  // 主標
+  s.addText("從「健康記錄」到「主動守護」", {
+    x: 0.6, y: 0.75, w: 9, h: 0.7,
+    fontSize: 30, fontFace: FONT.header, bold: true,
+    color: C.white, margin: 0,
+  });
+
+  // 副標金句
+  s.addText("我們做的不是健康 App，是讓子女安心的 AI 守護者", {
+    x: 0.6, y: 1.42, w: 9, h: 0.35,
+    fontSize: 14, fontFace: FONT.body, italic: true,
+    color: C.creamDeep, margin: 0,
+  });
+
+  // 三階段時間軸卡片
+  const stages = [
+    {
+      x: 0.6, badge: "✅ 已上線", badgeColor: C.sage,
+      title: "異常預警",
+      desc: "血壓飆高、3 天失聯、漏吃藥 → 自動 email 通知子女",
+    },
+    {
+      x: 3.7, badge: "開發中", badgeColor: C.gold,
+      title: "語音週報",
+      desc: "每週用溫暖語音，向子女回報爸媽近況",
+    },
+    {
+      x: 6.8, badge: "藍圖", badgeColor: C.ink3,
+      title: "主動關懷來電",
+      desc: "暖暖每天主動「打給」長輩問候、提醒",
+    },
+  ];
+
+  stages.forEach((st) => {
+    // 卡片（深色底上的淺卡）
+    s.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+      x: st.x, y: 2.0, w: 2.85, h: 2.5,
+      fill: { color: C.cream }, line: { color: C.cream, width: 0 },
+      rectRadius: 0.15,
+      shadow: { type: "outer", color: "000000", blur: 10, offset: 3, angle: 90, opacity: 0.25 },
+    });
+
+    // badge
+    s.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+      x: st.x + 0.25, y: 2.25, w: 1.3, h: 0.4,
+      fill: { color: st.badgeColor }, line: { color: st.badgeColor, width: 0 },
+      rectRadius: 0.2,
+    });
+    s.addText(st.badge, {
+      x: st.x + 0.25, y: 2.25, w: 1.3, h: 0.4,
+      fontSize: 11, fontFace: FONT.body, bold: true,
+      color: C.white, align: "center", valign: "middle", margin: 0,
+    });
+
+    // title
+    s.addText(st.title, {
+      x: st.x + 0.25, y: 2.85, w: 2.35, h: 0.5,
+      fontSize: 21, fontFace: FONT.header, bold: true,
+      color: C.ink1, margin: 0,
+    });
+
+    // desc
+    s.addText(st.desc, {
+      x: st.x + 0.25, y: 3.4, w: 2.4, h: 1.0,
+      fontSize: 12.5, fontFace: FONT.body,
+      color: C.ink2, lineSpacing: 18, margin: 0,
+    });
+  });
+
+  // 底部金句條
+  s.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+    x: 0.6, y: 4.85, w: 8.8, h: 0.55,
+    fill: { color: C.primary }, line: { color: C.primary, width: 0 },
+    rectRadius: 0.12,
+  });
+  s.addText("早期合作的夥伴，會一起參與這個守護藍圖", {
+    x: 0.6, y: 4.85, w: 8.8, h: 0.55,
+    fontSize: 14, fontFace: FONT.body, bold: true,
+    color: C.white, align: "center", valign: "middle", margin: 0,
+  });
+}
+
+// ============================================================
+// SLIDE 8: 對你的好處 + Next Step
 // ============================================================
 {
   const s = pres.addSlide();
