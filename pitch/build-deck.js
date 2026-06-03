@@ -250,13 +250,33 @@ function addIconCircle(slide, x, y, size, emoji, bgColor) {
     {
       x: 6.8, icon: "🎙️", iconBg: "E5EFE2",
       title: "AI 語音陪伴",
-      desc: "中文語音對話，心情陪伴 + 健康問答",
-      time: "像跟孫子聊天",
+      desc: "認得名字、記得慢性病 — 3 種人格可選",
+      time: "像家人 · 像護理師 · 像小孫子撒嬌",
+      highlight: true, // 標記為差異化亮點
     },
   ];
 
   features.forEach((f) => {
     addCard(s, { x: f.x, y: 1.6, w: 2.85, h: 2.3 });
+
+    // 差異化亮點：加一條深橘左側色條 + 「獨家」小角標
+    if (f.highlight) {
+      s.addShape(pres.shapes.RECTANGLE, {
+        x: f.x, y: 1.6, w: 0.08, h: 2.3,
+        fill: { color: C.deep }, line: { color: C.deep, width: 0 },
+      });
+      // 「獨家」小色塊（右上角）
+      s.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+        x: f.x + 2.1, y: 1.72, w: 0.65, h: 0.28,
+        fill: { color: C.deep }, line: { color: C.deep, width: 0 },
+        rectRadius: 0.04,
+      });
+      s.addText("獨家", {
+        x: f.x + 2.1, y: 1.72, w: 0.65, h: 0.28,
+        fontSize: 10, fontFace: FONT.body, bold: true,
+        color: C.white, align: "center", valign: "middle", margin: 0,
+      });
+    }
 
     addIconCircle(s, f.x + 1.075, 1.8, 0.7, f.icon, f.iconBg);
 
@@ -275,7 +295,8 @@ function addIconCircle(slide, x, y, size, emoji, bgColor) {
     s.addText(f.time, {
       x: f.x + 0.2, y: 3.55, w: 2.45, h: 0.3,
       fontSize: 10, fontFace: FONT.body,
-      color: C.ink3, align: "center", italic: true, margin: 0,
+      color: f.highlight ? C.deep : C.ink3,
+      align: "center", italic: true, bold: f.highlight, margin: 0,
     });
   });
 
