@@ -1,0 +1,95 @@
+// ────────────────────────────────────────────────
+// 警報 Email 模板（暖暖品牌色）
+// ────────────────────────────────────────────────
+
+export interface AlertPayload {
+  type: string;
+  severity: "info" | "warning" | "critical";
+  title: string;
+  message: string;
+  metadata?: Record<string, unknown>;
+}
+
+interface BuildAlertEmailParams {
+  familyName: string;
+  elderName: string;
+  alert: AlertPayload;
+}
+
+const SEVERITY_STYLE: Record<string, { color: string; icon: string; label: string }> = {
+  critical: { color: "#C95B6E", icon: "🚨", label: "需要注意" },
+  warning: { color: "#D9A441", icon: "⚠️", label: "溫馨提醒" },
+  info: { color: "#7AA779", icon: "💚", label: "近況通知" },
+};
+
+export function buildAlertEmail({
+  familyName,
+  elderName,
+  alert,
+}: BuildAlertEmailParams): string {
+  const style = SEVERITY_STYLE[alert.severity] ?? SEVERITY_STYLE.warning;
+
+  return `<!DOCTYPE html>
+<html lang="zh-Hant">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#FAF5EC;font-family:'PingFang TC','Noto Sans TC','Microsoft JhengHei',sans-serif;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#FAF5EC;padding:32px 16px;">
+    <tr><td align="center">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:480px;background:#FFFFFF;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.06);">
+
+        <!-- Header -->
+        <tr><td style="background:${style.color};padding:32px 24px;text-align:center;">
+          <div style="font-size:44px;line-height:1;">${style.icon}</div>
+          <h1 style="margin:10px 0 0;color:#FFFFFF;font-size:22px;font-weight:800;">暖暖健康提醒</h1>
+          <p style="margin:6px 0 0;color:#FFFFFF;font-size:13px;opacity:0.9;">${style.label}</p>
+        </td></tr>
+
+        <!-- Body -->
+        <tr><td style="padding:28px 24px;color:#3D2E20;">
+          <p style="margin:0 0 6px;font-size:16px;">${escapeHtml(familyName)} 您好，</p>
+          <p style="margin:0 0 18px;font-size:16px;line-height:1.6;color:#6B5848;">
+            關於 <strong style="color:#3D2E20;">${escapeHtml(elderName)}</strong> 的健康狀況，我們想讓您知道：
+          </p>
+
+          <div style="background:#FAF5EC;border-left:4px solid ${style.color};border-radius:10px;padding:18px 20px;margin:0 0 22px;">
+            <p style="margin:0 0 8px;font-weight:700;font-size:17px;color:#3D2E20;">${escapeHtml(alert.title)}</p>
+            <p style="margin:0;font-size:15px;line-height:1.65;color:#6B5848;">${escapeHtml(alert.message)}</p>
+          </div>
+
+          <div style="text-align:center;">
+            <a href="https://nuan55.com" style="display:inline-block;background:#E8845A;color:#FFFFFF;text-decoration:none;padding:15px 40px;border-radius:999px;font-weight:700;font-size:16px;box-shadow:0 4px 12px rgba(232,132,90,0.3);">
+              打開暖暖查看
+            </a>
+          </div>
+
+          <p style="margin:22px 0 0;font-size:12px;color:#A89580;line-height:1.6;text-align:center;">
+            ※ 本提醒僅供參考，不能取代專業醫療診斷。<br>如有健康疑慮，請諮詢醫師或就近就醫。
+          </p>
+        </td></tr>
+
+        <!-- Footer -->
+        <tr><td style="border-top:1px solid #F2E8D5;padding:18px 24px;text-align:center;background:#FAF5EC;">
+          <p style="margin:0 0 4px;font-size:12px;color:#6B5848;">暖暖團隊 ❤️</p>
+          <p style="margin:0;font-size:11px;color:#A89580;line-height:1.6;">
+            <a href="https://nuan55.com" style="color:#A89580;text-decoration:none;">nuan55.com</a><br>
+            您收到此信是因為您是 ${escapeHtml(elderName)} 的家人並開啟了健康提醒<br>
+            可在暖暖 App 的「家人共享」中關閉此通知
+          </p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
+// 防 XSS：使用者填的名字可能含特殊字元
+function escapeHtml(str: string): string {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}

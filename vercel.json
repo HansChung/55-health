@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/check-anomalies",
+      "schedule": "0 1 * * *"
+    }
+  ]
+}
