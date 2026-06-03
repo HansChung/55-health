@@ -72,6 +72,18 @@ export const api = {
   removeFamily: (id: string) =>
     apiFetch<{ ok: true }>(`/api/family/${id}`, { method: "DELETE" }),
 
+  // Alerts（異常預警守護紀錄）
+  listAlerts: (params?: { elderId?: string; unresolved?: boolean }) => {
+    const q = new URLSearchParams();
+    if (params?.elderId) q.set("elder", params.elderId);
+    if (params?.unresolved) q.set("unresolved", "1");
+    const qs = q.toString();
+    return apiFetch<{ alerts: PersistedAlert[] }>(`/api/alerts${qs ? `?${qs}` : ""}`);
+  },
+
+  resolveAlert: (id: string) =>
+    apiFetch<{ alert: PersistedAlert }>(`/api/alerts/${id}`, { method: "PATCH" }),
+
   // Conversations（語音對話記錄）
   listConversations: (params?: { sessionId?: string; days?: number; limit?: number }) => {
     const q = new URLSearchParams();
@@ -263,6 +275,26 @@ export interface FamilyPermissions {
   alerts?: boolean;
   diary?: boolean;
   voice?: boolean;
+}
+
+/** 後端 cron 偵測寫入的異常警報記錄（已通知家人） */
+export interface PersistedAlert {
+  id: string;
+  elder_id: string;
+  alert_type:
+    | "inactivity"
+    | "blood_pressure"
+    | "blood_glucose"
+    | "weight_change"
+    | "missed_medication";
+  severity: "info" | "warning" | "critical";
+  title: string;
+  message: string;
+  metadata: Record<string, unknown>;
+  notified_family: { family_id: string; email: string; sent_at: string }[];
+  resolved: boolean;
+  resolved_at: string | null;
+  created_at: string;
 }
 
 export interface PrescriptionResult {
