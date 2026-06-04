@@ -654,90 +654,129 @@ function addIconCircle(slide, x, y, size, emoji, bgColor) {
   });
 
   // 頂部小標
-  s.addText("VISION   |   不只記錄，而是主動守護", {
-    x: 0.6, y: 0.4, w: 9, h: 0.3,
+  s.addText("ROADMAP   |   一個會越長越大的平台", {
+    x: 0.6, y: 0.38, w: 9, h: 0.3,
     fontSize: 11, fontFace: FONT.body, charSpacing: 4,
     color: C.primary, bold: true, margin: 0,
   });
 
   // 主標
-  s.addText("從「健康記錄」到「主動守護」", {
-    x: 0.6, y: 0.75, w: 9, h: 0.7,
-    fontSize: 30, fontFace: FONT.header, bold: true,
+  s.addText("從工具，到平台，到生態系", {
+    x: 0.6, y: 0.72, w: 9, h: 0.6,
+    fontSize: 28, fontFace: FONT.header, bold: true,
     color: C.white, margin: 0,
   });
 
   // 副標金句
-  s.addText("我們做的不是健康 App，是讓子女安心的 AI 守護者", {
-    x: 0.6, y: 1.42, w: 9, h: 0.35,
-    fontSize: 14, fontFace: FONT.body, italic: true,
+  s.addText("每一階段，都為合作夥伴開出新的賺錢機會", {
+    x: 0.6, y: 1.35, w: 9, h: 0.3,
+    fontSize: 13, fontFace: FONT.body, italic: true,
     color: C.creamDeep, margin: 0,
   });
 
-  // 三階段時間軸卡片
-  const stages = [
+  // 三個 Horizon 直欄
+  const horizons = [
     {
-      x: 0.6, badge: "✅ 已上線", badgeColor: C.sage,
-      title: "異常預警",
-      desc: "血壓飆高、3 天失聯、漏吃藥 → 自動 email 通知子女",
+      x: 0.6, accent: C.sage, badge: "✅ 部分已上線", badgeColor: C.sage,
+      phase: "H1 · 主動守護",
+      period: "0–6 個月",
+      headline: "讓子女安心",
+      items: ["異常預警通知家人", "每日關懷推播", "LINE 整合", "子女端儀表板"],
+      money: "💰 訂閱分潤",
     },
     {
-      x: 3.7, badge: "開發中", badgeColor: C.gold,
-      title: "語音週報",
-      desc: "每週用溫暖語音，向子女回報爸媽近況",
+      x: 3.7, accent: C.gold, badge: "🔨 開發中", badgeColor: C.gold,
+      phase: "H2 · 健康平台",
+      period: "6–18 個月",
+      headline: "讓數據有價值",
+      items: ["慢病管理 + 回診", "藍牙血壓計整合", "遠距諮詢對接", "健康數據 API"],
+      money: "💰 軟硬整合 + 數據授權",
     },
     {
-      x: 6.8, badge: "藍圖", badgeColor: C.ink3,
-      title: "主動關懷來電",
-      desc: "暖暖每天主動「打給」長輩問候、提醒",
+      x: 6.8, accent: C.primary, badge: "🌱 藍圖", badgeColor: C.ink3,
+      phase: "H3 · 銀髮生態系",
+      period: "18 個月+",
+      headline: "成為銀髮入口",
+      items: ["保險風險方案", "長照機構後台", "健康電商導購", "AI 風險預測"],
+      money: "💰 B2B 大單 + 導購分潤",
     },
   ];
 
-  stages.forEach((st) => {
-    // 卡片（深色底上的淺卡）
+  horizons.forEach((h) => {
+    // 卡片
     s.addShape(pres.shapes.ROUNDED_RECTANGLE, {
-      x: st.x, y: 2.0, w: 2.85, h: 2.5,
+      x: h.x, y: 1.75, w: 2.85, h: 2.95,
       fill: { color: C.cream }, line: { color: C.cream, width: 0 },
-      rectRadius: 0.15,
+      rectRadius: 0.12,
       shadow: { type: "outer", color: "000000", blur: 10, offset: 3, angle: 90, opacity: 0.25 },
+    });
+    // 頂部 accent 色條
+    s.addShape(pres.shapes.RECTANGLE, {
+      x: h.x, y: 1.75, w: 2.85, h: 0.12,
+      fill: { color: h.accent }, line: { color: h.accent, width: 0 },
     });
 
     // badge
     s.addShape(pres.shapes.ROUNDED_RECTANGLE, {
-      x: st.x + 0.25, y: 2.25, w: 1.3, h: 0.4,
-      fill: { color: st.badgeColor }, line: { color: st.badgeColor, width: 0 },
-      rectRadius: 0.2,
+      x: h.x + 0.2, y: 2.0, w: 1.55, h: 0.34,
+      fill: { color: h.badgeColor }, line: { color: h.badgeColor, width: 0 },
+      rectRadius: 0.17,
     });
-    s.addText(st.badge, {
-      x: st.x + 0.25, y: 2.25, w: 1.3, h: 0.4,
-      fontSize: 11, fontFace: FONT.body, bold: true,
+    s.addText(h.badge, {
+      x: h.x + 0.2, y: 2.0, w: 1.55, h: 0.34,
+      fontSize: 10, fontFace: FONT.body, bold: true,
       color: C.white, align: "center", valign: "middle", margin: 0,
     });
 
-    // title
-    s.addText(st.title, {
-      x: st.x + 0.25, y: 2.85, w: 2.35, h: 0.5,
-      fontSize: 21, fontFace: FONT.header, bold: true,
+    // phase 名
+    s.addText(h.phase, {
+      x: h.x + 0.2, y: 2.42, w: 2.45, h: 0.35,
+      fontSize: 16, fontFace: FONT.header, bold: true,
       color: C.ink1, margin: 0,
     });
+    // period + headline
+    s.addText([
+      { text: `${h.period}　`, options: { color: C.ink3, fontSize: 10 } },
+      { text: h.headline, options: { color: h.accent, fontSize: 11, bold: true } },
+    ], {
+      x: h.x + 0.2, y: 2.76, w: 2.45, h: 0.3, fontFace: FONT.body, margin: 0,
+    });
 
-    // desc
-    s.addText(st.desc, {
-      x: st.x + 0.25, y: 3.4, w: 2.4, h: 1.0,
-      fontSize: 12.5, fontFace: FONT.body,
-      color: C.ink2, lineSpacing: 18, margin: 0,
+    // items 列表
+    s.addText(
+      h.items.map((it, i) => ({
+        text: it,
+        options: { bullet: { code: "2022" }, breakLine: i < h.items.length - 1 },
+      })),
+      {
+        x: h.x + 0.25, y: 3.12, w: 2.4, h: 1.05,
+        fontSize: 11, fontFace: FONT.body,
+        color: C.ink2, paraSpaceAfter: 3, margin: 0,
+      }
+    );
+
+    // money 條
+    s.addShape(pres.shapes.RECTANGLE, {
+      x: h.x, y: 4.28, w: 2.85, h: 0.42,
+      fill: { color: h.accent, transparency: 85 },
+      line: { color: h.accent, width: 0 },
+    });
+    s.addText(h.money, {
+      x: h.x + 0.15, y: 4.28, w: 2.55, h: 0.42,
+      fontSize: 11, fontFace: FONT.body, bold: true,
+      color: C.ink1, valign: "middle", margin: 0,
     });
   });
 
   // 底部金句條
   s.addShape(pres.shapes.ROUNDED_RECTANGLE, {
-    x: 0.6, y: 4.85, w: 8.8, h: 0.55,
+    x: 0.6, y: 4.9, w: 8.8, h: 0.5,
     fill: { color: C.primary }, line: { color: C.primary, width: 0 },
-    rectRadius: 0.12,
+    rectRadius: 0.1,
   });
-  s.addText("早期合作的夥伴，會一起參與這個守護藍圖", {
-    x: 0.6, y: 4.85, w: 8.8, h: 0.55,
-    fontSize: 14, fontFace: FONT.body, bold: true,
+  s.addText("早期夥伴 = 在每個新階段都享優先權與更好條件", {
+    x: 0.6, y: 4.9, w: 8.8, h: 0.5,
+    fontSize: 13, fontFace: FONT.body, bold: true,
     color: C.white, align: "center", valign: "middle", margin: 0,
   });
 }
