@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4 portrait; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  :root {
+    --primary: #E8845A;
+    --deep: #C95E36;
+    --cream: #FAF5EC;
+    --creamDeep: #F2E8D5;
+    --ink1: #3D2E20;
+    --ink2: #6B5848;
+    --ink3: #A89580;
+    --sage: #7AA779;
+    --gold: #D9A441;
+    --berry: #C95B6E;
+    --line: #EDE3D0;
+  }
+  body {
+    font-family: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    width: 210mm; height: 297mm;
+    background: var(--cream);
+    color: var(--ink1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── 裝飾圓 ── */
+  .blob { position: absolute; border-radius: 50%; z-index: 0; }
+  .blob1 { width: 280px; height: 280px; background: var(--primary); opacity: .07; top: -90px; right: -70px; }
+  .blob2 { width: 180px; height: 180px; background: var(--deep); opacity: .06; top: -40px; right: 30px; }
+  .blob3 { width: 220px; height: 220px; background: var(--sage); opacity: .06; bottom: -80px; left: -70px; }
+
+  .wrap { position: relative; z-index: 1; padding: 14mm 16mm; height: 100%; display: flex; flex-direction: column; justify-content: center; }
+
+  /* ── Header ── */
+  .head { display: flex; align-items: center; gap: 14px; margin-bottom: 6mm; }
+  .logo { width: 58px; height: 58px; border-radius: 18px;
+    background: linear-gradient(135deg, #FFD4A8, var(--primary));
+    display: flex; align-items: center; justify-content: center; font-size: 34px;
+    box-shadow: 0 6px 16px rgba(232,132,90,.3); }
+  .brand h1 { font-size: 30px; font-weight: 800; color: var(--deep); letter-spacing: 1px; line-height: 1; }
+  .brand .sub { font-size: 13px; color: var(--ink2); margin-top: 4px; }
+  .head .tag { margin-left: auto; text-align: right; }
+  .head .tag .big { font-size: 17px; font-weight: 800; color: var(--ink1); }
+  .head .tag .small { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+
+  .title-block { margin: 4mm 0 6mm; }
+  .title-block .kicker { font-size: 11px; letter-spacing: 3px; color: var(--deep); font-weight: 700; }
+  .title-block h2 { font-size: 27px; font-weight: 800; color: var(--ink1); margin-top: 5px; }
+  .title-block p { font-size: 13.5px; color: var(--ink2); font-style: italic; margin-top: 6px; }
+
+  /* ── 三 Horizon 卡 ── */
+  .horizons { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 7mm; }
+  .hz { background: #fff; border-radius: 14px; overflow: hidden;
+    box-shadow: 0 4px 14px rgba(61,46,32,.07); border: 1px solid var(--line);
+    display: flex; flex-direction: column; }
+  .hz .bar { height: 6px; }
+  .hz .body { padding: 15px 14px 0; flex: 1; }
+  .badge { display: inline-block; font-size: 10px; font-weight: 700; color: #fff;
+    padding: 3px 10px; border-radius: 20px; margin-bottom: 9px; }
+  .hz .phase { font-size: 17px; font-weight: 800; color: var(--ink1); }
+  .hz .period { font-size: 11px; color: var(--ink3); margin-top: 3px; }
+  .hz .headline { font-size: 12.5px; font-weight: 700; margin: 9px 0 11px; }
+  .hz ul { list-style: none; }
+  .hz li { font-size: 12px; color: var(--ink2); line-height: 1.9; padding-left: 15px; position: relative; }
+  .hz li::before { content: "•"; position: absolute; left: 2px; font-weight: 800; }
+  .hz .money { margin-top: 13px; padding: 10px 14px; font-size: 12px; font-weight: 800; color: var(--ink1); }
+
+  /* H1/H2/H3 配色 */
+  .h1 .bar { background: var(--sage); }   .h1 .badge { background: var(--sage); }   .h1 .headline { color: var(--sage); }   .h1 li::before { color: var(--sage); }   .h1 .money { background: #E8F0E4; }
+  .h2 .bar { background: var(--gold); }   .h2 .badge { background: var(--gold); }   .h2 .headline { color: #B8860B; }       .h2 li::before { color: var(--gold); }   .h2 .money { background: #F8EFD4; }
+  .h3 .bar { background: var(--primary); }.h3 .badge { background: var(--ink3); }   .h3 .headline { color: var(--deep); }    .h3 li::before { color: var(--primary); }.h3 .money { background: #FBE6D4; }
+
+  /* ── 收入演進條 ── */
+  .revenue { background: var(--ink1); border-radius: 14px; padding: 16px 20px; margin-bottom: 7mm; }
+  .revenue .rt { font-size: 12.5px; color: var(--creamDeep); font-weight: 700; margin-bottom: 11px; letter-spacing: 1px; }
+  .flow { display: flex; align-items: center; gap: 9px; }
+  .flow .step { flex: 1; background: rgba(255,255,255,.08); border-radius: 10px; padding: 11px 10px; text-align: center; }
+  .flow .step .n { font-size: 10px; color: var(--primary); font-weight: 800; }
+  .flow .step .t { font-size: 12.5px; color: #fff; font-weight: 700; margin-top: 3px; }
+  .flow .arrow { color: var(--primary); font-size: 18px; font-weight: 800; }
+
+  /* ── 為什麼現在 ── */
+  .why { display: grid; grid-template-columns: 1fr 1fr; gap: 13px 22px; margin-bottom: 6mm; }
+  .why .w { display: flex; gap: 10px; align-items: flex-start; }
+  .why .ic { width: 34px; height: 34px; border-radius: 10px; background: var(--creamDeep);
+    display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+  .why .wt { font-size: 13px; font-weight: 800; color: var(--ink1); }
+  .why .wd { font-size: 11.5px; color: var(--ink2); margin-top: 2px; line-height: 1.45; }
+  .why-title { font-size: 15px; font-weight: 800; color: var(--ink1); margin-bottom: 12px; }
+
+  /* ── 底部金句 + footer ── */
+  .punch { background: var(--primary); color: #fff; border-radius: 12px;
+    padding: 15px 18px; text-align: center; font-size: 15px; font-weight: 800; margin-bottom: 6mm;
+    box-shadow: 0 6px 16px rgba(232,132,90,.25); }
+  .footer { display: flex; align-items: center; justify-content: space-between;
+    border-top: 1px solid var(--line); padding-top: 10px; font-size: 11px; color: var(--ink3); }
+  .footer b { color: var(--ink2); }
+</style>
+</head>
+<body>
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+  <div class="blob blob3"></div>
+
+  <div class="wrap">
+    <!-- Header -->
+    <div class="head">
+      <div class="logo">🐻</div>
+      <div class="brand">
+        <h1>暖暖 NuanNuan</h1>
+        <div class="sub">陪 55+ 健康變老的 AI 守護平台</div>
+      </div>
+      <div class="tag">
+        <div class="big">產品願景藍圖</div>
+        <div class="small">合作夥伴專用 · 2026</div>
+      </div>
+    </div>
+
+    <!-- Title -->
+    <div class="title-block">
+      <div class="kicker">ROADMAP</div>
+      <h2>從工具，到平台，到生態系</h2>
+      <p>每一階段，都為合作夥伴開出新的賺錢機會</p>
+    </div>
+
+    <!-- Horizons -->
+    <div class="horizons">
+      <div class="hz h1">
+        <div class="bar"></div>
+        <div class="body">
+          <span class="badge">✅ 部分已上線</span>
+          <div class="phase">H1 · 主動守護</div>
+          <div class="period">0 – 6 個月</div>
+          <div class="headline">讓子女安心</div>
+          <ul>
+            <li>異常預警通知家人</li>
+            <li>每日關懷推播</li>
+            <li>LINE 整合</li>
+            <li>子女端儀表板</li>
+            <li>用藥交互作用警示</li>
+          </ul>
+        </div>
+        <div class="money">💰 訂閱分潤</div>
+      </div>
+
+      <div class="hz h2">
+        <div class="bar"></div>
+        <div class="body">
+          <span class="badge">🔨 開發中</span>
+          <div class="phase">H2 · 健康平台</div>
+          <div class="period">6 – 18 個月</div>
+          <div class="headline">讓數據有價值</div>
+          <ul>
+            <li>慢病管理 + 回診提醒</li>
+            <li>藍牙血壓計 / 血糖機整合</li>
+            <li>遠距諮詢對接</li>
+            <li>健康數據 API</li>
+            <li>家庭多帳號方案</li>
+          </ul>
+        </div>
+        <div class="money">💰 軟硬整合 + 數據授權</div>
+      </div>
+
+      <div class="hz h3">
+        <div class="bar"></div>
+        <div class="body">
+          <span class="badge">🌱 藍圖</span>
+          <div class="phase">H3 · 銀髮生態系</div>
+          <div class="period">18 個月以上</div>
+          <div class="headline">成為銀髮入口</div>
+          <ul>
+            <li>保險風險評分方案</li>
+            <li>長照機構管理後台</li>
+            <li>健康電商導購</li>
+            <li>AI 健康風險預測</li>
+            <li>跨平台白標輸出</li>
+          </ul>
+        </div>
+        <div class="money">💰 B2B 大單 + 導購分潤</div>
+      </div>
+    </div>
+
+    <!-- 收入演進 -->
+    <div class="revenue">
+      <div class="rt">合作夥伴的收入演進 — 隨平台長大，越賺越多</div>
+      <div class="flow">
+        <div class="step"><div class="n">H1</div><div class="t">訂閱分潤</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="n">H2</div><div class="t">軟硬整合 + 數據授權</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="n">H3</div><div class="t">B2B 大單 + 電商導購</div></div>
+      </div>
+    </div>
+
+    <!-- 為什麼現在 -->
+    <div>
+      <div class="why-title">為什麼現在就要加入？</div>
+      <div class="why">
+        <div class="w"><div class="ic">🏆</div><div><div class="wt">早鳥分潤更高</div><div class="wd">早期夥伴鎖定優惠分潤比例</div></div></div>
+        <div class="w"><div class="ic">🧭</div><div><div class="wt">共同定義產品</div><div class="wd">你的客戶需求影響開發優先順序</div></div></div>
+        <div class="w"><div class="ic">📈</div><div><div class="wt">市場卡位</div><div class="wd">超高齡社會明年到來，先進場先吃市場</div></div></div>
+        <div class="w"><div class="ic">🔗</div><div><div class="wt">平台紅利</div><div class="wd">每開一個新階段，收入來源就多一條</div></div></div>
+      </div>
+    </div>
+
+    <!-- 金句 -->
+    <div class="punch">早期夥伴 ＝ 在每個新階段都享有優先權與更好條件</div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div>🌐 <b>nuan55.com</b>　|　📧 sunboy1120@gmail.com</div>
+      <div>暖暖 NuanNuan　|　創辦人 鍾志鴻 Hans Chung</div>
+    </div>
+  </div>
+</body>
+</html>
