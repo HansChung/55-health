@@ -344,12 +344,12 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
           <h2 style={{ fontSize: "var(--fs-lg)", fontWeight: 700, margin: 0 }}>今天吃了什麼</h2>
           <span style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
-            {meals.filter(m => m.logged).length}/3 餐
+            {meals.filter(m => m.logged && m.mealType !== "snack").length}/3 餐
           </span>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {meals.map((m, i) => {
-            const mealType = (["breakfast", "lunch", "dinner"] as MealType[])[i] ?? "snack";
+            const mealType = m.mealType ?? (["breakfast", "lunch", "dinner"] as MealType[])[i] ?? "snack";
             return (
               <MealRow
                 key={i}

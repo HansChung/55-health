@@ -455,11 +455,19 @@ export default function Page() {
       color: items[0]?.color ?? "#E8845A",
       photo: items[0]?.emoji ?? "🍱",
       logged: true,
+      mealType,
     };
     setMeals((prev) => {
-      const slotIdx = ({ breakfast: 0, lunch: 1, dinner: 2, snack: 2 } as const)[mealType];
       const next = [...prev];
-      next[slotIdx] = optimisticMeal;
+      if (mealType === "snack") {
+        // 點心：覆蓋既有點心卡，沒有就附加一張（不佔用晚餐格）
+        const snackIdx = next.findIndex((m) => m.mealType === "snack");
+        if (snackIdx >= 0) next[snackIdx] = optimisticMeal;
+        else next.push(optimisticMeal);
+      } else {
+        const slotIdx = ({ breakfast: 0, lunch: 1, dinner: 2 } as const)[mealType];
+        next[slotIdx] = optimisticMeal;
+      }
       return next;
     });
     setPendingResult(null);

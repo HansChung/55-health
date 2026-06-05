@@ -11,6 +11,7 @@ export interface Meal {
   photoUrl?: string | null; // 真實照片 URL
   logged: boolean;
   emoji?: string;
+  mealType?: MealType;
 }
 
 export interface FoodItem {
