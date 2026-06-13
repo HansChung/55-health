@@ -84,6 +84,7 @@ export default function Page() {
   const [partnerCampaigns, setPartnerCampaigns] = useState<PartnerCampaign[]>([]);
   const [achievements, setAchievements] = useState<AchievementsResponse | null>(null);
   const [celebration, setCelebration] = useState<AchievementProgress[]>([]);
+  const [smartShi, setSmartShi] = useState<number | null>(null);
   const [pendingResult, setPendingResult] = useState<FoodResult | null>(null);
   const [pendingPhoto, setPendingPhoto] = useState<string | null>(null);
   const [selectedMeal, setSelectedMeal] = useState<MealRecord | null>(null);
@@ -196,6 +197,16 @@ export default function Page() {
     }
   };
 
+  const reloadSmart = async () => {
+    if (!user) return;
+    try {
+      const { assessments } = await api.listSmartAssessments();
+      setSmartShi(assessments[0]?.shi ?? null);
+    } catch (e) {
+      console.error("載入幸福指數失敗:", e);
+    }
+  };
+
   const openMealDetail = (mealType: string) => {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -280,6 +291,7 @@ export default function Page() {
   useEffect(() => {
     if (!user) return;
     reloadAchievements();
+    reloadSmart(); // 從智慧幸福檢測返回時刷新首頁 SHI
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, recentDbMeals.length, recentMetrics.length, profile?.medications?.length, subpage]);
 
@@ -546,6 +558,8 @@ export default function Page() {
               streak: achievements.stats.meal_streak,
             } : null}
             onAchievements={() => setSubpage("achievements")}
+            smartSummary={{ shi: smartShi }}
+            onSmart={() => setSubpage("smart")}
           />
         )}
         {tab === "history" && <HistoryScreen onMeal={(meal) => setSelectedMeal(meal)} />}

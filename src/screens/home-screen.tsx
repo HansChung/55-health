@@ -36,6 +36,8 @@ interface HomeScreenProps {
   onPartnerClick?: (campaign: PartnerCampaign) => void;
   achievementsSummary?: { unlockedCount: number; totalCount: number; latestEmoji?: string; streak?: number } | null;
   onAchievements?: () => void;
+  smartSummary?: { shi: number | null } | null;
+  onSmart?: () => void;
 }
 
 const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
@@ -52,7 +54,7 @@ function getDateLabel(): string {
   return `${d.getMonth() + 1}月${d.getDate()}日　星期${WEEKDAYS[d.getDay()]}`;
 }
 
-export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements }: HomeScreenProps) {
+export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart }: HomeScreenProps) {
   // 從餐點計算今日營養
   const totals = meals.reduce(
     (s, m) => {
@@ -145,6 +147,42 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
           </div>
         </button>
       </div>
+
+      {onSmart && (
+        <div style={{ padding: "18px 24px 0" }}>
+          <button
+            onClick={onSmart}
+            style={{
+              width: "100%", textAlign: "left",
+              background: "linear-gradient(135deg, #EEF6FB 0%, #FFFFFF 100%)",
+              borderRadius: "var(--r-lg)", padding: 18,
+              border: "1px solid #CDE4F0",
+              display: "flex", alignItems: "center", gap: 14,
+              boxShadow: "var(--shadow-sm)",
+            }}
+          >
+            <div style={{
+              width: 52, height: 52, borderRadius: 16,
+              background: "#DCEDF7",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 28, flexShrink: 0,
+            }}>
+              {smartSummary?.shi != null ? "🧭" : "✨"}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: "var(--fs-base)", fontWeight: 800, color: "var(--ink-1)" }}>
+                智慧幸福檢測
+              </div>
+              <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", marginTop: 2 }}>
+                {smartSummary?.shi != null
+                  ? `SHI 指數 ${smartSummary.shi} 分　·　看雷達圖`
+                  : "3 分鐘看見人生五大面向"}
+              </div>
+            </div>
+            <Icon name="chevronR" size={20} color="var(--ink-3)" />
+          </button>
+        </div>
+      )}
 
       {achievementsSummary && onAchievements && (
         <div style={{ padding: "18px 24px 0" }}>
