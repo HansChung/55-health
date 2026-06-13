@@ -14,6 +14,20 @@ const MEAL_LABEL: Record<string, string> = {
   snack: "點心",
 };
 
+/** 用「本地時間」算日期 key（YYYY-MM-DD），避免 UTC 把晚餐歸到隔天 */
+function localDayKey(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/** 用「本地時間」顯示 HH:MM（台灣 +8），不要直接切 ISO 字串（那是 UTC） */
+function localTime(iso: string): string {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
 export function HistoryScreen({ onMeal }: HistoryScreenProps) {
   const [mealsByDay, setMealsByDay] = useState<{ date: string; label: string; meals: MealRecord[]; totalCal: number }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,20 +39,21 @@ export function HistoryScreen({ onMeal }: HistoryScreenProps) {
         // 按日期分組
         const groups = new Map<string, MealRecord[]>();
         for (const m of meals) {
-          const day = m.eaten_at.substring(0, 10);
+          const day = localDayKey(new Date(m.eaten_at));
           const arr = groups.get(day) ?? [];
           arr.push(m);
           groups.set(day, arr);
         }
         const today = new Date();
-        const todayStr = today.toISOString().substring(0, 10);
-        const yesterday = new Date(today.getTime() - 86400000).toISOString().substring(0, 10);
+        const todayStr = localDayKey(today);
+        const yesterday = localDayKey(new Date(today.getTime() - 86400000));
 
         const sorted = Array.from(groups.entries())
           .sort(([a], [b]) => b.localeCompare(a))
           .map(([date, meals]) => {
-            const d = new Date(date);
-            const monthDay = `${d.getMonth() + 1}/${d.getDate()}`;
+            const [yy, mm, dd] = date.split("-").map(Number);
+            const d = new Date(yy, mm - 1, dd); // 本地建構，避免 UTC 偏移
+            const monthDay = `${mm}/${dd}`;
             const label = date === todayStr
               ? `今天 · ${monthDay}`
               : date === yesterday
@@ -150,7 +165,7 @@ export function HistoryScreen({ onMeal }: HistoryScreenProps) {
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
-                      {MEAL_LABEL[m.meal_type]}　·　{m.eaten_at.substring(11, 16)}
+                      {MEAL_LABEL[m.meal_type]}　·　{localTime(m.eaten_at)}
                     </div>
                     <div style={{
                       fontSize: "var(--fs-base)", fontWeight: 600,

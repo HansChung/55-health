@@ -58,7 +58,14 @@ export async function GET() {
   const meals = (mealsRes.data ?? []) as MealRow[];
   const exercises = (exercisesRes.data ?? []) as ExerciseRow[];
   const metrics = (metricsRes.data ?? []) as MetricRow[];
-  const days = new Set(meals.map((m) => m.eaten_at.substring(0, 10)));
+  // 用台灣時間（UTC+8）算「記錄天數」，避免伺服器 UTC 把早餐歸到前一天
+  const days = new Set(
+    meals.map((m) =>
+      new Date(new Date(m.eaten_at).getTime() + 8 * 3600 * 1000)
+        .toISOString()
+        .substring(0, 10)
+    )
+  );
 
   const totalCalories = sum(meals, (m) => m.total_cal);
   const totalProtein = sum(meals, (m) => m.protein_g);
