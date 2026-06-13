@@ -84,6 +84,16 @@ export const api = {
   resolveAlert: (id: string) =>
     apiFetch<{ alert: PersistedAlert }>(`/api/alerts/${id}`, { method: "PATCH" }),
 
+  // SMART RADAR / SHI 檢測
+  listSmartAssessments: () =>
+    apiFetch<{ assessments: SmartAssessment[] }>("/api/smart-assessment"),
+
+  submitSmartAssessment: (answers: number[]) =>
+    apiFetch<{ assessment: SmartAssessment; previous_shi: number | null; delta: number | null }>(
+      "/api/smart-assessment",
+      { method: "POST", json: { answers } }
+    ),
+
   // Conversations（語音對話記錄）
   listConversations: (params?: { sessionId?: string; days?: number; limit?: number }) => {
     const q = new URLSearchParams();
@@ -275,6 +285,20 @@ export interface FamilyPermissions {
   alerts?: boolean;
   diary?: boolean;
   voice?: boolean;
+}
+
+/** SMART RADAR / SHI 檢測記錄 */
+export interface SmartAssessment {
+  id: string;
+  user_id: string;
+  score_s: number;
+  score_m: number;
+  score_a: number;
+  score_r: number;
+  score_t: number;
+  shi: number;
+  answers: number[];
+  created_at: string;
 }
 
 /** 後端 cron 偵測寫入的異常警報記錄（已通知家人） */
