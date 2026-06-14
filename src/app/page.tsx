@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Tab, Modal, Subpage, FontScale, Meal, FoodResult, MealType } from "@/lib/types";
+import { useState, useEffect, useMemo } from "react";
+import { Tab, Modal, Subpage, Meal, FoodResult, MealType } from "@/lib/types";
 import { MOCK_RESULT } from "@/lib/mock-data";
 import { BottomNav } from "@/components/bottom-nav";
 import { SosButton } from "@/components/sos-button";
@@ -33,6 +33,7 @@ import type { MealRecord, AiSuggestion, ProfileMedication, HealthMetric, Favorit
 import type { AchievementProgress } from "@/lib/achievements";
 import { useAuth, type AppProfile } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { useDisplaySettings } from "@/hooks/use-display-settings";
 import { api } from "@/lib/api-client";
 import type { FoodAnalysisResult } from "@/lib/ai/gemini";
 import { mergeMealsWithSlots, guessMealType } from "@/lib/meal-utils";
@@ -57,20 +58,7 @@ export default function Page() {
     }
   }, []);
 
-  const [fontScale, setFontScale] = useState<FontScale>("base");
-  const [highContrast, setHighContrast] = useState(false);
-
-  useEffect(() => {
-    if (profile?.font_scale) setFontScale(profile.font_scale);
-    if (profile?.high_contrast !== undefined) setHighContrast(profile.high_contrast);
-  }, [profile]);
-
-  useEffect(() => {
-    if (fontScale === "lg") document.documentElement.setAttribute("data-fs", "lg");
-    else document.documentElement.removeAttribute("data-fs");
-    if (highContrast) document.documentElement.setAttribute("data-contrast", "high");
-    else document.documentElement.removeAttribute("data-contrast");
-  }, [fontScale, highContrast]);
+  const { fontScale, setFontScale } = useDisplaySettings(profile);
 
   const [tab, setTab] = useState<Tab>("home");
   const [modal, setModal] = useState<Modal>(null);
@@ -95,18 +83,29 @@ export default function Page() {
   const [showPhotoSource, setShowPhotoSource] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
 
-  const totalCal = meals.reduce((s, m) => s + (m.cal || 0), 0);
+  const totalCal = useMemo(() => meals.reduce((s, m) => s + (m.cal || 0), 0), [meals]);
   const calorieGoal = profile?.calorie_goal ?? 1800;
   const tier = (profile?.subscription_tier ?? "free") as SubscriptionTier;
-  const medicationReminders = hasFeature(tier, "medication_reminders")
-    ? getPendingMedicationReminders(profile?.medications ?? []).slice(0, 3)
-    : [];
-  const allHealthAlerts = generateHealthAlerts({
-    meals: recentDbMeals,
-    metrics: recentMetrics,
-    medications: profile?.medications ?? [],
-  });
-  const healthAlerts = hasFeature(tier, "health_alerts") ? allHealthAlerts.slice(0, 3) : [];
+  const medicationReminders = useMemo(
+    () =>
+      hasFeature(tier, "medication_reminders")
+        ? getPendingMedicationReminders(profile?.medications ?? []).slice(0, 3)
+        : [],
+    [tier, profile?.medications]
+  );
+  const allHealthAlerts = useMemo(
+    () =>
+      generateHealthAlerts({
+        meals: recentDbMeals,
+        metrics: recentMetrics,
+        medications: profile?.medications ?? [],
+      }),
+    [recentDbMeals, recentMetrics, profile?.medications]
+  );
+  const healthAlerts = useMemo(
+    () => (hasFeature(tier, "health_alerts") ? allHealthAlerts.slice(0, 3) : []),
+    [tier, allHealthAlerts]
+  );
 
   const requireFeature = (feature: FeatureKey, action: () => void) => {
     if (hasFeature(tier, feature)) {
@@ -218,14 +217,18 @@ export default function Page() {
     if (found) setSelectedMeal(found);
   };
 
-  const yesterdayMealsByType = recentDbMeals.reduce((acc, meal) => {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    if (isSameLocalDay(new Date(meal.eaten_at), yesterday)) {
-      acc[meal.meal_type] = meal;
-    }
-    return acc;
-  }, {} as Partial<Record<MealType, MealRecord>>);
+  const yesterdayMealsByType = useMemo(
+    () =>
+      recentDbMeals.reduce((acc, meal) => {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        if (isSameLocalDay(new Date(meal.eaten_at), yesterday)) {
+          acc[meal.meal_type] = meal;
+        }
+        return acc;
+      }, {} as Partial<Record<MealType, MealRecord>>),
+    [recentDbMeals]
+  );
 
   const handleRepeatYesterdayMeal = async (mealType: MealType) => {
     const source = yesterdayMealsByType[mealType];
