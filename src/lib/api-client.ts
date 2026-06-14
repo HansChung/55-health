@@ -7,10 +7,34 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
 interface FetchOptions extends RequestInit {
   json?: unknown;
+  /** 逾時毫秒數，預設 15 秒。網路掛起時不會無限等待 */
+  timeoutMs?: number;
+  /** 額外重試次數（僅對 GET 生效），預設 GET=2、其他=0。重試只發生在網路錯誤/逾時/5xx，不重試 4xx */
+  retries?: number;
 }
 
+export class ApiError extends Error {
+  status: number;
+  data: unknown;
+  /** 是否為網路/逾時等「連線層」錯誤（非伺服器回應的業務錯誤） */
+  isNetwork: boolean;
+  constructor(message: string, opts: { status?: number; data?: unknown; isNetwork?: boolean } = {}) {
+    super(message);
+    this.name = "ApiError";
+    this.status = opts.status ?? 0;
+    this.data = opts.data ?? null;
+    this.isNetwork = opts.isNetwork ?? false;
+  }
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T> {
-  const { json, headers, ...rest } = options;
+  const { json, headers, timeoutMs = 15000, retries, ...rest } = options;
+  const method = (rest.method ?? "GET").toUpperCase();
+  // 預設：只有 GET 自動重試（POST/PATCH/DELETE 重試可能造成重複寫入，不安全）
+  const maxRetries = retries ?? (method === "GET" ? 2 : 0);
+
   const init: RequestInit = {
     ...rest,
     credentials: "include",
@@ -21,18 +45,48 @@ async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T>
   };
   if (json !== undefined) init.body = JSON.stringify(json);
 
-  const res = await fetch(`${API_BASE}${path}`, init);
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const err = new Error(data?.error || `HTTP ${res.status}`) as Error & {
-      status: number;
-      data: unknown;
-    };
-    err.status = res.status;
-    err.data = data;
-    throw err;
+  let lastError: ApiError | null = null;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(`${API_BASE}${path}`, { ...init, signal: controller.signal });
+      clearTimeout(timer);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const apiErr = new ApiError(data?.error || `HTTP ${res.status}`, {
+          status: res.status,
+          data,
+        });
+        // 4xx 是用戶端錯誤（如未登入、配額用完），重試無意義 → 直接拋
+        if (res.status < 500) throw apiErr;
+        // 5xx 伺服器錯誤 → 記下來，可重試
+        lastError = apiErr;
+      } else {
+        return data as T;
+      }
+    } catch (e) {
+      clearTimeout(timer);
+      // 已是業務錯誤（4xx）直接往外拋，不重試
+      if (e instanceof ApiError && !e.isNetwork && e.status >= 400 && e.status < 500) {
+        throw e;
+      }
+      // AbortError（逾時）或 fetch 連線失敗 → 視為網路錯誤，可重試
+      const isTimeout = e instanceof DOMException && e.name === "AbortError";
+      lastError = new ApiError(
+        isTimeout ? "連線逾時" : "網路連線失敗",
+        { isNetwork: true }
+      );
+    }
+
+    // 還有重試機會 → 指數退避（0.5s、1s）後再試
+    if (attempt < maxRetries) {
+      await sleep(500 * Math.pow(2, attempt));
+    }
   }
-  return data as T;
+
+  throw lastError ?? new ApiError("網路連線失敗", { isNetwork: true });
 }
 
 export const api = {

@@ -32,6 +32,7 @@ import { PhotoSourceSheet } from "@/components/photo-source-sheet";
 import type { MealRecord, AiSuggestion, ProfileMedication, HealthMetric, FavoriteMeal, PartnerCampaign, AchievementsResponse } from "@/lib/api-client";
 import type { AchievementProgress } from "@/lib/achievements";
 import { useAuth, type AppProfile } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api-client";
 import type { FoodAnalysisResult } from "@/lib/ai/gemini";
 import { mergeMealsWithSlots, guessMealType } from "@/lib/meal-utils";
@@ -44,6 +45,7 @@ import { hasFeature, requiredTierLabel, type FeatureKey, type SubscriptionTier }
 
 export default function Page() {
   const { user, profile, loading, refreshProfile, setProfileDirectly } = useAuth();
+  const toast = useToast();
 
   // 如果用戶被 OAuth provider 丟回 /?code=xxx，自動轉到 /auth/callback
   useEffect(() => {
@@ -111,7 +113,7 @@ export default function Page() {
       action();
       return;
     }
-    alert(`這是${requiredTierLabel(feature)}功能，升級後就可以使用。`);
+    toast.info(`這是${requiredTierLabel(feature)}功能，升級後就可以使用。`);
     window.location.href = "/pricing";
   };
 
@@ -246,7 +248,8 @@ export default function Page() {
       await reloadMeals();
       loadSuggestion(true).catch(console.error);
     } catch (e) {
-      alert("複製昨天餐點失敗：" + (e as Error).message);
+      console.error("複製昨天餐點失敗:", e);
+      toast.error("複製餐點沒成功，請再試一次。");
     }
   };
 
@@ -259,7 +262,8 @@ export default function Page() {
       // 刪除後也重新生成建議（用戶今天吃的內容變了）
       loadSuggestion(true).catch(console.error);
     } catch (e) {
-      alert("刪除失敗：" + (e as Error).message);
+      console.error("刪除餐點失敗:", e);
+      toast.error("刪除沒成功，請再試一次。");
     }
   };
 
@@ -274,7 +278,8 @@ export default function Page() {
       const { profile: updated } = await api.updateProfile({ medications: next });
       setProfileDirectly(updated as AppProfile);
     } catch (e) {
-      alert("更新用藥狀態失敗：" + (e as Error).message);
+      console.error("更新用藥狀態失敗:", e);
+      toast.error("用藥記錄沒存成功，網路不穩時請稍後再點一次。");
     }
   };
 
@@ -312,9 +317,10 @@ export default function Page() {
         fat_g: meal.fat_g,
       });
       await reloadFavoriteMeals();
-      alert("已存成常吃餐點");
+      toast.success("已存成常吃餐點，下次一鍵就能加。");
     } catch (e) {
-      alert("儲存常吃餐點失敗：" + (e as Error).message);
+      console.error("儲存常吃餐點失敗:", e);
+      toast.error("存常吃餐點沒成功，請再試一次。");
     }
   };
 
@@ -337,7 +343,8 @@ export default function Page() {
       await reloadMeals();
       loadSuggestion(true).catch(console.error);
     } catch (e) {
-      alert("加入常吃餐點失敗：" + (e as Error).message);
+      console.error("加入常吃餐點失敗:", e);
+      toast.error("加入餐點沒成功，請再試一次。");
     }
   };
 
@@ -415,10 +422,9 @@ export default function Page() {
       setAnalyzing(false);
       console.error("[handleFileUpload] error:", err);
       const status = (err as { status?: number })?.status;
-      const msg = err instanceof Error ? err.message : String(err);
-      if (status === 429) alert("本月拍照次數已用完，請升級方案");
-      else if (status === 401) alert("請先登入");
-      else alert("辨識失敗：\n" + msg);
+      if (status === 429) toast.info("這個月的拍照次數用完了，升級方案就能繼續用。");
+      else if (status === 401) toast.error("請先登入再使用喔。");
+      else toast.error("照片看不太清楚，換一張光線好一點的再試試。");
     }
   };
 
@@ -470,7 +476,10 @@ export default function Page() {
       logged: true,
       mealType,
     };
+    // 先保存送出前的快照，失敗時可真正還原（不是靠重抓）
+    let mealsSnapshot: Meal[] = [];
     setMeals((prev) => {
+      mealsSnapshot = prev;
       const next = [...prev];
       if (mealType === "snack") {
         // 點心：覆蓋既有點心卡，沒有就附加一張（不佔用晚餐格）
@@ -508,8 +517,10 @@ export default function Page() {
       loadSuggestion(true).catch(console.error);
     } catch (e) {
       console.error("Save meal failed:", e);
-      alert("儲存失敗，請再試一次：" + (e as Error).message);
-      reloadMeals().catch(console.error);
+      // 真 rollback：把樂觀更新的那張卡還原回送出前的狀態，
+      // 避免長者以為已記錄成功（資料正確性）
+      setMeals(mealsSnapshot);
+      toast.error("餐點沒存成功，網路穩定後請再記錄一次。");
     }
   };
 
@@ -727,8 +738,8 @@ function FavoriteMealPicker({ mealType, favorites, onClose, onSelect }: {
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <h2 style={{ fontSize: "var(--fs-xl)", margin: 0 }}>選常吃餐點</h2>
-          <button onClick={onClose} style={{ padding: 8 }}>
-            <span style={{ fontSize: 24 }}>×</span>
+          <button onClick={onClose} aria-label="關閉" style={{ padding: 8 }}>
+            <span style={{ fontSize: 24 }} aria-hidden="true">×</span>
           </button>
         </div>
         {filtered.length === 0 ? (
