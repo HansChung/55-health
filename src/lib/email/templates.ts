@@ -84,6 +84,74 @@ export function buildAlertEmail({
 </html>`;
 }
 
+// ────────────────────────────────────────────────
+// 每週健康報告 Email
+// ────────────────────────────────────────────────
+interface BuildWeeklyEmailParams {
+  recipientName: string;
+  elderName: string;
+  /** 收件者是否為家人（決定用「家人摘要」還是「給長者的提醒」） */
+  forFamily: boolean;
+  report: {
+    meals: { days_logged: number; meals_count: number; avg_calories: number };
+    exercise: { minutes: number };
+    tips: string[];
+    family_summary: string[];
+  };
+}
+
+export function buildWeeklyReportEmail({
+  recipientName,
+  elderName,
+  forFamily,
+  report,
+}: BuildWeeklyEmailParams): string {
+  const points = forFamily ? report.family_summary : report.tips;
+  const intro = forFamily
+    ? `這是 <strong style="color:#3D2E20;">${escapeHtml(elderName)}</strong> 這週的健康摘要：`
+    : `這是您這週的健康回顧：`;
+
+  const listItems = points
+    .map(
+      (p) =>
+        `<li style="margin:0 0 10px;font-size:15px;line-height:1.65;color:#6B5848;">${escapeHtml(p)}</li>`
+    )
+    .join("");
+
+  return `<!DOCTYPE html>
+<html lang="zh-Hant">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#FAF5EC;font-family:'PingFang TC','Noto Sans TC','Microsoft JhengHei',sans-serif;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#FAF5EC;padding:32px 16px;">
+    <tr><td align="center">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:480px;background:#FFFFFF;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.06);">
+        <tr><td style="background:#E8845A;padding:24px 28px;">
+          <p style="margin:0;font-size:20px;font-weight:800;color:#FFFFFF;">🍊 暖暖每週報告</p>
+        </td></tr>
+        <tr><td style="padding:28px;">
+          <p style="margin:0 0 6px;font-size:16px;">${escapeHtml(recipientName)} 您好，</p>
+          <p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#6B5848;">${intro}</p>
+          <table role="presentation" width="100%" style="background:#FFF8EE;border-radius:14px;margin:0 0 18px;">
+            <tr><td style="padding:16px 18px;font-size:15px;color:#3D2E20;line-height:1.8;">
+              📋 飲食記錄：<strong>${report.meals.days_logged}</strong> 天、共 <strong>${report.meals.meals_count}</strong> 餐<br>
+              🔥 平均每天約 <strong>${report.meals.avg_calories}</strong> 大卡<br>
+              🚶 運動累積 <strong>${report.exercise.minutes}</strong> 分鐘
+            </td></tr>
+          </table>
+          <ul style="margin:0 0 8px;padding-left:20px;">${listItems}</ul>
+        </td></tr>
+        <tr><td style="padding:16px 28px 28px;border-top:1px solid #ECDFC8;">
+          <p style="margin:0;font-size:12px;color:#A89580;line-height:1.6;">
+            本報告由暖暖自動產生，僅供參考，非醫療診斷。如有健康疑慮請諮詢醫師。
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
 // 防 XSS：使用者填的名字可能含特殊字元
 function escapeHtml(str: string): string {
   return String(str)
