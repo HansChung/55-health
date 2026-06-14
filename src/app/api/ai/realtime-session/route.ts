@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServer } from "@/lib/supabase/server";
+import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
 import { checkUserQuota } from "@/lib/ai/usage-tracker";
 
 /**
@@ -81,27 +81,55 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const text = await response.text();
+      console.error("[api] OpenAI 建立 session 失敗:", response.status, text);
       return NextResponse.json(
-        { error: "建立語音 session 失敗：" + text },
+        { error: "暫時無法開始語音對話，請稍後再試" },
         { status: 500 }
       );
     }
 
     const data = await response.json();
+    const sessionId: string = data.session?.id ?? "";
+
+    // 計費完整性：在建立時就記下「伺服器端開始時間」與 max_seconds，
+    // 之後回報用量時用伺服器算的實際經過秒數當下限，避免 client 低報秒數繞過配額。
+    if (sessionId) {
+      try {
+        const admin = createSupabaseAdmin();
+        await admin.from("ai_usage").insert({
+          user_id: user.id,
+          service: "openai_realtime",
+          model,
+          audio_seconds: 0,
+          cost_usd: 0,
+          endpoint: "/api/ai/realtime-session",
+          success: true,
+          metadata: {
+            session_id: sessionId,
+            pending: true,
+            started_at: new Date().toISOString(),
+            max_seconds: maxSeconds,
+          },
+        });
+      } catch (e) {
+        console.error("[api] 記錄語音 session 開始時間失敗:", e);
+      }
+    }
+
     // GA 回傳格式：{ value: "ek_...", expires_at, session: {...} }
     // 把它包成前端期待的格式：{ session: { client_secret: { value }, id } }
     return NextResponse.json({
       session: {
         client_secret: { value: data.value },
-        id: data.session?.id ?? "",
+        id: sessionId,
         model,
       },
       quota: { used: quota.used, limit: quota.limit, tier: quota.tier },
       max_seconds: maxSeconds,
     });
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error("[api] 建立語音 session 例外:", error);
+    return NextResponse.json({ error: "暫時無法開始語音對話，請稍後再試" }, { status: 500 });
   }
 }
 
