@@ -7,6 +7,7 @@ import { SubPage } from "@/components/sub-page";
 import { Toggle } from "@/components/toggle";
 import { LockedFeatureCard } from "@/components/locked-feature-card";
 import { api, type ProfileMedication } from "@/lib/api-client";
+import { useToast } from "@/hooks/use-toast";
 import { hasFeature, type SubscriptionTier } from "@/lib/feature-gates";
 import { inferMedicationReminderTimes, isTakenToday } from "@/lib/medication-utils";
 
@@ -28,6 +29,7 @@ const CONDITIONS = [
 ];
 
 export function ChronicDiseaseScreen({ onBack, onScanPrescription, tier }: ChronicDiseaseScreenProps) {
+  const toast = useToast();
   const [selected, setSelected] = useState<string[]>([]);
   const [meds, setMeds] = useState<ProfileMedication[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,7 +87,8 @@ export function ChronicDiseaseScreen({ onBack, onScanPrescription, tier }: Chron
     try {
       await api.updateProfile({ medications: next });
     } catch (e) {
-      alert("儲存用藥提醒失敗：" + (e as Error).message);
+      console.error("儲存用藥提醒失敗:", e);
+      toast.error("用藥提醒沒存成功，請再試一次。");
     }
   };
 
@@ -98,7 +101,8 @@ export function ChronicDiseaseScreen({ onBack, onScanPrescription, tier }: Chron
       });
       onBack();
     } catch (e) {
-      alert("儲存失敗：" + (e as Error).message);
+      console.error("儲存慢性病設定失敗:", e);
+      toast.error("沒存成功，請再試一次。");
     }
     setSaving(false);
   };
@@ -278,7 +282,7 @@ export function ChronicDiseaseScreen({ onBack, onScanPrescription, tier }: Chron
                     <div style={{ fontSize: "var(--fs-base)", fontWeight: 700 }}>{m.name}</div>
                     {m.dose && <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>{m.dose}</div>}
                   </div>
-                  <button onClick={() => removeMed(i)} style={{ padding: 8 }}>
+                  <button onClick={() => removeMed(i)} aria-label={`移除藥物 ${m.name}`} style={{ padding: 8 }}>
                     <Icon name="x" size={20} color="var(--ink-3)" stroke={2.5} />
                   </button>
                 </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Icon } from "@/components/icons";
 import { SubPage } from "@/components/sub-page";
 import { api, type HealthMetric } from "@/lib/api-client";
+import { useToast } from "@/hooks/use-toast";
 
 interface HealthMetricsScreenProps {
   onBack: () => void;
@@ -238,6 +239,7 @@ function TrendChart({ tab, metrics }: { tab: TabType; metrics: HealthMetric[] })
 }
 
 function MetricRow({ metric, onDeleted }: { metric: HealthMetric; onDeleted: () => void }) {
+  const toast = useToast();
   const info = TAB_INFO[metric.metric_type as TabType];
 
   const handleDelete = async () => {
@@ -246,7 +248,8 @@ function MetricRow({ metric, onDeleted }: { metric: HealthMetric; onDeleted: () 
       await api.deleteMetric(metric.id);
       onDeleted();
     } catch (e) {
-      alert("刪除失敗");
+      console.error("刪除健康記錄失敗:", e);
+      toast.error("刪除沒成功，請再試一次。");
     }
   };
 
@@ -283,7 +286,7 @@ function MetricRow({ metric, onDeleted }: { metric: HealthMetric; onDeleted: () 
           </div>
         )}
       </div>
-      <button onClick={handleDelete} style={{ padding: 8 }}>
+      <button onClick={handleDelete} aria-label="刪除這筆記錄" style={{ padding: 8 }}>
         <Icon name="x" size={18} color="var(--ink-3)" stroke={2.5} />
       </button>
     </div>
@@ -296,6 +299,7 @@ function AddMetricSheet({ tab, previousMetric, onClose, onSaved }: {
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const toast = useToast();
   const info = TAB_INFO[tab];
   // 預填上次的值（方便長者快速記錄）
   const [weight, setWeight] = useState(previousMetric?.weight_kg?.toString() ?? "");
@@ -328,7 +332,8 @@ function AddMetricSheet({ tab, previousMetric, onClose, onSaved }: {
       await api.createMetric(body);
       onSaved();
     } catch (e) {
-      alert("儲存失敗：" + (e as Error).message);
+      console.error("儲存健康記錄失敗:", e);
+      toast.error("沒存成功，請再試一次。");
     }
     setSaving(false);
   };

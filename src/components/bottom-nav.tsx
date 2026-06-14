@@ -38,7 +38,7 @@ export function BottomNav({ tab, setTab, onCamera, onVoice }: BottomNavProps) {
       {tabs.map(t => {
         if (t.fab) {
           return (
-            <button key={t.id} onClick={() => handle(t.id)} style={{
+            <button key={t.id} onClick={() => handle(t.id)} aria-label="拍照記錄餐點" style={{
               width: 68, height: 68, borderRadius: "50%",
               background: "linear-gradient(135deg, #F4B58E, #E8845A)",
               boxShadow: "0 6px 0 var(--primary-deep), 0 10px 20px rgba(201, 94, 54, 0.3)",

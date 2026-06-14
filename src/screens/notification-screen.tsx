@@ -5,6 +5,7 @@ import { Icon } from "@/components/icons";
 import { SubPage } from "@/components/sub-page";
 import { Toggle } from "@/components/toggle";
 import { api, type NotificationSettings } from "@/lib/api-client";
+import { useToast } from "@/hooks/use-toast";
 
 interface NotificationScreenProps {
   onBack: () => void;
@@ -21,6 +22,7 @@ const DEFAULT_SETTINGS: NotificationSettings = {
 };
 
 export function NotificationScreen({ onBack }: NotificationScreenProps) {
+  const toast = useToast();
   const [settings, setSettings] = useState<NotificationSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -43,7 +45,8 @@ export function NotificationScreen({ onBack }: NotificationScreenProps) {
     try {
       await api.updateProfile({ notification_settings: newSettings });
     } catch (e) {
-      alert("儲存失敗：" + (e as Error).message);
+      console.error("儲存通知設定失敗:", e);
+      toast.error("沒存成功，請再試一次。");
     }
     setSaving(false);
   };

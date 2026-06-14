@@ -8,6 +8,7 @@ import { api, type PrescriptionResult } from "@/lib/api-client";
 import { compressImage } from "@/lib/image-utils";
 import { uploadMealPhoto } from "@/lib/upload-photo";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import { inferMedicationReminderTimes } from "@/lib/medication-utils";
 
 interface PrescriptionScanScreenProps {
@@ -18,6 +19,7 @@ type Stage = "choose" | "camera" | "analyzing" | "result" | "error";
 
 export function PrescriptionScanScreen({ onBack }: PrescriptionScanScreenProps) {
   const { user, profile, refreshProfile } = useAuth();
+  const toast = useToast();
   const [stage, setStage] = useState<Stage>("choose");
   const [errorMsg, setErrorMsg] = useState("");
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
@@ -78,10 +80,11 @@ export function PrescriptionScanScreen({ onBack }: PrescriptionScanScreenProps) 
         medications: [...existing, ...newMeds] as { name: string; dose?: string; time?: string }[],
       });
       await refreshProfile();
-      alert(`已加入 ${newMeds.length} 種藥物到您的用藥清單`);
+      toast.success(`已加入 ${newMeds.length} 種藥物到您的用藥清單。`);
       onBack();
     } catch (e) {
-      alert("儲存失敗：" + (e as Error).message);
+      console.error("儲存藥物失敗:", e);
+      toast.error("沒存成功，請再試一次。");
     }
     setSaving(false);
   };
@@ -420,7 +423,7 @@ function PrescriptionCamera({ onClose, onCapture }: {
           position: "absolute", top: 16, left: 16, right: 16,
           display: "flex", justifyContent: "space-between", alignItems: "center",
         }}>
-          <button onClick={onClose} style={{
+          <button onClick={onClose} aria-label="關閉相機" style={{
             width: 52, height: 52, borderRadius: "50%",
             background: "rgba(0,0,0,0.5)", backdropFilter: "blur(10px)",
             display: "flex", alignItems: "center", justifyContent: "center",

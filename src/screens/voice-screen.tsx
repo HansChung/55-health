@@ -287,6 +287,7 @@ export function VoiceScreen({ onClose, voiceTone = "warm" }: VoiceScreenProps) {
         <button
           onClick={handleMicPress}
           disabled={state === "connecting"}
+          aria-label={state === "connecting" ? "連線中" : isActive ? "結束對話" : "開始語音對話"}
           style={{
             width: 100, height: 100, borderRadius: "50%",
             background: isActive

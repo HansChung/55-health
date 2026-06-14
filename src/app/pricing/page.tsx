@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const PLANS = [
   {
@@ -22,12 +23,13 @@ const PLANS = [
 export default function PricingPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const supabase = createSupabaseBrowser();
+  const toast = useToast();
 
   const subscribe = async (plan: string) => {
     setLoading(plan);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      alert("請先登入");
+      toast.error("請先登入再選擇方案喔。");
       setLoading(null);
       return;
     }
@@ -41,7 +43,8 @@ export default function PricingPage() {
       if (error) throw new Error(error);
       window.location.href = url;
     } catch (e) {
-      alert("結帳失敗：" + (e as Error).message);
+      console.error("結帳失敗:", e);
+      toast.error("結帳沒成功，請稍後再試一次。");
       setLoading(null);
     }
   };

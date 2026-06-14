@@ -82,7 +82,7 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
               {getGreeting()}，{displayName || "您"}
             </h1>
           </div>
-          <button onClick={onAlertsCenter} style={{
+          <button onClick={onAlertsCenter} aria-label="提醒通知中心" style={{
             width: 52, height: 52, borderRadius: "50%",
             background: "var(--surface)", border: "1px solid var(--line)",
             display: "flex", alignItems: "center", justifyContent: "center",

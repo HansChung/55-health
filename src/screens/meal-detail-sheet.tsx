@@ -57,7 +57,7 @@ export function MealDetailSheet({ meal, onClose, onDelete, onSaveFavorite }: Mea
           <h2 style={{ fontSize: "var(--fs-xl)", fontWeight: 800, margin: 0 }}>
             {MEAL_LABEL[meal.meal_type] ?? meal.meal_type}
           </h2>
-          <button onClick={onClose} style={{
+          <button onClick={onClose} aria-label="關閉" style={{
             width: 36, height: 36, borderRadius: "50%",
             background: "var(--surface)", border: "1px solid var(--line)",
             display: "flex", alignItems: "center", justifyContent: "center",

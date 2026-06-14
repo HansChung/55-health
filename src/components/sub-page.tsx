@@ -28,7 +28,7 @@ export function SubPage({ title, onBack, children, accent, footer }: SubPageProp
           display: "flex", alignItems: "center", gap: 8,
           padding: "8px 16px 14px",
         }}>
-          <button onClick={onBack} style={{
+          <button onClick={onBack} aria-label="返回上一頁" style={{
             width: 48, height: 48, borderRadius: "50%",
             background: "var(--surface)", border: "1px solid var(--line)",
             display: "flex", alignItems: "center", justifyContent: "center",

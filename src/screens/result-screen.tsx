@@ -82,7 +82,7 @@ export function ResultScreen({ result, photoDataUrl, onClose, onSave }: ResultSc
             </div>
           </div>
         )}
-        <button onClick={onClose} style={{
+        <button onClick={onClose} aria-label="返回" style={{
           position: "absolute", top: 16, left: 16,
           width: 48, height: 48, borderRadius: "50%",
           background: "rgba(0,0,0,0.5)", backdropFilter: "blur(10px)",

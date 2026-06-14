@@ -207,7 +207,7 @@ export function CameraScreen({ onClose, onCapture }: CameraScreenProps) {
           position: "absolute", top: 16, left: 16, right: 16,
           display: "flex", justifyContent: "space-between", alignItems: "center",
         }}>
-          <button onClick={onClose} style={{
+          <button onClick={onClose} aria-label="關閉相機" style={{
             width: 52, height: 52, borderRadius: "50%",
             background: "rgba(0,0,0,0.5)", backdropFilter: "blur(10px)",
             display: "flex", alignItems: "center", justifyContent: "center",

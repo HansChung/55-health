@@ -5,6 +5,7 @@ import { Icon } from "@/components/icons";
 import { SubPage } from "@/components/sub-page";
 import { Toggle } from "@/components/toggle";
 import { api, type FamilyLink, type FamilyPermissions } from "@/lib/api-client";
+import { useToast } from "@/hooks/use-toast";
 
 interface FamilyShareScreenProps {
   onBack: () => void;
@@ -13,6 +14,7 @@ interface FamilyShareScreenProps {
 const AVATAR_COLORS = ["#7AA779", "#E8845A", "#D9A441", "#C95B6E", "#5BA0C9"];
 
 export function FamilyShareScreen({ onBack }: FamilyShareScreenProps) {
+  const toast = useToast();
   const [family, setFamily] = useState<FamilyLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
@@ -44,7 +46,8 @@ export function FamilyShareScreen({ onBack }: FamilyShareScreenProps) {
     try {
       await api.updateFamily(link.id, { permissions: newPerms });
     } catch (e) {
-      alert("更新失敗：" + (e as Error).message);
+      console.error("更新家人權限失敗:", e);
+      toast.error("更新沒成功，請再試一次。");
       reload();
     }
   };
@@ -55,7 +58,8 @@ export function FamilyShareScreen({ onBack }: FamilyShareScreenProps) {
       await api.removeFamily(link.id);
       reload();
     } catch (e) {
-      alert("移除失敗：" + (e as Error).message);
+      console.error("移除家人失敗:", e);
+      toast.error("移除沒成功，請再試一次。");
     }
   };
 
@@ -258,6 +262,7 @@ function InviteModal({ onClose, onCreated }: {
   onClose: () => void;
   onCreated: (link: FamilyLink) => void;
 }) {
+  const toast = useToast();
   const [name, setName] = useState("");
   const [relationship, setRelationship] = useState("");
   const [perm, setPerm] = useState<FamilyPermissions>({
@@ -276,7 +281,8 @@ function InviteModal({ onClose, onCreated }: {
       });
       onCreated(link);
     } catch (e) {
-      alert("建立邀請失敗：" + (e as Error).message);
+      console.error("建立邀請失敗:", e);
+      toast.error("建立邀請沒成功，請再試一次。");
     }
     setSaving(false);
   };
@@ -363,10 +369,11 @@ function InviteModal({ onClose, onCreated }: {
 }
 
 function InviteCodeModal({ link, onClose }: { link: FamilyLink; onClose: () => void }) {
+  const toast = useToast();
   const copyCode = () => {
     if (link.invite_code && typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard.writeText(link.invite_code);
-      alert("已複製：" + link.invite_code);
+      toast.success("邀請碼已複製：" + link.invite_code);
     }
   };
 

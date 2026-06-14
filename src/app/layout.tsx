@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/hooks/use-auth";
+import { ToastProvider } from "@/hooks/use-toast";
+import { OfflineBanner } from "@/components/offline-banner";
 
 export const metadata: Metadata = {
   title: "暖暖 · 55+ 飲食記錄",
@@ -27,7 +29,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <OfflineBanner />
+        <ToastProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </ToastProvider>
       </body>
     </html>
   );

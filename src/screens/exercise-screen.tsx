@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Icon } from "@/components/icons";
 import { SubPage } from "@/components/sub-page";
 import { api, type ExerciseRecord } from "@/lib/api-client";
+import { useToast } from "@/hooks/use-toast";
 
 interface ExerciseScreenProps {
   onBack: () => void;
@@ -17,6 +18,7 @@ const QUICK = [
 ];
 
 export function ExerciseScreen({ onBack }: ExerciseScreenProps) {
+  const toast = useToast();
   const [logs, setLogs] = useState<ExerciseRecord[]>([]);
   const [weekLogs, setWeekLogs] = useState<ExerciseRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,7 +60,8 @@ export function ExerciseScreen({ onBack }: ExerciseScreenProps) {
         });
         await reload();
       } catch (e) {
-        alert("新增失敗：" + (e as Error).message);
+        console.error("新增運動失敗:", e);
+        toast.error("沒記錄成功，請再試一次。");
       }
       setAdding(false);
       return;
@@ -72,7 +75,8 @@ export function ExerciseScreen({ onBack }: ExerciseScreenProps) {
       });
       await reload();
     } catch (e) {
-      alert("新增失敗：" + (e as Error).message);
+      console.error("新增運動失敗:", e);
+      toast.error("沒記錄成功，請再試一次。");
     }
     setAdding(false);
   };

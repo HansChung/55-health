@@ -180,7 +180,7 @@ export function LoginScreen({ onDone }: LoginScreenProps) {
       {step === "otp" && (
         <>
           <div style={{ padding: "8px 16px" }}>
-            <button onClick={() => setStep("email")} style={{
+            <button onClick={() => setStep("email")} aria-label="返回" style={{
               width: 48, height: 48, borderRadius: "50%",
               background: "var(--surface)", border: "1px solid var(--line)",
               display: "flex", alignItems: "center", justifyContent: "center",
