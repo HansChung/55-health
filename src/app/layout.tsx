@@ -5,8 +5,23 @@ import { ToastProvider } from "@/hooks/use-toast";
 import { OfflineBanner } from "@/components/offline-banner";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://nuan55.com"),
   title: "暖暖 · 55+ 飲食記錄",
   description: "給長者的飲食追蹤 App — 拍照記錄、AI 分析、語音對話",
+  applicationName: "暖暖",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "暖暖",
+  },
+  openGraph: {
+    type: "website",
+    locale: "zh_TW",
+    siteName: "暖暖",
+    title: "暖暖 · 55+ 飲食記錄",
+    description: "給長者的飲食追蹤 App — 拍照記錄、AI 分析、語音對話",
+  },
 };
 
 export const viewport: Viewport = {
