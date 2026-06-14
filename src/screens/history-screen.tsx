@@ -150,6 +150,8 @@ export function HistoryScreen({ onMeal }: HistoryScreenProps) {
                     <img
                       src={m.photo_url}
                       alt={m.items.map((it) => it.name).join("、")}
+                      loading="lazy"
+                      decoding="async"
                       style={{
                         width: 56, height: 56, borderRadius: 12,
                         objectFit: "cover", flexShrink: 0,

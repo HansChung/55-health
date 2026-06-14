@@ -72,7 +72,9 @@ export function MealDetailSheet({ meal, onClose, onDelete, onSaveFavorite }: Mea
         {meal.photo_url && (
           <img
             src={meal.photo_url}
-            alt="meal"
+            alt={meal.items?.map((it) => it.name).join("、") || "餐點照片"}
+            loading="lazy"
+            decoding="async"
             style={{
               width: "100%", height: 180, objectFit: "cover",
               borderRadius: 16, marginBottom: 16,
