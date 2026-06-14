@@ -82,6 +82,7 @@ export async function POST(req: NextRequest) {
         { status: 429 }
       );
     }
-    return NextResponse.json({ error: "AI 分析失敗：" + msg.substring(0, 100) }, { status: 500 });
+    console.error("[api] AI 食物分析失敗:", msg);
+    return NextResponse.json({ error: "照片分析失敗，換一張清楚一點的再試試" }, { status: 500 });
   }
 }

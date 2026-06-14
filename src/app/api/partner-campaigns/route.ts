@@ -23,7 +23,7 @@ export async function GET() {
     .order("created_at", { ascending: false })
     .limit(10);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) { console.error("[api] DB error:", error); return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 }); }
 
   const scored = (data ?? [])
     .map((campaign) => ({

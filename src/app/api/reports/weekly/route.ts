@@ -51,9 +51,11 @@ export async function GET() {
       .order("measured_at", { ascending: false }),
   ]);
 
-  if (mealsRes.error) return NextResponse.json({ error: mealsRes.error.message }, { status: 500 });
-  if (exercisesRes.error) return NextResponse.json({ error: exercisesRes.error.message }, { status: 500 });
-  if (metricsRes.error) return NextResponse.json({ error: metricsRes.error.message }, { status: 500 });
+  const reportError = mealsRes.error || exercisesRes.error || metricsRes.error;
+  if (reportError) {
+    console.error("[api] 週報讀取失敗:", reportError);
+    return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
+  }
 
   const meals = (mealsRes.data ?? []) as MealRow[];
   const exercises = (exercisesRes.data ?? []) as ExerciseRow[];

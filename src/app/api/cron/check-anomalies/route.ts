@@ -41,7 +41,8 @@ export async function GET(req: NextRequest) {
     .eq("status", "accepted");
 
   if (linksError) {
-    return NextResponse.json({ error: linksError.message }, { status: 500 });
+    console.error("[cron] 讀取 family_links 失敗:", linksError);
+    return NextResponse.json({ error: "伺服器錯誤" }, { status: 500 });
   }
 
   // 3. 以長輩(owner_id)分組，只留有開 alerts 權限的家人

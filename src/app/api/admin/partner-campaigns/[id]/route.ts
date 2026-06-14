@@ -29,7 +29,7 @@ export async function PATCH(
   try {
     body = PatchSchema.parse(await req.json());
   } catch (e) {
-    return NextResponse.json({ error: "格式錯誤", detail: String(e) }, { status: 400 });
+    console.error("[api] 格式錯誤:", e); return NextResponse.json({ error: "送出的資料格式有誤" }, { status: 400 });
   }
 
   const { id } = await params;
@@ -46,7 +46,7 @@ export async function PATCH(
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) { console.error("[api] DB error:", error); return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 }); }
   return NextResponse.json({ campaign: data });
 }
 
@@ -64,6 +64,6 @@ export async function DELETE(
     .delete()
     .eq("id", id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) { console.error("[api] DB error:", error); return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 }); }
   return NextResponse.json({ ok: true });
 }

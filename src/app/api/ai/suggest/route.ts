@@ -100,7 +100,7 @@ ${meals?.length
 
     return NextResponse.json({ suggestion });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return NextResponse.json({ error: "建議生成失敗：" + msg }, { status: 500 });
+    console.error("[api] AI 建議生成失敗:", e);
+    return NextResponse.json({ error: "建議生成失敗，請稍後再試" }, { status: 500 });
   }
 }

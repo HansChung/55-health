@@ -29,7 +29,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) { console.error("[api] DB error:", error); return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 }); }
   return NextResponse.json({ user: data });
 }
 
@@ -40,6 +40,6 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: stri
   const { id } = await ctx.params;
   const supabase = createSupabaseAdmin();
   const { error } = await supabase.auth.admin.deleteUser(id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) { console.error("[api] DB error:", error); return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 }); }
   return NextResponse.json({ ok: true });
 }

@@ -13,6 +13,6 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     .eq("id", id)
     .eq("user_id", user.id); // 確保只能刪自己的
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) { console.error("[api] DB error:", error); return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 }); }
   return NextResponse.json({ ok: true });
 }
