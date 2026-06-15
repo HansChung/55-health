@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4 portrait; margin: 12mm 13mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  :root {
+    --primary: #E8845A; --deep: #C95E36; --cream: #FAF5EC; --creamDeep: #F2E8D5;
+    --ink1: #3D2E20; --ink2: #6B5848; --ink3: #A89580;
+    --sage: #7AA779; --gold: #D9A441; --berry: #C95B6E; --line: #EDE3D0; --tech: #2E7CB8;
+  }
+  body { font-family: "PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif; color: var(--ink1); font-size: 11px; line-height: 1.5; }
+
+  /* Header */
+  .head { display: flex; align-items: center; gap: 11px; padding-bottom: 10px; border-bottom: 2px solid var(--primary); margin-bottom: 12px; }
+  .logo { width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg,#FFD4A8,var(--primary)); display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+  .htext .t { font-size: 17px; font-weight: 800; color: var(--ink1); }
+  .htext .s { font-size: 10.5px; color: var(--ink2); margin-top: 2px; }
+  .head .to { margin-left: auto; text-align: right; font-size: 10px; color: var(--ink3); }
+
+  .intro { background: var(--cream); border-radius: 10px; padding: 11px 14px; margin-bottom: 12px; font-size: 10.5px; color: var(--ink2); line-height: 1.65; }
+  .intro b { color: var(--ink1); }
+
+  /* 圖例 */
+  .legend { display: flex; gap: 14px; margin-bottom: 12px; font-size: 10px; color: var(--ink2); }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .pri { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .p1 { background: var(--berry); } .p2 { background: var(--gold); } .p3 { background: var(--ink3); }
+
+  /* 區塊 grid */
+  .grid { column-count: 2; column-gap: 14px; }
+  .sec { break-inside: avoid; margin-bottom: 11px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  .sec h3 { font-size: 12px; font-weight: 800; color: var(--deep); margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
+  .sec h3 .n { width: 18px; height: 18px; border-radius: 6px; background: var(--creamDeep); color: var(--deep); font-size: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .q { display: flex; gap: 6px; margin-bottom: 5px; font-size: 10.5px; color: var(--ink2); line-height: 1.5; }
+  .q:last-child { margin-bottom: 0; }
+  .q .dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+
+  /* 重點框 */
+  .star { break-inside: avoid; background: #FFF8EE; border: 1.5px solid var(--gold); border-radius: 10px; padding: 12px 15px; margin-top: 4px; }
+  .star .st { font-size: 12.5px; font-weight: 800; color: var(--ink1); margin-bottom: 8px; }
+  .star ol { margin: 0; padding-left: 20px; }
+  .star li { font-size: 11px; color: var(--ink2); line-height: 1.7; margin-bottom: 2px; }
+  .star li b { color: var(--deep); }
+
+  .footer { margin-top: 14px; padding-top: 9px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; font-size: 10px; color: var(--ink3); }
+  .footer b { color: var(--ink2); }
+</style>
+</head>
+<body>
+  <div class="head">
+    <div class="logo">🐻</div>
+    <div class="htext">
+      <div class="t">暖暖 × LifeSmart 整合技術問題清單</div>
+      <div class="s">交付對象：LifeSmart 技術／開放平台窗口</div>
+    </div>
+    <div class="to">暖暖 NuanNuan<br>2026</div>
+  </div>
+
+  <div class="intro">
+    感謝 貴公司願意提供 API。暖暖（nuan55.com）是一套 55+ 銀髮健康守護軟體，已具備<b>異常預警、家人通知與健康儀表板</b>。我們希望承接 貴公司環境偵測裝置的事件，做 AI 分析與家人通知。以下為串接前需釐清的技術問題，煩請逐項回覆，謝謝。
+  </div>
+
+  <div class="legend">
+    <span><i class="pri p1"></i>必答（決定能否開工）</span>
+    <span><i class="pri p2"></i>重要</span>
+    <span><i class="pri p3"></i>後續</span>
+  </div>
+
+  <div class="grid">
+    <div class="sec">
+      <h3><span class="n">一</span>開放平台 / 認證</h3>
+      <div class="q"><span class="dot p1"></span>是否有開放平台 / 雲端 API 文件？可否提供連結與開發者帳號申請方式？</div>
+      <div class="q"><span class="dot p1"></span>API 採用哪種認證？（OAuth 2.0／API Key／簽章）授權流程為何？</div>
+      <div class="q"><span class="dot p1"></span>Token 的有效期與更新（refresh）機制？</div>
+      <div class="q"><span class="dot p2"></span>正式與測試（sandbox）環境是否分開？base URL 各為何？</div>
+      <div class="q"><span class="dot p2"></span>申請接入需哪些資料／審核流程？大約多久開通？</div>
+    </div>
+
+    <div class="sec">
+      <h3><span class="n">二</span>裝置與資料</h3>
+      <div class="q"><span class="dot p1"></span>哪些裝置 SKU 提供資料 API？（人體存在、跌倒／離床、SOS、智慧床墊、門磁、溫濕度、空氣品質…）</div>
+      <div class="q"><span class="dot p1"></span>每種裝置可取得哪些欄位？可否提供 JSON 格式範例？</div>
+      <div class="q"><span class="dot p1"></span>數值的單位、時間戳格式與時區為何？</div>
+      <div class="q"><span class="dot p2"></span>裝置與「使用者帳號」如何對應？一位長輩多裝置如何識別？</div>
+      <div class="q"><span class="dot p2"></span>是否支援多租戶／多家庭的資料隔離？</div>
+    </div>
+
+    <div class="sec">
+      <h3><span class="n">三</span>即時性與推播</h3>
+      <div class="q"><span class="dot p1"></span>取得事件是用 Webhook 推播，還是要我們輪詢（polling）？</div>
+      <div class="q"><span class="dot p1"></span>若有 Webhook：可否推送到我們指定的 HTTPS 端點？格式為何？</div>
+      <div class="q"><span class="dot p1"></span>緊急事件（跌倒／SOS）的延遲大約多少秒？（救援最關鍵）</div>
+      <div class="q"><span class="dot p2"></span>若是輪詢：建議頻率？有無最小間隔限制？</div>
+      <div class="q"><span class="dot p2"></span>事件是否保證順序與不漏送？有無重送與去重（event id）？</div>
+    </div>
+
+    <div class="sec">
+      <h3><span class="n">四</span>用量與限制</h3>
+      <div class="q"><span class="dot p2"></span>API 的呼叫頻率限制（rate limit）為何？</div>
+      <div class="q"><span class="dot p3"></span>單帳號可綁定的裝置數上限？</div>
+      <div class="q"><span class="dot p3"></span>歷史資料可回查多久？是否提供歷史查詢 API？</div>
+    </div>
+
+    <div class="sec">
+      <h3><span class="n">五</span>安全</h3>
+      <div class="q"><span class="dot p1"></span>Webhook 是否提供簽章驗證（確認事件來自 LifeSmart）？</div>
+      <div class="q"><span class="dot p2"></span>是否支援 IP 白名單 / mTLS？</div>
+      <div class="q"><span class="dot p2"></span>健康資料傳輸是否全程 HTTPS／加密？</div>
+    </div>
+
+    <div class="sec">
+      <h3><span class="n">六</span>資料落地與合規 ⚠️</h3>
+      <div class="q"><span class="dot p1"></span>API 與資料伺服器機房位置在哪？（中國／海外節點）</div>
+      <div class="q"><span class="dot p1"></span>台灣使用者資料能否落地台灣或海外節點？（涉台灣個資法，上線關鍵）</div>
+      <div class="q"><span class="dot p2"></span>資料擁有權與授權範圍？可否存入我方資料庫做分析？</div>
+      <div class="q"><span class="dot p3"></span>是否有資料處理協議（DPA）／隱私條款可簽署？</div>
+    </div>
+
+    <div class="sec">
+      <h3><span class="n">七</span>測試與支援</h3>
+      <div class="q"><span class="dot p2"></span>可否提供測試帳號 + 測試裝置（或模擬器）做 POC？</div>
+      <div class="q"><span class="dot p2"></span>是否有技術窗口／開發者社群／工單支援？</div>
+      <div class="q"><span class="dot p3"></span>是否有 SDK（Node.js／後端）可用，還是純 REST？</div>
+    </div>
+
+    <div class="sec">
+      <h3><span class="n">八</span>商務（技術相關）</h3>
+      <div class="q"><span class="dot p2"></span>API 介接是否收費？怎麼計（按裝置／呼叫量／月費）？</div>
+      <div class="q"><span class="dot p3"></span>硬體由誰供應、安裝？是否有合作夥伴價格？</div>
+    </div>
+  </div>
+
+  <div class="star">
+    <div class="st">⭐ 若時間有限，請先回這三題（決定可行性）</div>
+    <ol>
+      <li><b>是否有開放 API、用什麼認證</b>（題 1–3）</li>
+      <li><b>緊急事件（跌倒／SOS）怎麼即時取得、延遲多少</b>（題 11–13）</li>
+      <li><b>台灣用戶資料能否落地台灣／海外</b>（題 22–23）</li>
+    </ol>
+  </div>
+
+  <div class="footer">
+    <div>🌐 <b>nuan55.com</b>　|　📧 sunboy1120@gmail.com</div>
+    <div>暖暖 NuanNuan　|　創辦人 鍾志鴻 Hans Chung</div>
+  </div>
+</body>
+</html>
