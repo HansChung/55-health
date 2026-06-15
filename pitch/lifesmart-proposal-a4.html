@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4 portrait; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  :root {
+    --primary: #E8845A; --deep: #C95E36; --cream: #FAF5EC; --creamDeep: #F2E8D5;
+    --ink1: #3D2E20; --ink2: #6B5848; --ink3: #A89580;
+    --sage: #7AA779; --gold: #D9A441; --berry: #C95B6E; --line: #EDE3D0;
+    --tech: #2E7CB8; --techSoft: #E8F1F8;
+  }
+  body { font-family: "PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;
+    width: 210mm; height: 297mm; background: var(--cream); color: var(--ink1);
+    position: relative; overflow: hidden; }
+  .blob { position: absolute; border-radius: 50%; z-index: 0; }
+  .b1 { width: 260px; height: 260px; background: var(--primary); opacity: .06; top: -80px; left: -60px; }
+  .b2 { width: 240px; height: 240px; background: var(--tech); opacity: .06; top: -70px; right: -60px; }
+  .b3 { width: 200px; height: 200px; background: var(--sage); opacity: .05; bottom: -70px; right: -50px; }
+  .wrap { position: relative; z-index: 1; padding: 13mm 15mm; height: 100%; display: flex; flex-direction: column; justify-content: center; }
+
+  /* Header */
+  .head { display: flex; align-items: center; gap: 12px; padding-bottom: 11px; border-bottom: 2px solid var(--line); margin-bottom: 12px; }
+  .lock { display: flex; align-items: center; gap: 9px; }
+  .logo { width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+  .logo.nn { background: linear-gradient(135deg,#FFD4A8,var(--primary)); }
+  .logo.ls { background: var(--techSoft); border: 1.5px solid #BBD8EC; font-size: 13px; font-weight: 800; color: var(--tech); }
+  .x { font-size: 20px; color: var(--ink3); font-weight: 300; }
+  .htext { margin-left: 4px; }
+  .htext .t { font-size: 19px; font-weight: 800; color: var(--ink1); }
+  .htext .s { font-size: 11.5px; color: var(--ink2); margin-top: 2px; }
+  .head .to { margin-left: auto; text-align: right; }
+  .head .to .a { font-size: 13px; font-weight: 800; color: var(--deep); }
+  .head .to .b { font-size: 10px; color: var(--ink3); margin-top: 2px; }
+
+  .lead { background: var(--ink1); color: #fff; border-radius: 12px; padding: 13px 18px; margin-bottom: 13px; text-align: center; }
+  .lead .big { font-size: 17px; font-weight: 800; }
+  .lead .sm { font-size: 11.5px; color: var(--creamDeep); margin-top: 3px; }
+
+  .sec-title { font-size: 13px; font-weight: 800; color: var(--ink1); margin: 0 0 8px; display: flex; align-items: center; gap: 7px; }
+  .sec-title .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--primary); }
+
+  /* 互補對比 */
+  .fit { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin-bottom: 13px; }
+  .card { border-radius: 12px; padding: 13px 15px; }
+  .card.nn { background: #fff; border: 1.5px solid #F2D9C9; }
+  .card.ls { background: var(--techSoft); border: 1.5px solid #CFE3F1; }
+  .card .ch { font-size: 13px; font-weight: 800; margin-bottom: 7px; }
+  .card.nn .ch { color: var(--deep); }
+  .card.ls .ch { color: var(--tech); }
+  .card ul { list-style: none; }
+  .card li { font-size: 11px; color: var(--ink2); line-height: 1.75; padding-left: 14px; position: relative; }
+  .card li::before { content: "•"; position: absolute; left: 2px; font-weight: 800; }
+  .card.nn li::before { color: var(--primary); }
+  .card.ls li::before { color: var(--tech); }
+
+  /* 整合流程 */
+  .flow { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 13px 14px; margin-bottom: 13px; }
+  .flow-row { display: flex; align-items: center; gap: 7px; }
+  .fstep { flex: 1; border-radius: 9px; padding: 9px 8px; text-align: center; }
+  .fstep .ft { font-size: 10.5px; font-weight: 800; line-height: 1.35; }
+  .fstep .fd { font-size: 9px; color: var(--ink3); margin-top: 2px; }
+  .fstep.a { background: var(--techSoft); } .fstep.a .ft { color: var(--tech); }
+  .fstep.b { background: var(--creamDeep); } .fstep.b .ft { color: var(--ink1); }
+  .fstep.c { background: #FDEEE5; } .fstep.c .ft { color: var(--deep); }
+  .fstep.d { background: #E8F0E4; } .fstep.d .ft { color: var(--sage); }
+  .farr { color: var(--ink3); font-size: 16px; font-weight: 800; }
+  .flow-note { font-size: 10px; color: var(--ink2); margin-top: 9px; text-align: center; }
+  .flow-note b { color: var(--deep); }
+
+  /* 兩欄：應用情境 + 商業模式 */
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px; }
+  .mini li { font-size: 11px; color: var(--ink2); line-height: 1.65; padding-left: 16px; position: relative; margin-bottom: 3px; }
+  .mini li::before { content: "✓"; position: absolute; left: 0; color: var(--sage); font-weight: 800; }
+  .biz { background: #fff; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .biz-row { display: flex; font-size: 10.5px; border-bottom: 1px solid var(--line); }
+  .biz-row:last-child { border-bottom: none; }
+  .biz-row .k { width: 38%; padding: 7px 10px; background: var(--cream); font-weight: 700; color: var(--ink1); }
+  .biz-row .v { flex: 1; padding: 7px 10px; color: var(--ink2); }
+
+  /* 待確認 */
+  .confirm { background: #FFF8EE; border: 1px solid var(--gold); border-radius: 10px; padding: 11px 15px; margin-bottom: 4px; }
+  .confirm .ct { font-size: 12px; font-weight: 800; color: var(--ink1); margin-bottom: 6px; }
+  .confirm .citems { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 18px; }
+  .confirm .ci { font-size: 10.5px; color: var(--ink2); line-height: 1.6; padding-left: 15px; position: relative; }
+  .confirm .ci::before { content: "?"; position: absolute; left: 2px; color: var(--gold); font-weight: 800; }
+
+  .footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding-top: 9px; margin-top: 10px; font-size: 10.5px; color: var(--ink3); }
+  .footer b { color: var(--ink2); }
+</style>
+</head>
+<body>
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+  <div class="wrap">
+
+    <!-- Header -->
+    <div class="head">
+      <div class="lock">
+        <div class="logo nn">🐻</div>
+        <div class="x">×</div>
+        <div class="logo ls">Life<br>Smart</div>
+      </div>
+      <div class="htext">
+        <div class="t">智慧守護整合合作提案</div>
+        <div class="s">暖暖 NuanNuan × LifeSmart ｜ 軟體 × 硬體的銀髮守護方案</div>
+      </div>
+      <div class="to">
+        <div class="a">敬呈 楊超群 董事長</div>
+        <div class="b">初步構想與可行性評估 · 2026</div>
+      </div>
+    </div>
+
+    <!-- Lead -->
+    <div class="lead">
+      <div class="big">您的「硬體感官」＋ 我們的「軟體大腦」＝ 真正的主動守護</div>
+      <div class="sm">LifeSmart 負責 24 小時感測，暖暖負責 AI 分析、家人通知與健康洞察，雙方優勢完全互補</div>
+    </div>
+
+    <!-- 互補對比 -->
+    <div class="sec-title"><span class="dot"></span>一、為什麼互補</div>
+    <div class="fit">
+      <div class="card nn">
+        <div class="ch">🐻 暖暖 NuanNuan ｜ 軟體大腦</div>
+        <ul>
+          <li>AI 飲食辨識、語音陪伴、用藥管理</li>
+          <li>SHI 智慧幸福指數 + 五大構面雷達圖</li>
+          <li>異常預警引擎 + 家人遠端儀表板</li>
+          <li>會員訂閱、客服與內容營運</li>
+        </ul>
+      </div>
+      <div class="card ls">
+        <div class="ch">LifeSmart ｜ 硬體感官</div>
+        <ul>
+          <li>人體存在偵測、跌倒 / 離床感測</li>
+          <li>SOS 緊急呼叫、智慧床墊、門磁</li>
+          <li>溫濕度、空氣品質等環境感測</li>
+          <li>成熟的居家 IoT 裝置與安裝體系</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 整合流程 -->
+    <div class="sec-title"><span class="dot"></span>二、整合架構（暖暖既有系統可直接承接）</div>
+    <div class="flow">
+      <div class="flow-row">
+        <div class="fstep a"><div class="ft">LifeSmart 感測器</div><div class="fd">跌倒／離床／SOS／環境</div></div>
+        <div class="farr">→</div>
+        <div class="fstep b"><div class="ft">雲端 API 串接</div><div class="fd">OAuth 授權 · 事件推播</div></div>
+        <div class="farr">→</div>
+        <div class="fstep c"><div class="ft">暖暖預警引擎</div><div class="fd">AI 判讀異常</div></div>
+        <div class="farr">→</div>
+        <div class="fstep d"><div class="ft">通知子女</div><div class="fd">家人儀表板 + Email</div></div>
+      </div>
+      <div class="flow-note">暖暖的<b>異常預警、家人通知、健康儀表板已開發完成並上線</b>，只需新增一個資料對接層，即可承接 LifeSmart 的感測事件。</div>
+    </div>
+
+    <!-- 兩欄 -->
+    <div class="two">
+      <div>
+        <div class="sec-title"><span class="dot"></span>三、整合後能做到</div>
+        <ul class="mini">
+          <li>長輩跌倒 / 久未活動 → 自動通知子女</li>
+          <li>被動感測 + 主動記錄 = 完整健康畫像</li>
+          <li>睡眠、活動量自動納入 SHI 幸福指數</li>
+          <li>SOS 一鍵求助直達家人手機</li>
+        </ul>
+      </div>
+      <div>
+        <div class="sec-title"><span class="dot"></span>四、合作模式構想</div>
+        <div class="biz">
+          <div class="biz-row"><div class="k">LifeSmart</div><div class="v">硬體 + 安裝 + 感測資料</div></div>
+          <div class="biz-row"><div class="k">暖暖</div><div class="v">軟體 + AI + 訂閱 + 客服</div></div>
+          <div class="biz-row"><div class="k">共同推出</div><div class="v">「智慧守護套組」對長照 / 保險 / 社區</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 待確認 -->
+    <div class="confirm">
+      <div class="ct">五、需與 貴公司 共同確認（決定可行性的關鍵）</div>
+      <div class="citems">
+        <div class="ci">是否提供開放平台 / 雲端 API 與文件</div>
+        <div class="ci">裝置事件能否推送至暖暖伺服器</div>
+        <div class="ci">哪些裝置 SKU 具備資料介接</div>
+        <div class="ci">資料落地與個資授權（台灣用戶）</div>
+        <div class="ci">API 計費與硬體供應方式</div>
+        <div class="ci">分潤與品牌呈現方式</div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div>🌐 <b>nuan55.com</b>　|　📧 sunboy1120@gmail.com</div>
+      <div>暖暖 NuanNuan　|　App 開發者 鍾志鴻 Hans Chung</div>
+    </div>
+  </div>
+</body>
+</html>
