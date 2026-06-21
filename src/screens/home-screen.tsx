@@ -39,6 +39,7 @@ interface HomeScreenProps {
   onAchievements?: () => void;
   smartSummary?: { shi: number | null } | null;
   onSmart?: () => void;
+  onIot?: () => void;
 }
 
 const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
@@ -55,7 +56,7 @@ function getDateLabel(): string {
   return `${d.getMonth() + 1}月${d.getDate()}日　星期${WEEKDAYS[d.getDay()]}`;
 }
 
-export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart }: HomeScreenProps) {
+export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart, onIot }: HomeScreenProps) {
   // 從餐點計算今日營養
   const totals = meals.reduce(
     (s, m) => {
@@ -160,6 +161,18 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
               : "3 分鐘看見人生五大面向"
           }
           background="linear-gradient(135deg, #EEF6FB 0%, #FFFFFF 100%)"
+          borderColor="#CDE4F0"
+          iconBg="#DCEDF7"
+        />
+      )}
+
+      {onIot && (
+        <NavCard
+          onClick={onIot}
+          emoji="🏠"
+          title="居家守護"
+          subtitle="感測器自動通知家人"
+          background="linear-gradient(135deg, #EAF2F8 0%, #FFFFFF 100%)"
           borderColor="#CDE4F0"
           iconBg="#DCEDF7"
         />

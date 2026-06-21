@@ -575,6 +575,7 @@ export default function Page() {
             onAchievements={() => setSubpage("achievements")}
             smartSummary={{ shi: smartShi }}
             onSmart={() => setSubpage("smart")}
+            onIot={() => setSubpage("iot")}
           />
         )}
         {tab === "history" && <HistoryScreen onMeal={(meal) => setSelectedMeal(meal)} />}
