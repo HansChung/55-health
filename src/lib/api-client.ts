@@ -148,6 +148,19 @@ export const api = {
       { method: "POST", json: { answers } }
     ),
 
+  // IoT 居家感測
+  listIotDevices: () =>
+    apiFetch<{ devices: IotDevice[] }>("/api/iot/devices"),
+
+  listIotEvents: () =>
+    apiFetch<{ events: IotEvent[] }>("/api/iot/events"),
+
+  simulateIotEvent: (eventKind: string) =>
+    apiFetch<{ ok: true; alerted: boolean; notified?: number }>("/api/iot/simulate", {
+      method: "POST",
+      json: { eventKind },
+    }),
+
   // Conversations（語音對話記錄）
   listConversations: (params?: { sessionId?: string; days?: number; limit?: number }) => {
     const q = new URLSearchParams();
@@ -339,6 +352,33 @@ export interface FamilyPermissions {
   alerts?: boolean;
   diary?: boolean;
   voice?: boolean;
+}
+
+/** IoT 居家感測裝置 */
+export interface IotDevice {
+  id: string;
+  user_id: string;
+  external_id: string | null;
+  kind: "presence" | "bed" | "sos" | "env";
+  name: string;
+  room: string | null;
+  source: "mock" | "lifesmart";
+  last_state: Record<string, unknown>;
+  last_event_at: string | null;
+  created_at: string;
+}
+
+/** IoT 感測事件 */
+export interface IotEvent {
+  id: string;
+  user_id: string;
+  device_id: string | null;
+  event_kind: "activity" | "fall" | "sos" | "leave_bed" | "in_bed" | "environment";
+  severity: "info" | "warning" | "critical";
+  data: Record<string, unknown>;
+  occurred_at: string;
+  source: string;
+  created_at: string;
 }
 
 /** SMART RADAR / SHI 檢測記錄 */

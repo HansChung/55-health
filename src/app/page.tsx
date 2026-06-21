@@ -27,6 +27,7 @@ import { WeeklyReportScreen } from "@/screens/weekly-report-screen";
 import { AlertsCenterScreen } from "@/screens/alerts-center-screen";
 import { AchievementsScreen } from "@/screens/achievements-screen";
 import { SmartScreen } from "@/screens/smart-screen";
+import { IotScreen } from "@/screens/iot-screen";
 import { MealDetailSheet } from "@/screens/meal-detail-sheet";
 import { PhotoSourceSheet } from "@/components/photo-source-sheet";
 import type { MealRecord, AiSuggestion, ProfileMedication, HealthMetric, FavoriteMeal, PartnerCampaign, AchievementsResponse } from "@/lib/api-client";
@@ -619,6 +620,7 @@ export default function Page() {
       {subpage === "alerts-center" && <AlertsCenterScreen alerts={allHealthAlerts} tier={tier} onBack={() => setSubpage(null)} />}
       {subpage === "achievements" && <AchievementsScreen onBack={() => setSubpage(null)} />}
       {subpage === "smart" && <SmartScreen onBack={() => setSubpage(null)} />}
+      {subpage === "iot" && <IotScreen onBack={() => setSubpage(null)} />}
       {subpage === "prescription" && <PrescriptionScanScreen onBack={() => setSubpage("chronic")} />}
       {subpage === "chronic" && (
         <ChronicDiseaseScreen
