@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Mascot } from "@/components/mascot";
 import { Icon } from "@/components/icons";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
+import { useBrand } from "@/hooks/use-brand";
 
 interface LoginScreenProps {
   onDone: () => void;
@@ -11,6 +12,7 @@ interface LoginScreenProps {
 
 export function LoginScreen({ onDone }: LoginScreenProps) {
   const supabase = createSupabaseBrowser();
+  const brand = useBrand();
   const [step, setStep] = useState<"email" | "otp" | "success">("email");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -79,7 +81,7 @@ export function LoginScreen({ onDone }: LoginScreenProps) {
           }}>
             <Mascot size={120} mood="happy" />
             <h1 style={{ fontSize: "var(--fs-2xl)", fontWeight: 800, margin: "20px 0 8px" }}>
-              歡迎使用暖暖
+              歡迎使用{brand.app_name}
             </h1>
             <p style={{ fontSize: "var(--fs-base)", color: "var(--ink-2)", margin: 0, lineHeight: 1.5, maxWidth: 320 }}>
               第一次使用會自動建立帳號

@@ -239,6 +239,15 @@ export const api = {
   adminTelemetry: (days = 7) =>
     apiFetch<AdminTelemetry>(`/api/admin/telemetry?days=${days}`),
 
+  adminListBrands: () =>
+    apiFetch<{ brands: BrandRow[] }>("/api/admin/brands"),
+  adminCreateBrand: (input: Partial<BrandRow> & { id: string; host: string; app_name: string }) =>
+    apiFetch<{ brand: BrandRow }>("/api/admin/brands", { method: "POST", json: input }),
+  adminUpdateBrand: (id: string, patch: Partial<BrandRow>) =>
+    apiFetch<{ brand: BrandRow }>(`/api/admin/brands/${id}`, { method: "PATCH", json: patch }),
+  adminDeleteBrand: (id: string) =>
+    apiFetch<{ ok: true }>(`/api/admin/brands/${id}`, { method: "DELETE" }),
+
   adminListUsers: () =>
     apiFetch<{ users: AdminUserRow[] }>("/api/admin/users"),
 
@@ -376,6 +385,20 @@ export interface ElderOverview {
   latest_alert: { title: string; severity: string; created_at: string } | null;
   iot: { lastActivityAt: string | null; temp: number | null; recentCritical: boolean } | null;
   shi: number | null;
+}
+
+/** 白標品牌（管理員） */
+export interface BrandRow {
+  id: string;
+  host: string;
+  app_name: string;
+  tagline: string | null;
+  primary_color: string;
+  primary_deep: string;
+  primary_soft: string;
+  logo_emoji: string | null;
+  active: boolean;
+  created_at: string;
 }
 
 /** 管理員遙測總覽 */
