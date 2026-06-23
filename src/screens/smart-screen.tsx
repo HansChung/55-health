@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { SubPage } from "@/components/sub-page";
 import { RadarChart } from "@/components/radar-chart";
 import { api, type SmartAssessment } from "@/lib/api-client";
+import { trackEvent } from "@/lib/telemetry";
 import {
   QUESTIONS,
   LIKERT_LABELS,
@@ -69,6 +70,7 @@ export function SmartScreen({ onBack }: SmartScreenProps) {
     setMode("submitting");
     try {
       const res = await api.submitSmartAssessment(finalAnswers);
+      trackEvent("smart_submit", { shi: res.assessment.shi });
       setDelta(res.delta);
       const { assessments } = await api.listSmartAssessments();
       setHistory(assessments);

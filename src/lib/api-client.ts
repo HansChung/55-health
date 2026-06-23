@@ -236,6 +236,9 @@ export const api = {
   adminUsageSummary: (days = 30) =>
     apiFetch<AdminUsageSummary>(`/api/admin/usage?days=${days}`),
 
+  adminTelemetry: (days = 7) =>
+    apiFetch<AdminTelemetry>(`/api/admin/telemetry?days=${days}`),
+
   adminListUsers: () =>
     apiFetch<{ users: AdminUserRow[] }>("/api/admin/users"),
 
@@ -373,6 +376,17 @@ export interface ElderOverview {
   latest_alert: { title: string; severity: string; created_at: string } | null;
   iot: { lastActivityAt: string | null; temp: number | null; recentCritical: boolean } | null;
   shi: number | null;
+}
+
+/** 管理員遙測總覽 */
+export interface AdminTelemetry {
+  days: number;
+  total_events: number;
+  active_users: number;
+  error_count: number;
+  usage: { name: string; count: number; users: number }[];
+  top_errors: { message: string; count: number }[];
+  recent_errors: { name: string; message: string; path: string | null; at: string }[];
 }
 
 /** IoT 居家感測裝置 */

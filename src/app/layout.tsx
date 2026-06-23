@@ -3,6 +3,8 @@ import "./globals.css";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ToastProvider } from "@/hooks/use-toast";
 import { OfflineBanner } from "@/components/offline-banner";
+import { ErrorBoundary } from "@/components/error-boundary";
+import { TelemetryInit } from "@/components/telemetry-init";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://nuan55.com"),
@@ -44,9 +46,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
+        <TelemetryInit />
         <OfflineBanner />
         <ToastProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <ErrorBoundary>{children}</ErrorBoundary>
+          </AuthProvider>
         </ToastProvider>
       </body>
     </html>

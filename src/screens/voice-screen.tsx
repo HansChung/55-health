@@ -6,6 +6,7 @@ import { Icon } from "@/components/icons";
 import { Mascot } from "@/components/mascot";
 import { api } from "@/lib/api-client";
 import { RealtimeClient } from "@/lib/realtime-client";
+import { trackEvent } from "@/lib/telemetry";
 
 interface VoiceScreenProps {
   onClose: () => void;
@@ -134,6 +135,7 @@ export function VoiceScreen({ onClose, voiceTone = "warm" }: VoiceScreenProps) {
 
     try {
       const { session, quota, max_seconds } = await api.createRealtimeSession();
+      trackEvent("voice_start");
       const ephemeralKey = session.client_secret.value;
       const sessionMax = Math.max(1, Math.min(180, max_seconds));
       maxSecondsRef.current = sessionMax;

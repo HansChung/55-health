@@ -12,6 +12,7 @@ const navItems = [
   { href: "/admin/partner-campaigns", label: "合作活動", icon: "🤝" },
   { href: "/admin/api-configs", label: "API 設定", icon: "🔑" },
   { href: "/admin/conversations", label: "對話記錄", icon: "💬" },
+  { href: "/admin/telemetry", label: "使用與錯誤", icon: "📈" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

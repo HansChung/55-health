@@ -152,6 +152,53 @@ export function buildWeeklyReportEmail({
 </html>`;
 }
 
+// ────────────────────────────────────────────────
+// 每日關懷問候 Email
+// ────────────────────────────────────────────────
+interface BuildDailyCareParams {
+  name: string;
+  greeting: string; // 早安 / 午安
+  lines: string[]; // 個人化問候內容（已組好）
+  tip: string; // 今日小叮嚀
+}
+
+export function buildDailyCareEmail({ name, greeting, lines, tip }: BuildDailyCareParams): string {
+  const body = lines
+    .map((l) => `<p style="margin:0 0 8px;font-size:16px;line-height:1.7;color:#3D2E20;">${escapeHtml(l)}</p>`)
+    .join("");
+  return `<!DOCTYPE html>
+<html lang="zh-Hant">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#FAF5EC;font-family:'PingFang TC','Noto Sans TC','Microsoft JhengHei',sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#FAF5EC;padding:32px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:480px;background:#FFFFFF;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.06);">
+        <tr><td style="background:linear-gradient(135deg,#FFD4A8 0%,#E8845A 100%);padding:28px 24px;text-align:center;">
+          <div style="font-size:44px;line-height:1;">🐻</div>
+          <h1 style="margin:8px 0 0;color:#fff;font-size:22px;font-weight:800;">${escapeHtml(greeting)}，${escapeHtml(name)}</h1>
+        </td></tr>
+        <tr><td style="padding:28px 24px;">
+          ${body}
+          <div style="background:#FFF8EE;border-radius:12px;padding:14px 16px;margin:16px 0 0;">
+            <p style="margin:0;font-size:15px;color:#6B5848;line-height:1.6;">💡 今日小叮嚀：${escapeHtml(tip)}</p>
+          </div>
+          <div style="text-align:center;margin-top:22px;">
+            <a href="https://nuan55.com" style="display:inline-block;background:#E8845A;color:#fff;text-decoration:none;padding:14px 36px;border-radius:999px;font-weight:700;font-size:16px;">打開暖暖記錄今天</a>
+          </div>
+        </td></tr>
+        <tr><td style="border-top:1px solid #F2E8D5;padding:16px 24px;text-align:center;">
+          <p style="margin:0;font-size:11px;color:#A89580;line-height:1.6;">
+            暖暖每天陪您 ❤️ · <a href="https://nuan55.com" style="color:#A89580;">nuan55.com</a><br>
+            不想收到每日問候？可在 App 的「提醒通知」中關閉。
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
 // 防 XSS：使用者填的名字可能含特殊字元
 function escapeHtml(str: string): string {
   return String(str)

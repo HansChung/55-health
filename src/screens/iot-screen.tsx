@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { SubPage } from "@/components/sub-page";
 import { api, type IotDevice, type IotEvent } from "@/lib/api-client";
+import { trackEvent } from "@/lib/telemetry";
 
 interface IotScreenProps {
   onBack: () => void;
@@ -57,6 +58,7 @@ export function IotScreen({ onBack }: IotScreenProps) {
     setToast("");
     try {
       const res = await api.simulateIotEvent(kind);
+      trackEvent("iot_simulate", { kind });
       setToast(res.alerted ? `已觸發警報${res.notified ? `，通知 ${res.notified} 位家人` : ""}` : "已記錄事件");
       await reload();
     } catch (e) {

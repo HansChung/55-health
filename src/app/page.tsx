@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { trackEvent } from "@/lib/telemetry";
 import { Tab, Modal, Subpage, Meal, FoodResult, MealType } from "@/lib/types";
 import { MOCK_RESULT } from "@/lib/mock-data";
 import { BottomNav } from "@/components/bottom-nav";
@@ -434,6 +435,7 @@ export default function Page() {
 
       const base64 = dataUrl.split(",")[1];
       const { result } = await api.analyzeFood(base64, "image/jpeg");
+      trackEvent("photo_analyze", { items: result.items?.length ?? 0 });
       // 先關掉 analyzing overlay 再開 result 視窗
       setAnalyzing(false);
       handleCapture(result, dataUrl);
@@ -532,6 +534,7 @@ export default function Page() {
         eaten_at: now.toISOString(),
         photo_url: photoUrl ?? undefined,
       });
+      trackEvent("meal_saved", { meal_type: mealType });
       reloadMeals().catch(console.error);
       loadSuggestion(true).catch(console.error);
     } catch (e) {
