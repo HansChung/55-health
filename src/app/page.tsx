@@ -28,6 +28,7 @@ import { AlertsCenterScreen } from "@/screens/alerts-center-screen";
 import { AchievementsScreen } from "@/screens/achievements-screen";
 import { SmartScreen } from "@/screens/smart-screen";
 import { IotScreen } from "@/screens/iot-screen";
+import { CaregiverScreen } from "@/screens/caregiver-screen";
 import { MealDetailSheet } from "@/screens/meal-detail-sheet";
 import { PhotoSourceSheet } from "@/components/photo-source-sheet";
 import type { MealRecord, AiSuggestion, ProfileMedication, HealthMetric, FavoriteMeal, PartnerCampaign, AchievementsResponse } from "@/lib/api-client";
@@ -76,6 +77,8 @@ export default function Page() {
   const [achievements, setAchievements] = useState<AchievementsResponse | null>(null);
   const [celebration, setCelebration] = useState<AchievementProgress[]>([]);
   const [smartShi, setSmartShi] = useState<number | null>(null);
+  const [careElderCount, setCareElderCount] = useState(0);
+  const [careNeedsAttention, setCareNeedsAttention] = useState(false);
   const [pendingResult, setPendingResult] = useState<FoodResult | null>(null);
   const [pendingPhoto, setPendingPhoto] = useState<string | null>(null);
   const [selectedMeal, setSelectedMeal] = useState<MealRecord | null>(null);
@@ -209,6 +212,17 @@ export default function Page() {
     }
   };
 
+  const reloadCaregiver = async () => {
+    if (!user) return;
+    try {
+      const { elders } = await api.familyOverview();
+      setCareElderCount(elders.length);
+      setCareNeedsAttention(elders.some((e) => e.overall !== "normal"));
+    } catch (e) {
+      console.error("載入家人狀況失敗:", e);
+    }
+  };
+
   const openMealDetail = (mealType: string) => {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -301,6 +315,7 @@ export default function Page() {
     if (!user) return;
     reloadAchievements();
     reloadSmart(); // 從智慧幸福檢測返回時刷新首頁 SHI
+    reloadCaregiver(); // 家人狀況（子女視角）
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, recentDbMeals.length, recentMetrics.length, profile?.medications?.length, subpage]);
 
@@ -576,6 +591,8 @@ export default function Page() {
             smartSummary={{ shi: smartShi }}
             onSmart={() => setSubpage("smart")}
             onIot={() => setSubpage("iot")}
+            caregiver={careElderCount > 0 ? { count: careElderCount, needsAttention: careNeedsAttention } : null}
+            onCaregiver={() => setSubpage("caregiver")}
           />
         )}
         {tab === "history" && <HistoryScreen onMeal={(meal) => setSelectedMeal(meal)} />}
@@ -622,6 +639,7 @@ export default function Page() {
       {subpage === "achievements" && <AchievementsScreen onBack={() => setSubpage(null)} />}
       {subpage === "smart" && <SmartScreen onBack={() => setSubpage(null)} />}
       {subpage === "iot" && <IotScreen onBack={() => setSubpage(null)} />}
+      {subpage === "caregiver" && <CaregiverScreen onBack={() => setSubpage(null)} />}
       {subpage === "prescription" && <PrescriptionScanScreen onBack={() => setSubpage("chronic")} />}
       {subpage === "chronic" && (
         <ChronicDiseaseScreen

@@ -40,6 +40,8 @@ interface HomeScreenProps {
   smartSummary?: { shi: number | null } | null;
   onSmart?: () => void;
   onIot?: () => void;
+  caregiver?: { count: number; needsAttention: boolean } | null;
+  onCaregiver?: () => void;
 }
 
 const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
@@ -56,7 +58,7 @@ function getDateLabel(): string {
   return `${d.getMonth() + 1}月${d.getDate()}日　星期${WEEKDAYS[d.getDay()]}`;
 }
 
-export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart, onIot }: HomeScreenProps) {
+export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart, onIot, caregiver = null, onCaregiver }: HomeScreenProps) {
   // 從餐點計算今日營養
   const totals = meals.reduce(
     (s, m) => {
@@ -149,6 +151,24 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
           </div>
         </button>
       </div>
+
+      {caregiver && onCaregiver && (
+        <NavCard
+          onClick={onCaregiver}
+          emoji={caregiver.needsAttention ? "🔔" : "👨‍👩‍👧"}
+          title="家人狀況"
+          subtitle={
+            caregiver.needsAttention
+              ? `有長輩需要您關心　·　共 ${caregiver.count} 位`
+              : `關心中的長輩 ${caregiver.count} 位　·　一切正常`
+          }
+          background={caregiver.needsAttention
+            ? "linear-gradient(135deg, #FBE8EC 0%, #FFFFFF 100%)"
+            : "linear-gradient(135deg, #EAF3E7 0%, #FFFFFF 100%)"}
+          borderColor={caregiver.needsAttention ? "#E4A9B5" : "#C3DDBB"}
+          iconBg={caregiver.needsAttention ? "#F7D7DE" : "#D5E8CE"}
+        />
+      )}
 
       {onSmart && (
         <NavCard

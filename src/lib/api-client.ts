@@ -148,6 +148,10 @@ export const api = {
       { method: "POST", json: { answers } }
     ),
 
+  // 子女／家人儀表板
+  familyOverview: () =>
+    apiFetch<{ elders: ElderOverview[] }>("/api/family/overview"),
+
   // IoT 居家感測
   listIotDevices: () =>
     apiFetch<{ devices: IotDevice[] }>("/api/iot/devices"),
@@ -352,6 +356,23 @@ export interface FamilyPermissions {
   alerts?: boolean;
   diary?: boolean;
   voice?: boolean;
+}
+
+/** 子女儀表板：單一長輩狀態總覽 */
+export interface ElderOverview {
+  elder_id: string;
+  name: string;
+  relationship: string;
+  permissions: Record<string, boolean>;
+  overall: "normal" | "attention" | "alert";
+  meals: { logged: number; lastAt: string | null } | null;
+  meds: { total: number; taken: number } | null;
+  bp: { systolic: number; diastolic: number; at: string } | null;
+  glucose: { value: number; at: string } | null;
+  alerts_unresolved: number;
+  latest_alert: { title: string; severity: string; created_at: string } | null;
+  iot: { lastActivityAt: string | null; temp: number | null; recentCritical: boolean } | null;
+  shi: number | null;
 }
 
 /** IoT 居家感測裝置 */
