@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4 landscape; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  :root {
+    --primary:#E8845A; --deep:#C95E36; --cream:#FAF5EC; --creamD:#F2E8D5;
+    --ink1:#3D2E20; --ink2:#6B5848; --ink3:#A89580; --line:#E3D6C0;
+    --sage:#7AA779; --gold:#D9A441; --berry:#C95B6E; --tech:#2E7CB8; --violet:#8268A8;
+  }
+  body { font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif; width:297mm; height:210mm; background:var(--cream); color:var(--ink1); position:relative; }
+  .wrap { padding:9mm 11mm; height:100%; display:flex; flex-direction:column; }
+
+  .head { display:flex; align-items:center; gap:10px; margin-bottom:7px; }
+  .logo { width:38px; height:38px; border-radius:11px; background:linear-gradient(135deg,#FFD4A8,var(--primary)); display:flex; align-items:center; justify-content:center; font-size:22px; }
+  .head .t { font-size:19px; font-weight:800; }
+  .head .s { font-size:11px; color:var(--ink2); }
+  .head .r { margin-left:auto; font-size:10px; color:var(--ink3); text-align:right; }
+
+  .layers { flex:1; display:flex; flex-direction:column; gap:7px; }
+  .layer { border:1px solid var(--line); border-radius:10px; background:#fff; padding:8px 11px; position:relative; }
+  .layer .lh { position:absolute; left:-1px; top:14px; writing-mode:vertical-rl; background:var(--ink1); color:#fff; font-size:10px; font-weight:700; padding:8px 3px; border-radius:0 6px 6px 0; letter-spacing:1px; }
+  .lbody { margin-left:26px; }
+  .ltitle { font-size:11.5px; font-weight:800; color:var(--deep); margin-bottom:6px; }
+  .row { display:flex; gap:7px; flex-wrap:wrap; }
+  .chip { font-size:10px; font-weight:600; padding:5px 9px; border-radius:7px; background:var(--creamD); color:var(--ink1); border:1px solid var(--line); white-space:nowrap; }
+  .grp { border:1px dashed var(--line); border-radius:8px; padding:6px 8px 7px; }
+  .grp .gt { font-size:9.5px; font-weight:700; color:var(--ink3); margin-bottom:5px; }
+  .grpwrap { display:flex; gap:8px; flex-wrap:wrap; }
+
+  .users { display:flex; gap:8px; }
+  .ucard { flex:1; border-radius:9px; padding:8px 12px; color:#fff; display:flex; align-items:center; gap:9px; }
+  .ucard .e { font-size:22px; }
+  .ucard .n { font-size:13px; font-weight:800; }
+  .ucard .d { font-size:9.5px; opacity:.9; }
+
+  .two { display:flex; gap:7px; }
+  .two > .layer { flex:1; }
+
+  .ext .chip { background:#EAF1F8; border-color:#CDE0EF; color:#22618f; }
+  .data .chip { background:#EDE7F4; border-color:#D6C9E6; color:#5d4682; }
+  .cron .chip { background:#FFF3DF; border-color:#EBD9A8; color:#8a6a00; }
+
+  .legend { margin-top:6px; font-size:9px; color:var(--ink3); display:flex; gap:14px; }
+  .arrowdown { text-align:center; color:var(--ink3); font-size:13px; line-height:.6; margin:-3px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div class="logo">🐻</div>
+    <div>
+      <div class="t">暖暖 NuanNuan — 系統架構圖</div>
+      <div class="s">55+ AI 健康守護平台 ｜ Next.js + Supabase + AI + IoT</div>
+    </div>
+    <div class="r">技術架構總覽<br>2026</div>
+  </div>
+
+  <div class="layers">
+    <!-- 使用者 -->
+    <div class="users">
+      <div class="ucard" style="background:linear-gradient(135deg,#E8845A,#C95E36)">
+        <span class="e">👵</span><div><div class="n">長輩（55+）</div><div class="d">拍照記錄 · 語音 · 用藥 · 檢測</div></div>
+      </div>
+      <div class="ucard" style="background:linear-gradient(135deg,#7AA779,#4F7A4E)">
+        <span class="e">👨‍👩‍👧</span><div><div class="n">子女 / 家人</div><div class="d">家人儀表板 · 異常通知 · 關懷</div></div>
+      </div>
+      <div class="ucard" style="background:linear-gradient(135deg,#2E7CB8,#1c5a86)">
+        <span class="e">🏢</span><div><div class="n">通路 / 管理員</div><div class="d">後台 · 白標 · 用量 · 分析</div></div>
+      </div>
+    </div>
+    <div class="arrowdown">▼ ▼ ▼</div>
+
+    <!-- 前端 -->
+    <div class="layer">
+      <div class="lh">前端</div>
+      <div class="lbody">
+        <div class="ltitle">📱 前端 App（Next.js 15 + React 19 · PWA · 可加到主畫面）</div>
+        <div class="grpwrap">
+          <div class="grp"><div class="gt">核心</div><div class="row">
+            <span class="chip">首頁儀表板</span><span class="chip">拍照辨識</span><span class="chip">飲食日記</span><span class="chip">AI 語音對話</span><span class="chip">個人設定</span>
+          </div></div>
+          <div class="grp"><div class="gt">健康</div><div class="row">
+            <span class="chip">血壓/血糖/體重</span><span class="chip">拍藥袋</span><span class="chip">慢性病/用藥</span><span class="chip">運動</span><span class="chip">每週報告</span>
+          </div></div>
+          <div class="grp"><div class="gt">守護 / 進階</div><div class="row">
+            <span class="chip">智慧幸福檢測(SHI)</span><span class="chip">居家守護(IoT)</span><span class="chip">安全提醒中心</span><span class="chip">家人共享</span><span class="chip">家人狀況(子女)</span><span class="chip">健康成就</span>
+          </div></div>
+        </div>
+      </div>
+    </div>
+    <div class="arrowdown">▼ HTTPS / JSON API</div>
+
+    <!-- 後端 + 排程 -->
+    <div class="two">
+      <div class="layer" style="flex:3">
+        <div class="lh">後端</div>
+        <div class="lbody">
+          <div class="ltitle">⚙️ 後端 API（Next.js API Routes · 伺服器端）</div>
+          <div class="grpwrap">
+            <div class="grp"><div class="gt">AI</div><div class="row">
+              <span class="chip">analyze-food</span><span class="chip">analyze-prescription</span><span class="chip">realtime 語音</span><span class="chip">suggest 建議</span>
+            </div></div>
+            <div class="grp"><div class="gt">資料</div><div class="row">
+              <span class="chip">profile</span><span class="chip">meals</span><span class="chip">health-metrics</span><span class="chip">smart-assessment</span><span class="chip">iot/*</span>
+            </div></div>
+            <div class="grp"><div class="gt">守護 / 家人</div><div class="row">
+              <span class="chip">family</span><span class="chip">family/overview</span><span class="chip">alerts</span>
+            </div></div>
+            <div class="grp"><div class="gt">營運</div><div class="row">
+              <span class="chip">stripe 金流</span><span class="chip">telemetry</span><span class="chip">admin/*</span>
+            </div></div>
+          </div>
+        </div>
+      </div>
+      <div class="layer cron" style="flex:1.1">
+        <div class="lh">排程</div>
+        <div class="lbody">
+          <div class="ltitle">⏰ 自動排程（Vercel Cron）</div>
+          <div class="row" style="flex-direction:column; gap:6px">
+            <span class="chip">每日 · 異常預警巡邏 → 通知家人</span>
+            <span class="chip">每日 · 每日關懷推播</span>
+            <span class="chip">每週 · 健康報告 Email</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="arrowdown">▼ ▲</div>
+
+    <!-- 資料 + 外部 -->
+    <div class="two">
+      <div class="layer data" style="flex:1.4">
+        <div class="lh">資料</div>
+        <div class="lbody">
+          <div class="ltitle">🗄️ 資料庫（Supabase PostgreSQL · RLS 權限隔離）</div>
+          <div class="row">
+            <span class="chip">profiles</span><span class="chip">meals</span><span class="chip">health_metrics</span><span class="chip">medications</span><span class="chip">family_links</span><span class="chip">alerts</span><span class="chip">iot_devices/events</span><span class="chip">smart_assessments</span><span class="chip">conversations</span><span class="chip">app_events</span><span class="chip">brands</span><span class="chip">subscription_plans</span><span class="chip">ai_usage</span>
+          </div>
+        </div>
+      </div>
+      <div class="layer ext" style="flex:1">
+        <div class="lh">外部</div>
+        <div class="lbody">
+          <div class="ltitle">🔌 外部服務</div>
+          <div class="row">
+            <span class="chip">Gemini（拍照辨識）</span><span class="chip">OpenAI Realtime（語音）</span><span class="chip">Resend（Email）</span><span class="chip">Stripe（訂閱金流）</span><span class="chip">LifeSmart IoT（整合中）</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <span>🟧 前端／API　🟪 資料庫　🟦 外部服務　🟨 排程</span>
+      <span>基礎設施：Vercel（部署 + Cron）· Cloudflare（DNS）· Supabase（Auth/DB/Storage）</span>
+      <span style="margin-left:auto; color:var(--ink2); font-weight:700;">nuan55.com</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4 landscape; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  :root {
+    --primary:#E8845A; --deep:#C95E36; --cream:#FAF5EC; --creamD:#F2E8D5;
+    --ink1:#3D2E20; --ink2:#6B5848; --ink3:#A89580; --line:#E3D6C0;
+    --sage:#7AA779; --gold:#D9A441; --berry:#C95B6E; --tech:#2E7CB8;
+  }
+  body { font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif; width:297mm; height:210mm; background:var(--cream); color:var(--ink1); overflow:hidden; }
+  .wrap { padding:8mm 11mm; }
+
+  .head { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .logo { width:38px; height:38px; border-radius:11px; background:linear-gradient(135deg,#FFD4A8,var(--primary)); display:flex; align-items:center; justify-content:center; font-size:22px; }
+  .head .t { font-size:19px; font-weight:800; }
+  .head .s { font-size:11px; color:var(--ink2); }
+  .head .r { margin-left:auto; font-size:10px; color:var(--ink3); text-align:right; }
+
+  table { width:100%; border-collapse:separate; border-spacing:5px; table-layout:fixed; }
+  td, th { vertical-align:middle; }
+  .rowlabel { width:84px; }
+  .rl { border-radius:9px; color:#fff; padding:14px 7px; writing-mode:vertical-rl; text-orientation:mixed; font-size:11px; font-weight:800; text-align:center; letter-spacing:1px; }
+
+  .stage-th { border-radius:9px; padding:9px 8px; text-align:center; color:#fff; }
+  .stage-th .n { font-size:13px; font-weight:800; }
+  .stage-th .e { font-size:18px; }
+
+  .cell { background:#fff; border:1px solid var(--line); border-radius:9px; padding:8px 9px; height:100%; vertical-align:top; }
+  td { vertical-align:top; }
+  .cell ul { list-style:none; }
+  .cell li { font-size:10px; color:var(--ink2); line-height:1.5; padding-left:11px; position:relative; margin-bottom:3px; }
+  .cell li::before { content:"·"; position:absolute; left:2px; font-weight:800; color:var(--primary); }
+  .cell.front li::before { color:var(--sage); }
+  .cell.back li::before { color:var(--tech); }
+  .cell.sup li::before { color:var(--gold); }
+
+  .line-note { font-size:8.5px; color:var(--ink3); text-align:center; padding:1px 0; }
+  .foot { margin-top:7px; font-size:9px; color:var(--ink3); display:flex; justify-content:space-between; }
+  .foot b { color:var(--ink2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div class="logo">🐻</div>
+    <div>
+      <div class="t">暖暖 NuanNuan — 服務藍圖</div>
+      <div class="s">從認識到合作擴展：使用者行為 × 前台接觸點 × 後台流程 × 支援系統</div>
+    </div>
+    <div class="r">Service Blueprint<br>2026</div>
+  </div>
+
+  <table>
+    <colgroup>
+      <col style="width:84px"><col><col><col><col><col><col>
+    </colgroup>
+    <!-- 階段 header -->
+    <tr style="height:46px">
+      <th class="rowlabel"></th>
+      <th><div class="stage-th" style="background:#C95E36"><div class="e">👋</div><div class="n">認識 / 註冊</div></div></th>
+      <th><div class="stage-th" style="background:#E8845A"><div class="e">📷</div><div class="n">每日記錄</div></div></th>
+      <th><div class="stage-th" style="background:#D9A441"><div class="e">🎙️</div><div class="n">AI 互動</div></div></th>
+      <th><div class="stage-th" style="background:#C95B6E"><div class="e">🚨</div><div class="n">異常守護</div></div></th>
+      <th><div class="stage-th" style="background:#7AA779"><div class="e">👨‍👩‍👧</div><div class="n">家人關懷</div></div></th>
+      <th><div class="stage-th" style="background:#2E7CB8"><div class="e">🤝</div><div class="n">合作擴展</div></div></th>
+    </tr>
+
+    <!-- 使用者行為 -->
+    <tr>
+      <td class="rowlabel"><div class="rl" style="background:var(--ink1)">👤 使用者行為</div></td>
+      <td><div class="cell"><ul><li>聽親友介紹</li><li>開 nuan55.com</li><li>Google／Email 登入</li><li>填年齡與慢性病</li></ul></div></td>
+      <td><div class="cell"><ul><li>拍照記錄三餐</li><li>量血壓血糖</li><li>拍藥袋、確認吃藥</li><li>記錄運動</li></ul></div></td>
+      <td><div class="cell"><ul><li>跟暖暖語音聊天</li><li>問健康問題</li><li>做幸福檢測(SHI)</li><li>看每日關懷</li></ul></div></td>
+      <td><div class="cell"><ul><li>（被動）感測器偵測</li><li>跌倒／離床／SOS</li><li>長輩無需操作</li></ul></div></td>
+      <td><div class="cell"><ul><li>子女查看家人狀況</li><li>收到異常通知</li><li>打電話關心</li></ul></div></td>
+      <td><div class="cell"><ul><li>通路推薦給客戶</li><li>機構導入</li><li>回診出示報告</li></ul></div></td>
+    </tr>
+
+    <!-- 前台接觸點 -->
+    <tr>
+      <td class="rowlabel"><div class="rl" style="background:var(--sage)">📱 前台接觸點</div></td>
+      <td><div class="cell front"><ul><li>登入頁（大字、免密碼）</li><li>新手引導</li><li>個人資料設定</li></ul></div></td>
+      <td><div class="cell front"><ul><li>首頁熱量環</li><li>拍照／結果頁</li><li>健康數值頁</li><li>用藥提醒卡</li></ul></div></td>
+      <td><div class="cell front"><ul><li>語音對話畫面</li><li>幸福指數雷達圖</li><li>關懷 Email</li></ul></div></td>
+      <td><div class="cell front"><ul><li>居家守護儀表板</li><li>安全提醒中心</li><li>警報 Email</li></ul></div></td>
+      <td><div class="cell front"><ul><li>家人狀況儀表板</li><li>家人共享設定</li><li>每週報告 Email</li></ul></div></td>
+      <td><div class="cell front"><ul><li>白標品牌（夥伴 logo）</li><li>合作後台</li><li>健康報告 PDF</li></ul></div></td>
+    </tr>
+    <tr><td></td><td colspan="6"><div class="line-note">— — — — — — — — — — — 互動分界線（使用者看得到 ｜ 看不到）— — — — — — — — — — —</div></td></tr>
+
+    <!-- 後台流程 -->
+    <tr>
+      <td class="rowlabel"><div class="rl" style="background:var(--tech)">⚙️ 後台流程</div></td>
+      <td><div class="cell back"><ul><li>建立帳號 + profile</li><li>OAuth / OTP 驗證</li></ul></div></td>
+      <td><div class="cell back"><ul><li>AI 影像辨識計算營養</li><li>寫入資料庫</li><li>個人化建議生成</li></ul></div></td>
+      <td><div class="cell back"><ul><li>即時語音串流</li><li>SHI 計分</li><li>用量 / 配額控管</li></ul></div></td>
+      <td><div class="cell back"><ul><li>每日異常巡邏 Cron</li><li>規則判斷嚴重度</li><li>防重複後發通知</li></ul></div></td>
+      <td><div class="cell back"><ul><li>家人狀態彙整</li><li>權限授權檢查</li><li>每日／每週排程寄信</li></ul></div></td>
+      <td><div class="cell back"><ul><li>網域→品牌解析</li><li>通路歸因 / 分潤</li><li>使用分析 / 監控</li></ul></div></td>
+    </tr>
+
+    <!-- 支援系統 -->
+    <tr>
+      <td class="rowlabel"><div class="rl" style="background:var(--gold)">🔌 支援系統</div></td>
+      <td><div class="cell sup"><ul><li>Supabase Auth</li><li>Google OAuth</li></ul></div></td>
+      <td><div class="cell sup"><ul><li>Gemini Vision</li><li>Supabase DB / Storage</li></ul></div></td>
+      <td><div class="cell sup"><ul><li>OpenAI Realtime</li><li>Gemini 文字</li></ul></div></td>
+      <td><div class="cell sup"><ul><li>LifeSmart IoT 感測</li><li>Resend Email</li><li>Vercel Cron</li></ul></div></td>
+      <td><div class="cell sup"><ul><li>Resend Email</li><li>RLS 權限隔離</li></ul></div></td>
+      <td><div class="cell sup"><ul><li>brands 表 / Stripe</li><li>遙測 app_events</li></ul></div></td>
+    </tr>
+  </table>
+
+  <div class="foot">
+    <span>🟥 使用者行為　🟩 前台（看得到）　🟦 後台（看不到）　🟨 支援系統</span>
+    <span><b>核心價值：</b>長輩零負擔記錄 → AI 主動守護 → 子女安心 → 通路共贏</span>
+    <span><b>nuan55.com</b></span>
+  </div>
+</div>
+</body>
+</html>
