@@ -67,3 +67,6 @@ design.tar.gz
 # ───── TypeScript 增量 build ─────
 *.tsbuildinfo
 next-env.d.ts
+
+# Mobile build 暫存
+.mobile-stash/

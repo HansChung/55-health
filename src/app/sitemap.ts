@@ -1,5 +1,8 @@
 import type { MetadataRoute } from "next";
 
+// 內容為靜態，標記 force-static 才能在 mobile 靜態匯出（output: export）下產生
+export const dynamic = "force-static";
+
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://nuan55.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {

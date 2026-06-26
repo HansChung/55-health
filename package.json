@@ -8,7 +8,7 @@
     "start": "next start",
     "test": "vitest run",
     "test:watch": "vitest",
-    "android:build": "next build && npx cap sync android",
+    "android:build": "node scripts/mobile-export.mjs && npx cap sync android",
     "android:open": "npm run android:build && npx cap open android"
   },
   "dependencies": {

@@ -7,11 +7,20 @@ import { BrandProvider } from "@/hooks/use-brand";
 import { OfflineBanner } from "@/components/offline-banner";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { TelemetryInit } from "@/components/telemetry-init";
-import { getBrandByHost, brandCssVars } from "@/lib/brand";
+import { getBrandByHost, brandCssVars, DEFAULT_BRAND, type Brand } from "@/lib/brand";
+
+// Mobile 靜態匯出（output: export）沒有網域、只有單一品牌，
+// 不能用 headers()（會強制動態渲染、無法靜態化）→ 直接用預設品牌。
+const IS_MOBILE = process.env.BUILD_TARGET === "mobile";
+
+async function resolveBrand(): Promise<Brand> {
+  if (IS_MOBILE) return DEFAULT_BRAND;
+  const host = (await headers()).get("host");
+  return getBrandByHost(host);
+}
 
 export async function generateMetadata(): Promise<Metadata> {
-  const host = (await headers()).get("host");
-  const brand = await getBrandByHost(host);
+  const brand = await resolveBrand();
   const title = `${brand.app_name} · 55+ 健康管家`;
   return {
     metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://nuan55.com"),
@@ -33,8 +42,7 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const host = (await headers()).get("host");
-  const brand = await getBrandByHost(host);
+  const brand = await resolveBrand();
 
   return (
     <html lang="zh-TW">
