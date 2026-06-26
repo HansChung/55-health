@@ -7,6 +7,10 @@ const ExerciseSchema = z.object({
   minutes: z.number().int().positive(),
   kcal_burned: z.number().int().optional(),
   performed_at: z.string().optional(),
+  // 來源標記：手動記錄 vs 從 Apple 健康 / Health Connect 同步
+  source: z.enum(["manual", "health"]).optional(),
+  // 健康平台上該筆運動的唯一 ID，用來去重（避免重複同步同一筆）
+  external_id: z.string().optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -39,6 +43,19 @@ export async function POST(req: NextRequest) {
     body = ExerciseSchema.parse(await req.json());
   } catch (e) {
     return NextResponse.json({ error: "格式錯誤" }, { status: 400 });
+  }
+
+  // 從健康平台同步、且帶 external_id 時用 upsert：重複的同一筆運動會被忽略（不重複新增）
+  if (body.source === "health" && body.external_id) {
+    const { data, error } = await supabase
+      .from("exercises")
+      .upsert({ ...body, user_id: user.id }, { onConflict: "user_id,external_id", ignoreDuplicates: true })
+      .select()
+      .maybeSingle();
+
+    if (error) { console.error("[api] DB error:", error); return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 }); }
+    // data 為 null 代表這筆已存在（被去重忽略）
+    return NextResponse.json({ exercise: data, duplicate: data === null });
   }
 
   const { data, error } = await supabase

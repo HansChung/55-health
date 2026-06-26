@@ -5,6 +5,12 @@ import { Icon } from "@/components/icons";
 import { SubPage } from "@/components/sub-page";
 import { api, type ExerciseRecord } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
+import {
+  isHealthAvailable,
+  requestHealthPermissions,
+  syncWorkouts,
+  getTodaySteps,
+} from "@/lib/health-sync";
 
 interface ExerciseScreenProps {
   onBack: () => void;
@@ -23,6 +29,10 @@ export function ExerciseScreen({ onBack }: ExerciseScreenProps) {
   const [weekLogs, setWeekLogs] = useState<ExerciseRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  // 健康平台同步（只在原生 App + 平台支援時顯示）
+  const [healthOk, setHealthOk] = useState(false);
+  const [steps, setSteps] = useState<number | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   const reload = async () => {
     try {
@@ -40,6 +50,49 @@ export function ExerciseScreen({ onBack }: ExerciseScreenProps) {
   useEffect(() => {
     reload();
   }, []);
+
+  // 原生 App 啟動時：偵測健康平台、載入今日步數
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const ok = await isHealthAvailable();
+      if (!alive) return;
+      setHealthOk(ok);
+      if (ok) {
+        const s = await getTodaySteps();
+        if (alive) setSteps(s);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const handleHealthSync = async () => {
+    setSyncing(true);
+    try {
+      const granted = await requestHealthPermissions();
+      if (!granted) {
+        toast.error("沒有取得健康資料權限，請到手機設定開啟。");
+        return;
+      }
+      const res = await syncWorkouts(7);
+      setSteps(await getTodaySteps());
+      await reload();
+      if (res.imported > 0) {
+        toast.success(`已同步 ${res.imported} 筆運動`);
+      } else if (res.total > 0) {
+        toast.success("運動記錄都是最新的了");
+      } else {
+        toast.success("最近 7 天沒有可同步的運動");
+      }
+    } catch (e) {
+      console.error("健康同步失敗:", e);
+      toast.error("同步沒成功，請再試一次。");
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const totalMin = logs.reduce((s, l) => s + l.minutes, 0);
   const totalKcal = logs.reduce((s, l) => s + l.kcal_burned, 0);
@@ -115,6 +168,36 @@ export function ExerciseScreen({ onBack }: ExerciseScreenProps) {
         <div style={{ textAlign: "center", padding: 40, color: "var(--ink-2)" }}>載入中…</div>
       ) : (
         <>
+          {healthOk && (
+            <div className="card" style={{
+              padding: 16, marginBottom: 16,
+              background: "linear-gradient(180deg, #EAF3FF 0%, #FFFFFF 100%)",
+              border: "1px solid #CFE2FB",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ fontSize: 32, lineHeight: 1 }}>📲</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: "var(--fs-sm)", fontWeight: 700 }}>健康資料同步</div>
+                  <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-2)" }}>
+                    {steps !== null ? `今天走了 ${steps.toLocaleString()} 步` : "從手機健康自動帶入運動"}
+                  </div>
+                </div>
+                <button
+                  onClick={handleHealthSync}
+                  disabled={syncing}
+                  style={{
+                    background: syncing ? "var(--line-strong)" : "var(--primary-deep)",
+                    color: "#fff", border: "none", borderRadius: 12,
+                    padding: "10px 16px", fontSize: "var(--fs-sm)", fontWeight: 700,
+                    flexShrink: 0,
+                  }}
+                >
+                  {syncing ? "同步中…" : "立即同步"}
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="card" style={{
             padding: 20, marginBottom: 20,
             background: "linear-gradient(180deg, #FFF9EF 0%, #FFFFFF 100%)",

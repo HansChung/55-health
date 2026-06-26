@@ -230,7 +230,7 @@ export const api = {
     apiFetch<{ exercises: ExerciseRecord[] }>(`/api/exercises?days=${days}`),
 
   createExercise: (ex: Partial<ExerciseRecord>) =>
-    apiFetch<{ exercise: ExerciseRecord }>("/api/exercises", { method: "POST", json: ex }),
+    apiFetch<{ exercise: ExerciseRecord | null; duplicate?: boolean }>("/api/exercises", { method: "POST", json: ex }),
 
   // Admin
   adminUsageSummary: (days = 30) =>
@@ -574,6 +574,10 @@ export interface ExerciseRecord {
   minutes: number;
   kcal_burned: number;
   performed_at: string;
+  /** 資料來源：手動記錄 or 從 Apple 健康 / Health Connect 同步 */
+  source?: "manual" | "health";
+  /** 健康平台上的唯一 ID（去重用） */
+  external_id?: string | null;
 }
 
 export interface AdminUsageSummary {

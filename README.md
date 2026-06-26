@@ -10,6 +10,7 @@
 - 👨‍👩‍👧 **家人共享** — 讓兒女遠端關心長輩飲食狀況
 - 💊 **慢性病提醒** — 高血壓、糖尿病等個人化建議
 - 🚶 **運動記錄** — 整合飲食 + 運動雙向追蹤
+- 📲 **健康平台同步** — 串接 Apple 健康 / Google Health Connect 自動帶入運動、步數（見 [`docs/health-integration.md`](docs/health-integration.md)）
 - 👑 **管理後台** — Token 用量、會員管理、API 設定
 - 💳 **訂閱付費** — Stripe 整合（免費 / NT$199 / NT$399）
 
