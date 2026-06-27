@@ -22,18 +22,22 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Health Connect：使用者點「為什麼需要這些權限」時導回 App（必填，否則無法授權） -->
+        </activity>
+
+        <!-- Health Connect 權限說明頁（Android 13 以下）：由 capacitor-health 外掛提供的 Activity -->
+        <activity
+            android:name="com.fit_up.health.capacitor.PermissionsRationaleActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
             </intent-filter>
-
         </activity>
 
-        <!-- Health Connect（Android 14+）：權限用途說明頁的進入點 -->
+        <!-- Health Connect 權限說明頁（Android 14+）：alias 指向同一個外掛 Activity -->
         <activity-alias
             android:name="ViewPermissionUsageActivity"
             android:exported="true"
-            android:targetActivity=".MainActivity"
+            android:targetActivity="com.fit_up.health.capacitor.PermissionsRationaleActivity"
             android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
@@ -55,4 +59,11 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- 讓 App 能偵測 / 開啟 Google Health Connect。
+         讀取權限（health.READ_STEPS / READ_EXERCISE / READ_ACTIVE_CALORIES_BURNED…）
+         由 capacitor-health 外掛的 manifest 自動合併進來，這裡不需重複宣告。 -->
+    <queries>
+        <package android:name="com.google.android.apps.healthdata" />
+    </queries>
 </manifest>

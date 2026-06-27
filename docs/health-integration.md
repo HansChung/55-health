@@ -67,25 +67,26 @@ npm run android:open       # Android Studio
 
 ### 2. iOS（Apple HealthKit）— 需要 Mac
 
-專案目前還沒有 `ios/` 平台，第一次要先建立：
+`@capacitor/ios` 已加入 package.json，iOS build 腳本（`ios:setup` / `ios:build` / `ios:open`）也已備好。
+**第一次**在 Mac 上建立 iOS 平台：
+
 ```bash
-npm i @capacitor/ios
-npx cap add ios
-npm run android:build   # 或自行 BUILD_TARGET=mobile next build 後 npx cap sync ios
-npx cap open ios        # Xcode
+npx cap add ios     # 一次性：產生 ios/ 原生專案（需 Mac + CocoaPods）
+npm run ios:setup   # 自動補 Info.plist（HealthKit 用途說明）+ Podfile 部署目標拉到 15.0
+npm run ios:open    # 靜態匯出 → cap sync ios → 開 Xcode
 ```
 
-在 Xcode：
-1. **Signing & Capabilities → + Capability → HealthKit**（需要 Apple Developer 帳號）。
-2. `Info.plist` 加入用途說明（沒有會直接被審查打回）：
-   ```xml
-   <key>NSHealthShareUsageDescription</key>
-   <string>暖暖會讀取您的運動與步數，幫您自動記錄每日活動。</string>
-   ```
-   （只讀資料**不需要** `NSHealthUpdateUsageDescription`。）
-3. 用**實體 iPhone** 測試（模擬器的健康資料有限）。
+`npm run ios:setup` 由 `scripts/ios-setup.mjs` 完成，會自動寫入：
+- `NSHealthShareUsageDescription`（讀取健康資料的用途說明，缺了會審查打回 / 執行期崩潰）
+- `NSHealthUpdateUsageDescription`（目前只讀，但外掛可能初始化寫入型別，保留避免崩潰）
+- Podfile `platform :ios, '15.0'`（`capacitor-health` podspec 要求）
 
-> ⚠️ App Store 審查：健康資料不得用於廣告或轉售；需有隱私政策連結；App Privacy 要如實申報讀取 Health 資料。
+**只剩一件 Xcode 手動步驟**（需 Apple Developer 帳號，無法腳本化）：
+> **Signing & Capabilities → + Capability → HealthKit**
+
+然後用**實體 iPhone** 測試（模擬器健康資料有限）。
+
+> ⚠️ App Store 審查：健康資料不得用於廣告或轉售；需有隱私政策連結（本專案已有 `/privacy`）；App Privacy 要如實申報讀取 Health 資料。
 
 ---
 
