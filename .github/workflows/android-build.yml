@@ -19,7 +19,7 @@ jobs:
       - name: 安裝 Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
 
       - name: 安裝 Java (JDK 21)
