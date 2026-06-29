@@ -1,0 +1,66 @@
+name: Android 建置（.aab）
+
+# 在 android-build 分支推送、或手動觸發時，於雲端建出 Android App Bundle。
+# 不需要本機安裝 Android Studio。
+# 需要在 GitHub repo Settings → Secrets 設定 4 個簽章 secret（見 docs/android-上架指南.md）：
+#   ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD / ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD
+on:
+  push:
+    branches: [android-build]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 取得程式碼
+        uses: actions/checkout@v4
+
+      - name: 安裝 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: 安裝 Java (JDK 21)
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: 安裝相依套件
+        run: npm ci
+
+      - name: 同步 Capacitor（殼 → Android）
+        run: npx cap sync android
+
+      - name: 還原簽章金鑰並設定環境（有設 Secret 才簽章）
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PW: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KS_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KS_KEYPW: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/upload-key.jks"
+            echo "ANDROID_KEYSTORE_FILE=$RUNNER_TEMP/upload-key.jks" >> "$GITHUB_ENV"
+            echo "ANDROID_KEYSTORE_PASSWORD=$KS_PW" >> "$GITHUB_ENV"
+            echo "ANDROID_KEY_ALIAS=$KS_ALIAS" >> "$GITHUB_ENV"
+            echo "ANDROID_KEY_PASSWORD=$KS_KEYPW" >> "$GITHUB_ENV"
+            echo "已載入簽章金鑰，將產出『已簽章』的 .aab"
+          else
+            echo "⚠️ 未設定簽章 Secret，將產出『未簽章』版本（僅供測試，無法上架 Play）"
+          fi
+
+      - name: 建置 App Bundle (.aab)
+        working-directory: android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew bundleRelease --no-daemon
+
+      - name: 上傳產出（到 Actions 頁面下載）
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuannuan-release-aab
+          path: android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error

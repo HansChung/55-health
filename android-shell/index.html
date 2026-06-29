@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>暖暖</title>
+  <style>
+    html,body{margin:0;height:100%;background:#FAF5EC;font-family:-apple-system,"PingFang TC","Noto Sans TC",sans-serif;}
+    .wrap{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:#3D2E20;text-align:center;padding:24px;}
+    .logo{width:96px;height:96px;border-radius:28px;background:linear-gradient(135deg,#FFD4A8,#E8845A);display:flex;align-items:center;justify-content:center;font-size:54px;box-shadow:0 10px 26px rgba(232,132,90,.35);}
+    h1{margin:0;font-size:26px;font-weight:800;color:#C95E36;}
+    p{margin:0;font-size:15px;color:#6B5848;}
+    .dot{width:10px;height:10px;border-radius:50%;background:#E8845A;animation:b 1s infinite ease-in-out;}
+    @keyframes b{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+    .err{display:none;margin-top:8px;}
+    .err a{color:#C95E36;font-weight:700;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="logo">🐻</div>
+    <h1>暖暖</h1>
+    <p>正在為您開啟…</p>
+    <div class="dot"></div>
+    <div class="err" id="err">
+      <p>網路好像沒連上。<br><a href="javascript:location.reload()">點這裡重新連線</a></p>
+    </div>
+  </div>
+  <script>
+    // 這個殼通常會立刻被線上的 nuan55.com 取代；
+    // 若 8 秒還停在這（多半是離線），顯示重連提示。
+    setTimeout(function(){ var e=document.getElementById('err'); if(e) e.style.display='block'; }, 8000);
+  </script>
+</body>
+</html>

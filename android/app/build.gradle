@@ -16,10 +16,27 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            // 簽章資訊由 CI 環境變數提供（不寫死、不入庫）
+            def ksFile = System.getenv("ANDROID_KEYSTORE_FILE")
+            if (ksFile && file(ksFile).exists()) {
+                storeFile file(ksFile)
+                storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // 有提供 keystore 才簽章（本機無 keystore 時仍可建未簽章版測試）
+            def ksFile = System.getenv("ANDROID_KEYSTORE_FILE")
+            if (ksFile && file(ksFile).exists()) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }
