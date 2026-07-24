@@ -30,6 +30,7 @@ import { AchievementsScreen } from "@/screens/achievements-screen";
 import { SmartScreen } from "@/screens/smart-screen";
 import { IotScreen } from "@/screens/iot-screen";
 import { CaregiverScreen } from "@/screens/caregiver-screen";
+import { CompanionDeviceScreen } from "@/screens/companion-device-screen";
 import { MealDetailSheet } from "@/screens/meal-detail-sheet";
 import { PhotoSourceSheet } from "@/components/photo-source-sheet";
 import type { MealRecord, AiSuggestion, ProfileMedication, HealthMetric, FavoriteMeal, PartnerCampaign, AchievementsResponse } from "@/lib/api-client";
@@ -643,6 +644,7 @@ export default function Page() {
       {subpage === "smart" && <SmartScreen onBack={() => setSubpage(null)} />}
       {subpage === "iot" && <IotScreen onBack={() => setSubpage(null)} />}
       {subpage === "caregiver" && <CaregiverScreen onBack={() => setSubpage(null)} />}
+      {subpage === "companion" && <CompanionDeviceScreen onBack={() => setSubpage(null)} />}
       {subpage === "prescription" && <PrescriptionScanScreen onBack={() => setSubpage("chronic")} />}
       {subpage === "chronic" && (
         <ChronicDiseaseScreen

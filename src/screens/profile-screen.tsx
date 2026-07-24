@@ -127,6 +127,7 @@ export function ProfileScreen({ onSubpage, onOnboarding }: ProfileScreenProps) {
         <Row icon="target" iconColor="#5BA0C9" label="智慧幸福檢測" value="SHI 指數與雷達圖" arrow onClick={() => onSubpage("smart")} />
         <Row icon="heart" iconColor="#2E7CB8" label="居家守護" value="感測器自動通知家人" arrow onClick={() => onSubpage("iot")} />
         <Row icon="user" iconColor="var(--sage)" label="家人狀況" value="查看我關心的長輩" arrow onClick={() => onSubpage("caregiver")} />
+        <Row icon="mic" iconColor="var(--primary-deep)" label="陪伴機器人" value="配對與管理" arrow onClick={() => onSubpage("companion")} />
       </Section>
 
       <Section title="訂閱方案">
