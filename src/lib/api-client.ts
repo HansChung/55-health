@@ -304,9 +304,36 @@ export const api = {
   // Achievements
   getAchievements: () =>
     apiFetch<AchievementsResponse>("/api/achievements"),
+
+  // Companion devices（陪伴機器人）
+  listDevices: () =>
+    apiFetch<{ devices: CompanionDevice[] }>("/api/devices"),
+
+  createDevicePairing: (name?: string) =>
+    apiFetch<{ device: CompanionDevice; pairing_code: string; expires_at: string }>(
+      "/api/devices",
+      { method: "POST", json: { name } }
+    ),
+
+  renameDevice: (id: string, name: string) =>
+    apiFetch<{ device: CompanionDevice }>(`/api/devices/${id}`, { method: "PATCH", json: { name } }),
+
+  deleteDevice: (id: string) =>
+    apiFetch<{ ok: true }>(`/api/devices/${id}`, { method: "DELETE" }),
 };
 
 // ─────── Types ───────
+export interface CompanionDevice {
+  id: string;
+  name: string;
+  pairing_code?: string | null;
+  pairing_expires_at?: string | null;
+  paired_at: string | null;
+  last_seen_at: string | null;
+  fw_version: string | null;
+  created_at?: string;
+}
+
 export interface ProfileData {
   id: string;
   display_name: string | null;

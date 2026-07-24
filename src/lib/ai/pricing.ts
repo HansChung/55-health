@@ -38,6 +38,17 @@ export const PRICING = {
     input: 0.15 / 1_000_000,
     output: 0.60 / 1_000_000,
   },
+
+  // 陪伴機器人（裝置問答）：STT 按秒、TTS 按「字元數」（放在 outputTokens 欄位）
+  "whisper-1": {
+    audio_input: 0.006 / 60, // $0.006/分鐘 → 每秒
+  },
+  "tts-1": {
+    output: 15.0 / 1_000_000, // $15 / 1M 字元
+  },
+  "tts-1-hd": {
+    output: 30.0 / 1_000_000,
+  },
 } as const;
 
 export type PricedModel = keyof typeof PRICING;
