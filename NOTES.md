@@ -445,10 +445,19 @@ android/                                       # Capacitor Android（未實測�
 9. **Resend 驗證 nuan55.com** — 完成後 Email 可寄給所有用戶（異常預警、每週報告）
 10. **合作活動實際接洽藥局/診所** — 已有後台，找廠商上架
 
-### 🤖 陪伴機器人（已規劃，暫緩實作 — 等 App 上架後）
-- **商業定位**：下一版 App 將與 ESP32-S3 陪伴機器人「綁售」，兩者要深度連動（共用同一 Supabase 帳號／資料）。
-- **完整計畫**：見 `.cursor/plans/暖暖陪伴機器人_*.plan.md`（裝置認證、裝置 API、語音 provider 抽換、分階段 + 豆包）。
-- **現在開發 App 要注意**：核心邏輯盡量放 server 端 API（不要只在前端 client 算），機器人之後才能直接重用。例如用藥提醒 [src/lib/medication-utils.ts](src/lib/medication-utils.ts)、健康警示 [src/lib/health-alerts.ts](src/lib/health-alerts.ts) 目前在 client，未來需搬一份到 server。
+### 🤖 陪伴機器人（第一階段已實作 ✅ 2026-07）
+- **商業定位**：下一版 App 將與 ESP32-S3 陪伴機器人「綁售」，兩者深度連動（共用同一 Supabase 帳號／資料）。
+- **已完成（軟體全套）**：
+  - DB：`supabase/add-devices.sql`（devices 表 + RLS，**要去 Supabase 跑**）
+  - 裝置認證：`src/lib/device-guard.ts`（Bearer 裝置 token → SHA-256 比對 → user_id）
+  - 配對：App 產 6 位數配對碼（`POST /api/devices`）→ 機器人 `POST /api/devices/pair` 換長期 token
+  - 裝置 API：`/api/device/ask`（錄音→Whisper→Gemini→TTS，回 WAV+表情）、`/api/device/reminders`、`/api/device/heartbeat`（該播報的用藥提醒）、`/api/device/speak`（TTS 播報）、`/api/device/realtime-session`（第二階段即時對談用）
+  - 語音供應商抽換：`src/lib/ai/voice-provider.ts`，env `VOICE_PROVIDER=openai|doubao`（豆包已寫好 HTTP 版，填 `DOUBAO_*` env 即用）
+  - 控費：STT 秒數計入既有「語音分鐘」月配額（`checkUserQuota`）；`pricing.ts` 已加 whisper-1（按秒）/ tts-1（按字元，放 outputTokens 欄位）
+  - App UI：`我的 → 陪伴機器人`（`companion-device-screen.tsx`）— 產配對碼、看在線狀態、改名、解除綁定
+  - 韌體：`firmware/`（Arduino sketch + 接線表 + 燒錄步驟 + TFT_eSPI 設定檔），非工程師可交給 maker 朋友照做
+- **待辦（硬體）**：實際接線燒錄測試（需要 ESP32-S3 + INMP441 + MAX98357A + ST7789 實機）
+- **第二階段**：見 `firmware/PHASE2.md`（ESP-IDF WebRTC 即時對談、喚醒詞 ESP-SR、豆包實測）
 
 ### 長期
 11. **Android Capacitor 打包 + 上 Play Store**
@@ -528,6 +537,13 @@ ADMIN_EMAILS=sunboy1120@gmail.com
 # STRIPE_WEBHOOK_SECRET=
 # STRIPE_PRICE_BASIC=
 # STRIPE_PRICE_PRO=
+
+# 陪伴機器人語音供應商（預設 openai，不填也可）
+# VOICE_PROVIDER=openai        # 或 doubao（要先填 DOUBAO_*）
+# OPENAI_TTS_MODEL=tts-1
+# OPENAI_TTS_VOICE=shimmer
+# DOUBAO_APP_ID=
+# DOUBAO_ACCESS_TOKEN=
 ```
 
 ---
@@ -577,6 +593,7 @@ git push
 11. `supabase/add-alerts.sql` — 警報表 + RLS（家人異常預警用）
 12. `supabase/add-smart-assessments.sql` — 智慧幸福檢測（SHI）表
 13. `supabase/add-stripe-customer.sql` — profiles.stripe_customer_id（**啟用 Stripe 前再跑即可**）
+14. `supabase/add-devices.sql` — 陪伴機器人 devices 表（**用機器人功能前要跑**）
 
 如果是接手既有環境，**通常不用再跑**，只在新增表時補。
 
