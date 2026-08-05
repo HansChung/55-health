@@ -4,4 +4,6 @@
     <string name="title_activity_main">暖暖</string>
     <string name="package_name">com.nuannuan.app</string>
     <string name="custom_url_scheme">com.nuannuan.app</string>
+    <!-- Health Connect 權限畫面「隱私權政策」連結 -->
+    <string name="health_connect_privacy_policy_url">https://nuan55.com/privacy</string>
 </resources>
