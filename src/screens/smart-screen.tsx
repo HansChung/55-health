@@ -16,6 +16,8 @@ import {
 
 interface SmartScreenProps {
   onBack: () => void;
+  /** 前往圓夢藍圖（日常光點） */
+  onBlueprint?: () => void;
 }
 
 type Mode = "loading" | "intro" | "quiz" | "submitting" | "result";
@@ -24,7 +26,7 @@ function toScores(a: SmartAssessment): SmartScores {
   return { S: a.score_s, M: a.score_m, A: a.score_a, R: a.score_r, T: a.score_t };
 }
 
-export function SmartScreen({ onBack }: SmartScreenProps) {
+export function SmartScreen({ onBack, onBlueprint }: SmartScreenProps) {
   const [mode, setMode] = useState<Mode>("loading");
   const [history, setHistory] = useState<SmartAssessment[]>([]);
   const [answers, setAnswers] = useState<number[]>([]);
@@ -169,7 +171,24 @@ export function SmartScreen({ onBack }: SmartScreenProps) {
   if (mode === "intro" || !latest) {
     return (
       <SubPage title="智慧幸福檢測" onBack={onBack}
-        footer={<button className="btn-primary" style={{ width: "100%" }} onClick={startQuiz}>開始檢測（約 3 分鐘）</button>}
+        footer={
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <button className="btn-primary" style={{ width: "100%" }} onClick={startQuiz}>開始檢測（約 3 分鐘）</button>
+            {onBlueprint && (
+              <button
+                type="button"
+                onClick={onBlueprint}
+                style={{
+                  width: "100%", padding: "14px 16px", borderRadius: 14,
+                  border: "2px solid var(--line-strong)", background: "var(--surface)",
+                  fontWeight: 700, fontSize: "var(--fs-sm)", cursor: "pointer",
+                }}
+              >
+                或先點亮圓夢藍圖光點（不用考試）
+              </button>
+            )}
+          </div>
+        }
       >
         <div style={{ textAlign: "center", padding: "12px 0 24px" }}>
           <div style={{ fontSize: 56, marginBottom: 12 }}>🧭</div>
@@ -215,7 +234,24 @@ export function SmartScreen({ onBack }: SmartScreenProps) {
   return (
     <SubPage title="智慧幸福檢測" onBack={onBack}
       accent="linear-gradient(180deg, #FBE6D4 0%, transparent 100%)"
-      footer={<button className="btn-primary" style={{ width: "100%" }} onClick={startQuiz}>重新檢測</button>}
+      footer={
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <button className="btn-primary" style={{ width: "100%" }} onClick={startQuiz}>重新檢測</button>
+          {onBlueprint && (
+            <button
+              type="button"
+              onClick={onBlueprint}
+              style={{
+                width: "100%", padding: "14px 16px", borderRadius: 14,
+                border: "2px solid var(--line-strong)", background: "var(--surface)",
+                fontWeight: 700, fontSize: "var(--fs-sm)", cursor: "pointer",
+              }}
+            >
+              用日常小事點亮圓夢藍圖
+            </button>
+          )}
+        </div>
+      }
     >
       {/* SHI 總分 */}
       <div style={{ textAlign: "center", marginBottom: 8 }}>

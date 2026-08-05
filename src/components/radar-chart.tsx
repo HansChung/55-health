@@ -1,25 +1,46 @@
 "use client";
 
-import { DIMENSIONS, type SmartScores } from "@/lib/smart";
+import { DIMENSIONS, type SmartDimension, type SmartScores } from "@/lib/smart";
+
+export interface RadarAxis {
+  key: SmartDimension;
+  label: string;
+  color: string;
+}
 
 interface RadarChartProps {
   scores: SmartScores;
   /** 可選：上一次分數，疊一層做對比 */
   compare?: SmartScores | null;
   size?: number;
+  /** 自訂五軸標籤（圓夢藍圖可用「安全」等）；預設 SHI DIMENSIONS */
+  axes?: RadarAxis[];
+  /** 頂點旁顯示的數字；預設用 scores；可改顯示光點數 */
+  valueLabels?: Partial<Record<SmartDimension, string | number>>;
 }
 
 /**
  * 五軸雷達圖（SVG，無外部套件）
  * 軸順序：S(上) → M → A → R → T 順時針
  */
-export function RadarChart({ scores, compare, size = 280 }: RadarChartProps) {
+export function RadarChart({
+  scores,
+  compare,
+  size = 280,
+  axes,
+  valueLabels,
+}: RadarChartProps) {
+  const dims: RadarAxis[] = axes ?? DIMENSIONS.map((d) => ({
+    key: d.key,
+    label: d.label,
+    color: d.color,
+  }));
+
   const cx = size / 2;
   const cy = size / 2;
-  const maxR = size * 0.34; // 留空間給外圈標籤
-  const n = DIMENSIONS.length;
+  const maxR = size * 0.34;
+  const n = dims.length;
 
-  // 第 i 軸的角度（-90 度從正上方開始，順時針）
   const angle = (i: number) => (-90 + (360 / n) * i) * (Math.PI / 180);
 
   const pointAt = (i: number, ratio: number) => {
@@ -30,21 +51,21 @@ export function RadarChart({ scores, compare, size = 280 }: RadarChartProps) {
     };
   };
 
-  // 背景網格（4 圈）
   const gridRings = [0.25, 0.5, 0.75, 1].map((ratio) =>
-    DIMENSIONS.map((_, i) => pointAt(i, ratio))
+    dims
+      .map((_, i) => pointAt(i, ratio))
       .map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`)
       .join(" ")
   );
 
   const toPolygon = (s: SmartScores) =>
-    DIMENSIONS.map((d, i) => pointAt(i, (s[d.key] ?? 0) / 100))
+    dims
+      .map((d, i) => pointAt(i, (s[d.key] ?? 0) / 100))
       .map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`)
       .join(" ");
 
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      {/* 網格圈 */}
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="SMART 雷達圖">
       {gridRings.map((pts, i) => (
         <polygon
           key={i}
@@ -55,8 +76,7 @@ export function RadarChart({ scores, compare, size = 280 }: RadarChartProps) {
         />
       ))}
 
-      {/* 軸線 */}
-      {DIMENSIONS.map((_, i) => {
+      {dims.map((_, i) => {
         const p = pointAt(i, 1);
         return (
           <line
@@ -71,7 +91,6 @@ export function RadarChart({ scores, compare, size = 280 }: RadarChartProps) {
         );
       })}
 
-      {/* 對比層（上次） */}
       {compare && (
         <polygon
           points={toPolygon(compare)}
@@ -82,7 +101,6 @@ export function RadarChart({ scores, compare, size = 280 }: RadarChartProps) {
         />
       )}
 
-      {/* 本次分數 */}
       <polygon
         points={toPolygon(scores)}
         fill="rgba(232,132,90,0.22)"
@@ -91,21 +109,26 @@ export function RadarChart({ scores, compare, size = 280 }: RadarChartProps) {
         strokeLinejoin="round"
       />
 
-      {/* 頂點圓點 */}
-      {DIMENSIONS.map((d, i) => {
+      {dims.map((d, i) => {
         const p = pointAt(i, (scores[d.key] ?? 0) / 100);
-        return <circle key={i} cx={p.x} cy={p.y} r={3.5} fill={d.color} />;
+        const lit = (scores[d.key] ?? 0) > 0;
+        return (
+          <g key={i}>
+            {lit && (
+              <circle cx={p.x} cy={p.y} r={10} fill={d.color} fillOpacity={0.2} />
+            )}
+            <circle cx={p.x} cy={p.y} r={lit ? 5 : 3.5} fill={d.color} />
+          </g>
+        );
       })}
 
-      {/* 構面標籤 */}
-      {DIMENSIONS.map((d, i) => {
-        const p = pointAt(i, 1.0);
-        // 標籤往外推一點
+      {dims.map((d, i) => {
         const a = angle(i);
         const lx = cx + Math.cos(a) * (maxR + 22);
         const ly = cy + Math.sin(a) * (maxR + 18);
         const anchor =
           Math.abs(Math.cos(a)) < 0.3 ? "middle" : Math.cos(a) > 0 ? "start" : "end";
+        const labelVal = valueLabels?.[d.key] ?? scores[d.key];
         return (
           <g key={i}>
             <text
@@ -126,7 +149,7 @@ export function RadarChart({ scores, compare, size = 280 }: RadarChartProps) {
               fontWeight={800}
               fill={d.color}
             >
-              {scores[d.key]}
+              {labelVal}
             </text>
           </g>
         );

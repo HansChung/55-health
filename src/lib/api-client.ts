@@ -148,6 +148,20 @@ export const api = {
       { method: "POST", json: { answers } }
     ),
 
+  // SMART 圓夢藍圖 — 日常光點
+  listSmartSparks: () =>
+    apiFetch<{
+      sparks: import("./smart-blueprint").SmartSpark[];
+      counts: Record<import("./smart").SmartDimension, number>;
+      scores: import("./smart").SmartScores;
+    }>("/api/smart-sparks"),
+
+  createSmartSpark: (body: import("./smart-blueprint").SparkInput) =>
+    apiFetch<{ spark: import("./smart-blueprint").SmartSpark }>("/api/smart-sparks", {
+      method: "POST",
+      json: body,
+    }),
+
   // 子女／家人儀表板
   familyOverview: () =>
     apiFetch<{ elders: ElderOverview[] }>("/api/family/overview"),

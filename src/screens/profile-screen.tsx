@@ -124,6 +124,7 @@ export function ProfileScreen({ onSubpage, onOnboarding }: ProfileScreenProps) {
         <Row icon="flame" iconColor="var(--gold)" label="運動記錄" value="查看詳細" arrow onClick={() => onSubpage("exercise")} />
         <Row icon="book" iconColor="var(--primary-deep)" label="每週健康報告" value="查看本週摘要" arrow onClick={() => onSubpage("weekly-report")} />
         <Row icon="sparkle" iconColor="var(--gold)" label="健康成就" value="查看徽章與連續記錄" arrow onClick={() => onSubpage("achievements")} />
+        <Row icon="sparkle" iconColor="#E8845A" label="圓夢藍圖" value="點亮日常 SMART 光點" arrow onClick={() => onSubpage("blueprint")} />
         <Row icon="target" iconColor="#5BA0C9" label="智慧幸福檢測" value="SHI 指數與雷達圖" arrow onClick={() => onSubpage("smart")} />
         <Row icon="heart" iconColor="#2E7CB8" label="居家守護" value="感測器自動通知家人" arrow onClick={() => onSubpage("iot")} />
         <Row icon="user" iconColor="var(--sage)" label="家人狀況" value="查看我關心的長輩" arrow onClick={() => onSubpage("caregiver")} />
