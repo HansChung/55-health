@@ -140,13 +140,20 @@ export const api = {
 
   // SMART RADAR / SHI 檢測
   listSmartAssessments: () =>
-    apiFetch<{ assessments: SmartAssessment[] }>("/api/smart-assessment"),
+    apiFetch<{
+      assessments: SmartAssessment[];
+      insights: import("./smart").SmartInsights | null;
+      previous: import("./smart").SmartScores | null;
+    }>("/api/smart-assessment"),
 
   submitSmartAssessment: (answers: number[]) =>
-    apiFetch<{ assessment: SmartAssessment; previous_shi: number | null; delta: number | null }>(
-      "/api/smart-assessment",
-      { method: "POST", json: { answers } }
-    ),
+    apiFetch<{
+      assessment: SmartAssessment;
+      previous_shi: number | null;
+      previous: import("./smart").SmartScores | null;
+      delta: number | null;
+      insights: import("./smart").SmartInsights;
+    }>("/api/smart-assessment", { method: "POST", json: { answers } }),
 
   // 子女／家人儀表板
   familyOverview: () =>

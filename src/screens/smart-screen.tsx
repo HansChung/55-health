@@ -9,9 +9,11 @@ import {
   QUESTIONS,
   LIKERT_LABELS,
   DIMENSIONS,
-  shiVerdict,
-  weakestDimension,
+  buildSmartInsights,
+  type SmartDimension,
+  type SmartInsights,
   type SmartScores,
+  type DimensionTip,
 } from "@/lib/smart";
 
 interface SmartScreenProps {
@@ -24,20 +26,40 @@ function toScores(a: SmartAssessment): SmartScores {
   return { S: a.score_s, M: a.score_m, A: a.score_a, R: a.score_r, T: a.score_t };
 }
 
+function formatDelta(d: number | null | undefined): string | null {
+  if (d == null || d === 0) return null;
+  return d > 0 ? `▲ +${d}` : `▼ ${d}`;
+}
+
 export function SmartScreen({ onBack }: SmartScreenProps) {
   const [mode, setMode] = useState<Mode>("loading");
   const [history, setHistory] = useState<SmartAssessment[]>([]);
   const [answers, setAnswers] = useState<number[]>([]);
   const [step, setStep] = useState(0);
   const [delta, setDelta] = useState<number | null>(null);
+  const [insights, setInsights] = useState<SmartInsights | null>(null);
+  const [selectedDim, setSelectedDim] = useState<SmartDimension | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     api
       .listSmartAssessments()
-      .then(({ assessments }) => {
+      .then(({ assessments, insights: serverInsights }) => {
         setHistory(assessments);
-        setMode(assessments.length > 0 ? "result" : "intro");
+        if (assessments.length > 0) {
+          const latest = assessments[0];
+          const prev = assessments[1] ? toScores(assessments[1]) : null;
+          setInsights(
+            serverInsights ?? buildSmartInsights(toScores(latest), prev, null)
+          );
+          setSelectedDim(
+            (serverInsights ?? buildSmartInsights(toScores(latest), prev, null)).focus.key
+          );
+          if (prev) setDelta(latest.shi - (assessments[1]?.shi ?? latest.shi));
+          setMode("result");
+        } else {
+          setMode("intro");
+        }
       })
       .catch(() => setMode("intro"));
   }, []);
@@ -56,7 +78,6 @@ export function SmartScreen({ onBack }: SmartScreenProps) {
     const next = [...answers];
     next[step] = value;
     setAnswers(next);
-    // 自動跳下一題
     setTimeout(() => {
       if (step < QUESTIONS.length - 1) {
         setStep(step + 1);
@@ -72,8 +93,11 @@ export function SmartScreen({ onBack }: SmartScreenProps) {
       const res = await api.submitSmartAssessment(finalAnswers);
       trackEvent("smart_submit", { shi: res.assessment.shi });
       setDelta(res.delta);
-      const { assessments } = await api.listSmartAssessments();
+      setInsights(res.insights);
+      setSelectedDim(res.insights.focus.key);
+      const { assessments, insights: listed } = await api.listSmartAssessments();
       setHistory(assessments);
+      if (listed) setInsights(listed);
       setMode("result");
     } catch (e) {
       setError("送出失敗：" + (e as Error).message);
@@ -100,7 +124,6 @@ export function SmartScreen({ onBack }: SmartScreenProps) {
         title="智慧幸福檢測"
         onBack={() => (step > 0 ? setStep(step - 1) : setMode(history.length ? "result" : "intro"))}
       >
-        {/* 進度條 */}
         <div style={{ marginBottom: 28 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
             <span style={{ fontSize: "var(--fs-sm)", color: dim.color, fontWeight: 700 }}>
@@ -115,7 +138,6 @@ export function SmartScreen({ onBack }: SmartScreenProps) {
           </div>
         </div>
 
-        {/* 題目 */}
         <div style={{
           fontSize: "var(--fs-xl)", fontWeight: 700, lineHeight: 1.5,
           color: "var(--ink-1)", marginBottom: 32, minHeight: 100,
@@ -123,7 +145,6 @@ export function SmartScreen({ onBack }: SmartScreenProps) {
           {q.text}
         </div>
 
-        {/* 1-5 大按鈕 */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {LIKERT_LABELS.map((label, i) => {
             const value = i + 1;
@@ -208,9 +229,12 @@ export function SmartScreen({ onBack }: SmartScreenProps) {
 
   // ── 結果頁 ──
   const scores = toScores(latest);
-  const verdict = shiVerdict(latest.shi);
-  const weak = weakestDimension(scores);
-  const trend = [...history].reverse(); // 舊→新
+  const resolved = insights ?? buildSmartInsights(scores, previous ? toScores(previous) : null, null);
+  const verdict = resolved.verdict;
+  const trend = [...history].reverse();
+  const selectedTip: DimensionTip =
+    resolved.dimensionTips.find((t) => t.key === (selectedDim ?? resolved.focus.key)) ??
+    resolved.dimensionTips.find((t) => t.key === resolved.focus.key)!;
 
   return (
     <SubPage title="智慧幸福檢測" onBack={onBack}
@@ -224,7 +248,7 @@ export function SmartScreen({ onBack }: SmartScreenProps) {
           <span style={{ fontSize: 72, fontWeight: 800, color: verdict.color, lineHeight: 1 }}>{latest.shi}</span>
           {delta != null && delta !== 0 && (
             <span style={{ fontSize: "var(--fs-lg)", fontWeight: 800, color: delta > 0 ? "var(--sage)" : "var(--berry)" }}>
-              {delta > 0 ? `▲ +${delta}` : `▼ ${delta}`}
+              {formatDelta(delta)}
             </span>
           )}
         </div>
@@ -235,45 +259,64 @@ export function SmartScreen({ onBack }: SmartScreenProps) {
       </div>
 
       {/* 雷達圖 */}
-      <div style={{ display: "flex", justifyContent: "center", margin: "12px 0 8px" }}>
-        <RadarChart scores={scores} compare={previous ? toScores(previous) : null} size={300} />
+      <div style={{ display: "flex", justifyContent: "center", margin: "12px 0 4px" }}>
+        <RadarChart
+          scores={scores}
+          compare={previous ? toScores(previous) : null}
+          size={300}
+          highlight={resolved.focus.key}
+          selected={selectedDim ?? resolved.focus.key}
+          onSelectDimension={setSelectedDim}
+          animate
+        />
       </div>
-      {previous && (
-        <div style={{ textAlign: "center", fontSize: "var(--fs-xs)", color: "var(--ink-3)", marginBottom: 16 }}>
-          實線＝本次　·　虛線＝上次
-        </div>
-      )}
+      <div style={{ textAlign: "center", fontSize: "var(--fs-xs)", color: "var(--ink-3)", marginBottom: 16 }}>
+        點選構面可看建議
+      </div>
 
-      {/* 各構面長條 */}
+      {/* 解讀卡：優勢 + 優先加強 + 選中構面 */}
+      <InsightCards
+        insights={resolved}
+        selectedTip={selectedTip}
+        onSelectDim={setSelectedDim}
+      />
+
+      {/* 精簡五軸列 + delta */}
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
-        {DIMENSIONS.map((d) => (
-          <div key={d.key}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-              <span style={{ fontSize: "var(--fs-sm)", fontWeight: 700 }}>{d.label}</span>
-              <span style={{ fontSize: "var(--fs-sm)", fontWeight: 800, color: d.color }}>{scores[d.key]}</span>
-            </div>
-            <div style={{ height: 8, background: "var(--line)", borderRadius: 99, overflow: "hidden" }}>
-              <div style={{ width: `${scores[d.key]}%`, height: "100%", background: d.color }} />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* 建議優先改善 */}
-      <div style={{
-        background: weak.color + "18", border: `1px solid ${weak.color}55`,
-        borderRadius: "var(--r-lg)", padding: 16, marginBottom: 20,
-        display: "flex", gap: 12, alignItems: "flex-start",
-      }}>
-        <div style={{ fontSize: 24 }}>💡</div>
-        <div>
-          <div style={{ fontSize: "var(--fs-base)", fontWeight: 700, marginBottom: 2 }}>
-            可以優先加強：{weak.label}
-          </div>
-          <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.5 }}>
-            這是目前分數較低的面向（{scores[weak.key]} 分）。建議下個月再檢測一次，看看進步了多少。
-          </div>
-        </div>
+        {resolved.dimensionTips.map((d) => {
+          const dLabel = formatDelta(d.delta);
+          const isSel = d.key === (selectedDim ?? resolved.focus.key);
+          return (
+            <button
+              key={d.key}
+              type="button"
+              onClick={() => setSelectedDim(d.key)}
+              style={{
+                display: "block", width: "100%", textAlign: "left",
+                background: isSel ? d.color + "14" : "transparent",
+                border: isSel ? `1px solid ${d.color}55` : "1px solid transparent",
+                borderRadius: 12, padding: "8px 10px", cursor: "pointer",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                <span style={{ fontSize: "var(--fs-sm)", fontWeight: 700 }}>{d.label}</span>
+                <span style={{ fontSize: "var(--fs-sm)", fontWeight: 800, color: d.color }}>
+                  {d.score}
+                  {dLabel && (
+                    <span style={{
+                      marginLeft: 8,
+                      color: (d.delta ?? 0) > 0 ? "var(--sage)" : "var(--berry)",
+                      fontWeight: 700,
+                    }}>{dLabel}</span>
+                  )}
+                </span>
+              </div>
+              <div style={{ height: 8, background: "var(--line)", borderRadius: 99, overflow: "hidden" }}>
+                <div style={{ width: `${d.score}%`, height: "100%", background: d.color }} />
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       {/* SHI 趨勢 */}
@@ -290,6 +333,98 @@ export function SmartScreen({ onBack }: SmartScreenProps) {
         上次檢測：{new Date(latest.created_at).toLocaleDateString("zh-TW")}
       </div>
     </SubPage>
+  );
+}
+
+function InsightCards({
+  insights,
+  selectedTip,
+  onSelectDim,
+}: {
+  insights: SmartInsights;
+  selectedTip: DimensionTip;
+  onSelectDim: (k: SmartDimension) => void;
+}) {
+  const strengthDelta = formatDelta(
+    insights.deltas ? insights.deltas[insights.strength.key] : null
+  );
+  const focusDelta = formatDelta(
+    insights.deltas ? insights.deltas[insights.focus.key] : null
+  );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
+      {/* 優勢 */}
+      <div style={{
+        background: insights.strength.color + "18",
+        border: `1px solid ${insights.strength.color}55`,
+        borderRadius: "var(--r-lg)", padding: 16,
+      }}>
+        <div style={{ fontSize: "var(--fs-sm)", fontWeight: 700, color: insights.strength.color, marginBottom: 4 }}>
+          您的優勢：{insights.strength.label}
+          {strengthDelta && <span style={{ marginLeft: 8 }}>{strengthDelta}</span>}
+        </div>
+        <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.55 }}>
+          {insights.strengthNote}
+        </div>
+      </div>
+
+      {/* 優先加強 */}
+      <button
+        type="button"
+        onClick={() => onSelectDim(insights.focus.key)}
+        style={{
+          background: insights.focus.color + "18",
+          border: `1px solid ${insights.focus.color}55`,
+          borderRadius: "var(--r-lg)", padding: 16,
+          textAlign: "left", cursor: "pointer",
+        }}
+      >
+        <div style={{ fontSize: "var(--fs-sm)", fontWeight: 700, color: insights.focus.color, marginBottom: 4 }}>
+          可以優先加強：{insights.focus.label}
+          {focusDelta && <span style={{ marginLeft: 8 }}>{focusDelta}</span>}
+        </div>
+        <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.55 }}>
+          {insights.personalizedNote}
+        </div>
+        <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-3)", marginTop: 8, fontWeight: 700 }}>
+          {insights.dimensionTips.find((t) => t.key === insights.focus.key)?.ctaLabel}
+        </div>
+      </button>
+
+      {/* 選中構面建議 */}
+      <div style={{
+        background: "var(--surface)",
+        border: `1px solid ${selectedTip.color}66`,
+        borderRadius: "var(--r-lg)", padding: 16,
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
+          <div style={{ fontSize: "var(--fs-base)", fontWeight: 800, color: selectedTip.color }}>
+            {selectedTip.label}
+          </div>
+          <div style={{ fontSize: "var(--fs-sm)", fontWeight: 800, color: selectedTip.color }}>
+            {selectedTip.score} 分
+            {formatDelta(selectedTip.delta) && (
+              <span style={{
+                marginLeft: 8,
+                color: (selectedTip.delta ?? 0) > 0 ? "var(--sage)" : "var(--berry)",
+              }}>
+                {formatDelta(selectedTip.delta)}
+              </span>
+            )}
+          </div>
+        </div>
+        <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.55, marginBottom: 6 }}>
+          {selectedTip.desc}
+        </div>
+        <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-1)", lineHeight: 1.55, fontWeight: 600 }}>
+          {selectedTip.tip}
+        </div>
+        <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-3)", marginTop: 8, fontWeight: 700 }}>
+          {selectedTip.ctaLabel}
+        </div>
+      </div>
+    </div>
   );
 }
 
