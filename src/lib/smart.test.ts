@@ -1,12 +1,16 @@
 import { describe, it, expect } from "vitest";
 import {
   computeDimensionScores,
+  computeScoresFromResponses,
   computeSHI,
   strongestDimension,
   weakestDimension,
+  weakestDimensions,
   dimensionDeltas,
   buildSmartInsights,
+  buildQuizPlan,
   personalizeFocusNote,
+  extractAskedIds,
   type SmartScores,
   type SmartSignals,
 } from "./smart";
@@ -132,5 +136,58 @@ describe("buildSmartInsights / personalizeFocusNote", () => {
       T: -5,
     });
     expect(insights.dimensionTips.find((t) => t.key === "R")!.delta).toBe(-20);
+  });
+});
+
+describe("智慧複測出題 / 計分", () => {
+  const prev: SmartScores = { S: 100, M: 75, A: 50, R: 0, T: 25 };
+
+  it("無上次 → 完整 15 題", () => {
+    const plan = buildQuizPlan({ previousScores: null, seed: 1 });
+    expect(plan.mode).toBe("full");
+    expect(plan.questions).toHaveLength(15);
+    expect(plan.questions.map((q) => q.id)).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    ]);
+  });
+
+  it("有上次 → 約 7 題，弱項各 2 題", () => {
+    const plan = buildQuizPlan({ previousScores: prev, seed: 42 });
+    expect(plan.mode).toBe("quick");
+    expect(plan.questions).toHaveLength(7);
+    expect(plan.focusDims).toEqual(["R", "T"]);
+    const countByDim = { S: 0, M: 0, A: 0, R: 0, T: 0 };
+    for (const q of plan.questions) countByDim[q.dim]++;
+    expect(countByDim.R).toBe(2);
+    expect(countByDim.T).toBe(2);
+    expect(countByDim.S).toBe(1);
+    expect(countByDim.M).toBe(1);
+    expect(countByDim.A).toBe(1);
+  });
+
+  it("weakestDimensions 取最低兩個", () => {
+    expect(weakestDimensions(prev, 2)).toEqual(["R", "T"]);
+  });
+
+  it("複測計分：有答的更新、沒答的沿用上次", () => {
+    // 只答 R 兩題都 5 → R=100；其他沿用
+    const scores = computeScoresFromResponses({ 10: 5, 25: 5 }, prev);
+    expect(scores.R).toBe(100);
+    expect(scores.S).toBe(100);
+    expect(scores.T).toBe(25);
+  });
+
+  it("同 seed 出題穩定；避開最近題目", () => {
+    const a = buildQuizPlan({ previousScores: prev, seed: 7, recentAskedIds: [10, 11, 12] });
+    const b = buildQuizPlan({ previousScores: prev, seed: 7, recentAskedIds: [10, 11, 12] });
+    expect(a.questions.map((q) => q.id)).toEqual(b.questions.map((q) => q.id));
+    const rIds = a.questions.filter((q) => q.dim === "R").map((q) => q.id);
+    // 應優先避開 10/11/12
+    expect(rIds.every((id) => ![10, 11, 12].includes(id))).toBe(true);
+  });
+
+  it("extractAskedIds 支援舊陣列與新格式", () => {
+    expect(extractAskedIds([5, 4, 3])).toEqual([1, 2, 3]);
+    expect(extractAskedIds({ mode: "quick", responses: { "16": 4, "25": 5 } })).toEqual([16, 25]);
   });
 });

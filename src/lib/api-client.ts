@@ -144,16 +144,31 @@ export const api = {
       assessments: SmartAssessment[];
       insights: import("./smart").SmartInsights | null;
       previous: import("./smart").SmartScores | null;
+      nextQuiz: import("./smart").QuizPlan;
     }>("/api/smart-assessment"),
 
-  submitSmartAssessment: (answers: number[]) =>
+  submitSmartAssessment: (
+    payload:
+      | number[]
+      | {
+          mode: import("./smart").QuizMode;
+          responses: { id: number; value: number }[];
+        }
+  ) =>
     apiFetch<{
       assessment: SmartAssessment;
       previous_shi: number | null;
       previous: import("./smart").SmartScores | null;
       delta: number | null;
       insights: import("./smart").SmartInsights;
-    }>("/api/smart-assessment", { method: "POST", json: { answers } }),
+      mode?: import("./smart").QuizMode;
+    }>(
+      "/api/smart-assessment",
+      {
+        method: "POST",
+        json: Array.isArray(payload) ? { answers: payload } : payload,
+      }
+    ),
 
   // 子女／家人儀表板
   familyOverview: () =>

@@ -1,18 +1,23 @@
 // ────────────────────────────────────────────────
 // SMART RADAR / SHI 檢測 API
-// GET  → 歷史記錄（新到舊）+ 最新一筆 insights
-// POST → 提交 15 題答案 → 伺服器計算分數 → 存檔 → 回傳 insights／上次五軸
+// GET  → 歷史 + insights + nextQuiz（完整測／智慧複測）
+// POST → 提交答案（完整 15 題或智慧短測）→ 存檔 → insights
 // ────────────────────────────────────────────────
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { z } from "zod";
 import {
+  buildQuizPlan,
   buildSmartInsights,
-  computeDimensionScores,
+  computeScoresFromResponses,
   computeSHI,
-  QUESTIONS,
+  extractAskedIds,
+  normalizeAnswerMap,
+  QUESTION_BY_ID,
+  type QuizMode,
   type SmartScores,
   type SmartSignals,
+  type StoredAnswers,
 } from "@/lib/smart";
 
 type AssessmentRow = {
@@ -24,11 +29,13 @@ type AssessmentRow = {
   score_r: number;
   score_t: number;
   shi: number;
-  answers: number[];
+  answers: unknown;
   created_at: string;
 };
 
-function toScores(a: Pick<AssessmentRow, "score_s" | "score_m" | "score_a" | "score_r" | "score_t">): SmartScores {
+function toScores(
+  a: Pick<AssessmentRow, "score_s" | "score_m" | "score_a" | "score_r" | "score_t">
+): SmartScores {
   return { S: a.score_s, M: a.score_m, A: a.score_a, R: a.score_r, T: a.score_t };
 }
 
@@ -74,7 +81,6 @@ async function loadSignals(
 
     const mealDays = new Set(
       ((mealsRes.data ?? []) as { eaten_at: string }[]).map((m) =>
-        // 用台灣時間（UTC+8）算「記錄天數」
         new Date(new Date(m.eaten_at).getTime() + 8 * 3600 * 1000)
           .toISOString()
           .substring(0, 10)
@@ -91,6 +97,14 @@ async function loadSignals(
     console.error("[smart-assessment] signals load failed:", e);
     return empty;
   }
+}
+
+function recentAskedFromHistory(assessments: AssessmentRow[]): number[] {
+  const ids: number[] = [];
+  for (const row of assessments.slice(0, 2)) {
+    ids.push(...extractAskedIds(row.answers));
+  }
+  return ids;
 }
 
 export async function GET() {
@@ -115,20 +129,38 @@ export async function GET() {
   const assessments = (data ?? []) as AssessmentRow[];
   let insights = null;
   let previous: SmartScores | null = null;
+  const latestScores = assessments[0] ? toScores(assessments[0]) : null;
 
   if (assessments.length > 0) {
-    const latest = assessments[0];
     previous = assessments[1] ? toScores(assessments[1]) : null;
     const signals = await loadSignals(supabase, user.id);
-    insights = buildSmartInsights(toScores(latest), previous, signals);
+    insights = buildSmartInsights(latestScores!, previous, signals);
   }
 
-  return NextResponse.json({ assessments, insights, previous });
+  const nextQuiz = buildQuizPlan({
+    previousScores: latestScores,
+    recentAskedIds: recentAskedFromHistory(assessments),
+    seed: user.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0) + assessments.length * 17,
+  });
+
+  return NextResponse.json({ assessments, insights, previous, nextQuiz });
 }
 
-const PostSchema = z.object({
-  // 15 個 1-5 的答案（依題目順序）
-  answers: z.array(z.number().int().min(1).max(5)).length(QUESTIONS.length),
+const LegacyPostSchema = z.object({
+  answers: z.array(z.number().int().min(1).max(5)).length(15),
+});
+
+const QuizPostSchema = z.object({
+  mode: z.enum(["full", "quick"]),
+  responses: z
+    .array(
+      z.object({
+        id: z.number().int().positive(),
+        value: z.number().int().min(1).max(5),
+      })
+    )
+    .min(5)
+    .max(15),
 });
 
 export async function POST(req: NextRequest) {
@@ -138,18 +170,40 @@ export async function POST(req: NextRequest) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "未登入" }, { status: 401 });
 
-  let body;
+  let raw: unknown;
   try {
-    body = PostSchema.parse(await req.json());
-  } catch (e) {
-    console.error("[api] 格式錯誤:", e);
+    raw = await req.json();
+  } catch {
     return NextResponse.json({ error: "送出的資料格式有誤" }, { status: 400 });
   }
 
-  const scores = computeDimensionScores(body.answers);
-  const shi = computeSHI(scores);
+  let mode: QuizMode;
+  let responseMap: Record<number, number>;
 
-  // 取上一次完整五軸（算進步幅度 + 雷達對比）
+  const quizParsed = QuizPostSchema.safeParse(raw);
+  const legacyParsed = LegacyPostSchema.safeParse(raw);
+
+  if (quizParsed.success) {
+    mode = quizParsed.data.mode;
+    responseMap = {};
+    for (const r of quizParsed.data.responses) {
+      if (!QUESTION_BY_ID[r.id]) {
+        return NextResponse.json({ error: "送出的資料格式有誤" }, { status: 400 });
+      }
+      responseMap[r.id] = r.value;
+    }
+    if (mode === "full" && Object.keys(responseMap).length !== 15) {
+      return NextResponse.json({ error: "送出的資料格式有誤" }, { status: 400 });
+    }
+  } else if (legacyParsed.success) {
+    mode = "full";
+    responseMap = normalizeAnswerMap(legacyParsed.data.answers);
+  } else {
+    console.error("[api] 格式錯誤:", quizParsed.error ?? legacyParsed.error);
+    return NextResponse.json({ error: "送出的資料格式有誤" }, { status: 400 });
+  }
+
+  // 取上一次完整五軸
   const { data: prevRows } = await supabase
     .from("smart_assessments")
     .select("shi, score_s, score_m, score_a, score_r, score_t")
@@ -161,6 +215,20 @@ export async function POST(req: NextRequest) {
   const previous: SmartScores | null = prevRow ? toScores(prevRow) : null;
   const prevShi = prevRow?.shi ?? null;
 
+  // 複測：沒答到的構面沿用上次；完整測：只依本次答案
+  const scores = computeScoresFromResponses(
+    responseMap,
+    mode === "quick" ? previous : null
+  );
+  const shi = computeSHI(scores);
+
+  const stored: StoredAnswers = {
+    mode,
+    responses: Object.fromEntries(
+      Object.entries(responseMap).map(([k, v]) => [String(k), v])
+    ),
+  };
+
   const { data, error } = await supabase
     .from("smart_assessments")
     .insert({
@@ -171,7 +239,7 @@ export async function POST(req: NextRequest) {
       score_r: scores.R,
       score_t: scores.T,
       shi,
-      answers: body.answers,
+      answers: stored,
     })
     .select()
     .single();
@@ -190,5 +258,6 @@ export async function POST(req: NextRequest) {
     previous,
     delta: prevShi != null ? shi - prevShi : null,
     insights,
+    mode,
   });
 }
