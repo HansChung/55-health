@@ -22,22 +22,26 @@ import {
   type SmartSpark,
 } from "@/lib/smart-blueprint";
 
+import type { SparkSource } from "@/lib/chapter-opening";
+
 interface BlueprintScreenProps {
   onBack: () => void;
   /** QR／深連結：一進來就開光點表單或 chapter3 */
   initialMode?: "home" | "spark" | "chapter3";
+  /** 光點來源（chapter0100 = 章節開篇「記下一句話」） */
+  sparkSource?: SparkSource;
 }
 
 type View = "home" | "spark" | "done";
 
-export function BlueprintScreen({ onBack, initialMode = "home" }: BlueprintScreenProps) {
+export function BlueprintScreen({ onBack, initialMode = "home", sparkSource }: BlueprintScreenProps) {
   const { user } = useAuth();
   const toast = useToast();
   const [view, setView] = useState<View>(
     initialMode === "spark" || initialMode === "chapter3" ? "spark" : "home"
   );
-  const [source] = useState<"spark_card" | "chapter3">(
-    initialMode === "chapter3" ? "chapter3" : "spark_card"
+  const [source] = useState<SparkSource>(
+    sparkSource ?? (initialMode === "chapter3" ? "chapter3" : "spark_card")
   );
   const [sparks, setSparks] = useState<SmartSpark[]>([]);
   const [counts, setCounts] = useState(emptySparkCounts());
@@ -168,7 +172,13 @@ export function BlueprintScreen({ onBack, initialMode = "home" }: BlueprintScree
   if (view === "spark") {
     return (
       <SubPage
-        title={source === "chapter3" ? "Chapter 3 打卡" : "點亮光點"}
+        title={
+          source === "chapter3"
+            ? "Chapter 3 打卡"
+            : source === "chapter0100"
+              ? "記下一句話"
+              : "點亮光點"
+        }
         onBack={() => (initialMode === "home" ? setView("home") : onBack())}
         accent="linear-gradient(180deg, #FBE6D4 0%, transparent 100%)"
         footer={

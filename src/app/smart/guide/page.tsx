@@ -78,6 +78,19 @@ export default function SmartGuidePage() {
         <p style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.6 }}>
           當方向清楚，圓夢就不再只是口號。它會變成一條看得見、走得到、能持續調整的路。
         </p>
+
+        <button
+          type="button"
+          onClick={() => router.push("/smart/chapter/0100")}
+          style={{
+            width: "100%", marginTop: 16, padding: "16px",
+            background: "var(--surface)", border: "2px solid #5BA0C9",
+            borderRadius: "var(--r-lg)", fontWeight: 700,
+            fontSize: "var(--fs-sm)", color: "#5BA0C9", cursor: "pointer",
+          }}
+        >
+          章節開篇｜風起了，調整風帆 →
+        </button>
       </SubPage>
     </div>
   );

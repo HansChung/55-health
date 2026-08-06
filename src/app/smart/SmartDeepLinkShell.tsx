@@ -3,10 +3,14 @@
 import { BlueprintScreen } from "@/screens/blueprint-screen";
 import { useRouter } from "next/navigation";
 
+import type { SparkSource } from "@/lib/chapter-opening";
+
 export function SmartDeepLinkShell({
   mode,
+  sparkSource = "spark_card",
 }: {
   mode: "home" | "spark" | "chapter3";
+  sparkSource?: SparkSource;
 }) {
   const router = useRouter();
   return (
@@ -18,6 +22,7 @@ export function SmartDeepLinkShell({
     }}>
       <BlueprintScreen
         initialMode={mode}
+        sparkSource={sparkSource}
         onBack={() => router.push("/")}
       />
     </div>

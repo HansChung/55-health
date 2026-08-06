@@ -20,7 +20,7 @@ const PostSchema = z.object({
   action_text: z.string().trim().min(1).max(200),
   feeling_text: z.string().trim().min(1).max(200),
   checklist: z.array(z.enum(checklistIds)).max(10).optional(),
-  source: z.enum(["spark_card", "chapter3"]).optional(),
+  source: z.enum(["spark_card", "chapter3", "chapter0100"]).optional(),
 });
 
 export async function GET() {

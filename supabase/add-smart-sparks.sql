@@ -12,7 +12,7 @@ create table if not exists smart_sparks (
   feeling_text text not null,
   checklist jsonb default '[]'::jsonb,
   source text not null default 'spark_card'
-    check (source in ('spark_card', 'chapter3')),
+    check (source in ('spark_card', 'chapter3', 'chapter0100')),
   created_at timestamptz default now()
 );
 

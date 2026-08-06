@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SmartDeepLinkShell } from "../SmartDeepLinkShell";
+import { SparkPageClient } from "./SparkPageClient";
 
 export const metadata: Metadata = {
   title: "我的第一個 SMART RADAR 光點｜暖暖",
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 
 /** QR：我的第一個 SMART RADAR 光點互動卡 */
 export default function SmartSparkPage() {
-  return <SmartDeepLinkShell mode="spark" />;
+  return <SparkPageClient />;
 }

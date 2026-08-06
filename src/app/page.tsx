@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { trackEvent } from "@/lib/telemetry";
 import { Tab, Modal, Subpage, Meal, FoodResult, MealType } from "@/lib/types";
 import { MOCK_RESULT } from "@/lib/mock-data";
@@ -88,6 +88,36 @@ export default function Page() {
   const [suggestionLoading, setSuggestionLoading] = useState(false);
   const [showPhotoSource, setShowPhotoSource] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const pendingOpenRef = useRef<string | null>(null);
+
+  // 章節開篇 QR 深連結：/?open=voice|camera|photo&from=chapter0100
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    const open = url.searchParams.get("open");
+    if (open && ["voice", "camera", "photo"].includes(open)) {
+      pendingOpenRef.current = open;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (loading || !user || !pendingOpenRef.current) return;
+    const open = pendingOpenRef.current;
+    pendingOpenRef.current = null;
+
+    const url = new URL(window.location.href);
+    const from = url.searchParams.get("from");
+    if (from) trackEvent("chapter_entry_open", { from, open });
+
+    if (open === "voice") setModal("voice");
+    else if (open === "camera") setModal("camera");
+    else if (open === "photo") setShowPhotoSource(true);
+
+    url.searchParams.delete("open");
+    url.searchParams.delete("from");
+    const qs = url.searchParams.toString();
+    window.history.replaceState({}, "", url.pathname + (qs ? `?${qs}` : ""));
+  }, [loading, user]);
 
   const totalCal = useMemo(() => meals.reduce((s, m) => s + (m.cal || 0), 0), [meals]);
   const calorieGoal = profile?.calorie_goal ?? 1800;
