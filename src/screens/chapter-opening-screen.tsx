@@ -6,9 +6,11 @@ import { SubPage } from "@/components/sub-page";
 import { Icon } from "@/components/icons";
 import {
   type ChapterEntry,
-  type ChapterEntryId,
   type ChapterOpening,
+  type ChapterRewriteDraft,
   type PhoneEntryPath,
+  type QuestionRewriteDemo,
+  chapterDraftKey,
   chapterEntryHref,
   chapterPickKey,
   chapterVoiceTryHref,
@@ -25,10 +27,14 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const toast = useToast();
   const layout = chapter.layout ?? "routes";
   const pickKey = chapterPickKey(chapter.id);
+  const draftKey = chapterDraftKey(chapter.id);
 
   const [picked, setPicked] = useState<string | null>(null);
   const [reflectNote, setReflectNote] = useState("");
   const [guideOpen, setGuideOpen] = useState(false);
+  const [keywords, setKeywords] = useState<[string, string, string]>(["", "", ""]);
+  const [naturalQuestion, setNaturalQuestion] = useState("");
+  const [backgrounds, setBackgrounds] = useState<string[]>([]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -39,10 +45,31 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         if (parsed.id) setPicked(parsed.id);
         if (parsed.note) setReflectNote(parsed.note);
       }
+      if (layout === "question-rewrite") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterRewriteDraft;
+          if (d.keywords) setKeywords(d.keywords);
+          if (d.naturalQuestion) setNaturalQuestion(d.naturalQuestion);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+          if (d.backgrounds) setBackgrounds(d.backgrounds);
+        }
+      }
     } catch {
       /* ignore */
     }
-  }, [pickKey]);
+  }, [pickKey, draftKey, layout]);
+
+  const saveDraft = (patch: Partial<ChapterRewriteDraft>) => {
+    if (layout !== "question-rewrite" || typeof window === "undefined") return;
+    const next: ChapterRewriteDraft = {
+      keywords: patch.keywords ?? keywords,
+      naturalQuestion: patch.naturalQuestion ?? naturalQuestion,
+      reflectNote: patch.reflectNote ?? reflectNote,
+      backgrounds: patch.backgrounds ?? backgrounds,
+    };
+    localStorage.setItem(draftKey, JSON.stringify(next));
+  };
 
   const savePick = (id: string, note?: string) => {
     setPicked(id);
@@ -63,6 +90,38 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const tryInNuannuan = () => {
     trackEvent("chapter_voice_try", { chapter: chapter.id });
     router.push(chapterVoiceTryHref(chapter.id));
+  };
+
+  const copyNaturalQuestion = async () => {
+    const text = naturalQuestion.trim();
+    if (!text) {
+      toast.info("請先寫好您的自然提問。");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("已複製自然提問，可以貼到 AI 對話或說出來。");
+    } catch {
+      toast.info("請長按文字框手動複製。");
+    }
+  };
+
+  const applyDemo = (demo: QuestionRewriteDemo) => {
+    setKeywords(demo.keywords);
+    setNaturalQuestion(demo.naturalQuestion);
+    saveDraft({
+      keywords: demo.keywords,
+      naturalQuestion: demo.naturalQuestion,
+    });
+    toast.success(`已帶入${demo.label}，您可以再改成自己的問題。`);
+  };
+
+  const toggleBackground = (id: string) => {
+    setBackgrounds((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      saveDraft({ backgrounds: next });
+      return next;
+    });
   };
 
   const copySamplePrompt = async () => {
@@ -210,6 +269,89 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
             </div>
           )}
 
+          {layout === "question-rewrite" && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                先寫三個關鍵字
+              </div>
+              <div style={{
+                display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8,
+                marginBottom: 12,
+              }}>
+                {(["一", "二", "三"] as const).map((label, i) => (
+                  <input
+                    key={label}
+                    value={keywords[i]}
+                    onChange={(e) => {
+                      const next = [...keywords] as [string, string, string];
+                      next[i] = e.target.value;
+                      setKeywords(next);
+                      saveDraft({ keywords: next });
+                    }}
+                    placeholder={`關鍵字${label}`}
+                    style={{
+                      padding: "12px 10px", borderRadius: 10,
+                      border: "2px solid var(--line-strong)",
+                      background: "var(--surface)", fontSize: "var(--fs-sm)",
+                      textAlign: "center", fontFamily: "inherit",
+                    }}
+                  />
+                ))}
+              </div>
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                改寫成一段完整的生活提問
+              </div>
+              <textarea
+                value={naturalQuestion}
+                onChange={(e) => {
+                  setNaturalQuestion(e.target.value);
+                  saveDraft({ naturalQuestion: e.target.value });
+                }}
+                placeholder="例如：我有在吃血壓藥，最近量起來偏高，請用簡單中文告訴我飲食要注意什麼？"
+                rows={4}
+                style={{
+                  width: "100%", padding: "14px 16px", marginBottom: 10,
+                  borderRadius: 12, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                }}
+              />
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={copyNaturalQuestion}
+                  style={{
+                    width: "100%", padding: "14px",
+                    background: "var(--surface)", border: "2px solid var(--line-strong)",
+                    borderRadius: "var(--r-pill)", fontWeight: 700,
+                    fontSize: "var(--fs-sm)", cursor: "pointer",
+                  }}
+                >
+                  複製我的自然提問
+                </button>
+                <button
+                  type="button"
+                  onClick={tryInNuannuan}
+                  style={{
+                    width: "100%", padding: "14px",
+                    background: "var(--primary-soft)", border: "2px solid var(--primary)",
+                    borderRadius: "var(--r-pill)", fontWeight: 700,
+                    fontSize: "var(--fs-sm)", color: "var(--primary-deep)",
+                    cursor: "pointer",
+                  }}
+                >
+                  在暖暖試問這句話 →
+                </button>
+              </div>
+            </div>
+          )}
+
           {layout === "routes" && chapter.entries && chapter.entries.length > 0 && (
             <div style={{
               display: "grid", gridTemplateColumns: "1fr 1fr",
@@ -249,11 +391,51 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           )}
 
           <StepCard title="回望一下" body={chapter.reflectPrompt} />
+
+          {layout === "question-rewrite" && chapter.backgroundOptions && (
+            <div style={{
+              display: "flex", flexDirection: "column", gap: 8, marginBottom: 12,
+            }}>
+              {chapter.backgroundOptions.map((opt) => {
+                const on = backgrounds.includes(opt.id);
+                return (
+                  <label
+                    key={opt.id}
+                    style={{
+                      display: "flex", gap: 12, alignItems: "flex-start",
+                      padding: 12, background: on ? "var(--primary-soft)" : "var(--surface)",
+                      borderRadius: 12,
+                      border: `2px solid ${on ? "var(--primary)" : "var(--line)"}`,
+                      cursor: "pointer", fontSize: "var(--fs-sm)",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={on}
+                      onChange={() => toggleBackground(opt.id)}
+                      style={{ width: 22, height: 22, marginTop: 2, flexShrink: 0 }}
+                    />
+                    <span>
+                      <strong>{opt.label}</strong>
+                      <span style={{ color: "var(--ink-3)", display: "block", marginTop: 2 }}>
+                        {opt.hint}
+                      </span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+
           <textarea
             value={reflectNote}
             onChange={(e) => {
               setReflectNote(e.target.value);
-              if (picked) savePick(picked, e.target.value);
+              if (layout === "question-rewrite") {
+                saveDraft({ reflectNote: e.target.value });
+              } else if (picked) {
+                savePick(picked, e.target.value);
+              }
             }}
             placeholder={chapter.reflectPlaceholder ?? "寫下您的想法…"}
             rows={3}
@@ -309,6 +491,44 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                           <li key={i} style={{ marginBottom: 4 }}>{s}</li>
                         ))}
                       </ol>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "question-rewrite" && chapter.rewriteDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.rewriteDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8,
+                        color: "var(--primary-deep)",
+                      }}>
+                        {demo.label}
+                      </div>
+                      <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-3)", marginBottom: 6 }}>
+                        關鍵字：{demo.keywords.join(" · ")}
+                      </div>
+                      <div style={{
+                        fontSize: "var(--fs-sm)", color: "var(--ink-2)",
+                        lineHeight: 1.55, marginBottom: 10,
+                      }}>
+                        → {demo.naturalQuestion}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => applyDemo(demo)}
+                        style={{
+                          padding: "8px 14px", borderRadius: "var(--r-pill)",
+                          border: "1px solid var(--primary)", background: "var(--surface)",
+                          color: "var(--primary-deep)", fontWeight: 700,
+                          fontSize: "var(--fs-xs)", cursor: "pointer",
+                        }}
+                      >
+                        帶入這組示範
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -382,6 +602,9 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           picked={picked}
           reflectNote={reflectNote}
           layout={layout}
+          keywords={keywords}
+          naturalQuestion={naturalQuestion}
+          backgrounds={backgrounds}
         />
       </div>
     </>
@@ -509,13 +732,56 @@ function PrintCard({
   picked,
   reflectNote,
   layout,
+  keywords = ["", "", ""],
+  naturalQuestion = "",
+  backgrounds = [],
 }: {
   chapter: ChapterOpening;
   picked: string | null;
   reflectNote: string;
-  layout: "routes" | "ai-entry";
+  layout: ChapterOpening["layout"];
+  keywords?: [string, string, string];
+  naturalQuestion?: string;
+  backgrounds?: string[];
 }) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const bgLabels = chapter.backgroundOptions
+    ?.filter((o) => backgrounds.includes(o.id))
+    .map((o) => o.label)
+    .join("、");
+
+  if (layout === "question-rewrite") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <div style={{
+          display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12,
+          marginBottom: 16,
+        }}>
+          <PrintGridCell title="① 三個關鍵字" minHeight={56}>
+            {keywords.filter(Boolean).join(" · ") || "＿＿ · ＿＿ · ＿＿"}
+          </PrintGridCell>
+          <PrintGridCell title="② 補上的背景" minHeight={56}>
+            {bgLabels || "＿＿＿＿＿＿"}
+          </PrintGridCell>
+          <PrintGridCell title="③ 自然提問（改寫後）" minHeight={80}>
+            {naturalQuestion || "＿＿＿＿＿＿＿＿＿＿"}
+          </PrintGridCell>
+          <PrintGridCell title="④ 回望" minHeight={80}>
+            {reflectNote || "＿＿＿＿＿＿＿＿＿＿"}
+          </PrintGridCell>
+        </div>
+        <p style={{ fontSize: 12, color: "#666" }}>
+          掃碼網址：{origin}/smart/chapter/{chapter.id}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: 480, margin: "0 auto" }}>
@@ -582,6 +848,26 @@ function PrintCard({
       <p style={{ fontSize: 12, color: "#666" }}>
         掃碼網址：{origin}/smart/chapter/{chapter.id}
       </p>
+    </div>
+  );
+}
+
+function PrintGridCell({
+  title,
+  children,
+  minHeight,
+}: {
+  title: string;
+  children: React.ReactNode;
+  minHeight: number;
+}) {
+  return (
+    <div style={{
+      border: "2px solid #333", borderRadius: 8, padding: 10,
+      minHeight,
+    }}>
+      <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{title}</div>
+      <div style={{ fontSize: 13, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{children}</div>
     </div>
   );
 }

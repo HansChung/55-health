@@ -1,5 +1,5 @@
 /** 章節開篇 QR 深連結（例：0100 → /smart/chapter/0100） */
-export type ChapterLayout = "routes" | "ai-entry";
+export type ChapterLayout = "routes" | "ai-entry" | "question-rewrite";
 
 export type ChapterEntryId = "ask" | "snap" | "photo" | "note";
 
@@ -20,6 +20,21 @@ export interface PhoneEntryPath {
   label: string;
   emoji: string;
   steps: string[];
+}
+
+/** 關鍵字 → 自然提問示範（0103 等章節用） */
+export interface QuestionRewriteDemo {
+  id: string;
+  label: string;
+  keywords: [string, string, string];
+  naturalQuestion: string;
+}
+
+/** 補背景選項（0103 回望用） */
+export interface QuestionBackgroundOption {
+  id: string;
+  label: string;
+  hint: string;
 }
 
 export interface ChapterOpening {
@@ -52,6 +67,9 @@ export interface ChapterOpening {
   entries?: ChapterEntry[];
   /** ai-entry 版型：常見手機入口路徑 */
   phonePaths?: PhoneEntryPath[];
+  /** question-rewrite 版型：三組示範 + 背景選項 */
+  rewriteDemos?: QuestionRewriteDemo[];
+  backgroundOptions?: QuestionBackgroundOption[];
 }
 
 export const CHAPTER_0100: ChapterOpening = {
@@ -211,9 +229,73 @@ export const CHAPTER_0102: ChapterOpening = {
   ],
 };
 
+export const CHAPTER_0103: ChapterOpening = {
+  id: "0103",
+  qrCode: "0103",
+  title: "把關鍵字丟掉：用人話對話",
+  subtitle: "章節開篇",
+  layout: "question-rewrite",
+  headerEmoji: "💬",
+  accentGradient: "linear-gradient(180deg, #FFF0E8 0%, transparent 55%)",
+  quote: "好問題不必像口令；把真實需要說清楚，AI 才能真正幫上忙。",
+  atAGlance:
+    "很多人習慣只丟三個關鍵字給 AI，像在下口令。這一章練習把關鍵字改寫成完整的生活提問，並補上一點背景，讓回答更貼近您真正需要。",
+  tryPrompt:
+    "挑一個最近想查的問題，先寫三個關鍵字，再把它改成一段完整的生活提問。",
+  reflectPrompt: "補上哪一項背景後，AI 的回應最接近我的需要？",
+  reflectPlaceholder: "例如：補上「健康背景」和「想達成的目的」後，回答就具體多了…",
+  continueTitle: "暖暖陪您繼續",
+  continueBody:
+    "掃碼進入暖暖，聽三組「關鍵字變自然提問」示範，再完成一次改寫。",
+  printCardTitle: "自然提問四格卡",
+  printCardDescription:
+    "可列印四格卡：關鍵字、補背景、自然提問、回望。填完可帶在身邊練習。",
+  printButtonLabel: "列印四格卡",
+  guideTitle: "關鍵字變自然提問",
+  guideDuration: "三組示範",
+  guideParagraphs: [
+    "口令式問法：「血壓 高 吃藥」— AI 往往只能猜您要什麼。",
+    "自然提問：說清楚誰、什麼狀況、想達成什麼，回答才會貼近生活。",
+    "下面三組示範可以對照著改寫您自己的問題；改完可在暖暖語音試問。",
+  ],
+  guideFooterNote: "語音示範即將推出；目前請先閱讀三組文字示範。",
+  footerGuideLabel: "看三組「關鍵字→自然提問」示範",
+  rewriteDemos: [
+    {
+      id: "bp",
+      label: "示範 1｜健康飲食",
+      keywords: ["血壓", "偏高", "飲食"],
+      naturalQuestion:
+        "我有在吃血壓藥，最近量起來偏高，請用簡單中文告訴我，飲食上要注意什麼？",
+    },
+    {
+      id: "video",
+      label: "示範 2｜跟家人視訊",
+      keywords: ["孫子", "視訊", "教"],
+      naturalQuestion:
+        "孫子下週要跟我視訊，我想學怎麼接視訊電話，可以一步一步慢慢教嗎？",
+    },
+    {
+      id: "knee",
+      label: "示範 3｜運動與身體",
+      keywords: ["膝蓋", "走路", "痛"],
+      naturalQuestion:
+        "我走路時膝蓋會痛，想問有什麼適合的運動，或該注意什麼？",
+    },
+  ],
+  backgroundOptions: [
+    { id: "health", label: "健康或慢性病背景", hint: "例如高血壓、糖尿病" },
+    { id: "when", label: "時間、頻率或情境", hint: "例如最近一週、早上起床" },
+    { id: "goal", label: "想達成的目的", hint: "例如想知道該怎麼做" },
+    { id: "who", label: "跟誰有關", hint: "例如自己、家人、醫生" },
+    { id: "limit", label: "我的限制", hint: "例如只用語音、不太會打字" },
+  ],
+};
+
 const CHAPTERS: Record<string, ChapterOpening> = {
   "0100": CHAPTER_0100,
   "0102": CHAPTER_0102,
+  "0103": CHAPTER_0103,
 };
 
 export function getChapterOpening(id: string): ChapterOpening | null {
@@ -222,6 +304,17 @@ export function getChapterOpening(id: string): ChapterOpening | null {
 
 export function chapterPickKey(chapterId: string): string {
   return `nuannuan_chapter${chapterId}_pick`;
+}
+
+export function chapterDraftKey(chapterId: string): string {
+  return `nuannuan_chapter${chapterId}_draft`;
+}
+
+export interface ChapterRewriteDraft {
+  keywords: [string, string, string];
+  naturalQuestion: string;
+  reflectNote: string;
+  backgrounds: string[];
 }
 
 export function chapterEntryHref(

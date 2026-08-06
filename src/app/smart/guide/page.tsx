@@ -103,6 +103,18 @@ export default function SmartGuidePage() {
         >
           章節 0102｜先找得到，再慢慢用 →
         </button>
+        <button
+          type="button"
+          onClick={() => router.push("/smart/chapter/0103")}
+          style={{
+            width: "100%", marginTop: 10, padding: "16px",
+            background: "var(--surface)", border: "2px solid #E8845A",
+            borderRadius: "var(--r-lg)", fontWeight: 700,
+            fontSize: "var(--fs-sm)", color: "var(--primary-deep)", cursor: "pointer",
+          }}
+        >
+          章節 0103｜把關鍵字丟掉：用人話對話 →
+        </button>
       </SubPage>
     </div>
   );

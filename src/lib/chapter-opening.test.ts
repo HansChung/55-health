@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   CHAPTER_0100,
   CHAPTER_0102,
+  CHAPTER_0103,
   chapterEntryHref,
   chapterPickKey,
+  chapterDraftKey,
   chapterVoiceTryHref,
   getChapterOpening,
   isSparkSource,
@@ -23,6 +25,14 @@ describe("chapter-opening", () => {
     expect(ch?.samplePrompt).toContain("簡單中文");
     expect(ch?.phonePaths?.length).toBeGreaterThan(3);
     expect(ch?.entries).toBeUndefined();
+  });
+
+  it("getChapterOpening 0103 question-rewrite", () => {
+    const ch = getChapterOpening("0103");
+    expect(ch?.title).toContain("關鍵字");
+    expect(ch?.layout).toBe("question-rewrite");
+    expect(ch?.rewriteDemos).toHaveLength(3);
+    expect(ch?.backgroundOptions?.length).toBeGreaterThan(2);
   });
 
   it("未知章節回 null", () => {
@@ -45,6 +55,7 @@ describe("chapter-opening", () => {
 
   it("chapterPickKey 各章獨立", () => {
     expect(chapterPickKey("0100")).not.toBe(chapterPickKey("0102"));
+    expect(chapterDraftKey("0103")).toContain("0103");
   });
 
   it("isSparkSource", () => {
