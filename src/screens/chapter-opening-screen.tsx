@@ -14,7 +14,11 @@ import {
   type OrganizeDecideDemo,
   type VisionIdentifyDemo,
   type VisionTrustLevel,
+  type PhotoSearchDemo,
+  type NoteCaptureDemo,
+  type SmartFlowDemo,
   buildOrganizeAskPrompt,
+  buildSmartFlowAskPrompt,
   buildVisionAskPrompt,
   chapterCameraTryHref,
   chapterDraftKey,
@@ -23,6 +27,9 @@ import {
   chapterPickKey,
   chapterVoiceTryHref,
   type ChapterVisionDraft,
+  type ChapterPhotoSearchDraft,
+  type ChapterNoteCaptureDraft,
+  type ChapterSmartFlowDraft,
 } from "@/lib/chapter-opening";
 import { trackEvent } from "@/lib/telemetry";
 import { useToast } from "@/hooks/use-toast";
@@ -51,6 +58,15 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const [itemLabel, setItemLabel] = useState("");
   const [aiAnswerNote, setAiAnswerNote] = useState("");
   const [trustLevel, setTrustLevel] = useState<VisionTrustLevel | "">("");
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [memoryNote, setMemoryNote] = useState("");
+  const [noteTitle, setNoteTitle] = useState("");
+  const [noteContent, setNoteContent] = useState("");
+  const [noteTagId, setNoteTagId] = useState("");
+  const [snapNote, setSnapNote] = useState("");
+  const [askQuestion, setAskQuestion] = useState("");
+  const [askAnswer, setAskAnswer] = useState("");
+  const [savedLine, setSavedLine] = useState("");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -92,12 +108,53 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           if (d.reflectNote) setReflectNote(d.reflectNote);
         }
       }
+      if (layout === "photo-search") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterPhotoSearchDraft;
+          if (d.searchKeyword) setSearchKeyword(d.searchKeyword);
+          if (d.memoryNote) setMemoryNote(d.memoryNote);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "note-capture") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterNoteCaptureDraft;
+          if (d.noteTitle) setNoteTitle(d.noteTitle);
+          if (d.noteContent) setNoteContent(d.noteContent);
+          if (d.tagId) setNoteTagId(d.tagId);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        } else if (chapter.defaultNoteTitle) {
+          setNoteTitle(chapter.defaultNoteTitle);
+        }
+      }
+      if (layout === "smart-flow") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterSmartFlowDraft;
+          if (d.snapNote) setSnapNote(d.snapNote);
+          if (d.askQuestion) setAskQuestion(d.askQuestion);
+          if (d.askAnswer) setAskAnswer(d.askAnswer);
+          if (d.savedLine) setSavedLine(d.savedLine);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
     } catch {
       /* ignore */
     }
-  }, [pickKey, draftKey, layout]);
+  }, [pickKey, draftKey, layout, chapter.defaultNoteTitle]);
 
-  const saveDraft = (patch: Partial<ChapterRewriteDraft & ChapterOrganizeDraft & ChapterVisionDraft>) => {
+  const saveDraft = (
+    patch: Partial<
+      ChapterRewriteDraft &
+        ChapterOrganizeDraft &
+        ChapterVisionDraft &
+        ChapterPhotoSearchDraft &
+        ChapterNoteCaptureDraft &
+        ChapterSmartFlowDraft
+    >
+  ) => {
     if (typeof window === "undefined") return;
     if (layout === "question-rewrite") {
       const next: ChapterRewriteDraft = {
@@ -123,6 +180,33 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         itemLabel: patch.itemLabel ?? itemLabel,
         aiAnswerNote: patch.aiAnswerNote ?? aiAnswerNote,
         trustLevel: patch.trustLevel ?? trustLevel,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layout === "photo-search") {
+      const next: ChapterPhotoSearchDraft = {
+        searchKeyword: patch.searchKeyword ?? searchKeyword,
+        memoryNote: patch.memoryNote ?? memoryNote,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layout === "note-capture") {
+      const next: ChapterNoteCaptureDraft = {
+        noteTitle: patch.noteTitle ?? noteTitle,
+        noteContent: patch.noteContent ?? noteContent,
+        tagId: patch.tagId ?? noteTagId,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layout === "smart-flow") {
+      const next: ChapterSmartFlowDraft = {
+        snapNote: patch.snapNote ?? snapNote,
+        askQuestion: patch.askQuestion ?? askQuestion,
+        askAnswer: patch.askAnswer ?? askAnswer,
+        savedLine: patch.savedLine ?? savedLine,
         reflectNote: patch.reflectNote ?? reflectNote,
       };
       localStorage.setItem(draftKey, JSON.stringify(next));
@@ -239,6 +323,76 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const setVisionTrust = (level: VisionTrustLevel) => {
     setTrustLevel(level);
     saveDraft({ trustLevel: level });
+  };
+
+  const applyPhotoSearchDemo = (demo: PhotoSearchDemo) => {
+    setSearchKeyword(demo.searchKeyword);
+    setMemoryNote(demo.memoryNote);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      searchKeyword: demo.searchKeyword,
+      memoryNote: demo.memoryNote,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的搜尋詞。`);
+  };
+
+  const applyNoteDemo = (demo: NoteCaptureDemo) => {
+    setNoteTitle(demo.noteTitle);
+    setNoteContent(demo.noteContent);
+    setNoteTagId(demo.tagId);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      noteTitle: demo.noteTitle,
+      noteContent: demo.noteContent,
+      tagId: demo.tagId,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的便條。`);
+  };
+
+  const applySmartFlowDemo = (demo: SmartFlowDemo) => {
+    setSnapNote(demo.snapNote);
+    setAskQuestion(demo.askQuestion);
+    setAskAnswer(demo.askAnswer);
+    setSavedLine(demo.savedLine);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      snapNote: demo.snapNote,
+      askQuestion: demo.askQuestion,
+      askAnswer: demo.askAnswer,
+      savedLine: demo.savedLine,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的流程。`);
+  };
+
+  const copySmartFlowAsk = async () => {
+    const text = buildSmartFlowAskPrompt(snapNote);
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("已複製二問提問句，可以貼給 AI 或說出來。");
+    } catch {
+      toast.info("請長按文字框手動複製。");
+    }
+  };
+
+  const copyNoteTemplate = async () => {
+    const tagLabel =
+      chapter.noteTagOptions?.find((t) => t.id === noteTagId)?.label ?? "";
+    const text = [noteTitle.trim(), noteContent.trim(), tagLabel ? `#${tagLabel}` : ""]
+      .filter(Boolean)
+      .join("\n");
+    if (!noteContent.trim()) {
+      toast.info("請先寫下一句想留下的話。");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("已複製便條內容，可以貼到您的筆記 App。");
+    } catch {
+      toast.info("請長按文字框手動複製。");
+    }
   };
 
   const toggleBackground = (id: string) => {
@@ -679,6 +833,265 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
             </div>
           )}
 
+          {layout === "photo-search" && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                在相簿搜尋一個有溫度的詞
+              </div>
+              <input
+                value={searchKeyword}
+                onChange={(e) => {
+                  setSearchKeyword(e.target.value);
+                  saveDraft({ searchKeyword: e.target.value });
+                }}
+                placeholder="例如：海邊、生日、台南、咖啡、朋友…"
+                style={{
+                  width: "100%", padding: "12px 14px", marginBottom: 10,
+                  borderRadius: 10, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", boxSizing: "border-box",
+                }}
+              />
+              {chapter.warmKeywordSuggestions && (
+                <div style={{
+                  display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14,
+                }}>
+                  {chapter.warmKeywordSuggestions.map((word) => (
+                    <button
+                      key={word}
+                      type="button"
+                      onClick={() => {
+                        setSearchKeyword(word);
+                        saveDraft({ searchKeyword: word });
+                      }}
+                      style={{
+                        padding: "8px 14px", borderRadius: "var(--r-pill)",
+                        border: `2px solid ${searchKeyword === word ? "#9B7AD4" : "var(--line-strong)"}`,
+                        background: searchKeyword === word ? "#F5EEF8" : "var(--surface)",
+                        fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                        color: searchKeyword === word ? "#7B5BB8" : "var(--ink-2)",
+                      }}
+                    >
+                      {word}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                最觸動的一張，寫下一句回憶
+              </div>
+              <textarea
+                value={memoryNote}
+                onChange={(e) => {
+                  setMemoryNote(e.target.value);
+                  saveDraft({ memoryNote: e.target.value });
+                }}
+                placeholder="例如：和老朋友在巷口小店，第一次用新手機拍的那杯咖啡…"
+                rows={3}
+                style={{
+                  width: "100%", padding: "14px 16px",
+                  borderRadius: 12, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                }}
+              />
+              <p style={{
+                fontSize: "var(--fs-xs)", color: "var(--ink-3)", margin: "10px 0 0",
+                lineHeight: 1.5,
+              }}>
+                提示：請在手機「照片／相簿」App 內使用搜尋；結果可能受備份設定與辨識準確度影響。
+              </p>
+            </div>
+          )}
+
+          {layout === "note-capture" && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                標題
+              </div>
+              <input
+                value={noteTitle}
+                onChange={(e) => {
+                  setNoteTitle(e.target.value);
+                  saveDraft({ noteTitle: e.target.value });
+                }}
+                placeholder={chapter.defaultNoteTitle ?? "今天的小發現"}
+                style={{
+                  width: "100%", padding: "12px 14px", marginBottom: 12,
+                  borderRadius: 10, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", boxSizing: "border-box",
+                }}
+              />
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                只寫一句真正想留下的話
+              </div>
+              <textarea
+                value={noteContent}
+                onChange={(e) => {
+                  setNoteContent(e.target.value);
+                  saveDraft({ noteContent: e.target.value });
+                }}
+                placeholder="例如：路邊那朵小白花可能叫「阿拉伯婆婆納」…"
+                rows={3}
+                style={{
+                  width: "100%", padding: "14px 16px", marginBottom: 12,
+                  borderRadius: 12, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                }}
+              />
+              {chapter.noteTagOptions && (
+                <>
+                  <div style={{
+                    fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                    marginBottom: 8,
+                  }}>
+                    加一個簡單標籤
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+                    {chapter.noteTagOptions.map((tag) => {
+                      const on = noteTagId === tag.id;
+                      return (
+                        <button
+                          key={tag.id}
+                          type="button"
+                          onClick={() => {
+                            setNoteTagId(tag.id);
+                            saveDraft({ tagId: tag.id });
+                          }}
+                          style={{
+                            textAlign: "left", padding: "12px 14px", borderRadius: 12,
+                            border: `2px solid ${on ? "var(--primary)" : "var(--line-strong)"}`,
+                            background: on ? "var(--primary-soft)" : "var(--surface)",
+                            fontWeight: 700, fontSize: "var(--fs-sm)", cursor: "pointer",
+                          }}
+                        >
+                          {on ? "✓ " : ""}{tag.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+              <button type="button" onClick={copyNoteTemplate} style={secondaryBtnStyle}>
+                複製便條內容（可貼到筆記 App）
+              </button>
+            </div>
+          )}
+
+          {layout === "smart-flow" && (
+            <div style={{ marginBottom: 16 }}>
+              {(["一拍", "二問", "三記下"] as const).map((stepLabel, idx) => (
+                <div
+                  key={stepLabel}
+                  style={{
+                    marginBottom: 14, padding: 14, borderRadius: 14,
+                    background: "var(--surface)", border: "2px solid var(--line)",
+                  }}
+                >
+                  <div style={{
+                    fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--primary-deep)",
+                    marginBottom: 8,
+                  }}>
+                    {idx + 1}｜{stepLabel}
+                  </div>
+                  {idx === 0 && (
+                    <>
+                      <input
+                        value={snapNote}
+                        onChange={(e) => {
+                          setSnapNote(e.target.value);
+                          saveDraft({ snapNote: e.target.value });
+                        }}
+                        placeholder="拍下什麼？例如：公園長椅旁的小白花…"
+                        style={{
+                          width: "100%", padding: "12px 14px", marginBottom: 8,
+                          borderRadius: 10, border: "2px solid var(--line-strong)",
+                          background: "var(--surface-warm)", fontSize: "var(--fs-sm)",
+                          fontFamily: "inherit", boxSizing: "border-box",
+                        }}
+                      />
+                      <button type="button" onClick={tryCameraInNuannuan} style={primaryOutlineBtnStyle}>
+                        在暖暖拍一下 →
+                      </button>
+                    </>
+                  )}
+                  {idx === 1 && (
+                    <>
+                      <input
+                        value={askQuestion}
+                        onChange={(e) => {
+                          setAskQuestion(e.target.value);
+                          saveDraft({ askQuestion: e.target.value });
+                        }}
+                        placeholder="這是什麼？請用簡單中文說明。"
+                        style={{
+                          width: "100%", padding: "12px 14px", marginBottom: 8,
+                          borderRadius: 10, border: "2px solid var(--line-strong)",
+                          background: "var(--surface-warm)", fontSize: "var(--fs-sm)",
+                          fontFamily: "inherit", boxSizing: "border-box",
+                        }}
+                      />
+                      <textarea
+                        value={askAnswer}
+                        onChange={(e) => {
+                          setAskAnswer(e.target.value);
+                          saveDraft({ askAnswer: e.target.value });
+                        }}
+                        placeholder="AI 回答摘要…"
+                        rows={2}
+                        style={{
+                          width: "100%", padding: "12px 14px", marginBottom: 8,
+                          borderRadius: 10, border: "2px solid var(--line-strong)",
+                          background: "var(--surface-warm)", fontSize: "var(--fs-sm)",
+                          fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                        }}
+                      />
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        <button type="button" onClick={copySmartFlowAsk} style={secondaryBtnStyle}>
+                          複製二問提問句
+                        </button>
+                        <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>
+                          在暖暖問一句 →
+                        </button>
+                      </div>
+                    </>
+                  )}
+                  {idx === 2 && (
+                    <textarea
+                      value={savedLine}
+                      onChange={(e) => {
+                        setSavedLine(e.target.value);
+                        saveDraft({ savedLine: e.target.value });
+                      }}
+                      placeholder="從回答裡選最有用的一句，存進便條…"
+                      rows={3}
+                      style={{
+                        width: "100%", padding: "12px 14px",
+                        borderRadius: 10, border: "2px solid var(--line-strong)",
+                        background: "var(--surface-warm)", fontSize: "var(--fs-sm)",
+                        fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                      }}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
           {layout === "routes" && chapter.entries && chapter.entries.length > 0 && (
             <div style={{
               display: "grid", gridTemplateColumns: "1fr 1fr",
@@ -762,7 +1175,13 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                 saveDraft({ userDecision: e.target.value });
               } else {
                 setReflectNote(e.target.value);
-                if (layout === "question-rewrite" || layout === "vision-identify") {
+                if (
+                  layout === "question-rewrite" ||
+                  layout === "vision-identify" ||
+                  layout === "photo-search" ||
+                  layout === "note-capture" ||
+                  layout === "smart-flow"
+                ) {
                   saveDraft({ reflectNote: e.target.value });
                 } else if (picked) {
                   savePick(picked, e.target.value);
@@ -960,6 +1379,120 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                   ))}
                 </div>
               )}
+              {layout === "photo-search" && chapter.photoSearchDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.photoSearchDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "#9B7AD4",
+                      }}>
+                        {demo.label}
+                      </div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}>
+                        <strong>搜尋詞：</strong>{demo.searchKeyword}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.55, margin: "0 0 8px" }}>
+                        {demo.memoryNote}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>
+                        {demo.reflectNote}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => applyPhotoSearchDemo(demo)}
+                        style={{
+                          padding: "8px 14px", borderRadius: "var(--r-pill)",
+                          border: "1px solid #9B7AD4", background: "var(--surface)",
+                          color: "#7B5BB8", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                        }}
+                      >
+                        帶入這則案例
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "note-capture" && chapter.noteCaptureDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.noteCaptureDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)",
+                      }}>
+                        {demo.label}
+                      </div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}>
+                        <strong>{demo.noteTitle}</strong>
+                      </p>
+                      <p style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.55, margin: "0 0 8px" }}>
+                        {demo.noteContent}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>
+                        {demo.reflectNote}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => applyNoteDemo(demo)}
+                        style={{
+                          padding: "8px 14px", borderRadius: "var(--r-pill)",
+                          border: "1px solid var(--primary)", background: "var(--surface)",
+                          color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                        }}
+                      >
+                        帶入這則案例
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "smart-flow" && chapter.smartFlowDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.smartFlowDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "#5BA0C9",
+                      }}>
+                        {demo.label}
+                      </div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}>
+                        <strong>一拍：</strong>{demo.snapNote}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}>
+                        <strong>二問：</strong>{demo.askQuestion}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}>
+                        <strong>回答：</strong>{demo.askAnswer}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 8px" }}>
+                        <strong>三記下：</strong>{demo.savedLine}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>
+                        {demo.reflectNote}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => applySmartFlowDemo(demo)}
+                        style={{
+                          padding: "8px 14px", borderRadius: "var(--r-pill)",
+                          border: "1px solid #5BA0C9", background: "var(--surface)",
+                          color: "#5BA0C9", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                        }}
+                      >
+                        帶入這則案例
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
               {chapter.guideFooterNote && (
                 <p style={{
                   fontSize: "var(--fs-xs)", color: "var(--ink-3)",
@@ -1039,6 +1572,15 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           itemLabel={itemLabel}
           aiAnswerNote={aiAnswerNote}
           trustLevel={trustLevel}
+          searchKeyword={searchKeyword}
+          memoryNote={memoryNote}
+          noteTitle={noteTitle}
+          noteContent={noteContent}
+          noteTagId={noteTagId}
+          snapNote={snapNote}
+          askQuestion={askQuestion}
+          askAnswer={askAnswer}
+          savedLine={savedLine}
         />
       </div>
     </>
@@ -1176,6 +1718,15 @@ function PrintCard({
   itemLabel = "",
   aiAnswerNote = "",
   trustLevel = "",
+  searchKeyword = "",
+  memoryNote = "",
+  noteTitle = "",
+  noteContent = "",
+  noteTagId = "",
+  snapNote = "",
+  askQuestion = "",
+  askAnswer = "",
+  savedLine = "",
 }: {
   chapter: ChapterOpening;
   picked: string | null;
@@ -1191,6 +1742,15 @@ function PrintCard({
   itemLabel?: string;
   aiAnswerNote?: string;
   trustLevel?: VisionTrustLevel | "";
+  searchKeyword?: string;
+  memoryNote?: string;
+  noteTitle?: string;
+  noteContent?: string;
+  noteTagId?: string;
+  snapNote?: string;
+  askQuestion?: string;
+  askAnswer?: string;
+  savedLine?: string;
 }) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const bgLabels = chapter.backgroundOptions
@@ -1204,6 +1764,105 @@ function PrintCard({
       : trustLevel === "verify"
         ? "需要查證"
         : "";
+
+  const noteTagLabel =
+    chapter.noteTagOptions?.find((t) => t.id === noteTagId)?.label ?? "";
+
+  if (layout === "photo-search") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <PrintGridCell title="搜尋詞（有溫度的詞）" minHeight={48}>
+          {searchKeyword || "＿＿＿＿＿＿"}
+        </PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="一句回憶" minHeight={72}>
+            {memoryNote || "＿＿＿＿＿＿＿＿＿＿"}
+          </PrintGridCell>
+        </div>
+        <PrintGridCell title="這張照片讓我想起…" minHeight={72}>
+          {reflectNote || "＿＿＿＿＿＿＿＿＿＿"}
+        </PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>
+          掃碼網址：{origin}/smart/chapter/{chapter.id}
+        </p>
+      </div>
+    );
+  }
+
+  if (layout === "note-capture") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <PrintGridCell title="標題" minHeight={40}>
+          {noteTitle || chapter.defaultNoteTitle || "＿＿＿＿"}
+        </PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="一句話" minHeight={64}>
+            {noteContent || "＿＿＿＿＿＿＿＿＿＿"}
+          </PrintGridCell>
+        </div>
+        <div style={{
+          display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16,
+        }}>
+          <PrintGridCell title="標籤" minHeight={48}>
+            {noteTagLabel || "＿＿＿＿"}
+          </PrintGridCell>
+          <PrintGridCell title="送給未來的自己" minHeight={48}>
+            {reflectNote || "＿＿＿＿＿＿"}
+          </PrintGridCell>
+        </div>
+        <p style={{ fontSize: 12, color: "#666" }}>
+          掃碼網址：{origin}/smart/chapter/{chapter.id}
+        </p>
+      </div>
+    );
+  }
+
+  if (layout === "smart-flow") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <PrintGridCell title="① 一拍" minHeight={48}>
+          {snapNote || "＿＿＿＿＿＿"}
+        </PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="② 二問" minHeight={48}>
+            {askQuestion || "這是什麼？請用簡單中文說明。"}
+          </PrintGridCell>
+        </div>
+        <PrintGridCell title="AI 回答摘要" minHeight={48}>
+          {askAnswer || "＿＿＿＿＿＿"}
+        </PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="③ 三記下" minHeight={48}>
+            {savedLine || "＿＿＿＿＿＿"}
+          </PrintGridCell>
+        </div>
+        <PrintGridCell title="這一次我帶走了什麼" minHeight={64}>
+          {reflectNote || "＿＿＿＿＿＿＿＿＿＿"}
+        </PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>
+          掃碼網址：{origin}/smart/chapter/{chapter.id}
+        </p>
+      </div>
+    );
+  }
 
   if (layout === "vision-identify") {
     return (

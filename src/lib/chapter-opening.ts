@@ -4,7 +4,10 @@ export type ChapterLayout =
   | "ai-entry"
   | "question-rewrite"
   | "organize-decide"
-  | "vision-identify";
+  | "vision-identify"
+  | "photo-search"
+  | "note-capture"
+  | "smart-flow";
 
 export type VisionTrustLevel = "enjoy" | "verify";
 
@@ -62,6 +65,42 @@ export interface VisionSafetyTip {
   items: string[];
 }
 
+/** 相簿搜尋示範（0106 用） */
+export interface PhotoSearchDemo {
+  id: string;
+  label: string;
+  searchKeyword: string;
+  memoryNote: string;
+  reflectNote: string;
+}
+
+/** 數位便條標籤（0107 用） */
+export interface NoteTagOption {
+  id: string;
+  label: string;
+}
+
+/** 數位便條示範（0107 用） */
+export interface NoteCaptureDemo {
+  id: string;
+  label: string;
+  noteTitle: string;
+  noteContent: string;
+  tagId: string;
+  reflectNote: string;
+}
+
+/** 一拍二問三記下示範（0108 用） */
+export interface SmartFlowDemo {
+  id: string;
+  label: string;
+  snapNote: string;
+  askQuestion: string;
+  askAnswer: string;
+  savedLine: string;
+  reflectNote: string;
+}
+
 /** 「整理三點，不替我決定」生活案例（0104 用） */
 export interface OrganizeDecideDemo {
   id: string;
@@ -111,6 +150,15 @@ export interface ChapterOpening {
   /** vision-identify 版型：影像辨識示範 + 安全提醒 */
   visionDemos?: VisionIdentifyDemo[];
   visionSafetyTips?: VisionSafetyTip[];
+  /** photo-search 版型：有溫度的搜尋詞建議 */
+  warmKeywordSuggestions?: string[];
+  photoSearchDemos?: PhotoSearchDemo[];
+  /** note-capture 版型：便條標籤與示範 */
+  defaultNoteTitle?: string;
+  noteTagOptions?: NoteTagOption[];
+  noteCaptureDemos?: NoteCaptureDemo[];
+  /** smart-flow 版型：三拍示範 */
+  smartFlowDemos?: SmartFlowDemo[];
 }
 
 export const CHAPTER_0100: ChapterOpening = {
@@ -465,12 +513,163 @@ export const CHAPTER_0105: ChapterOpening = {
   ],
 };
 
+export const CHAPTER_0106: ChapterOpening = {
+  id: "0106",
+  qrCode: "0106",
+  title: "為手機裝上相簿：照片可以搜尋",
+  subtitle: "章節開篇",
+  layout: "photo-search",
+  headerEmoji: "🖼",
+  accentGradient: "linear-gradient(180deg, #F5EEF8 0%, transparent 55%)",
+  quote: "照片不只是檔案；一個有溫度的詞，可以喚回一段記憶。",
+  atAGlance:
+    "這一章練習用「有溫度的詞」在相簿裡搜尋——海邊、生日、台南、咖啡、朋友——讓被淹沒的回憶重新浮上來。搜尋結果可能受備份設定與辨識準確度影響，私人照片請先確認雲端同步與分享權限。",
+  tryPrompt:
+    "打開自己的相簿搜尋一個有溫度的詞，選出最觸動的一張，寫下一句回憶。",
+  reflectPrompt: "這張照片讓我想起了誰、哪裡，或哪一段人生？",
+  reflectPlaceholder: "例如：想起在台南和老朋友一起喝咖啡的那個下午…",
+  continueTitle: "暖暖陪您繼續",
+  continueBody:
+    "掃碼進入暖暖，觀看「一個詞找回照片」微短劇，再完成一張私人回憶卡。",
+  printCardTitle: "相簿搜尋關鍵字卡",
+  printCardDescription: "可列印：搜尋詞、觸動的一張、一句回憶、這張照片讓我想起…",
+  printButtonLabel: "列印關鍵字卡",
+  guideTitle: "一個詞找回照片",
+  guideDuration: "微短劇",
+  guideParagraphs: [
+    "以前照片不多，每一張都伴著說得出來的故事；現在手機裡照片越來越多，回憶反而越難找。",
+    "具有搜尋功能的數位相簿，可以依日期、地點或影像內容提出候選，再由您找出真正想念的那一張。",
+    "一個有溫度的詞，便可能讓一段回憶重新走回來。",
+  ],
+  guideFooterNote: "微短劇即將推出；目前請先閱讀文字示範。",
+  footerGuideLabel: "觀看「一個詞找回照片」微短劇",
+  warmKeywordSuggestions: ["海邊", "生日", "台南", "咖啡", "朋友"],
+  photoSearchDemos: [
+    {
+      id: "coffee",
+      label: "案例｜搜尋「咖啡」",
+      searchKeyword: "咖啡",
+      memoryNote: "和老朋友在巷口小店，第一次用新手機拍的那杯 latte。",
+      reflectNote: "想起那位多年未見、仍記得我口味的朋友。",
+    },
+    {
+      id: "tainan",
+      label: "案例｜搜尋「台南」",
+      searchKeyword: "台南",
+      memoryNote: "赤崁樓前，孫子第一次自己按下快門。",
+      reflectNote: "那一段三代同遊的旅程，以及他興奮的表情。",
+    },
+  ],
+};
+
+export const CHAPTER_0107: ChapterOpening = {
+  id: "0107",
+  qrCode: "0107",
+  title: "為它準備便條紙：靈感被收藏",
+  subtitle: "章節開篇",
+  layout: "note-capture",
+  headerEmoji: "📝",
+  accentGradient: "linear-gradient(180deg, #FFF8E8 0%, transparent 55%)",
+  quote: "靈感不必靠硬記；留下一句、加一個標籤，日後就找得到。",
+  atAGlance:
+    "這一章練習把稍縱即逝的靈感，用最小單位存進數位便條：一個標題、一句話、一個簡單標籤。請避免把密碼、驗證碼或完整敏感資料放進一般筆記。",
+  tryPrompt:
+    "建立一則最簡單的筆記：標題「今天的小發現」，內容只寫一句真正想留下的話。",
+  reflectPrompt: "這句話為什麼值得送給未來的自己？",
+  reflectPlaceholder: "例如：下次看到類似的花，我就能叫出名字了…",
+  continueTitle: "暖暖陪您繼續",
+  continueBody:
+    "掃碼進入暖暖，跟著 30 秒示範完成第一張數位便條，保存與否由您決定。",
+  printCardTitle: "一句話便條模板",
+  printCardDescription: "可列印：標題、一句話、標籤、送給未來的自己。",
+  printButtonLabel: "列印便條模板",
+  guideTitle: "第一張數位便條",
+  guideDuration: "約 30 秒",
+  guideParagraphs: [
+    "散步時知道一朵花的名字、翻相簿找到老照片、讀到想提醒自己的話——這些片刻很珍貴，也很容易消失。",
+    "不必一次建立複雜分類；最小的保存單位，可以只是一個標題、一句話與一個簡單標籤。",
+    "先留下，再慢慢整理，比期待自己永遠記得更可靠。",
+  ],
+  guideFooterNote: "30 秒示範影片即將推出；目前請先閱讀文字案例。",
+  footerGuideLabel: "看 30 秒數位便條示範",
+  defaultNoteTitle: "今天的小發現",
+  noteTagOptions: [
+    { id: "discovery", label: "今天的小發現" },
+    { id: "try", label: "想試試看" },
+    { id: "share", label: "和家人分享" },
+  ],
+  noteCaptureDemos: [
+    {
+      id: "flower",
+      label: "案例｜花的名字",
+      noteTitle: "今天的小發現",
+      noteContent: "路邊那朵小白花可能叫「阿拉伯婆婆納」，春天常見。",
+      tagId: "discovery",
+      reflectNote: "下次散步看到，可以叫出名字，跟孙子分享。",
+    },
+    {
+      id: "quote",
+      label: "案例｜想記住的一句話",
+      noteTitle: "今天的小發現",
+      noteContent: "「慢下來，不是落後，是留給自己聽見生活的空隙。」",
+      tagId: "share",
+      reflectNote: "下次心裡急躁時，提醒自己這句話。",
+    },
+  ],
+};
+
+export const CHAPTER_0108: ChapterOpening = {
+  id: "0108",
+  qrCode: "0108",
+  title: "預備起飛：一拍、二問、三記下",
+  subtitle: "章節開篇",
+  layout: "smart-flow",
+  headerEmoji: "🚀",
+  accentGradient: "linear-gradient(180deg, #E8F4FA 0%, #FFF8EE 100%)",
+  quote: "一拍、二問、三記下：看見、理解、保存，完成第一個 AI 生活流程。",
+  atAGlance:
+    "這一章把「一拍、二問、三記下」串成第一條可重複的生活流線：先拍下低風險事物，用自然的話問 AI，再把最有用的一句存進便條。「二問」是第二步的名稱，不是規定一定要問兩次。",
+  tryPrompt:
+    "完整做一次：拍下一樣低風險事物，問 AI 一個簡單問題，再把最有用的一句存進筆記。",
+  reflectPrompt: "這一次，我真正帶走了什麼？",
+  reflectPlaceholder: "例如：不只認識了那朵花，還留下一句可以跟家人分享的話…",
+  continueTitle: "暖暖陪您繼續",
+  continueBody:
+    "掃碼進入暖暖，看 30 秒三拍示範，跟著完成一次；可以直接離開，也可以選擇保存成果。",
+  printCardTitle: "數位華爾滋隨身卡",
+  printCardDescription: "可列印：一拍、二問、三記下，以及這一次我帶走了什麼。",
+  printButtonLabel: "列印隨身卡",
+  guideTitle: "一拍、二問、三記下",
+  guideDuration: "約 30 秒",
+  guideParagraphs: [
+    "真正重要的，不是記住全部工具名稱，而是把幾個簡單動作串成一條自己用得上的生活流線。",
+    "一拍：看到想了解的，先拍下來。二問：用自然的話問一句。三記下：從回答裡選出最有用的一句，存進便條。",
+    "當您完成一次「看見、理解、保存」，就親手完成了一個可重複的生活流程。",
+  ],
+  guideFooterNote: "30 秒三拍示範即將推出；目前請先閱讀文字案例。",
+  footerGuideLabel: "看 30 秒三拍示範",
+  smartFlowDemos: [
+    {
+      id: "flower",
+      label: "案例｜路邊小花完整流程",
+      snapNote: "公園長椅旁不知名小白花",
+      askQuestion: "這是什麼？請用簡單中文說明。",
+      askAnswer: "可能是十字花科的野花，春天常見，觀賞即可。",
+      savedLine: "那朵小白花可能叫「阿拉伯婆婆納」，春天公园常見。",
+      reflectNote: "我完成了第一次「看見→理解→保存」，可以跟家人分享这句话。",
+    },
+  ],
+};
+
 const CHAPTERS: Record<string, ChapterOpening> = {
   "0100": CHAPTER_0100,
   "0102": CHAPTER_0102,
   "0103": CHAPTER_0103,
   "0104": CHAPTER_0104,
   "0105": CHAPTER_0105,
+  "0106": CHAPTER_0106,
+  "0107": CHAPTER_0107,
+  "0108": CHAPTER_0108,
 };
 
 export function getChapterOpening(id: string): ChapterOpening | null {
@@ -505,6 +704,35 @@ export interface ChapterVisionDraft {
   aiAnswerNote: string;
   trustLevel: VisionTrustLevel | "";
   reflectNote: string;
+}
+
+export interface ChapterPhotoSearchDraft {
+  searchKeyword: string;
+  memoryNote: string;
+  reflectNote: string;
+}
+
+export interface ChapterNoteCaptureDraft {
+  noteTitle: string;
+  noteContent: string;
+  tagId: string;
+  reflectNote: string;
+}
+
+export interface ChapterSmartFlowDraft {
+  snapNote: string;
+  askQuestion: string;
+  askAnswer: string;
+  savedLine: string;
+  reflectNote: string;
+}
+
+/** 0108：二問用的自然提問句 */
+export function buildSmartFlowAskPrompt(subject?: string): string {
+  const base = "這是什麼？請用簡單中文說明。";
+  const hint = subject?.trim();
+  if (!hint) return base;
+  return `${base}（我拍的是：${hint}）`;
 }
 
 /** 0105：拍照後請 AI 說明用的提問句 */

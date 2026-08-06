@@ -139,6 +139,42 @@ export default function SmartGuidePage() {
         >
           章節 0105｜為手機裝上眼睛：萬物皆可問 →
         </button>
+        <button
+          type="button"
+          onClick={() => router.push("/smart/chapter/0106")}
+          style={{
+            width: "100%", marginTop: 10, padding: "16px",
+            background: "var(--surface)", border: "2px solid #9B7AD4",
+            borderRadius: "var(--r-lg)", fontWeight: 700,
+            fontSize: "var(--fs-sm)", color: "#7B5BB8", cursor: "pointer",
+          }}
+        >
+          章節 0106｜為手機裝上相簿：照片可以搜尋 →
+        </button>
+        <button
+          type="button"
+          onClick={() => router.push("/smart/chapter/0107")}
+          style={{
+            width: "100%", marginTop: 10, padding: "16px",
+            background: "var(--surface)", border: "2px solid var(--primary)",
+            borderRadius: "var(--r-lg)", fontWeight: 700,
+            fontSize: "var(--fs-sm)", color: "var(--primary-deep)", cursor: "pointer",
+          }}
+        >
+          章節 0107｜為它準備便條紙：靈感被收藏 →
+        </button>
+        <button
+          type="button"
+          onClick={() => router.push("/smart/chapter/0108")}
+          style={{
+            width: "100%", marginTop: 10, padding: "16px",
+            background: "var(--surface)", border: "2px solid #5BA0C9",
+            borderRadius: "var(--r-lg)", fontWeight: 700,
+            fontSize: "var(--fs-sm)", color: "#5BA0C9", cursor: "pointer",
+          }}
+        >
+          章節 0108｜預備起飛：一拍、二問、三記下 →
+        </button>
       </SubPage>
     </div>
   );

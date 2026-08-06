@@ -4,6 +4,7 @@ import {
   CHAPTER_0102,
   CHAPTER_0103,
   buildOrganizeAskPrompt,
+  buildSmartFlowAskPrompt,
   buildVisionAskPrompt,
   chapterCameraTryHref,
   chapterEntryHref,
@@ -57,6 +58,29 @@ describe("chapter-opening", () => {
     expect(ch?.printCardTitle).toBe("影像辨識安全卡");
   });
 
+  it("getChapterOpening 0106 photo-search", () => {
+    const ch = getChapterOpening("0106");
+    expect(ch?.title).toContain("照片可以搜尋");
+    expect(ch?.layout).toBe("photo-search");
+    expect(ch?.warmKeywordSuggestions).toContain("台南");
+    expect(ch?.printCardTitle).toBe("相簿搜尋關鍵字卡");
+  });
+
+  it("getChapterOpening 0107 note-capture", () => {
+    const ch = getChapterOpening("0107");
+    expect(ch?.layout).toBe("note-capture");
+    expect(ch?.defaultNoteTitle).toBe("今天的小發現");
+    expect(ch?.noteTagOptions?.length).toBe(3);
+  });
+
+  it("getChapterOpening 0108 smart-flow", () => {
+    const ch = getChapterOpening("0108");
+    expect(ch?.title).toContain("預備起飛");
+    expect(ch?.layout).toBe("smart-flow");
+    expect(ch?.quote).toContain("一拍、二問、三記下");
+    expect(ch?.smartFlowDemos).toHaveLength(1);
+  });
+
   it("buildOrganizeAskPrompt", () => {
     expect(buildOrganizeAskPrompt("")).toContain("不要替我決定");
     expect(buildOrganizeAskPrompt("  出門要帶什麼  ")).toContain("出門要帶什麼");
@@ -66,6 +90,11 @@ describe("chapter-opening", () => {
   it("buildVisionAskPrompt", () => {
     expect(buildVisionAskPrompt()).toContain("簡單中文");
     expect(buildVisionAskPrompt("  小白花  ")).toContain("我拍的是：小白花");
+  });
+
+  it("buildSmartFlowAskPrompt", () => {
+    expect(buildSmartFlowAskPrompt()).toBe("這是什麼？請用簡單中文說明。");
+    expect(buildSmartFlowAskPrompt("小白花")).toContain("我拍的是：小白花");
   });
 
   it("chapterCameraTryHref 0105", () => {
