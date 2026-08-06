@@ -19,6 +19,20 @@ const CHAPTER_2_LINKS: { id: string; label: string; color: string }[] = [
   { id: "0211", label: "感官全開：把好奇變成生活反射", color: "#E8845A" },
 ];
 
+const CHAPTER_7_LINKS: { id: string; label: string; color: string }[] = [
+  { id: "0700", label: "城市漫遊｜一日生活圈的數位優雅", color: "#4A7FA5" },
+  { id: "0701", label: "城市不是遠方，是重新打開的生活圈", color: "#5BA0C9" },
+  { id: "0702", label: "出發前，先讓 AI 幫您彩排一天", color: "#9B7AD4" },
+  { id: "0703", label: "Calendar：把重要時刻安放好", color: "#E8845A" },
+  { id: "0704", label: "Wallet：讓票券與通行更從容", color: "#7B5BB8" },
+  { id: "0705", label: "Maps：在陌生城市找到安心角落", color: "var(--sage)" },
+  { id: "0706", label: "建立我的 55+ 活動參與指南", color: "#4A7FA5" },
+  { id: "0707", label: "一句話，生成我的一日生活圈", color: "#5BA0C9" },
+  { id: "0708", label: "變數來了，也能優雅重排", color: "#9B7AD4" },
+  { id: "0709", label: "把一日經歷變成數位見聞錄", color: "#E8845A" },
+  { id: "0710", label: "點亮城市通行光點", color: "#7B5BB8" },
+];
+
 /**
  * QR：SMART RADAR 溫暖導讀（文字版；之後可換成音檔）
  * 對應 KU05 左頁文案精華
@@ -206,6 +220,37 @@ export default function SmartGuidePage() {
           {" "}共同節奏：一拍、二問、三記下。練習完可把最有用的一句話「點成光點」。
         </p>
         {CHAPTER_2_LINKS.map((ch) => (
+          <button
+            key={ch.id}
+            type="button"
+            onClick={() => router.push(`/smart/chapter/${ch.id}`)}
+            style={{
+              width: "100%", marginTop: 8, padding: "14px 16px",
+              background: "var(--surface)", border: `2px solid ${ch.color}`,
+              borderRadius: "var(--r-lg)", fontWeight: 700,
+              fontSize: "var(--fs-sm)", color: ch.color, cursor: "pointer",
+              textAlign: "left",
+            }}
+          >
+            章節 {ch.id}｜{ch.label} →
+          </button>
+        ))}
+
+        <div style={{
+          fontSize: "var(--fs-sm)", fontWeight: 800, color: "#4A7FA5",
+          marginTop: 24, marginBottom: 10,
+        }}>
+          第七章｜城市漫遊
+        </div>
+        <p style={{
+          fontSize: "var(--fs-xs)", color: "var(--ink-2)", lineHeight: 1.55,
+          margin: "0 0 12px", padding: "12px 14px",
+          background: "var(--surface)", borderRadius: 12, border: "1px solid var(--line)",
+        }}>
+          <strong>安心比效率重要；餘裕比塞滿珍貴。</strong>
+          {" "}彩排一天、安放時間票券、找到安心路線、優雅重排，再留下見聞。
+        </p>
+        {CHAPTER_7_LINKS.map((ch) => (
           <button
             key={ch.id}
             type="button"

@@ -1,5 +1,6 @@
 /** 章節開篇 QR 深連結（例：0100 → /smart/chapter/0100） */
 import { CHAPTER_2_OPENINGS } from "./chapter-opening-ch2";
+import { CHAPTER_7_OPENINGS } from "./chapter-opening-ch7";
 
 export type ChapterLayout =
   | "routes"
@@ -16,7 +17,16 @@ export type ChapterLayout =
   | "recipe-card"
   | "photo-edit-safe"
   | "photo-curate"
-  | "sensory-habit";
+  | "sensory-habit"
+  | "city-radius"
+  | "day-rehearsal"
+  | "moment-place"
+  | "pass-prep"
+  | "safe-corner"
+  | "activity-guide"
+  | "elegant-replan"
+  | "three-sight"
+  | "city-lights";
 
 export type VisionTrustLevel = "enjoy" | "verify";
 
@@ -183,6 +193,110 @@ export interface SensoryHabitDemo {
   reflectNote: string;
 }
 
+/** Chapter 7：生活半徑起點（0701） */
+export interface CityRadiusDemo {
+  id: string;
+  label: string;
+  place: string;
+  meaning: string;
+  reflectNote: string;
+}
+
+/** Chapter 7：一日彩排（0702） */
+export interface DayRehearsalDemo {
+  id: string;
+  label: string;
+  fromPlace: string;
+  toPlace: string;
+  restPoint: string;
+  backup: string;
+  officialCheck: string;
+  reflectNote: string;
+}
+
+/** Chapter 7：重要時刻安放（0703） */
+export interface MomentPlaceDemo {
+  id: string;
+  label: string;
+  activity: string;
+  departAt: string;
+  arriveAt: string;
+  restAt: string;
+  returnAt: string;
+  reflectNote: string;
+}
+
+/** Chapter 7：通行準備（0704） */
+export interface PassPrepDemo {
+  id: string;
+  label: string;
+  ticketWhere: string;
+  openHow: string;
+  officialSource: string;
+  backup: string;
+  reflectNote: string;
+}
+
+/** Chapter 7：安心角落（0705） */
+export interface SafeCornerDemo {
+  id: string;
+  label: string;
+  destination: string;
+  routeNote: string;
+  restSpot: string;
+  backup: string;
+  reflectNote: string;
+}
+
+/** Chapter 7：活動參與指南（0706） */
+export interface ActivityGuideDemo {
+  id: string;
+  label: string;
+  activityType: string;
+  duration: string;
+  restStyle: string;
+  transitPref: string;
+  companion: string;
+  reflectNote: string;
+}
+
+/** Chapter 7：優雅重排（0708） */
+export interface ElegantReplanDemo {
+  id: string;
+  label: string;
+  trigger: string;
+  planA: string;
+  planB: string;
+  softReminder: string;
+  reflectNote: string;
+}
+
+/** Chapter 7：一日三格見聞（0709） */
+export interface ThreeSightDemo {
+  id: string;
+  label: string;
+  saw: string;
+  felt: string;
+  bringHome: string;
+  reflectNote: string;
+}
+
+/** Chapter 7：城市通行光點（0710） */
+export interface CityLightsDemo {
+  id: string;
+  label: string;
+  arrange: string;
+  verify: string;
+  replan: string;
+  keep: string;
+  reflectNote: string;
+}
+
+export interface ChapterAppDeepLink {
+  href: string;
+  label: string;
+}
+
 /** 「整理三點，不替我決定」生活案例（0104 用） */
 export interface OrganizeDecideDemo {
   id: string;
@@ -266,6 +380,17 @@ export interface ChapterOpening {
   /** sensory-habit 版型：生活場景選項 */
   habitSceneOptions?: HabitSceneOption[];
   habitDemos?: SensoryHabitDemo[];
+  /** Chapter 7 版型資料 */
+  cityRadiusDemos?: CityRadiusDemo[];
+  dayRehearsalDemos?: DayRehearsalDemo[];
+  momentPlaceDemos?: MomentPlaceDemo[];
+  passPrepDemos?: PassPrepDemo[];
+  safeCornerDemos?: SafeCornerDemo[];
+  activityGuideDemos?: ActivityGuideDemo[];
+  elegantReplanDemos?: ElegantReplanDemo[];
+  threeSightDemos?: ThreeSightDemo[];
+  cityLightsDemos?: CityLightsDemo[];
+  appDeepLink?: ChapterAppDeepLink;
 }
 
 export const CHAPTER_0100: ChapterOpening = {
@@ -800,6 +925,7 @@ const CHAPTERS: Record<string, ChapterOpening> = {
   "0107": CHAPTER_0107,
   "0108": CHAPTER_0108,
   ...CHAPTER_2_OPENINGS,
+  ...CHAPTER_7_OPENINGS,
 };
 
 export function getChapterOpening(id: string): ChapterOpening | null {
@@ -907,6 +1033,78 @@ export interface ChapterSensoryHabitDraft {
   reflectNote: string;
 }
 
+export interface ChapterCityRadiusDraft {
+  place: string;
+  meaning: string;
+  reflectNote: string;
+}
+
+export interface ChapterDayRehearsalDraft {
+  fromPlace: string;
+  toPlace: string;
+  restPoint: string;
+  backup: string;
+  officialCheck: string;
+  reflectNote: string;
+}
+
+export interface ChapterMomentPlaceDraft {
+  activity: string;
+  departAt: string;
+  arriveAt: string;
+  restAt: string;
+  returnAt: string;
+  reflectNote: string;
+}
+
+export interface ChapterPassPrepDraft {
+  ticketWhere: string;
+  openHow: string;
+  officialSource: string;
+  backup: string;
+  reflectNote: string;
+}
+
+export interface ChapterSafeCornerDraft {
+  destination: string;
+  routeNote: string;
+  restSpot: string;
+  backup: string;
+  reflectNote: string;
+}
+
+export interface ChapterActivityGuideDraft {
+  activityType: string;
+  duration: string;
+  restStyle: string;
+  transitPref: string;
+  companion: string;
+  reflectNote: string;
+}
+
+export interface ChapterElegantReplanDraft {
+  trigger: string;
+  planA: string;
+  planB: string;
+  softReminder: string;
+  reflectNote: string;
+}
+
+export interface ChapterThreeSightDraft {
+  saw: string;
+  felt: string;
+  bringHome: string;
+  reflectNote: string;
+}
+
+export interface ChapterCityLightsDraft {
+  arrange: string;
+  verify: string;
+  replan: string;
+  keep: string;
+  reflectNote: string;
+}
+
 /** 0202：植物辨識提問句 */
 export function buildPlantAskPrompt(): string {
   return "這可能是什麼植物？請說明特徵。如果不確定，請說明不確定的部分。";
@@ -933,6 +1131,18 @@ export function buildCuriosityPrompt(question?: string): string {
   const q = question?.trim();
   if (!q) return "請用簡單中文解釋，並舉一個日常生活例子。";
   return `${q} 請用簡單中文解釋，並舉一個日常生活例子。`;
+}
+
+/** 0702：一日生活圈彩排提問句 */
+export function buildDayRehearsalPrompt(fromPlace?: string, toPlace?: string): string {
+  const from = fromPlace?.trim() || "住家附近";
+  const to = toPlace?.trim() || "想去的地方";
+  return `請幫我彩排一個有餘裕的一日生活圈：從「${from}」到「${to}」。請整理出發時間建議、交通方式、停留節奏、休息點、一個備案，以及什麼情況下可以放慢或改期。請用簡單中文，不要把行程塞滿，也不要替我決定一定要去。實際資訊請提醒我向官方確認。`;
+}
+
+/** 0707：一日生活圈啟動句 */
+export function buildUrbanDayCirclePrompt(): string {
+  return "請依照我的 55+ 活動參與指南，幫我安排一個有餘裕的一日生活圈。上午不要太早出門，中午附近找個能坐下來的地方，下午安排一個展覽或書店，回程不要太晚，途中保留休息與備案。請用簡單中文，不要把行程塞滿，也不要替我決定。實際交通與開放時間請提醒我向官方確認。地點請用大範圍描述即可。";
 }
 
 /** 0206：餐點觀察提問句 */
@@ -1075,6 +1285,14 @@ export function getChapterDeepLinkHint(from: string | null | undefined): Chapter
     "0206": {
       label: "美食篇｜觀察",
       tips: ["拍一道餐點", "請整理可能食材與溫和觀察", "這不是醫療或營養診斷"],
+    },
+    "0702": {
+      label: "一日彩排",
+      tips: ["請彩排有餘裕的一天", "保留休息點與備案", "實際資訊向官方確認"],
+    },
+    "0707": {
+      label: "一日生活圈",
+      tips: ["依 55+ 活動參與指南", "不要把行程塞滿", "地點用大範圍即可"],
     },
   };
   const hit = known[chapterId] ?? {
