@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: 338.7mm 190.5mm; margin: 0; } /* 16:9 (10in × 5.625in @96dpi → mm) */
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  :root {
+    --primary:#E8845A; --deep:#C95E36; --cream:#FAF5EC; --creamD:#F2E8D5;
+    --ink1:#3D2E20; --ink2:#6B5848; --ink3:#A89580; --sage:#7AA779;
+    --gold:#D9A441; --berry:#C95B6E; --line:#E3D6C0; --arc:#E8B694;
+  }
+  body { font-family:"PingFang TC","Noto Sans TC",sans-serif; }
+  .slide { width:1280px; height:720px; position:relative; overflow:hidden; background:var(--cream); page-break-after:always; }
+  .slide:last-child { page-break-after:auto; }
+
+  .arc { position:absolute; border-radius:50%; border:1px solid var(--arc); }
+  .kicker { position:absolute; left:77px; top:46px; font-size:14px; letter-spacing:5px; color:var(--deep); font-weight:700; }
+  .btitle { position:absolute; left:77px; top:88px; font-size:38px; font-weight:800; color:var(--ink1); }
+  .foot { position:absolute; right:77px; bottom:26px; font-size:11px; color:var(--ink3); }
+
+  .card { background:#fff; border:1px solid var(--line); border-radius:18px; box-shadow:0 3px 12px rgba(61,46,32,.06); }
+  .chip { background:var(--primary); color:#fff; border-radius:999px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; }
+</style>
+</head>
+<body>
+
+<!-- ═══ S1 封面 ═══ -->
+<div class="slide">
+  <div class="arc" style="left:calc(50% - 166px); top:calc(60.4% - 166px); width:332px; height:332px; opacity:.5;"></div>
+  <div class="arc" style="left:calc(50% - 243px); top:calc(60.4% - 243px); width:486px; height:486px; opacity:.42;"></div>
+  <div class="arc" style="left:calc(50% - 333px); top:calc(60.4% - 333px); width:666px; height:666px; opacity:.34;"></div>
+  <div class="arc" style="left:calc(50% - 435px); top:calc(60.4% - 435px); width:870px; height:870px; opacity:.26;"></div>
+  <div class="arc" style="left:calc(50% - 550px); top:calc(60.4% - 550px); width:1100px; height:1100px; opacity:.18;"></div>
+  <div class="arc" style="left:calc(50% - 678px); top:calc(60.4% - 678px); width:1356px; height:1356px; opacity:.1;"></div>
+  <img src="../public/icon-maskable-512.png" style="clip-path:circle(39%); position:absolute; left:calc(50% - 134px); top:134px; width:268px; height:268px;">
+  <div style="position:absolute; top:404px; width:100%; text-align:center; font-size:82px; color:var(--deep); letter-spacing:26px; text-indent:26px;">暖暖</div>
+  <div style="position:absolute; top:528px; width:100%; text-align:center; font-size:16px; color:var(--ink3); letter-spacing:8px;">N U A N N U A N</div>
+  <div style="position:absolute; top:576px; width:100%; text-align:center; font-size:26px; color:var(--ink2);">陪 55+ 健康變老的 AI 管家</div>
+  <div style="position:absolute; top:650px; width:100%; text-align:center; font-size:17px; color:var(--primary); font-weight:700; letter-spacing:3px;">nuan55.com</div>
+</div>
+
+<!-- ═══ S2 為什麼 ═══ -->
+<div class="slide">
+  <div class="kicker">WHY　·　為什麼需要暖暖</div>
+  <div class="btitle">台灣已進入超高齡社會，但工具沒跟上</div>
+  <div style="position:absolute; top:211px; left:77px; right:77px; display:flex; gap:26px;">
+    <div class="card" style="flex:1; height:371px; text-align:center; padding-top:38px;">
+      <div style="font-size:38px;">📊</div>
+      <div style="font-size:58px; font-weight:800; color:var(--deep); margin-top:14px;">20.8%</div>
+      <div style="font-size:17px; font-weight:700; color:var(--ink1); margin-top:16px;">65 歲以上人口占比</div>
+      <div style="font-size:14px; color:var(--ink2); margin-top:8px;">每 5 人就有 1 位長輩</div>
+    </div>
+    <div class="card" style="flex:1; height:371px; text-align:center; padding-top:38px;">
+      <div style="font-size:38px;">💊</div>
+      <div style="font-size:58px; font-weight:800; color:var(--berry); margin-top:14px;">78%</div>
+      <div style="font-size:17px; font-weight:700; color:var(--ink1); margin-top:16px;">子女最擔心的事</div>
+      <div style="font-size:14px; color:var(--ink2); margin-top:8px;">爸媽亂吃藥、飲食不均</div>
+    </div>
+    <div class="card" style="flex:1; height:371px; text-align:center; padding-top:38px;">
+      <div style="font-size:38px;">📱</div>
+      <div style="font-size:58px; font-weight:800; color:var(--gold); margin-top:14px;">&lt; 5%</div>
+      <div style="font-size:17px; font-weight:700; color:var(--ink1); margin-top:16px;">健康 App 長輩留存率</div>
+      <div style="font-size:14px; color:var(--ink2); margin-top:8px;">字太小、太複雜、學不會</div>
+    </div>
+  </div>
+  <div style="position:absolute; left:77px; right:77px; top:617px; height:67px; background:var(--ink1); border-radius:13px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px; font-weight:700;">
+    長輩需要的不是更多功能，是「不用學就會用」的陪伴
+  </div>
+  <div class="foot">nuan55.com　·　02</div>
+</div>
+
+<!-- ═══ S3 暖暖是什麼 ═══ -->
+<div class="slide">
+  <div class="arc" style="left:calc(86% - 154px); top:calc(50% - 154px); width:308px; height:308px; opacity:.45;"></div>
+  <div class="arc" style="left:calc(86% - 243px); top:calc(50% - 243px); width:486px; height:486px; opacity:.34;"></div>
+  <div class="arc" style="left:calc(86% - 346px); top:calc(50% - 346px); width:692px; height:692px; opacity:.24;"></div>
+  <div class="arc" style="left:calc(86% - 461px); top:calc(50% - 461px); width:922px; height:922px; opacity:.14;"></div>
+  <div class="kicker">WHAT　·　暖暖是什麼</div>
+  <div style="position:absolute; left:77px; top:141px; font-size:44px; font-weight:800; color:var(--ink1); line-height:1.35;">一位住在手機裡的<br>貼心健康管家</div>
+  <div style="position:absolute; left:77px; top:340px; font-size:19px; color:var(--ink2); line-height:1.7;">不用下載、不用打字、不用學。<br>打開網頁，拍張照片，暖暖就開始照顧您。</div>
+  <img src="../public/icon-maskable-512.png" style="clip-path:circle(39%); position:absolute; right:100px; top:198px; width:320px; height:320px;">
+  <div style="position:absolute; left:77px; top:531px; display:flex; gap:18px;">
+    <div class="chip" style="padding:12px 26px; font-size:16px;">字超大　好閱讀</div>
+    <div class="chip" style="padding:12px 26px; font-size:16px;">一鍵操作</div>
+    <div class="chip" style="padding:12px 26px; font-size:16px;">免下載 App</div>
+    <div class="chip" style="padding:12px 26px; font-size:16px;">親切中文語音</div>
+  </div>
+  <div style="position:absolute; left:77px; top:627px; font-size:18px; font-weight:700; color:var(--sage);">🌐 用瀏覽器打開 nuan55.com 就能開始</div>
+  <div class="foot">nuan55.com　·　03</div>
+</div>
+
+<!-- ═══ S4 三大功能 ═══ -->
+<div class="slide">
+  <div class="kicker">HOW　·　三個動作，全部搞定</div>
+  <div class="btitle">拍一下，暖暖就懂</div>
+  <div style="position:absolute; top:205px; left:77px; right:77px; display:flex; gap:26px;">
+    <div class="card" style="flex:1; height:403px; text-align:center; padding-top:32px;">
+      <div style="width:90px; height:90px; border-radius:50%; background:#FCE4D5; margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:40px;">📷</div>
+      <div style="font-size:22px; font-weight:800; color:var(--deep); margin-top:20px;">拍照記錄飲食</div>
+      <div style="font-size:14.5px; color:var(--ink2); margin:14px 28px 0; line-height:1.65;">拍一張菜，AI 自動算出熱量與營養，貼心提醒少鹽少油</div>
+      <div style="display:inline-block; background:var(--creamD); border-radius:999px; padding:8px 22px; font-size:13px; font-weight:700; color:var(--ink1); margin-top:20px;">5 秒完成</div>
+    </div>
+    <div class="card" style="flex:1; height:403px; text-align:center; padding-top:32px;">
+      <div style="width:90px; height:90px; border-radius:50%; background:#F4D7DC; margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:40px;">💊</div>
+      <div style="font-size:22px; font-weight:800; color:var(--deep); margin-top:20px;">拍藥袋管用藥</div>
+      <div style="font-size:14.5px; color:var(--ink2); margin:14px 28px 0; line-height:1.65;">藥袋一拍，自動讀出藥名用法，時間到提醒吃藥</div>
+      <div style="display:inline-block; background:var(--creamD); border-radius:999px; padding:8px 22px; font-size:13px; font-weight:700; color:var(--ink1); margin-top:20px;">不怕忘記</div>
+    </div>
+    <div class="card" style="flex:1; height:403px; text-align:center; padding-top:32px;">
+      <div style="width:90px; height:90px; border-radius:50%; background:#E5EFE2; margin:0 auto; display:flex; align-items:center; justify-content:center; font-size:40px;">🎙️</div>
+      <div style="font-size:22px; font-weight:800; color:var(--deep); margin-top:20px;">跟暖暖聊聊天</div>
+      <div style="font-size:14.5px; color:var(--ink2); margin:14px 28px 0; line-height:1.65;">真人般的語音對話，陪伴解悶、回答健康問題</div>
+      <div style="display:inline-block; background:var(--creamD); border-radius:999px; padding:8px 22px; font-size:13px; font-weight:700; color:var(--ink1); margin-top:20px;">像孫子陪聊</div>
+    </div>
+  </div>
+  <div style="position:absolute; top:642px; width:100%; text-align:center; font-size:16px; font-style:italic; color:var(--ink3);">全程不用打字　·　60 歲以上長輩實測 3 分鐘上手</div>
+  <div class="foot">nuan55.com　·　04</div>
+</div>
+
+<!-- ═══ S5 主動守護（深色） ═══ -->
+<div class="slide" style="background:var(--ink1);">
+  <div style="position:absolute; left:-205px; bottom:-307px; width:640px; height:640px; border-radius:50%; background:var(--deep); opacity:.22;"></div>
+  <div style="position:absolute; right:-128px; top:-230px; width:576px; height:576px; border-radius:50%; background:var(--primary); opacity:.2;"></div>
+  <div class="kicker" style="color:var(--primary);">GUARDIAN　·　不只記錄，更會主動守護</div>
+  <div class="btitle" style="color:#fff;">長輩不說，暖暖也會替他說</div>
+  <div style="position:absolute; top:237px; left:77px; right:77px; display:flex; align-items:center; gap:10px;">
+    <div style="flex:1; background:var(--cream); border-radius:17px; height:320px; text-align:center; padding-top:26px; box-shadow:0 4px 16px rgba(0,0,0,.3);">
+      <div style="font-size:40px;">👀</div>
+      <div style="font-size:19px; font-weight:800; color:var(--ink1); margin-top:14px;">暖暖天天觀察</div>
+      <div style="font-size:13.5px; color:var(--ink2); margin-top:12px; line-height:1.6;">血壓、吃藥、活動<br>每天自動巡邏</div>
+    </div>
+    <div style="color:var(--primary); font-size:28px; font-weight:800;">→</div>
+    <div style="flex:1; background:var(--cream); border-radius:17px; height:320px; text-align:center; padding-top:26px; box-shadow:0 4px 16px rgba(0,0,0,.3);">
+      <div style="font-size:40px;">⚡</div>
+      <div style="font-size:19px; font-weight:800; color:var(--ink1); margin-top:14px;">發現不對勁</div>
+      <div style="font-size:13.5px; color:var(--ink2); margin-top:12px; line-height:1.6;">血壓飆高、跌倒<br>三天沒動靜、忘記吃藥</div>
+    </div>
+    <div style="color:var(--primary); font-size:28px; font-weight:800;">→</div>
+    <div style="flex:1; background:var(--cream); border-radius:17px; height:320px; text-align:center; padding-top:26px; box-shadow:0 4px 16px rgba(0,0,0,.3);">
+      <div style="font-size:40px;">📨</div>
+      <div style="font-size:19px; font-weight:800; color:var(--ink1); margin-top:14px;">立刻通知家人</div>
+      <div style="font-size:13.5px; color:var(--ink2); margin-top:12px; line-height:1.6;">子女手機馬上收到<br>完整狀況說明</div>
+    </div>
+    <div style="color:var(--primary); font-size:28px; font-weight:800;">→</div>
+    <div style="flex:1; background:var(--cream); border-radius:17px; height:320px; text-align:center; padding-top:26px; box-shadow:0 4px 16px rgba(0,0,0,.3);">
+      <div style="font-size:40px;">🤝</div>
+      <div style="font-size:19px; font-weight:800; color:var(--ink1); margin-top:14px;">家人及時關心</div>
+      <div style="font-size:13.5px; color:var(--ink2); margin-top:12px; line-height:1.6;">一通電話<br>就能化解危機</div>
+    </div>
+  </div>
+  <div style="position:absolute; left:77px; right:77px; top:604px; height:70px; background:var(--primary); border-radius:13px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px; font-weight:700;">
+    跌倒偵測 · 居家感測 · 異常預警 —— 已實際上線運作
+  </div>
+</div>
+
+<!-- ═══ S6 家人安心 ═══ -->
+<div class="slide">
+  <div class="kicker">FAMILY　·　給子女的一顆定心丸</div>
+  <div class="btitle">爸媽今天好嗎？打開手機就知道</div>
+  <!-- 左：儀表板卡 -->
+  <div class="card" style="position:absolute; left:77px; top:207px; width:525px; height:429px; overflow:hidden;">
+    <div style="background:#EAF3E7; height:79px; display:flex; align-items:center; padding:0 32px; gap:12px;">
+      <span style="font-size:19px; font-weight:800; color:var(--ink1);">👵 陳美玲</span>
+      <span style="font-size:14px; font-weight:800; color:var(--sage);">● 今天正常</span>
+    </div>
+    <div style="padding:10px 32px 0;">
+      <div style="display:flex; align-items:center; height:62px; border-bottom:1px solid var(--line); font-size:15px;"><span style="width:36px;">🍽️</span><span style="width:88px; color:var(--ink3);">飲食</span><b style="color:var(--ink1);">已記錄 3 餐</b></div>
+      <div style="display:flex; align-items:center; height:62px; border-bottom:1px solid var(--line); font-size:15px;"><span style="width:36px;">💊</span><span style="width:88px; color:var(--ink3);">用藥</span><b style="color:var(--ink1);">2/2 已服用 ✓</b></div>
+      <div style="display:flex; align-items:center; height:62px; border-bottom:1px solid var(--line); font-size:15px;"><span style="width:36px;">🩺</span><span style="width:88px; color:var(--ink3);">血壓</span><b style="color:var(--ink1);">125 / 80 穩定</b></div>
+      <div style="display:flex; align-items:center; height:62px; border-bottom:1px solid var(--line); font-size:15px;"><span style="width:36px;">🏠</span><span style="width:88px; color:var(--ink3);">居家</span><b style="color:var(--ink1);">客廳有活動 · 26°C</b></div>
+      <div style="display:flex; align-items:center; height:62px; font-size:15px;"><span style="width:36px;">🧭</span><span style="width:88px; color:var(--ink3);">幸福指數</span><b style="color:var(--ink1);">78 分（↑3）</b></div>
+    </div>
+  </div>
+  <!-- 右：三點 -->
+  <div style="position:absolute; left:653px; top:224px; right:77px;">
+    <div style="display:flex; gap:20px; margin-bottom:36px;">
+      <div style="width:54px; height:54px; border-radius:50%; background:var(--primary); color:#fff; font-size:22px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0;">1</div>
+      <div><div style="font-size:21px; font-weight:800; color:var(--ink1);">遠端就能看</div><div style="font-size:15px; color:var(--ink2); margin-top:6px; line-height:1.6;">子女在自己手機上，隨時看到爸媽的飲食、用藥、血壓與居家狀況</div></div>
+    </div>
+    <div style="display:flex; gap:20px; margin-bottom:36px;">
+      <div style="width:54px; height:54px; border-radius:50%; background:var(--primary); color:#fff; font-size:22px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0;">2</div>
+      <div><div style="font-size:21px; font-weight:800; color:var(--ink1);">異常主動報</div><div style="font-size:15px; color:var(--ink2); margin-top:6px; line-height:1.6;">有狀況第一時間通知，不用天天奪命連環 call</div></div>
+    </div>
+    <div style="display:flex; gap:20px;">
+      <div style="width:54px; height:54px; border-radius:50%; background:var(--primary); color:#fff; font-size:22px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0;">3</div>
+      <div><div style="font-size:21px; font-weight:800; color:var(--ink1);">隱私長輩管</div><div style="font-size:15px; color:var(--ink2); margin-top:6px; line-height:1.6;">看得到什麼，由長輩自己決定；尊重是關懷的前提</div></div>
+    </div>
+    <div style="font-size:17px; font-style:italic; color:var(--deep); margin-top:40px;">「不是監視，是讓關心剛剛好。」</div>
+  </div>
+  <div class="foot">nuan55.com　·　06</div>
+</div>
+
+<!-- ═══ S7 三步驟開始 ═══ -->
+<div class="slide">
+  <div class="arc" style="left:calc(50% - 282px); top:563px; width:564px; height:564px; opacity:.4;"></div>
+  <div class="arc" style="left:calc(50% - 397px); top:563px; width:794px; height:794px; opacity:.3;"></div>
+  <div class="arc" style="left:calc(50% - 525px); top:563px; width:1050px; height:1050px; opacity:.2;"></div>
+  <div class="kicker">START　·　今天就開始</div>
+  <div class="btitle">三步驟，馬上開始</div>
+  <div style="position:absolute; top:230px; left:77px; right:77px; display:flex; align-items:flex-start; gap:20px;">
+    <div style="flex:1; position:relative;">
+      <div class="card" style="height:333px; text-align:center; padding-top:52px;">
+        <div style="font-size:44px;">🌐</div>
+        <div style="font-size:22px; font-weight:800; color:var(--ink1); margin-top:18px;">打開網址</div>
+        <div style="font-size:15px; color:var(--ink2); margin-top:12px; line-height:1.65;">手機瀏覽器輸入<br>nuan55.com</div>
+      </div>
+      <div style="position:absolute; top:-24px; left:calc(50% - 38px); width:76px; height:76px; border-radius:50%; background:var(--deep); border:5px solid var(--cream); color:#fff; font-size:28px; font-weight:800; display:flex; align-items:center; justify-content:center;">1</div>
+    </div>
+    <div style="align-self:center; color:var(--primary); font-size:32px; font-weight:800;">→</div>
+    <div style="flex:1; position:relative;">
+      <div class="card" style="height:333px; text-align:center; padding-top:52px;">
+        <div style="font-size:44px;">🔑</div>
+        <div style="font-size:22px; font-weight:800; color:var(--ink1); margin-top:18px;">簡單登入</div>
+        <div style="font-size:15px; color:var(--ink2); margin-top:12px; line-height:1.65;">Google 或 Email<br>免記密碼</div>
+      </div>
+      <div style="position:absolute; top:-24px; left:calc(50% - 38px); width:76px; height:76px; border-radius:50%; background:var(--deep); border:5px solid var(--cream); color:#fff; font-size:28px; font-weight:800; display:flex; align-items:center; justify-content:center;">2</div>
+    </div>
+    <div style="align-self:center; color:var(--primary); font-size:32px; font-weight:800;">→</div>
+    <div style="flex:1; position:relative;">
+      <div class="card" style="height:333px; text-align:center; padding-top:52px;">
+        <div style="font-size:44px;">📷</div>
+        <div style="font-size:22px; font-weight:800; color:var(--ink1); margin-top:18px;">拍第一張照</div>
+        <div style="font-size:15px; color:var(--ink2); margin-top:12px; line-height:1.65;">拍下這一餐<br>暖暖開始陪伴</div>
+      </div>
+      <div style="position:absolute; top:-24px; left:calc(50% - 38px); width:76px; height:76px; border-radius:50%; background:var(--deep); border:5px solid var(--cream); color:#fff; font-size:28px; font-weight:800; display:flex; align-items:center; justify-content:center;">3</div>
+    </div>
+  </div>
+  <div style="position:absolute; top:600px; width:100%; text-align:center; font-size:18px;">
+    <span style="color:var(--ink2);">💡 子女幫爸媽設定一次，</span><b style="color:var(--deep);">之後長輩自己就會用</b>
+  </div>
+  <div style="position:absolute; top:650px; width:100%; text-align:center; font-size:15px; color:var(--ink3);">免費開始使用　·　不需信用卡</div>
+</div>
+
+<!-- ═══ S8 封底 ═══ -->
+<div class="slide">
+  <div class="arc" style="left:calc(50% - 192px); top:calc(44.4% - 192px); width:384px; height:384px; opacity:.48;"></div>
+  <div class="arc" style="left:calc(50% - 282px); top:calc(44.4% - 282px); width:564px; height:564px; opacity:.38;"></div>
+  <div class="arc" style="left:calc(50% - 384px); top:calc(44.4% - 384px); width:768px; height:768px; opacity:.28;"></div>
+  <div class="arc" style="left:calc(50% - 499px); top:calc(44.4% - 499px); width:998px; height:998px; opacity:.18;"></div>
+  <div class="arc" style="left:calc(50% - 627px); top:calc(44.4% - 627px); width:1254px; height:1254px; opacity:.1;"></div>
+  <img src="../public/icon-maskable-512.png" style="clip-path:circle(39%); position:absolute; left:calc(50% - 115px); top:96px; width:230px; height:230px;">
+  <div style="position:absolute; top:348px; width:100%; text-align:center; font-size:52px; font-weight:800; color:var(--ink1); letter-spacing:8px;">讓關心，剛剛好</div>
+  <div style="position:absolute; top:463px; width:100%; text-align:center; font-size:19px; color:var(--ink2);">暖暖 NuanNuan　·　陪 55+ 健康變老的 AI 管家</div>
+  <div style="position:absolute; top:544px; left:calc(50% - 205px); width:410px; height:79px; background:var(--primary); border-radius:999px; box-shadow:0 6px 20px rgba(201,94,54,.35); display:flex; align-items:center; justify-content:center; color:#fff; font-size:26px; font-weight:800; letter-spacing:1px;">nuan55.com</div>
+  <div style="position:absolute; top:656px; width:100%; text-align:center; font-size:14px; color:var(--ink3);">合作洽詢　sunboy1120@gmail.com</div>
+</div>
+
+</body>
+</html>
