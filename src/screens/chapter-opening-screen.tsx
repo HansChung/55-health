@@ -54,6 +54,16 @@ import {
   type ChapterPhotoEditDraft,
   type ChapterPhotoCurateDraft,
   type ChapterSensoryHabitDraft,
+  type BoundaryChooseDemo,
+  type PlanBDemo,
+  type DualTrackDemo,
+  type TasteJournalDemo,
+  type ArLightDemo,
+  type ChapterBoundaryChooseDraft,
+  type ChapterPlanBDraft,
+  type ChapterDualTrackDraft,
+  type ChapterTasteJournalDraft,
+  type ChapterArLightDraft,
 } from "@/lib/chapter-opening";
 import { trackEvent } from "@/lib/telemetry";
 import { useToast } from "@/hooks/use-toast";
@@ -113,6 +123,17 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const [captions, setCaptions] = useState<[string, string, string]>(["", "", ""]);
   const [pickedScenes, setPickedScenes] = useState<string[]>([]);
   const [planNote, setPlanNote] = useState("");
+  const [cannotLine, setCannotLine] = useState("");
+  const [canChooseLine, setCanChooseLine] = useState("");
+  const [planScene, setPlanScene] = useState("");
+  const [planBoundary, setPlanBoundary] = useState("");
+  const [planReturn, setPlanReturn] = useState("");
+  const [bodyTrack, setBodyTrack] = useState("");
+  const [soulTrack, setSoulTrack] = useState("");
+  const [journalLines, setJournalLines] = useState<[string, string, string, string]>(["", "", "", ""]);
+  const [keepPractice, setKeepPractice] = useState("");
+  const [agencyAction, setAgencyAction] = useState("");
+  const [resilienceAction, setResilienceAction] = useState("");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -257,6 +278,52 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           if (d.reflectNote) setReflectNote(d.reflectNote);
         }
       }
+      if (layout === "boundary-choose") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterBoundaryChooseDraft;
+          if (d.cannotLine) setCannotLine(d.cannotLine);
+          if (d.canChooseLine) setCanChooseLine(d.canChooseLine);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "plan-b") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterPlanBDraft;
+          if (d.scene) setPlanScene(d.scene);
+          if (d.boundary) setPlanBoundary(d.boundary);
+          if (d.returnAction) setPlanReturn(d.returnAction);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "dual-track") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterDualTrackDraft;
+          if (d.bodyTrack) setBodyTrack(d.bodyTrack);
+          if (d.soulTrack) setSoulTrack(d.soulTrack);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "taste-journal") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterTasteJournalDraft;
+          if (d.lines) setJournalLines(d.lines);
+          if (d.keepPractice) setKeepPractice(d.keepPractice);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "ar-light") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterArLightDraft;
+          if (d.agencyAction) setAgencyAction(d.agencyAction);
+          if (d.resilienceAction) setResilienceAction(d.resilienceAction);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
     } catch {
       /* ignore */
     }
@@ -276,7 +343,12 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         ChapterRecipeDraft &
         ChapterPhotoEditDraft &
         ChapterPhotoCurateDraft &
-        ChapterSensoryHabitDraft
+        ChapterSensoryHabitDraft &
+        ChapterBoundaryChooseDraft &
+        ChapterPlanBDraft &
+        ChapterDualTrackDraft &
+        ChapterTasteJournalDraft &
+        ChapterArLightDraft
     >
   ) => {
     if (typeof window === "undefined") return;
@@ -399,6 +471,47 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
       };
       localStorage.setItem(draftKey, JSON.stringify(next));
     }
+    if (layout === "boundary-choose") {
+      const next: ChapterBoundaryChooseDraft = {
+        cannotLine: patch.cannotLine ?? cannotLine,
+        canChooseLine: patch.canChooseLine ?? canChooseLine,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layout === "plan-b") {
+      const next: ChapterPlanBDraft = {
+        scene: patch.scene ?? planScene,
+        boundary: patch.boundary ?? planBoundary,
+        returnAction: patch.returnAction ?? planReturn,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layout === "dual-track") {
+      const next: ChapterDualTrackDraft = {
+        bodyTrack: patch.bodyTrack ?? bodyTrack,
+        soulTrack: patch.soulTrack ?? soulTrack,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layout === "taste-journal") {
+      const next: ChapterTasteJournalDraft = {
+        lines: patch.lines ?? journalLines,
+        keepPractice: patch.keepPractice ?? keepPractice,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layout === "ar-light") {
+      const next: ChapterArLightDraft = {
+        agencyAction: patch.agencyAction ?? agencyAction,
+        resilienceAction: patch.resilienceAction ?? resilienceAction,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
   };
 
   const savePick = (id: string, note?: string) => {
@@ -484,6 +597,30 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         break;
       case "sensory-habit":
         action = planNote.trim() || pickedScenes.join("、");
+        break;
+      case "boundary-choose":
+        action = canChooseLine.trim() || cannotLine.trim();
+        break;
+      case "plan-b":
+        action =
+          [planBoundary, planReturn].filter(Boolean).join("｜") ||
+          planScene.trim();
+        break;
+      case "dual-track":
+        action =
+          [bodyTrack && `身體：${bodyTrack}`, soulTrack && `靈魂：${soulTrack}`]
+            .filter(Boolean)
+            .join("；") || bodyTrack.trim();
+        break;
+      case "taste-journal":
+        action =
+          keepPractice.trim() || journalLines.filter(Boolean).join("／");
+        break;
+      case "ar-light":
+        action =
+          [agencyAction && `A：${agencyAction}`, resilienceAction && `R：${resilienceAction}`]
+            .filter(Boolean)
+            .join("；") || agencyAction.trim();
         break;
       case "routes":
       case "ai-entry":
@@ -781,6 +918,68 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
       saveDraft({ pickedScenes: next });
       return next;
     });
+  };
+
+  const applyBoundaryChooseDemo = (demo: BoundaryChooseDemo) => {
+    setCannotLine(demo.cannotLine);
+    setCanChooseLine(demo.canChooseLine);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      cannotLine: demo.cannotLine,
+      canChooseLine: demo.canChooseLine,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的句子。`);
+  };
+
+  const applyPlanBDemo = (demo: PlanBDemo) => {
+    setPlanScene(demo.scene);
+    setPlanBoundary(demo.boundary);
+    setPlanReturn(demo.returnAction);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      scene: demo.scene,
+      boundary: demo.boundary,
+      returnAction: demo.returnAction,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的 Plan B。`);
+  };
+
+  const applyDualTrackDemo = (demo: DualTrackDemo) => {
+    setBodyTrack(demo.bodyTrack);
+    setSoulTrack(demo.soulTrack);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      bodyTrack: demo.bodyTrack,
+      soulTrack: demo.soulTrack,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的指南。`);
+  };
+
+  const applyTasteJournalDemo = (demo: TasteJournalDemo) => {
+    setJournalLines(demo.lines);
+    setKeepPractice(demo.keepPractice);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      lines: demo.lines,
+      keepPractice: demo.keepPractice,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的週記。`);
+  };
+
+  const applyArLightDemo = (demo: ArLightDemo) => {
+    setAgencyAction(demo.agencyAction);
+    setResilienceAction(demo.resilienceAction);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      agencyAction: demo.agencyAction,
+      resilienceAction: demo.resilienceAction,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的點燈。`);
   };
 
   const copyNoteTemplate = async () => {
@@ -2052,6 +2251,227 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
             </div>
           )}
 
+
+          {layout === "boundary-choose" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>
+                  原本的「不能吃」
+                </div>
+                <textarea
+                  value={cannotLine}
+                  onChange={(e) => {
+                    setCannotLine(e.target.value);
+                    saveDraft({ cannotLine: e.target.value });
+                  }}
+                  placeholder="例如：我不能吃甜的…"
+                  rows={2}
+                  style={{
+                    width: "100%", padding: "12px 14px",
+                    borderRadius: 12, border: "2px solid var(--line-strong)",
+                    background: "var(--surface)", fontSize: "var(--fs-sm)",
+                    fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                  }}
+                />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>
+                  我可以有底線地選擇
+                </div>
+                <textarea
+                  value={canChooseLine}
+                  onChange={(e) => {
+                    setCanChooseLine(e.target.value);
+                    saveDraft({ canChooseLine: e.target.value });
+                  }}
+                  placeholder="例如：一小塊甜點，吃完後散步十分鐘…"
+                  rows={2}
+                  style={{
+                    width: "100%", padding: "12px 14px",
+                    borderRadius: 12, border: "2px solid var(--line-strong)",
+                    background: "var(--surface)", fontSize: "var(--fs-sm)",
+                    fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {layout === "plan-b" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { key: "scene", label: "聚餐／享受場景", value: planScene, set: setPlanScene, ph: "例如：週末家族聚餐…" },
+                { key: "boundary", label: "我的一條底線", value: planBoundary, set: setPlanBoundary, ph: "例如：甜點只吃一小塊…" },
+                { key: "returnAction", label: "回歸小動作", value: planReturn, set: setPlanReturn, ph: "例如：隔天恢復平常散步…" },
+              ].map((row) => (
+                <div key={row.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>
+                    {row.label}
+                  </div>
+                  <textarea
+                    value={row.value}
+                    onChange={(e) => {
+                      row.set(e.target.value);
+                      const patch =
+                        row.key === "scene"
+                          ? { scene: e.target.value }
+                          : row.key === "boundary"
+                            ? { boundary: e.target.value }
+                            : { returnAction: e.target.value };
+                      saveDraft(patch);
+                    }}
+                    placeholder={row.ph}
+                    rows={2}
+                    style={{
+                      width: "100%", padding: "12px 14px",
+                      borderRadius: 12, border: "2px solid var(--line-strong)",
+                      background: "var(--surface)", fontSize: "var(--fs-sm)",
+                      fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "dual-track" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>
+                  身體軌（底線／禁忌／需再確認）
+                </div>
+                <textarea
+                  value={bodyTrack}
+                  onChange={(e) => {
+                    setBodyTrack(e.target.value);
+                    saveDraft({ bodyTrack: e.target.value });
+                  }}
+                  placeholder="例如：花生過敏；醫生提醒少油炸…"
+                  rows={3}
+                  style={{
+                    width: "100%", padding: "12px 14px",
+                    borderRadius: 12, border: "2px solid var(--line-strong)",
+                    background: "var(--surface)", fontSize: "var(--fs-sm)",
+                    fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                  }}
+                />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>
+                  靈魂軌（味道／記憶／想保留的享受）
+                </div>
+                <textarea
+                  value={soulTrack}
+                  onChange={(e) => {
+                    setSoulTrack(e.target.value);
+                    saveDraft({ soulTrack: e.target.value });
+                  }}
+                  placeholder="例如：喜歡家常湯品；想和孫子分享下午點心…"
+                  rows={3}
+                  style={{
+                    width: "100%", padding: "12px 14px",
+                    borderRadius: 12, border: "2px solid var(--line-strong)",
+                    background: "var(--surface)", fontSize: "var(--fs-sm)",
+                    fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {layout === "taste-journal" && (
+            <div style={{ marginBottom: 16 }}>
+              {(["看懂了什麼", "享受了什麼", "守住哪一條底線", "偏離後如何回來"] as const).map((label, i) => (
+                <div key={label} style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 4 }}>
+                    {i + 1}. {label}
+                  </div>
+                  <input
+                    value={journalLines[i]}
+                    onChange={(e) => {
+                      const next: [string, string, string, string] = [...journalLines] as [string, string, string, string];
+                      next[i] = e.target.value;
+                      setJournalLines(next);
+                      saveDraft({ lines: next });
+                    }}
+                    placeholder={`寫一句關於「${label}」…`}
+                    style={{
+                      width: "100%", padding: "12px 14px",
+                      borderRadius: 12, border: "2px solid var(--line-strong)",
+                      background: "var(--surface)", fontSize: "var(--fs-sm)",
+                      fontFamily: "inherit", boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+              ))}
+              <div style={{ marginTop: 4 }}>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>
+                  下週想保留的小做法
+                </div>
+                <textarea
+                  value={keepPractice}
+                  onChange={(e) => {
+                    setKeepPractice(e.target.value);
+                    saveDraft({ keepPractice: e.target.value });
+                  }}
+                  placeholder="例如：下週繼續「先吃菜再享用」…"
+                  rows={2}
+                  style={{
+                    width: "100%", padding: "12px 14px",
+                    borderRadius: 12, border: "2px solid var(--line-strong)",
+                    background: "var(--surface)", fontSize: "var(--fs-sm)",
+                    fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {layout === "ar-light" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>
+                  A｜自主小動作
+                </div>
+                <textarea
+                  value={agencyAction}
+                  onChange={(e) => {
+                    setAgencyAction(e.target.value);
+                    saveDraft({ agencyAction: e.target.value });
+                  }}
+                  placeholder="例如：點菜前先問自己想要的滋味…"
+                  rows={2}
+                  style={{
+                    width: "100%", padding: "12px 14px",
+                    borderRadius: 12, border: "2px solid var(--line-strong)",
+                    background: "var(--surface)", fontSize: "var(--fs-sm)",
+                    fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                  }}
+                />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>
+                  R｜韌性小動作
+                </div>
+                <textarea
+                  value={resilienceAction}
+                  onChange={(e) => {
+                    setResilienceAction(e.target.value);
+                    saveDraft({ resilienceAction: e.target.value });
+                  }}
+                  placeholder="例如：偏離後隔天恢復平常散步…"
+                  rows={2}
+                  style={{
+                    width: "100%", padding: "12px 14px",
+                    borderRadius: 12, border: "2px solid var(--line-strong)",
+                    background: "var(--surface)", fontSize: "var(--fs-sm)",
+                    fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           {layout === "routes" && chapter.entries && chapter.entries.length > 0 && (
             <div style={{
               display: "grid", gridTemplateColumns: "1fr 1fr",
@@ -2147,7 +2567,12 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                   layout === "recipe-card" ||
                   layout === "photo-edit-safe" ||
                   layout === "photo-curate" ||
-                  layout === "sensory-habit"
+                  layout === "sensory-habit" ||
+                  layout === "boundary-choose" ||
+                  layout === "plan-b" ||
+                  layout === "dual-track" ||
+                  layout === "taste-journal" ||
+                  layout === "ar-light"
                 ) {
                   saveDraft({ reflectNote: e.target.value });
                 } else if (picked) {
@@ -2623,7 +3048,121 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                   ))}
                 </div>
               )}
-              {layout === "photo-search" && chapter.photoSearchDemos && (
+              
+              {layout === "boundary-choose" && chapter.boundaryChooseDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.boundaryChooseDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>
+                        {demo.label}
+                      </div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>不能：</strong>{demo.cannotLine}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>可選擇：</strong>{demo.canChooseLine}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
+                      <button type="button" onClick={() => applyBoundaryChooseDemo(demo)} style={{
+                        padding: "8px 14px", borderRadius: "var(--r-pill)",
+                        border: "1px solid var(--primary)", background: "var(--surface)",
+                        color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                      }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "plan-b" && chapter.planBDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.planBDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "#E8845A" }}>
+                        {demo.label}
+                      </div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>場景：</strong>{demo.scene}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>底線：</strong>{demo.boundary}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>回歸：</strong>{demo.returnAction}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
+                      <button type="button" onClick={() => applyPlanBDemo(demo)} style={{
+                        padding: "8px 14px", borderRadius: "var(--r-pill)",
+                        border: "1px solid #E8845A", background: "var(--surface)",
+                        color: "#E8845A", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                      }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "dual-track" && chapter.dualTrackDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.dualTrackDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--sage)" }}>
+                        {demo.label}
+                      </div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>身體軌：</strong>{demo.bodyTrack}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>靈魂軌：</strong>{demo.soulTrack}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
+                      <button type="button" onClick={() => applyDualTrackDemo(demo)} style={{
+                        padding: "8px 14px", borderRadius: "var(--r-pill)",
+                        border: "1px solid var(--sage)", background: "var(--surface)",
+                        color: "var(--sage)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                      }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "taste-journal" && chapter.tasteJournalDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.tasteJournalDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "#5BA0C9" }}>
+                        {demo.label}
+                      </div>
+                      <ol style={{ margin: "0 0 8px", paddingLeft: 20, fontSize: "var(--fs-xs)", color: "var(--ink-2)" }}>
+                        {demo.lines.map((line, i) => (<li key={i}>{line}</li>))}
+                      </ol>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>保留：</strong>{demo.keepPractice}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
+                      <button type="button" onClick={() => applyTasteJournalDemo(demo)} style={{
+                        padding: "8px 14px", borderRadius: "var(--r-pill)",
+                        border: "1px solid #5BA0C9", background: "var(--surface)",
+                        color: "#5BA0C9", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                      }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "ar-light" && chapter.arLightDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.arLightDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>
+                        {demo.label}
+                      </div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>A：</strong>{demo.agencyAction}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>R：</strong>{demo.resilienceAction}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
+                      <button type="button" onClick={() => applyArLightDemo(demo)} style={{
+                        padding: "8px 14px", borderRadius: "var(--r-pill)",
+                        border: "1px solid var(--primary)", background: "var(--surface)",
+                        color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                      }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+{layout === "photo-search" && chapter.photoSearchDemos && (
                 <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
                   {chapter.photoSearchDemos.map((demo) => (
                     <div key={demo.id} style={{
@@ -2783,6 +3322,27 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
             {chapter.continueBody}
           </p>
 
+          {chapter.appDeepLink && (
+            <button
+              type="button"
+              onClick={() => {
+                trackEvent("chapter_app_deep_link", {
+                  chapter: chapter.id,
+                  href: chapter.appDeepLink!.href,
+                });
+                router.push(chapter.appDeepLink!.href);
+              }}
+              style={{
+                width: "100%", padding: "14px", marginBottom: 16,
+                background: "var(--surface)", border: "2px solid var(--primary)",
+                borderRadius: "var(--r-pill)", fontWeight: 800,
+                fontSize: "var(--fs-sm)", color: "var(--primary-deep)", cursor: "pointer",
+              }}
+            >
+              {chapter.appDeepLink.label}
+            </button>
+          )}
+
           <div style={{
             padding: 16, borderRadius: "var(--r-lg)",
             background: "linear-gradient(135deg, #FBE6D4 0%, #FFF8EE 100%)",
@@ -2906,6 +3466,17 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           captions={captions}
           pickedScenes={pickedScenes}
           planNote={planNote}
+          cannotLine={cannotLine}
+          canChooseLine={canChooseLine}
+          planScene={planScene}
+          planBoundary={planBoundary}
+          planReturn={planReturn}
+          bodyTrack={bodyTrack}
+          soulTrack={soulTrack}
+          journalLines={journalLines}
+          keepPractice={keepPractice}
+          agencyAction={agencyAction}
+          resilienceAction={resilienceAction}
         />
       </div>
     </>
@@ -3074,6 +3645,17 @@ function PrintCard({
   captions = ["", "", ""],
   pickedScenes = [],
   planNote = "",
+  cannotLine = "",
+  canChooseLine = "",
+  planScene = "",
+  planBoundary = "",
+  planReturn = "",
+  bodyTrack = "",
+  soulTrack = "",
+  journalLines = ["", "", "", ""],
+  keepPractice = "",
+  agencyAction = "",
+  resilienceAction = "",
 }: {
   chapter: ChapterOpening;
   picked: string | null;
@@ -3120,6 +3702,17 @@ function PrintCard({
   captions?: [string, string, string];
   pickedScenes?: string[];
   planNote?: string;
+  cannotLine?: string;
+  canChooseLine?: string;
+  planScene?: string;
+  planBoundary?: string;
+  planReturn?: string;
+  bodyTrack?: string;
+  soulTrack?: string;
+  journalLines?: [string, string, string, string];
+  keepPractice?: string;
+  agencyAction?: string;
+  resilienceAction?: string;
 }) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const bgLabels = chapter.backgroundOptions
@@ -3360,6 +3953,111 @@ function PrintCard({
         <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>
           掃碼網址：{origin}/smart/chapter/{chapter.id}
         </p>
+      </div>
+    );
+  }
+
+
+  if (layout === "boundary-choose") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <PrintGridCell title="原本的「不能吃」" minHeight={48}>{cannotLine || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="我可以有底線地選擇" minHeight={64}>{canChooseLine || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        </div>
+        <PrintGridCell title="我的重要底線" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if (layout === "plan-b") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <PrintGridCell title="場景" minHeight={48}>{planScene || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="底線" minHeight={48}>{planBoundary || "＿＿＿＿＿＿"}</PrintGridCell>
+        </div>
+        <PrintGridCell title="回歸小動作" minHeight={48}>{planReturn || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="享受後仍自在的做法" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        </div>
+        <p style={{ fontSize: 12, color: "#666" }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if (layout === "dual-track") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <PrintGridCell title="身體軌" minHeight={72}>{bodyTrack || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="靈魂軌" minHeight={72}>{soulTrack || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        </div>
+        <PrintGridCell title="最能幫助 AI 不越界的資訊" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if (layout === "taste-journal") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <PrintGridCell title="四句回顧" minHeight={120}>
+          <ol style={{ margin: 0, paddingLeft: 18 }}>
+            {(journalLines.some(Boolean) ? journalLines : ["＿＿＿", "＿＿＿", "＿＿＿", "＿＿＿"]).map((line, i) => (
+              <li key={i} style={{ marginBottom: 4 }}>{line || "＿＿＿"}</li>
+            ))}
+          </ol>
+        </PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="下週想保留" minHeight={48}>{keepPractice || "＿＿＿＿＿＿"}</PrintGridCell>
+        </div>
+        <PrintGridCell title="最能代表自主或韌性的一刻" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if (layout === "ar-light") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <PrintGridCell title="A｜自主小動作" minHeight={64}>{agencyAction || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="R｜韌性小動作" minHeight={64}>{resilienceAction || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        </div>
+        <PrintGridCell title="哪一盞已亮／下一步" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
       </div>
     );
   }
