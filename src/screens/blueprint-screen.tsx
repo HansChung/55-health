@@ -30,8 +30,15 @@ interface BlueprintScreenProps {
 
 type View = "home" | "spark" | "done";
 
+function emptyChecks(): Record<ChecklistId, boolean> {
+  return Object.fromEntries(CHECKLIST_ITEMS.map((c) => [c.id, false])) as Record<
+    ChecklistId,
+    boolean
+  >;
+}
+
 export function BlueprintScreen({ onBack, initialMode = "home" }: BlueprintScreenProps) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const toast = useToast();
   const [view, setView] = useState<View>(
     initialMode === "spark" || initialMode === "chapter3" ? "spark" : "home"
@@ -42,29 +49,48 @@ export function BlueprintScreen({ onBack, initialMode = "home" }: BlueprintScree
   const [sparks, setSparks] = useState<SmartSpark[]>([]);
   const [counts, setCounts] = useState(emptySparkCounts());
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   // 表單
   const [actionText, setActionText] = useState("");
   const [dimension, setDimension] = useState<SmartDimension | null>(null);
   const [feelingText, setFeelingText] = useState("");
-  const [checks, setChecks] = useState<Record<ChecklistId, boolean>>(() =>
-    Object.fromEntries(CHECKLIST_ITEMS.map((c) => [c.id, false])) as Record<ChecklistId, boolean>
-  );
+  const [checks, setChecks] = useState<Record<ChecklistId, boolean>>(emptyChecks);
   const [submitting, setSubmitting] = useState(false);
   const [lastSpark, setLastSpark] = useState<SmartSpark | null>(null);
+  /** 這次送出前的光點總數，用來判斷文案「第一個」還是「又點亮」 */
+  const [sparkCountBeforeSubmit, setSparkCountBeforeSubmit] = useState(0);
+
+  const resetForm = () => {
+    setActionText("");
+    setDimension(null);
+    setFeelingText("");
+    setChecks(emptyChecks());
+  };
+
+  const openSparkForm = () => {
+    resetForm();
+    setView("spark");
+  };
 
   const reload = async () => {
+    if (authLoading) return;
     if (!user) {
+      setSparks([]);
+      setCounts(emptySparkCounts());
+      setLoadError("");
       setLoading(false);
       return;
     }
     setLoading(true);
+    setLoadError("");
     try {
       const res = await api.listSmartSparks();
       setSparks(res.sparks);
       setCounts(res.counts);
     } catch (e) {
       console.error(e);
+      setLoadError((e as Error).message || "載入光點失敗，請稍後再試");
     }
     setLoading(false);
   };
@@ -72,7 +98,7 @@ export function BlueprintScreen({ onBack, initialMode = "home" }: BlueprintScree
   useEffect(() => {
     reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [user?.id, authLoading]);
 
   const scores = useMemo(() => scoresFromSparkCounts(counts), [counts]);
   const glow = glowingDimension(counts);
@@ -96,6 +122,10 @@ export function BlueprintScreen({ onBack, initialMode = "home" }: BlueprintScree
   };
 
   const submitSpark = async () => {
+    if (authLoading) {
+      toast.info("正在確認登入狀態，請稍候再按一次");
+      return;
+    }
     if (!user) {
       toast.error("請先登入，才能保存您的光點");
       return;
@@ -105,6 +135,7 @@ export function BlueprintScreen({ onBack, initialMode = "home" }: BlueprintScree
       return;
     }
     setSubmitting(true);
+    setSparkCountBeforeSubmit(sparks.length);
     try {
       const checklist = CHECKLIST_ITEMS.filter((c) => checks[c.id]).map((c) => c.id);
       const { spark } = await api.createSmartSpark({
@@ -116,6 +147,7 @@ export function BlueprintScreen({ onBack, initialMode = "home" }: BlueprintScree
       });
       trackEvent("smart_spark", { dimension, source });
       setLastSpark(spark);
+      resetForm();
       setView("done");
       await reload();
       toast.success("已點亮一個光點！");
@@ -128,19 +160,33 @@ export function BlueprintScreen({ onBack, initialMode = "home" }: BlueprintScree
   // ── 完成慶祝 ──
   if (view === "done" && lastSpark) {
     const dim = blueprintDim(lastSpark.dimension);
+    const isFirst = sparkCountBeforeSubmit === 0;
     return (
       <SubPage title="圓夢藍圖" onBack={onBack}
         accent="linear-gradient(180deg, #FBE6D4 0%, transparent 100%)"
         footer={
-          <button className="btn-primary" style={{ width: "100%" }} onClick={() => setView("home")}>
-            看我的雷達
-          </button>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <button className="btn-primary" style={{ width: "100%" }} onClick={() => setView("home")}>
+              看我的雷達
+            </button>
+            <button
+              type="button"
+              onClick={openSparkForm}
+              style={{
+                width: "100%", padding: "14px 16px", borderRadius: 14,
+                border: "2px solid var(--line-strong)", background: "var(--surface)",
+                fontWeight: 700, fontSize: "var(--fs-sm)", cursor: "pointer",
+              }}
+            >
+              再點亮一個
+            </button>
+          </div>
         }
       >
         <div style={{ textAlign: "center", padding: "20px 0" }}>
           <div style={{ fontSize: 56, marginBottom: 8 }}>✨</div>
           <h2 style={{ fontSize: "var(--fs-2xl)", fontWeight: 800, margin: "0 0 8px" }}>
-            第一個光點已點亮
+            {isFirst ? "第一個光點已點亮" : "又點亮一個光點"}
           </h2>
           <p style={{ fontSize: "var(--fs-base)", color: "var(--ink-2)", lineHeight: 1.6 }}>
             {BLUEPRINT_THINK}
@@ -258,13 +304,32 @@ export function BlueprintScreen({ onBack, initialMode = "home" }: BlueprintScree
           ))}
         </div>
 
-        {!user && (
+        {authLoading && (
           <div style={{
             marginTop: 12, padding: 12, borderRadius: 12,
-            background: "var(--berry-soft, #F8E6E8)", color: "var(--berry)",
+            background: "var(--surface-warm, #FBF3E8)", color: "var(--ink-2)",
             fontSize: "var(--fs-sm)",
           }}>
-            請先回到首頁登入，光點才會保存。
+            正在確認登入狀態…
+          </div>
+        )}
+        {!authLoading && !user && (
+          <div style={{
+            marginTop: 12, padding: 14, borderRadius: 12,
+            background: "var(--berry-soft, #F8E6E8)", color: "var(--berry)",
+            fontSize: "var(--fs-sm)", lineHeight: 1.5,
+          }}>
+            <div style={{ marginBottom: 10 }}>請先登入，光點才會保存到您的帳戶。</div>
+            <a
+              href="/"
+              style={{
+                display: "block", textAlign: "center", padding: "12px 14px",
+                borderRadius: 12, background: "var(--berry)", color: "#fff",
+                fontWeight: 800, textDecoration: "none",
+              }}
+            >
+              前往登入
+            </a>
           </div>
         )}
       </SubPage>
@@ -278,7 +343,7 @@ export function BlueprintScreen({ onBack, initialMode = "home" }: BlueprintScree
       onBack={onBack}
       accent="linear-gradient(180deg, #FBE6D4 0%, transparent 100%)"
       footer={
-        <button className="btn-primary" style={{ width: "100%" }} onClick={() => setView("spark")}>
+        <button className="btn-primary" style={{ width: "100%" }} onClick={openSparkForm}>
           {totalSparks === 0 ? "點亮我的第一個光點" : "再點亮一個光點"}
         </button>
       }
@@ -300,7 +365,7 @@ export function BlueprintScreen({ onBack, initialMode = "home" }: BlueprintScree
       </p>
 
       <div style={{ display: "flex", justifyContent: "center", margin: "4px 0 8px" }}>
-        {loading ? (
+        {loading || authLoading ? (
           <div style={{ padding: 40, color: "var(--ink-3)" }}>載入中…</div>
         ) : (
           <RadarChart
@@ -314,6 +379,38 @@ export function BlueprintScreen({ onBack, initialMode = "home" }: BlueprintScree
       <div style={{ textAlign: "center", fontSize: "var(--fs-xs)", color: "var(--ink-3)", marginBottom: 16 }}>
         數字＝該面向已點亮的光點數　·　R＝安全
       </div>
+      {loadError && (
+        <div style={{
+          marginBottom: 16, padding: 12, borderRadius: 12,
+          background: "var(--berry-soft, #F8E6E8)", color: "var(--berry)",
+          fontSize: "var(--fs-sm)", lineHeight: 1.5,
+        }}>
+          {loadError}
+          <button
+            type="button"
+            onClick={() => reload()}
+            style={{
+              display: "block", marginTop: 8, width: "100%", padding: "10px 12px",
+              borderRadius: 10, border: "1px solid currentColor", background: "transparent",
+              fontWeight: 700, color: "inherit", cursor: "pointer",
+            }}
+          >
+            再試一次
+          </button>
+        </div>
+      )}
+      {!authLoading && !user && (
+        <div style={{
+          marginBottom: 16, padding: 14, borderRadius: 12,
+          background: "var(--surface-warm, #FBF3E8)", color: "var(--ink-2)",
+          fontSize: "var(--fs-sm)", lineHeight: 1.5,
+        }}>
+          登入後才能保存與查看您的光點。
+          <a href="/" style={{ display: "inline-block", marginTop: 8, fontWeight: 800, color: "var(--primary, #E8845A)" }}>
+            前往登入 →
+          </a>
+        </div>
+      )}
 
       {totalSparks > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
