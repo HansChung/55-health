@@ -1,4 +1,6 @@
 /** 章節開篇 QR 深連結（例：0100 → /smart/chapter/0100） */
+import { CHAPTER_2_OPENINGS } from "./chapter-opening-ch2";
+
 export type ChapterLayout =
   | "routes"
   | "ai-entry"
@@ -7,11 +9,18 @@ export type ChapterLayout =
   | "vision-identify"
   | "photo-search"
   | "note-capture"
-  | "smart-flow";
+  | "smart-flow"
+  | "menu-translate"
+  | "product-compare"
+  | "curiosity-ask"
+  | "recipe-card"
+  | "photo-edit-safe"
+  | "photo-curate"
+  | "sensory-habit";
 
 export type VisionTrustLevel = "enjoy" | "verify";
 
-export type ChapterEntryId = "ask" | "snap" | "photo" | "note";
+export type ChapterEntryId = string;
 
 export type SparkSource = "spark_card" | "chapter3" | "chapter0100";
 
@@ -101,6 +110,79 @@ export interface SmartFlowDemo {
   reflectNote: string;
 }
 
+/** 外文菜單翻譯示範（0203 用） */
+export interface MenuTranslateDemo {
+  id: string;
+  label: string;
+  menuSnippet: string;
+  dietaryNeed: string;
+  translationSummary: string;
+  confirmWithStaff: string;
+}
+
+/** 商品比較示範（0204 用） */
+export interface ProductCompareDemo {
+  id: string;
+  label: string;
+  productA: string;
+  productB: string;
+  threeDiffs: [string, string, string];
+  verifyItem: string;
+  decisionFactor: string;
+}
+
+/** 好奇心提問示範（0205 用） */
+export interface CuriosityAskDemo {
+  id: string;
+  label: string;
+  question: string;
+  aiAnswer: string;
+  insight: string;
+}
+
+/** 料理卡示範（0207 用） */
+export interface RecipeCardDemo {
+  id: string;
+  label: string;
+  dishName: string;
+  colors: string;
+  fiberSource: string;
+  feeling: string;
+}
+
+/** 安全修圖示範（0209 用） */
+export interface PhotoEditSafeDemo {
+  id: string;
+  label: string;
+  backupNote: string;
+  editAction: string;
+  compareNote: string;
+}
+
+/** 照片策展示範（0210 用） */
+export interface PhotoCurateDemo {
+  id: string;
+  label: string;
+  theme: string;
+  captions: [string, string, string];
+  reflectNote: string;
+}
+
+/** 感官習慣場景（0211 用） */
+export interface HabitSceneOption {
+  id: string;
+  label: string;
+  hint: string;
+}
+
+export interface SensoryHabitDemo {
+  id: string;
+  label: string;
+  pickedScenes: string[];
+  planNote: string;
+  reflectNote: string;
+}
+
 /** 「整理三點，不替我決定」生活案例（0104 用） */
 export interface OrganizeDecideDemo {
   id: string;
@@ -159,6 +241,21 @@ export interface ChapterOpening {
   noteCaptureDemos?: NoteCaptureDemo[];
   /** smart-flow 版型：三拍示範 */
   smartFlowDemos?: SmartFlowDemo[];
+  /** menu-translate 版型 */
+  menuDemos?: MenuTranslateDemo[];
+  /** product-compare 版型 */
+  productCompareDemos?: ProductCompareDemo[];
+  /** curiosity-ask 版型 */
+  curiosityDemos?: CuriosityAskDemo[];
+  /** recipe-card 版型 */
+  recipeCardDemos?: RecipeCardDemo[];
+  /** photo-edit-safe 版型 */
+  photoEditDemos?: PhotoEditSafeDemo[];
+  /** photo-curate 版型 */
+  photoCurateDemos?: PhotoCurateDemo[];
+  /** sensory-habit 版型：生活場景選項 */
+  habitSceneOptions?: HabitSceneOption[];
+  habitDemos?: SensoryHabitDemo[];
 }
 
 export const CHAPTER_0100: ChapterOpening = {
@@ -670,6 +767,7 @@ const CHAPTERS: Record<string, ChapterOpening> = {
   "0106": CHAPTER_0106,
   "0107": CHAPTER_0107,
   "0108": CHAPTER_0108,
+  ...CHAPTER_2_OPENINGS,
 };
 
 export function getChapterOpening(id: string): ChapterOpening | null {
@@ -725,6 +823,89 @@ export interface ChapterSmartFlowDraft {
   askAnswer: string;
   savedLine: string;
   reflectNote: string;
+}
+
+export interface ChapterMenuDraft {
+  menuSnippet: string;
+  dietaryNeed: string;
+  translationSummary: string;
+  confirmWithStaff: string;
+  reflectNote: string;
+}
+
+export interface ChapterProductCompareDraft {
+  productA: string;
+  productB: string;
+  threeDiffs: [string, string, string];
+  verifyItem: string;
+  reflectNote: string;
+}
+
+export interface ChapterCuriosityDraft {
+  question: string;
+  aiAnswer: string;
+  insight: string;
+  reflectNote: string;
+}
+
+export interface ChapterRecipeDraft {
+  dishName: string;
+  colors: string;
+  fiberSource: string;
+  feeling: string;
+  reflectNote: string;
+}
+
+export interface ChapterPhotoEditDraft {
+  backupDone: boolean;
+  editAction: string;
+  compareNote: string;
+  reflectNote: string;
+}
+
+export interface ChapterPhotoCurateDraft {
+  theme: string;
+  captions: [string, string, string];
+  reflectNote: string;
+}
+
+export interface ChapterSensoryHabitDraft {
+  pickedScenes: string[];
+  planNote: string;
+  reflectNote: string;
+}
+
+/** 0202：植物辨識提問句 */
+export function buildPlantAskPrompt(): string {
+  return "這可能是什麼植物？請說明特徵。如果不確定，請說明不確定的部分。";
+}
+
+/** 0203：菜單翻譯提問句 */
+export function buildMenuTranslatePrompt(dietaryNeed?: string): string {
+  const base =
+    "請翻譯照片裡這段菜單的菜名與主要食材，用簡單中文。如果不確定，請說明不確定的部分。";
+  const need = dietaryNeed?.trim();
+  if (!need) return base;
+  return `${base} 我的飲食需要：${need}`;
+}
+
+/** 0204：商品比較提問句 */
+export function buildProductComparePrompt(productA?: string, productB?: string): string {
+  const a = productA?.trim() || "商品 A";
+  const b = productB?.trim() || "商品 B";
+  return `請整理「${a}」與「${b}」的三項差異，以及一項我需要再向標示或店員確認的資訊。請用簡單中文，不要替我決定買哪一個。`;
+}
+
+/** 0205：好奇心提問句 */
+export function buildCuriosityPrompt(question?: string): string {
+  const q = question?.trim();
+  if (!q) return "請用簡單中文解釋，並舉一個日常生活例子。";
+  return `${q} 請用簡單中文解釋，並舉一個日常生活例子。`;
+}
+
+/** 0206：餐點觀察提問句 */
+export function buildFoodObservePrompt(): string {
+  return "請整理這道餐點可能的主要食材、烹調特色，以及一項溫和的飲食觀察。請用簡單中文，這不是醫療或營養診斷。";
 }
 
 /** 0108：二問用的自然提問句 */

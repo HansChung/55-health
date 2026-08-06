@@ -3,6 +3,7 @@ import {
   CHAPTER_0100,
   CHAPTER_0102,
   CHAPTER_0103,
+  buildMenuTranslatePrompt,
   buildOrganizeAskPrompt,
   buildSmartFlowAskPrompt,
   buildVisionAskPrompt,
@@ -79,6 +80,29 @@ describe("chapter-opening", () => {
     expect(ch?.layout).toBe("smart-flow");
     expect(ch?.quote).toContain("一拍、二問、三記下");
     expect(ch?.smartFlowDemos).toHaveLength(1);
+  });
+
+  it("getChapterOpening 0200 Chapter 2 routes", () => {
+    const ch = getChapterOpening("0200");
+    expect(ch?.title).toBe("感官覺醒");
+    expect(ch?.layout).toBe("routes");
+    expect(ch?.entries?.length).toBe(5);
+  });
+
+  it("getChapterOpening 0203 menu-translate", () => {
+    const ch = getChapterOpening("0203");
+    expect(ch?.layout).toBe("menu-translate");
+    expect(ch?.menuDemos).toHaveLength(1);
+  });
+
+  it("getChapterOpening 0211 sensory-habit", () => {
+    const ch = getChapterOpening("0211");
+    expect(ch?.layout).toBe("sensory-habit");
+    expect(ch?.habitSceneOptions?.length).toBeGreaterThan(3);
+  });
+
+  it("buildMenuTranslatePrompt", () => {
+    expect(buildMenuTranslatePrompt("少辣")).toContain("少辣");
   });
 
   it("buildOrganizeAskPrompt", () => {

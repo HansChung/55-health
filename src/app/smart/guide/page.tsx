@@ -4,6 +4,21 @@ import { useRouter } from "next/navigation";
 import { SubPage } from "@/components/sub-page";
 import { BLUEPRINT_DIMENSIONS, BLUEPRINT_INSIGHT } from "@/lib/smart-blueprint";
 
+const CHAPTER_2_LINKS: { id: string; label: string; color: string }[] = [
+  { id: "0200", label: "感官覺醒｜章節開篇", color: "#5BA0C9" },
+  { id: "0201", label: "數位華爾滋：一拍、二問、三記下", color: "#9B7AD4" },
+  { id: "0202", label: "自然篇：路邊小花都有身世", color: "var(--sage)" },
+  { id: "0203", label: "旅行篇：點菜的勇氣", color: "#E8845A" },
+  { id: "0204", label: "消費篇：精明消費", color: "#7B5BB8" },
+  { id: "0205", label: "知識篇：好奇心", color: "#5BA0C9" },
+  { id: "0206", label: "美食篇：舌尖下的秘密", color: "var(--primary-deep)" },
+  { id: "0207", label: "五色高纖食譜庫", color: "var(--sage)" },
+  { id: "0208", label: "照片搜尋：回憶不必被埋沒", color: "#9B7AD4" },
+  { id: "0209", label: "魔法橡皮擦：修復遺憾", color: "#5BA0C9" },
+  { id: "0210", label: "人生策展", color: "#7B5BB8" },
+  { id: "0211", label: "感官全開：把好奇變成生活反射", color: "#E8845A" },
+];
+
 /**
  * QR：SMART RADAR 溫暖導讀（文字版；之後可換成音檔）
  * 對應 KU05 左頁文案精華
@@ -175,6 +190,29 @@ export default function SmartGuidePage() {
         >
           章節 0108｜預備起飛：一拍、二問、三記下 →
         </button>
+
+        <div style={{
+          fontSize: "var(--fs-sm)", fontWeight: 800, color: "var(--sage)",
+          marginTop: 24, marginBottom: 10,
+        }}>
+          第二章｜感官覺醒
+        </div>
+        {CHAPTER_2_LINKS.map((ch) => (
+          <button
+            key={ch.id}
+            type="button"
+            onClick={() => router.push(`/smart/chapter/${ch.id}`)}
+            style={{
+              width: "100%", marginTop: 8, padding: "14px 16px",
+              background: "var(--surface)", border: `2px solid ${ch.color}`,
+              borderRadius: "var(--r-lg)", fontWeight: 700,
+              fontSize: "var(--fs-sm)", color: ch.color, cursor: "pointer",
+              textAlign: "left",
+            }}
+          >
+            章節 {ch.id}｜{ch.label} →
+          </button>
+        ))}
       </SubPage>
     </div>
   );
