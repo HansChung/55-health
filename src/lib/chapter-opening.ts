@@ -1,5 +1,6 @@
 /** 章節開篇 QR 深連結（例：0100 → /smart/chapter/0100） */
 import { CHAPTER_2_OPENINGS } from "./chapter-opening-ch2";
+import { CHAPTER_3_OPENINGS } from "./chapter-opening-ch3";
 
 export type ChapterLayout =
   | "routes"
@@ -16,7 +17,14 @@ export type ChapterLayout =
   | "recipe-card"
   | "photo-edit-safe"
   | "photo-curate"
-  | "sensory-habit";
+  | "sensory-habit"
+  | "elevator-wish"
+  | "life-match"
+  | "five-reflect"
+  | "three-steps"
+  | "meaning-seed"
+  | "share-intent"
+  | "embark-card";
 
 export type VisionTrustLevel = "enjoy" | "verify";
 
@@ -183,6 +191,86 @@ export interface SensoryHabitDemo {
   reflectNote: string;
 }
 
+/** Chapter 3：SMART 方向選項 */
+export interface SmartDirectionOption {
+  id: string;
+  letter: string;
+  label: string;
+  hint: string;
+}
+
+export interface ElevatorWishDemo {
+  id: string;
+  label: string;
+  want: string;
+  stuck: string;
+  aiHelp: string;
+  reflectNote: string;
+}
+
+export interface LifeRoleOption {
+  id: string;
+  label: string;
+  hint: string;
+}
+
+export interface LifeMatchDemo {
+  id: string;
+  label: string;
+  painPoint: string;
+  roleId: string;
+  reflectNote: string;
+}
+
+export interface FiveReflectDemo {
+  id: string;
+  label: string;
+  focusId: string;
+  statuses: Record<string, string>;
+  nextStep: string;
+  reflectNote: string;
+}
+
+export interface ThreeStepsDemo {
+  id: string;
+  label: string;
+  task: string;
+  steps: [string, string, string] | string[];
+  reflectNote: string;
+}
+
+export interface MeaningSeedDemo {
+  id: string;
+  label: string;
+  material: string;
+  formHint: string;
+  because: string;
+  reflectNote: string;
+}
+
+export interface ShareIntentDemo {
+  id: string;
+  label: string;
+  shareWhat: string;
+  forWhom: string;
+  privacyNote: string;
+  reflectNote: string;
+}
+
+export interface EmbarkDemo {
+  id: string;
+  label: string;
+  direction: string;
+  firstStep: string;
+  aiHelp: string;
+  reflectNote: string;
+}
+
+export interface ChapterAppDeepLink {
+  href: string;
+  label: string;
+}
+
 /** 「整理三點，不替我決定」生活案例（0104 用） */
 export interface OrganizeDecideDemo {
   id: string;
@@ -266,6 +354,19 @@ export interface ChapterOpening {
   /** sensory-habit 版型：生活場景選項 */
   habitSceneOptions?: HabitSceneOption[];
   habitDemos?: SensoryHabitDemo[];
+  /** Chapter 3 版型資料 */
+  elevatorDemos?: ElevatorWishDemo[];
+  lifeRoleOptions?: LifeRoleOption[];
+  lifeMatchDemos?: LifeMatchDemo[];
+  smartDirections?: SmartDirectionOption[];
+  fiveReflectMode?: "pick" | "status" | "weekly";
+  statusChoices?: string[];
+  fiveReflectDemos?: FiveReflectDemo[];
+  threeStepsDemos?: ThreeStepsDemo[];
+  meaningSeedDemos?: MeaningSeedDemo[];
+  shareIntentDemos?: ShareIntentDemo[];
+  embarkDemos?: EmbarkDemo[];
+  appDeepLink?: ChapterAppDeepLink;
 }
 
 export const CHAPTER_0100: ChapterOpening = {
@@ -800,6 +901,7 @@ const CHAPTERS: Record<string, ChapterOpening> = {
   "0107": CHAPTER_0107,
   "0108": CHAPTER_0108,
   ...CHAPTER_2_OPENINGS,
+  ...CHAPTER_3_OPENINGS,
 };
 
 export function getChapterOpening(id: string): ChapterOpening | null {
@@ -904,6 +1006,53 @@ export interface ChapterPhotoCurateDraft {
 export interface ChapterSensoryHabitDraft {
   pickedScenes: string[];
   planNote: string;
+  reflectNote: string;
+}
+
+export interface ChapterElevatorWishDraft {
+  want: string;
+  stuck: string;
+  aiHelp: string;
+  reflectNote: string;
+}
+
+export interface ChapterLifeMatchDraft {
+  painPoint: string;
+  roleId: string;
+  reflectNote: string;
+}
+
+export interface ChapterFiveReflectDraft {
+  focusId: string;
+  statuses: Record<string, string>;
+  nextStep: string;
+  reflectNote: string;
+}
+
+export interface ChapterThreeStepsDraft {
+  task: string;
+  steps: [string, string, string];
+  reflectNote: string;
+}
+
+export interface ChapterMeaningSeedDraft {
+  material: string;
+  formHint: string;
+  because: string;
+  reflectNote: string;
+}
+
+export interface ChapterShareIntentDraft {
+  shareWhat: string;
+  forWhom: string;
+  privacyNote: string;
+  reflectNote: string;
+}
+
+export interface ChapterEmbarkDraft {
+  direction: string;
+  firstStep: string;
+  aiHelp: string;
   reflectNote: string;
 }
 
