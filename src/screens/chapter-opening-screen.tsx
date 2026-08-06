@@ -6,6 +6,7 @@ import { SubPage } from "@/components/sub-page";
 import { Icon } from "@/components/icons";
 import {
   type ChapterEntry,
+  type ChapterLayout,
   type ChapterOpening,
   type ChapterOrganizeDraft,
   type ChapterRewriteDraft,
@@ -54,6 +55,22 @@ import {
   type ChapterPhotoEditDraft,
   type ChapterPhotoCurateDraft,
   type ChapterSensoryHabitDraft,
+  type VerifyFirstDemo,
+  type PauseReflexDemo,
+  type RockCheckDemo,
+  type MuscleRecordDemo,
+  type TrustListsDemo,
+  type ListEntryDemo,
+  type FamilyWeeklyDemo,
+  type TrLightDemo,
+  type ChapterVerifyFirstDraft,
+  type ChapterPauseReflexDraft,
+  type ChapterRockCheckDraft,
+  type ChapterMuscleRecordDraft,
+  type ChapterTrustListsDraft,
+  type ChapterListEntryDraft,
+  type ChapterFamilyWeeklyDraft,
+  type ChapterTrLightDraft,
 } from "@/lib/chapter-opening";
 import { trackEvent } from "@/lib/telemetry";
 import { useToast } from "@/hooks/use-toast";
@@ -65,7 +82,7 @@ interface ChapterOpeningScreenProps {
 export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const router = useRouter();
   const toast = useToast();
-  const layout = chapter.layout ?? "routes";
+  const layout: ChapterLayout = chapter.layout ?? "routes";
   const pickKey = chapterPickKey(chapter.id);
   const draftKey = chapterDraftKey(chapter.id);
 
@@ -113,6 +130,21 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const [captions, setCaptions] = useState<[string, string, string]>(["", "", ""]);
   const [pickedScenes, setPickedScenes] = useState<string[]>([]);
   const [planNote, setPlanNote] = useState("");
+  const [firstAction, setFirstAction] = useState("");
+  const [thenAction, setThenAction] = useState("");
+  const [rockScenario, setRockScenario] = useState("");
+  const [rockFlags, setRockFlags] = useState<[string, string, string]>(["", "", ""]);
+  const [rockSafeAction, setRockSafeAction] = useState("");
+  const [scamPattern, setScamPattern] = useState("");
+  const [muscleSafeAction, setMuscleSafeAction] = useState("");
+  const [blackSummary, setBlackSummary] = useState("");
+  const [whiteSummary, setWhiteSummary] = useState("");
+  const [entryType, setEntryType] = useState("");
+  const [entryFeatures, setEntryFeatures] = useState("");
+  const [entrySafeAction, setEntrySafeAction] = useState("");
+  const [familyLines, setFamilyLines] = useState<[string, string, string]>(["", "", ""]);
+  const [trustAction, setTrustAction] = useState("");
+  const [resilienceAction, setResilienceAction] = useState("");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -257,6 +289,78 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           if (d.reflectNote) setReflectNote(d.reflectNote);
         }
       }
+      if (layout === "verify-first") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterVerifyFirstDraft;
+          if (d.firstAction) setFirstAction(d.firstAction);
+          if (d.thenAction) setThenAction(d.thenAction);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "pause-reflex") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterPauseReflexDraft;
+          if (d.focusId) setPicked(d.focusId);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "rock-check") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterRockCheckDraft;
+          if (d.scenario) setRockScenario(d.scenario);
+          if (d.flags) setRockFlags(d.flags);
+          if (d.safeAction) setRockSafeAction(d.safeAction);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "muscle-record") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterMuscleRecordDraft;
+          if (d.scamPattern) setScamPattern(d.scamPattern);
+          if (d.safeAction) setMuscleSafeAction(d.safeAction);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "trust-lists") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterTrustListsDraft;
+          if (d.blackSummary) setBlackSummary(d.blackSummary);
+          if (d.whiteSummary) setWhiteSummary(d.whiteSummary);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "list-entry") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterListEntryDraft;
+          if (d.entryType) setEntryType(d.entryType);
+          if (d.features) setEntryFeatures(d.features);
+          if (d.safeAction) setEntrySafeAction(d.safeAction);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "family-weekly") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterFamilyWeeklyDraft;
+          if (d.lines) setFamilyLines(d.lines);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "tr-light") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterTrLightDraft;
+          if (d.trustAction) setTrustAction(d.trustAction);
+          if (d.resilienceAction) setResilienceAction(d.resilienceAction);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
     } catch {
       /* ignore */
     }
@@ -276,7 +380,15 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         ChapterRecipeDraft &
         ChapterPhotoEditDraft &
         ChapterPhotoCurateDraft &
-        ChapterSensoryHabitDraft
+        ChapterSensoryHabitDraft &
+        ChapterVerifyFirstDraft &
+        ChapterPauseReflexDraft &
+        ChapterRockCheckDraft &
+        ChapterMuscleRecordDraft &
+        ChapterTrustListsDraft &
+        ChapterListEntryDraft &
+        ChapterFamilyWeeklyDraft &
+        ChapterTrLightDraft
     >
   ) => {
     if (typeof window === "undefined") return;
@@ -308,7 +420,127 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
       };
       localStorage.setItem(draftKey, JSON.stringify(next));
     }
-    if (layout === "photo-search") {
+  
+  if (layout === "verify-first") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="我願意先" minHeight={48}>{firstAction || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="再" minHeight={48}>{thenAction || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="容易忘記查證的情境" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if (layout === "pause-reflex") {
+    const focusLabel = chapter.pauseReflexOptions?.find((o) => o.id === picked)?.label ?? picked ?? "";
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="不點／不回／不輸入" minHeight={64}>先截圖，後提問；沒確認前，絕不點擊。</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="我最需要練習" minHeight={48}>{focusLabel || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if (layout === "rock-check") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="模擬訊息" minHeight={64}>{rockScenario || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="三個疑點" minHeight={72}>
+            <ol style={{ margin: 0, paddingLeft: 18 }}>
+              {(rockFlags.some(Boolean) ? rockFlags : ["＿＿＿", "＿＿＿", "＿＿＿"]).map((f, i) => (
+                <li key={i}>{f || "＿＿＿"}</li>
+              ))}
+            </ol>
+          </PrintGridCell>
+        </div>
+        <PrintGridCell title="安全確認方式" minHeight={64}>{rockSafeAction || reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if (layout === "muscle-record") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="已能辨識的話術" minHeight={48}>{scamPattern || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="安全動作" minHeight={48}>{muscleSafeAction || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="一眼認出的警訊" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if (layout === "trust-lists") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="黑名單摘要" minHeight={64}>{blackSummary || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="白名單摘要" minHeight={64}>{whiteSummary || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="可記／絕不可記" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if (layout === "list-entry") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="類型／對象" minHeight={48}>{entryType || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="特徵／確認方式" minHeight={64}>{entryFeatures || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="安全動作" minHeight={48}>{entrySafeAction || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell></div>
+        <p style={{ fontSize: 12, color: "#666" }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if (layout === "family-weekly") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="三句低風險週報" minHeight={96}>
+          <ol style={{ margin: 0, paddingLeft: 18 }}>
+            {(familyLines.some(Boolean) ? familyLines : ["＿＿＿", "＿＿＿", "＿＿＿"]).map((l, i) => (
+              <li key={i} style={{ marginBottom: 4 }}>{l || "＿＿＿"}</li>
+            ))}
+          </ol>
+        </PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="溫和提醒方式" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell></div>
+        <p style={{ fontSize: 12, color: "#666" }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if (layout === "tr-light") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="T｜信賴光點" minHeight={64}>{trustAction || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="R｜韌性／安全光點" minHeight={64}>{resilienceAction || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="想帶進日常的心法" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if (layout === "photo-search") {
       const next: ChapterPhotoSearchDraft = {
         searchKeyword: patch.searchKeyword ?? searchKeyword,
         memoryNote: patch.memoryNote ?? memoryNote,
@@ -399,6 +631,71 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
       };
       localStorage.setItem(draftKey, JSON.stringify(next));
     }
+    const layoutKey: string = layout;
+    if (layoutKey === "verify-first") {
+      const next: ChapterVerifyFirstDraft = {
+        firstAction: patch.firstAction ?? firstAction,
+        thenAction: patch.thenAction ?? thenAction,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "pause-reflex") {
+      const next: ChapterPauseReflexDraft = {
+        focusId: patch.focusId ?? picked ?? "",
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "rock-check") {
+      const next: ChapterRockCheckDraft = {
+        scenario: patch.scenario ?? rockScenario,
+        flags: patch.flags ?? rockFlags,
+        safeAction: patch.safeAction ?? rockSafeAction,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "muscle-record") {
+      const next: ChapterMuscleRecordDraft = {
+        scamPattern: patch.scamPattern ?? scamPattern,
+        safeAction: patch.safeAction ?? muscleSafeAction,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "trust-lists") {
+      const next: ChapterTrustListsDraft = {
+        blackSummary: patch.blackSummary ?? blackSummary,
+        whiteSummary: patch.whiteSummary ?? whiteSummary,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "list-entry") {
+      const next: ChapterListEntryDraft = {
+        entryType: patch.entryType ?? entryType,
+        features: patch.features ?? entryFeatures,
+        safeAction: patch.safeAction ?? entrySafeAction,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "family-weekly") {
+      const next: ChapterFamilyWeeklyDraft = {
+        lines: patch.lines ?? familyLines,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "tr-light") {
+      const next: ChapterTrLightDraft = {
+        trustAction: patch.trustAction ?? trustAction,
+        resilienceAction: patch.resilienceAction ?? resilienceAction,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
   };
 
   const savePick = (id: string, note?: string) => {
@@ -484,6 +781,49 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         break;
       case "sensory-habit":
         action = planNote.trim() || pickedScenes.join("、");
+        break;
+      case "verify-first":
+        action =
+          (firstAction.trim() || thenAction.trim())
+            ? `我願意先${firstAction.trim()}，再${thenAction.trim()}`
+            : "";
+        break;
+      case "pause-reflex":
+        action =
+          (chapter.pauseReflexOptions?.find((o) => o.id === picked)?.label
+            ? `最需要練習：${chapter.pauseReflexOptions.find((o) => o.id === picked)!.label}`
+            : "") || reflectNote.trim();
+        break;
+      case "rock-check":
+        action =
+          rockSafeAction.trim() ||
+          rockFlags.filter(Boolean).join("；") ||
+          rockScenario.trim();
+        break;
+      case "muscle-record":
+        action =
+          [scamPattern, muscleSafeAction].filter(Boolean).join("｜") ||
+          scamPattern.trim();
+        break;
+      case "trust-lists":
+        action =
+          [blackSummary && `黑：${blackSummary}`, whiteSummary && `白：${whiteSummary}`]
+            .filter(Boolean)
+            .join("；");
+        break;
+      case "list-entry":
+        action =
+          [entryType, entryFeatures, entrySafeAction].filter(Boolean).join("｜") ||
+          entryType.trim();
+        break;
+      case "family-weekly":
+        action = familyLines.filter(Boolean).join("／");
+        break;
+      case "tr-light":
+        action =
+          [trustAction && `T：${trustAction}`, resilienceAction && `R：${resilienceAction}`]
+            .filter(Boolean)
+            .join("；");
         break;
       case "routes":
       case "ai-entry":
@@ -781,6 +1121,101 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
       saveDraft({ pickedScenes: next });
       return next;
     });
+  };
+
+  const applyVerifyFirstDemo = (demo: VerifyFirstDemo) => {
+    setFirstAction(demo.firstAction);
+    setThenAction(demo.thenAction);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      firstAction: demo.firstAction,
+      thenAction: demo.thenAction,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}`);
+  };
+
+  const applyPauseReflexDemo = (demo: PauseReflexDemo) => {
+    setPicked(demo.focusId);
+    setReflectNote(demo.reflectNote);
+    saveDraft({ focusId: demo.focusId, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}`);
+  };
+
+  const applyRockCheckDemo = (demo: RockCheckDemo) => {
+    const flags: [string, string, string] = [
+      demo.flags[0] ?? "",
+      demo.flags[1] ?? "",
+      demo.flags[2] ?? "",
+    ];
+    setRockScenario(demo.scenario);
+    setRockFlags(flags);
+    setRockSafeAction(demo.safeAction);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      scenario: demo.scenario,
+      flags,
+      safeAction: demo.safeAction,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}`);
+  };
+
+  const applyMuscleRecordDemo = (demo: MuscleRecordDemo) => {
+    setScamPattern(demo.scamPattern);
+    setMuscleSafeAction(demo.safeAction);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      scamPattern: demo.scamPattern,
+      safeAction: demo.safeAction,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}`);
+  };
+
+  const applyTrustListsDemo = (demo: TrustListsDemo) => {
+    setBlackSummary(demo.blackSummary);
+    setWhiteSummary(demo.whiteSummary);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      blackSummary: demo.blackSummary,
+      whiteSummary: demo.whiteSummary,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}`);
+  };
+
+  const applyListEntryDemo = (demo: ListEntryDemo) => {
+    setEntryType(demo.entryType);
+    setEntryFeatures(demo.features);
+    setEntrySafeAction(demo.safeAction);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      entryType: demo.entryType,
+      features: demo.features,
+      safeAction: demo.safeAction,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}`);
+  };
+
+  const applyFamilyWeeklyDemo = (demo: FamilyWeeklyDemo) => {
+    setFamilyLines(demo.lines);
+    setReflectNote(demo.reflectNote);
+    saveDraft({ lines: demo.lines, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}`);
+  };
+
+  const applyTrLightDemo = (demo: TrLightDemo) => {
+    setTrustAction(demo.trustAction);
+    setResilienceAction(demo.resilienceAction);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      trustAction: demo.trustAction,
+      resilienceAction: demo.resilienceAction,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}`);
   };
 
   const copyNoteTemplate = async () => {
@@ -2052,6 +2487,159 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
             </div>
           )}
 
+
+          {layout === "verify-first" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>我願意先</div>
+                <textarea value={firstAction} onChange={(e) => { setFirstAction(e.target.value); saveDraft({ firstAction: e.target.value }); }}
+                  placeholder="例如：暫停、不點連結…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>再</div>
+                <textarea value={thenAction} onChange={(e) => { setThenAction(e.target.value); saveDraft({ thenAction: e.target.value }); }}
+                  placeholder="例如：用自己保存的官方電話查證…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
+          {layout === "pause-reflex" && chapter.pauseReflexOptions && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+              {chapter.pauseReflexOptions.map((opt) => {
+                const on = picked === opt.id;
+                return (
+                  <button key={opt.id} type="button"
+                    onClick={() => { setPicked(opt.id); saveDraft({ focusId: opt.id }); }}
+                    style={{ textAlign: "left", padding: "12px 14px", borderRadius: 12, border: `2px solid ${on ? "var(--primary)" : "var(--line-strong)"}`, background: on ? "var(--primary-soft)" : "var(--surface)", cursor: "pointer" }}>
+                    <strong style={{ fontSize: "var(--fs-sm)" }}>{opt.label}{on ? " · 我最需要練習" : ""}</strong>
+                    <span style={{ display: "block", fontSize: "var(--fs-xs)", color: "var(--ink-3)", marginTop: 2 }}>{opt.hint}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {layout === "rock-check" && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>模擬訊息（請勿當真）</div>
+              <textarea value={rockScenario} onChange={(e) => { setRockScenario(e.target.value); saveDraft({ scenario: e.target.value }); }}
+                placeholder="貼上或改寫一則模擬邀約／假親友訊息…" rows={2}
+                style={{ width: "100%", padding: "12px 14px", marginBottom: 10, borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              {(["疑點一", "疑點二", "疑點三"] as const).map((label, i) => (
+                <div key={label} style={{ marginBottom: 8 }}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 4 }}>{label}</div>
+                  <input value={rockFlags[i]} onChange={(e) => {
+                    const next: [string, string, string] = [...rockFlags] as [string, string, string];
+                    next[i] = e.target.value; setRockFlags(next); saveDraft({ flags: next });
+                  }} placeholder={`${label}…`} style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", boxSizing: "border-box" }} />
+                </div>
+              ))}
+              <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>安全確認方式</div>
+              <textarea value={rockSafeAction} onChange={(e) => { setRockSafeAction(e.target.value); saveDraft({ safeAction: e.target.value }); }}
+                placeholder="例如：不加入、打原本電話確認…" rows={2}
+                style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              {chapter.samplePrompt && (
+                <button type="button" onClick={async () => {
+                  try { await navigator.clipboard.writeText(chapter.samplePrompt!); toast.success("已複製安全提問句"); }
+                  catch { toast.info("請手動複製下方提問句"); }
+                }} style={{ marginTop: 10, width: "100%", padding: "12px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>
+                  複製「只列疑點」提問句
+                </button>
+              )}
+            </div>
+          )}
+
+          {layout === "muscle-record" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>已能辨識的話術</div>
+                <textarea value={scamPattern} onChange={(e) => { setScamPattern(e.target.value); saveDraft({ scamPattern: e.target.value }); }}
+                  placeholder="例如：保證獲利／老師帶單…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>我的安全動作</div>
+                <textarea value={muscleSafeAction} onChange={(e) => { setMuscleSafeAction(e.target.value); saveDraft({ safeAction: e.target.value }); }}
+                  placeholder="例如：不加入群組、先跟家人討論…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
+          {layout === "trust-lists" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>黑名單摘要（低敏感）</div>
+                <textarea value={blackSummary} onChange={(e) => { setBlackSummary(e.target.value); saveDraft({ blackSummary: e.target.value }); }}
+                  placeholder="例如：保證獲利群組、假銀行凍結簡訊…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>白名單摘要（親自確認過）</div>
+                <textarea value={whiteSummary} onChange={(e) => { setWhiteSummary(e.target.value); saveDraft({ whiteSummary: e.target.value }); }}
+                  placeholder="例如：子女原電話、銀行官網客服…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
+          {layout === "list-entry" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-3)" }}>
+                {chapter.listEntryMode === "whitelist" ? "新增一筆白名單（親自確認過）" : "新增一筆黑名單（低敏感模式）"}
+              </div>
+              {[
+                { key: "entryType", label: chapter.listEntryMode === "whitelist" ? "可信對象" : "騙術類型", value: entryType, set: setEntryType, ph: "例如：假客服／A 銀行官方客服…" },
+                { key: "features", label: chapter.listEntryMode === "whitelist" ? "確認方式" : "可疑特徵", value: entryFeatures, set: setEntryFeatures, ph: "例如：從官網查到的電話／保證獲利…" },
+                { key: "safeAction", label: "安全動作", value: entrySafeAction, set: setEntrySafeAction, ph: "例如：掛斷後用白名單回撥…" },
+              ].map((row) => (
+                <div key={row.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{row.label}</div>
+                  <textarea value={row.value} onChange={(e) => {
+                    row.set(e.target.value);
+                    const patch = row.key === "entryType" ? { entryType: e.target.value } : row.key === "features" ? { features: e.target.value } : { safeAction: e.target.value };
+                    saveDraft(patch);
+                  }} placeholder={row.ph} rows={2}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "family-weekly" && (
+            <div style={{ marginBottom: 16 }}>
+              {(["看見了哪種新騙術", "更新了哪筆安全紀錄", "想提醒家人的一句話"] as const).map((label, i) => (
+                <div key={label} style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 4 }}>{i + 1}. {label}</div>
+                  <input value={familyLines[i]} onChange={(e) => {
+                    const next: [string, string, string] = [...familyLines] as [string, string, string];
+                    next[i] = e.target.value; setFamilyLines(next); saveDraft({ lines: next });
+                  }} placeholder={`${label}（不含個資）…`}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", boxSizing: "border-box" }} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "tr-light" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>T｜信賴光點</div>
+                <textarea value={trustAction} onChange={(e) => { setTrustAction(e.target.value); saveDraft({ trustAction: e.target.value }); }}
+                  placeholder="例如：重要通知只走白名單管道…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>R｜韌性／安全光點</div>
+                <textarea value={resilienceAction} onChange={(e) => { setResilienceAction(e.target.value); saveDraft({ resilienceAction: e.target.value }); }}
+                  placeholder="例如：心跳加快時先暫停…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
           {layout === "routes" && chapter.entries && chapter.entries.length > 0 && (
             <div style={{
               display: "grid", gridTemplateColumns: "1fr 1fr",
@@ -2147,7 +2735,15 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                   layout === "recipe-card" ||
                   layout === "photo-edit-safe" ||
                   layout === "photo-curate" ||
-                  layout === "sensory-habit"
+                  layout === "sensory-habit" ||
+                  layout === "verify-first" ||
+                  layout === "pause-reflex" ||
+                  layout === "rock-check" ||
+                  layout === "muscle-record" ||
+                  layout === "trust-lists" ||
+                  layout === "list-entry" ||
+                  layout === "family-weekly" ||
+                  layout === "tr-light"
                 ) {
                   saveDraft({ reflectNote: e.target.value });
                 } else if (picked) {
@@ -2623,7 +3219,112 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                   ))}
                 </div>
               )}
-              {layout === "photo-search" && chapter.photoSearchDemos && (
+              
+              {layout === "verify-first" && chapter.verifyFirstDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.verifyFirstDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>先：</strong>{demo.firstAction}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>再：</strong>{demo.thenAction}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
+                      <button type="button" onClick={() => applyVerifyFirstDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "pause-reflex" && chapter.pauseReflexDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.pauseReflexDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8 }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>練習：</strong>{chapter.pauseReflexOptions?.find((o) => o.id === demo.focusId)?.label ?? demo.focusId}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
+                      <button type="button" onClick={() => applyPauseReflexDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "rock-check" && chapter.rockCheckDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.rockCheckDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "#E8845A" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>模擬：</strong>{demo.scenario}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>疑點：</strong>{demo.flags.join("；")}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>安全：</strong>{demo.safeAction}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
+                      <button type="button" onClick={() => applyRockCheckDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid #E8845A", background: "var(--surface)", color: "#E8845A", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "muscle-record" && chapter.muscleRecordDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.muscleRecordDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8 }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>話術：</strong>{demo.scamPattern}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>動作：</strong>{demo.safeAction}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
+                      <button type="button" onClick={() => applyMuscleRecordDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "trust-lists" && chapter.trustListsDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.trustListsDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8 }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>黑：</strong>{demo.blackSummary}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>白：</strong>{demo.whiteSummary}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
+                      <button type="button" onClick={() => applyTrustListsDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "list-entry" && chapter.listEntryDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.listEntryDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8 }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>類型：</strong>{demo.entryType}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>特徵：</strong>{demo.features}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>安全：</strong>{demo.safeAction}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
+                      <button type="button" onClick={() => applyListEntryDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "family-weekly" && chapter.familyWeeklyDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.familyWeeklyDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8 }}>{demo.label}</div>
+                      <ol style={{ margin: "0 0 8px", paddingLeft: 20, fontSize: "var(--fs-xs)" }}>{demo.lines.map((l, i) => (<li key={i}>{l}</li>))}</ol>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
+                      <button type="button" onClick={() => applyFamilyWeeklyDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "tr-light" && chapter.trLightDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.trLightDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8 }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>T：</strong>{demo.trustAction}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>R：</strong>{demo.resilienceAction}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
+                      <button type="button" onClick={() => applyTrLightDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+{layout === "photo-search" && chapter.photoSearchDemos && (
                 <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
                   {chapter.photoSearchDemos.map((demo) => (
                     <div key={demo.id} style={{
@@ -2783,6 +3484,27 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
             {chapter.continueBody}
           </p>
 
+          {chapter.appDeepLink && (
+            <button
+              type="button"
+              onClick={() => {
+                trackEvent("chapter_app_deep_link", {
+                  chapter: chapter.id,
+                  href: chapter.appDeepLink!.href,
+                });
+                router.push(chapter.appDeepLink!.href);
+              }}
+              style={{
+                width: "100%", padding: "14px", marginBottom: 16,
+                background: "var(--surface)", border: "2px solid var(--primary)",
+                borderRadius: "var(--r-pill)", fontWeight: 800,
+                fontSize: "var(--fs-sm)", color: "var(--primary-deep)", cursor: "pointer",
+              }}
+            >
+              {chapter.appDeepLink.label}
+            </button>
+          )}
+
           <div style={{
             padding: 16, borderRadius: "var(--r-lg)",
             background: "linear-gradient(135deg, #FBE6D4 0%, #FFF8EE 100%)",
@@ -2906,6 +3628,21 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           captions={captions}
           pickedScenes={pickedScenes}
           planNote={planNote}
+          firstAction={firstAction}
+          thenAction={thenAction}
+          rockScenario={rockScenario}
+          rockFlags={rockFlags}
+          rockSafeAction={rockSafeAction}
+          scamPattern={scamPattern}
+          muscleSafeAction={muscleSafeAction}
+          blackSummary={blackSummary}
+          whiteSummary={whiteSummary}
+          entryType={entryType}
+          entryFeatures={entryFeatures}
+          entrySafeAction={entrySafeAction}
+          familyLines={familyLines}
+          trustAction={trustAction}
+          resilienceAction={resilienceAction}
         />
       </div>
     </>
@@ -3074,6 +3811,21 @@ function PrintCard({
   captions = ["", "", ""],
   pickedScenes = [],
   planNote = "",
+  firstAction = "",
+  thenAction = "",
+  rockScenario = "",
+  rockFlags = ["", "", ""],
+  rockSafeAction = "",
+  scamPattern = "",
+  muscleSafeAction = "",
+  blackSummary = "",
+  whiteSummary = "",
+  entryType = "",
+  entryFeatures = "",
+  entrySafeAction = "",
+  familyLines = ["", "", ""],
+  trustAction = "",
+  resilienceAction = "",
 }: {
   chapter: ChapterOpening;
   picked: string | null;
@@ -3120,6 +3872,21 @@ function PrintCard({
   captions?: [string, string, string];
   pickedScenes?: string[];
   planNote?: string;
+  firstAction?: string;
+  thenAction?: string;
+  rockScenario?: string;
+  rockFlags?: [string, string, string];
+  rockSafeAction?: string;
+  scamPattern?: string;
+  muscleSafeAction?: string;
+  blackSummary?: string;
+  whiteSummary?: string;
+  entryType?: string;
+  entryFeatures?: string;
+  entrySafeAction?: string;
+  familyLines?: [string, string, string];
+  trustAction?: string;
+  resilienceAction?: string;
 }) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const bgLabels = chapter.backgroundOptions

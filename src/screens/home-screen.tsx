@@ -189,12 +189,22 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
           onClick={onBookPractice}
           emoji="📖"
           title="書本練習"
-          subtitle="一拍、二問、三記下｜智慧啟航／感官覺醒"
+          subtitle="一拍、二問、三記下｜智慧啟航／感官覺醒／理財防詐"
           background="linear-gradient(135deg, #E8F5EE 0%, #FFFFFF 100%)"
           borderColor="#C3DDBB"
           iconBg="#D5E8CE"
         />
       )}
+
+      <NavCard
+        onClick={() => { window.location.href = "/smart/fraud"; }}
+        emoji="🛡"
+        title="安心保鑣"
+        subtitle="先暫停、後查證｜ROCK 練習與本機黑白名單"
+        background="linear-gradient(135deg, #E8F0FA 0%, #FFFFFF 100%)"
+        borderColor="#C5D4E8"
+        iconBg="#D6E4F5"
+      />
 
       {onSmart && (
         <NavCard
