@@ -212,6 +212,16 @@ export interface ChapterOpening {
   reflectPlaceholder?: string;
   continueTitle: string;
   continueBody: string;
+  /**
+   * 這章練習主要在哪裡完成（避免讀者以為 App 已有專屬功能）
+   * - nuannuan：暖暖可直接做
+   * - phone：請用手機系統功能（相簿／備忘錄／修圖）
+   * - paper：本頁填寫或列印即可
+   * - mixed：暖暖可陪練一部分（語音／相機），其餘在手機或紙本
+   */
+  practiceWhere?: "nuannuan" | "phone" | "paper" | "mixed";
+  /** 能力說明短句，顯示在「暖暖陪您繼續」上方 */
+  capabilityNote?: string;
   printCardTitle: string;
   printCardDescription?: string;
   printButtonLabel?: string;
@@ -274,7 +284,10 @@ export const CHAPTER_0100: ChapterOpening = {
   reflectPlaceholder: "例如：我比較想先試「問一句」，因為最近有很多想問的事…",
   continueTitle: "暖暖陪您繼續",
   continueBody:
-    "掃碼進入暖暖，聽 2 分鐘章首導讀，再選一條最適合您的啟航路線。",
+    "掃碼進入暖暖，可先讀章首導讀文字，再選一條啟航路線：問一句、拍一下、找照片，或記下一句話。",
+  practiceWhere: "nuannuan",
+  capabilityNote:
+    "四個入口都可在暖暖嘗試；章首導讀目前為文字版。",
   printCardTitle: "智慧啟航路線卡",
   printCardDescription: "沒有手機掃碼時，可列印下方路線卡，勾選今天想試的入口。",
   printButtonLabel: "列印啟航路線卡",
@@ -337,7 +350,10 @@ export const CHAPTER_0102: ChapterOpening = {
   reflectPlaceholder: "例如：幫我記得吃藥、幫我辨識食物熱量、陪我聊天解悶…",
   continueTitle: "暖暖陪您繼續",
   continueBody:
-    "掃碼進入暖暖，觀看 30 秒「找到手機 AI 入口」示範；不同手機也提供文字版路徑。",
+    "掃碼進入暖暖，可用語音試同一句話；下方也有文字版入口路徑。示範影片之後再補。",
+  practiceWhere: "mixed",
+  capabilityNote:
+    "暖暖提供語音試問；各品牌手機 AI 入口仍請在您的手機裡找。",
   printCardTitle: "常見入口辨識卡",
   printCardDescription:
     "沒有手機掃碼時，可列印這張卡，對照自己的手機品牌找入口。",
@@ -432,7 +448,9 @@ export const CHAPTER_0103: ChapterOpening = {
   reflectPlaceholder: "例如：補上「健康背景」和「想達成的目的」後，回答就具體多了…",
   continueTitle: "暖暖陪您繼續",
   continueBody:
-    "掃碼進入暖暖，聽三組「關鍵字變自然提問」示範，再完成一次改寫。",
+    "掃碼進入暖暖，可用語音試您改寫後的自然提問；本頁也可先完成改寫與列印。",
+  practiceWhere: "nuannuan",
+  capabilityNote: "改寫練習可在本頁完成；想再問一次，可進暖暖語音。",
   printCardTitle: "自然提問四格卡",
   printCardDescription:
     "可列印四格卡：關鍵字、補背景、自然提問、回望。填完可帶在身邊練習。",
@@ -495,7 +513,9 @@ export const CHAPTER_0104: ChapterOpening = {
   reflectPlaceholder: "例如：要不要改變作息可以我自己想，但調藥必須問醫生…",
   continueTitle: "暖暖陪您繼續",
   continueBody:
-    "掃碼進入暖暖，跟著一個生活案例練習「整理三點，不替我決定」。",
+    "掃碼進入暖暖，可用語音試「請 AI 整理」；決定權仍留在您手上。本頁也可先填完再列印。",
+  practiceWhere: "mixed",
+  capabilityNote: "暖暖可陪您試問整理；「真正要決定什麼」請自己填寫，不交給 AI。",
   printCardTitle: "三點一決定整理卡",
   printCardDescription:
     "可列印：繁雜的事、三個重點、可先做的下一步、我真正要決定的。",
@@ -558,7 +578,10 @@ export const CHAPTER_0105: ChapterOpening = {
   reflectPlaceholder: "例如：AI 說這是某種草藥，但能不能吃還要問藥師…",
   continueTitle: "暖暖陪您繼續",
   continueBody:
-    "掃碼進入暖暖，看 30 秒影像辨識示範，並練習分辨「可直接欣賞」與「需要查證」。",
+    "掃碼進入暖暖，可拍一下或從相簿選照片，用通用 AI 說明。請選低風險物品；結果僅供參考。",
+  practiceWhere: "mixed",
+  capabilityNote:
+    "暖暖相機目前以通用影像說明為主（非專用識物 App）。牽涉食用、安全請再查證。",
   printCardTitle: "影像辨識安全卡",
   printCardDescription:
     "可列印：拍的物品、AI 說了什麼、可直接欣賞或需查證、值得再查證的一點。",
@@ -570,8 +593,8 @@ export const CHAPTER_0105: ChapterOpening = {
     "可直接欣賞：認識路邊花草、看包裝上的外文說明——錯了頂多有趣，傷害不大。",
     "需要查證：跟吃、用藥、過敏、投資、詐騙有關——請再問專業人士或官方來源。",
   ],
-  guideFooterNote: "示範影片即將推出；目前請先閱讀下方文字案例。",
-  footerGuideLabel: "看 30 秒影像辨識示範",
+  guideFooterNote: "示範影片之後再補；目前請先用本頁案例與安全提醒練習。",
+  footerGuideLabel: "閱讀欣賞 vs 查證示範",
   visionSafetyTips: [
     {
       id: "ok",
@@ -622,12 +645,15 @@ export const CHAPTER_0106: ChapterOpening = {
   atAGlance:
     "這一章練習用「有溫度的詞」在相簿裡搜尋——海邊、生日、台南、咖啡、朋友——讓被淹沒的回憶重新浮上來。搜尋結果可能受備份設定與辨識準確度影響，私人照片請先確認雲端同步與分享權限。",
   tryPrompt:
-    "打開自己的相簿搜尋一個有溫度的詞，選出最觸動的一張，寫下一句回憶。",
+    "打開手機「照片／相簿」App，搜尋一個有溫度的詞，選出最觸動的一張，回到本頁寫下一句回憶。",
   reflectPrompt: "這張照片讓我想起了誰、哪裡，或哪一段人生？",
   reflectPlaceholder: "例如：想起在台南和老朋友一起喝咖啡的那個下午…",
   continueTitle: "暖暖陪您繼續",
   continueBody:
-    "掃碼進入暖暖，觀看「一個詞找回照片」微短劇，再完成一張私人回憶卡。",
+    "搜尋請在您的手機相簿完成（暖暖尚無相簿搜尋）。回來後可在本頁寫回憶、列印卡片，或點成光點。",
+  practiceWhere: "phone",
+  capabilityNote:
+    "請用手機系統相簿搜尋；暖暖幫您留下回憶與光點，不取代相簿功能。",
   printCardTitle: "相簿搜尋關鍵字卡",
   printCardDescription: "可列印：搜尋詞、觸動的一張、一句回憶、這張照片讓我想起…",
   printButtonLabel: "列印關鍵字卡",
@@ -638,8 +664,8 @@ export const CHAPTER_0106: ChapterOpening = {
     "具有搜尋功能的數位相簿，可以依日期、地點或影像內容提出候選，再由您找出真正想念的那一張。",
     "一個有溫度的詞，便可能讓一段回憶重新走回來。",
   ],
-  guideFooterNote: "微短劇即將推出；目前請先閱讀文字示範。",
-  footerGuideLabel: "觀看「一個詞找回照片」微短劇",
+  guideFooterNote: "微短劇之後再補；現在請先在手機相簿試搜尋，再回本頁寫下回憶。",
+  footerGuideLabel: "閱讀「一個詞找回照片」示範",
   warmKeywordSuggestions: ["海邊", "生日", "台南", "咖啡", "朋友"],
   photoSearchDemos: [
     {
@@ -671,12 +697,15 @@ export const CHAPTER_0107: ChapterOpening = {
   atAGlance:
     "這一章練習把稍縱即逝的靈感，用最小單位存進數位便條：一個標題、一句話、一個簡單標籤。請避免把密碼、驗證碼或完整敏感資料放進一般筆記。",
   tryPrompt:
-    "建立一則最簡單的筆記：標題「今天的小發現」，內容只寫一句真正想留下的話。",
+    "建立一則最簡單的筆記：標題「今天的小發現」，內容只寫一句真正想留下的話。（可貼到手機備忘錄）",
   reflectPrompt: "這句話為什麼值得送給未來的自己？",
   reflectPlaceholder: "例如：下次看到類似的花，我就能叫出名字了…",
   continueTitle: "暖暖陪您繼續",
   continueBody:
-    "掃碼進入暖暖，跟著 30 秒示範完成第一張數位便條，保存與否由您決定。",
+    "請在本頁寫好便條並複製到手機備忘錄或筆記 App。暖暖尚無獨立便條庫；也可把這句話點成光點。",
+  practiceWhere: "phone",
+  capabilityNote:
+    "便條請存進您的手機備忘錄；暖暖可幫您複製內容或點成光點，不取代筆記 App。",
   printCardTitle: "一句話便條模板",
   printCardDescription: "可列印：標題、一句話、標籤、送給未來的自己。",
   printButtonLabel: "列印便條模板",
@@ -687,8 +716,8 @@ export const CHAPTER_0107: ChapterOpening = {
     "不必一次建立複雜分類；最小的保存單位，可以只是一個標題、一句話與一個簡單標籤。",
     "先留下，再慢慢整理，比期待自己永遠記得更可靠。",
   ],
-  guideFooterNote: "30 秒示範影片即將推出；目前請先閱讀文字案例。",
-  footerGuideLabel: "看 30 秒數位便條示範",
+  guideFooterNote: "示範影片之後再補；現在請先在本頁寫好，再複製到手機備忘錄。",
+  footerGuideLabel: "閱讀數位便條示範",
   defaultNoteTitle: "今天的小發現",
   noteTagOptions: [
     { id: "discovery", label: "今天的小發現" },
@@ -732,7 +761,10 @@ export const CHAPTER_0108: ChapterOpening = {
   reflectPlaceholder: "例如：不只認識了那朵花，還留下一句可以跟家人分享的話…",
   continueTitle: "暖暖陪您繼續",
   continueBody:
-    "掃碼進入暖暖，看 30 秒三拍示範，跟著完成一次；可以直接離開，也可以選擇保存成果。",
+    "掃碼進入暖暖，可依序「拍一下→問一句」；「三記下」請寫在本頁或手機備忘錄，也可點成光點。",
+  practiceWhere: "mixed",
+  capabilityNote:
+    "一拍、二問可在暖暖完成；三記下可用本頁欄位、手機備忘錄，或點成光點。",
   printCardTitle: "數位華爾滋隨身卡",
   printCardDescription: "可列印：一拍、二問、三記下，以及這一次我帶走了什麼。",
   printButtonLabel: "列印隨身卡",
@@ -743,8 +775,8 @@ export const CHAPTER_0108: ChapterOpening = {
     "一拍：看到想了解的，先拍下來。二問：用自然的話問一句。三記下：從回答裡選出最有用的一句，存進便條。",
     "當您完成一次「看見、理解、保存」，就親手完成了一個可重複的生活流程。",
   ],
-  guideFooterNote: "30 秒三拍示範即將推出；目前請先閱讀文字案例。",
-  footerGuideLabel: "看 30 秒三拍示範",
+  guideFooterNote: "示範影片之後再補；請先跟著本頁三步驟做一次。",
+  footerGuideLabel: "閱讀三拍示範",
   smartFlowDemos: [
     {
       id: "flower",
@@ -960,6 +992,21 @@ export function chapterCameraTryHref(chapterId: string): string {
 export function chapterPhotoTryHref(chapterId: string): string {
   const params = new URLSearchParams({ open: "photo", from: `chapter${chapterId}` });
   return `/?${params.toString()}`;
+}
+
+export function practiceWhereLabel(
+  where: NonNullable<ChapterOpening["practiceWhere"]>
+): string {
+  switch (where) {
+    case "phone":
+      return "請在手機完成";
+    case "paper":
+      return "本頁／紙本即可完成";
+    case "mixed":
+      return "暖暖可陪練一部分";
+    default:
+      return "可在暖暖完成";
+  }
 }
 
 /** 章節練習 → 光點來源（例：0104 → chapter0104） */

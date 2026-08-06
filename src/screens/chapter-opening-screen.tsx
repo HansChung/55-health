@@ -33,6 +33,7 @@ import {
   chapterSparkHref,
   chapterSparkSource,
   chapterVoiceTryHref,
+  practiceWhereLabel,
   saveChapterSparkSeed,
   type ChapterVisionDraft,
   type ChapterPhotoSearchDraft,
@@ -1310,7 +1311,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                 fontSize: "var(--fs-xs)", color: "var(--ink-3)", margin: "10px 0 0",
                 lineHeight: 1.5,
               }}>
-                提示：請在手機「照片／相簿」App 內使用搜尋；結果可能受備份設定與辨識準確度影響。
+                提示：搜尋請在手機「照片／相簿」App 完成（暖暖尚無相簿搜尋）；結果可能受備份設定與辨識準確度影響。回本頁寫下回憶即可。
               </p>
             </div>
           )}
@@ -2748,6 +2749,33 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           )}
 
           <SectionLabel>{chapter.continueTitle}</SectionLabel>
+          {chapter.capabilityNote && (
+            <div style={{
+              marginBottom: 12, padding: "12px 14px", borderRadius: 12,
+              background:
+                chapter.practiceWhere === "phone"
+                  ? "#F5EEF8"
+                  : chapter.practiceWhere === "paper"
+                    ? "var(--surface-warm)"
+                    : "var(--primary-soft)",
+              border: "1px solid var(--line)",
+            }}>
+              {chapter.practiceWhere && (
+                <div style={{
+                  fontSize: "var(--fs-xs)", fontWeight: 800,
+                  color: "var(--primary-deep)", marginBottom: 4,
+                }}>
+                  {practiceWhereLabel(chapter.practiceWhere)}
+                </div>
+              )}
+              <p style={{
+                fontSize: "var(--fs-xs)", color: "var(--ink-2)",
+                lineHeight: 1.55, margin: 0,
+              }}>
+                {chapter.capabilityNote}
+              </p>
+            </div>
+          )}
           <p style={{
             fontSize: "var(--fs-sm)", color: "var(--ink-2)",
             lineHeight: 1.6, margin: "0 0 16px",

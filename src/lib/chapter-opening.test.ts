@@ -18,6 +18,7 @@ import {
   getChapterDeepLinkHint,
   getChapterOpening,
   isSparkSource,
+  practiceWhereLabel,
 } from "./chapter-opening";
 
 describe("chapter-opening", () => {
@@ -128,6 +129,19 @@ describe("chapter-opening", () => {
     expect(chapterCameraTryHref("0105")).toContain("open=camera");
     expect(chapterPhotoTryHref("0105")).toContain("open=photo");
     expect(chapterCameraTryHref("0105")).toContain("from=chapter0105");
+  });
+
+  it("getChapterOpening 0208 photo-search is phone practice", () => {
+    const ch = getChapterOpening("0208");
+    expect(ch?.practiceWhere).toBe("phone");
+    expect(ch?.capabilityNote).toContain("手機系統相簿");
+    expect(ch?.continueBody).toContain("手機相簿");
+  });
+
+  it("practiceWhereLabel", () => {
+    expect(practiceWhereLabel("phone")).toBe("請在手機完成");
+    expect(practiceWhereLabel("paper")).toBe("本頁／紙本即可完成");
+    expect(practiceWhereLabel("mixed")).toBe("暖暖可陪練一部分");
   });
 
   it("未知章節回 null", () => {

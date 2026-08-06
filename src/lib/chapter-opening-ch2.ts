@@ -19,7 +19,10 @@ export const CHAPTER_0200: ChapterOpening = {
   reflectPlaceholder: "例如：最近常經過的路邊花，我想知道名字…",
   continueTitle: "暖暖陪您繼續",
   continueBody:
-    "掃碼進入暖暖，聽 2 分鐘章首導讀，再選一條自己的感官覺醒路線。",
+    "掃碼進入暖暖，可先讀章首導讀文字，再選一條感官覺醒路線。各課會標明：請在暖暖、手機或紙本完成。",
+  practiceWhere: "mixed",
+  capabilityNote:
+    "本章有的在暖暖（拍／問）、有的在手機相簿或紙本完成；進入各課會清楚標示。",
   printCardTitle: "感官覺醒路線卡",
   printCardDescription: "可列印：圈選最想重新看懂的場景與回望。",
   printButtonLabel: "列印路線卡",
@@ -30,14 +33,14 @@ export const CHAPTER_0200: ChapterOpening = {
     "看到不懂的花、外文菜單、商品標籤、一道料理或一張老照片，都可以先停一下、拍下來，再用自然的話問一句。",
     "本章從自然、旅行、消費與飲食，走到相簿、修圖與人生策展。每一步都可以選擇做或不做，也可以隨時重來。",
   ],
-  guideFooterNote: "語音版導讀即將推出；目前請先閱讀以上文字。",
-  footerGuideLabel: "聽／讀 2 分鐘章首導讀",
+  guideFooterNote: "語音版導讀之後再補；目前請先閱讀以上文字。",
+  footerGuideLabel: "閱讀 2 分鐘章首導讀",
   entries: [
     { id: "flower", label: "自然｜花", hint: "路邊小花、植物", emoji: "🌸", href: "/smart/chapter/0202" },
     { id: "menu", label: "旅行｜菜單", hint: "外文菜單、點餐", emoji: "🍽", href: "/smart/chapter/0203" },
     { id: "product", label: "消費｜商品", hint: "標籤、規格比較", emoji: "🏷", href: "/smart/chapter/0204" },
     { id: "dish", label: "飲食｜料理", hint: "一道餐點、食材", emoji: "🥗", href: "/smart/chapter/0206" },
-    { id: "album", label: "相簿｜照片", hint: "搜尋、喚回回憶", emoji: "🖼", href: "/smart/chapter/0208" },
+    { id: "album", label: "相簿｜照片", hint: "搜尋請用手機相簿", emoji: "🖼", href: "/smart/chapter/0208" },
   ],
 };
 
@@ -58,7 +61,10 @@ export const CHAPTER_0201: ChapterOpening = {
   reflectPlaceholder: "例如：今天認識了○○，我注意到○○…",
   continueTitle: "暖暖陪您繼續",
   continueBody:
-    "掃碼進入暖暖，看 30 秒三拍示範，跟著完成一次；成果是否保存由您決定。",
+    "掃碼進入暖暖，可依序「拍一下→問一句」；「三記下」請寫在本頁或手機備忘錄，也可點成光點。",
+  practiceWhere: "mixed",
+  capabilityNote:
+    "一拍、二問可在暖暖完成；三記下用本頁欄位、手機備忘錄，或點成光點即可。",
   printCardTitle: "數位華爾滋隨身卡",
   printCardDescription: "可列印：一拍、二問、三記下，以及今天留下的那句話。",
   printButtonLabel: "列印隨身卡",
@@ -69,8 +75,8 @@ export const CHAPTER_0201: ChapterOpening = {
     "一拍：把眼前不懂的事物拍下來。二問：用自己的話問 AI 一句。三記下：選出真正有用的一句保存。",
     "若答案牽涉安全、健康或重要選擇，可加問：「我還需要向哪裡確認？」",
   ],
-  guideFooterNote: "示範影片即將推出；目前請先閱讀文字案例。",
-  footerGuideLabel: "看 30 秒三拍示範",
+  guideFooterNote: "示範影片之後再補；請先跟著本頁三步驟做一次。",
+  footerGuideLabel: "閱讀三拍示範",
   smartFlowDemos: [
     {
       id: "waltz",
@@ -99,7 +105,11 @@ export const CHAPTER_0202: ChapterOpening = {
   reflectPrompt: "AI 的哪一點回答，需要我再查證？",
   reflectPlaceholder: "例如：能不能觸碰或採摘，需要查圖鑑…",
   continueTitle: "暖暖陪您繼續",
-  continueBody: "掃碼進入暖暖，看一段識花微示範，完成一張植物發現卡。",
+  continueBody:
+    "掃碼進入暖暖，可拍一下請通用 AI 說明。這不是專用識花 App；食用、藥用、寵物安全請再查證。",
+  practiceWhere: "mixed",
+  capabilityNote:
+    "暖暖可陪您拍照提問；結果僅供參考，不等於植物學鑑定。",
   printCardTitle: "植物辨識查證卡",
   printCardDescription: "可列印：拍的植物、AI 摘要、需查證的一點、今天認識了…",
   printButtonLabel: "列印查證卡",
@@ -110,8 +120,8 @@ export const CHAPTER_0202: ChapterOpening = {
     "AI 依影像提出可能答案，不等於植物學鑑定；欣賞名稱可以，食用藥用要查證。",
     "留下一句：「今天認識了＿＿，我注意到＿＿。」",
   ],
-  guideFooterNote: "微示範影片即將推出；目前請先閱讀文字案例。",
-  footerGuideLabel: "看識花微示範",
+  guideFooterNote: "微示範影片之後再補；目前請先用本頁案例練習。",
+  footerGuideLabel: "閱讀識花示範",
   visionSafetyTips: [
     {
       id: "ok",
@@ -152,7 +162,11 @@ export const CHAPTER_0203: ChapterOpening = {
   reflectPrompt: "哪一項資訊一定要向店家確認？",
   reflectPlaceholder: "例如：是否含堅果、能否做少辣…",
   continueTitle: "暖暖陪您繼續",
-  continueBody: "掃碼進入暖暖，聽一段點餐情境，完成一張旅行點菜卡。",
+  continueBody:
+    "掃碼進入暖暖，可拍照或語音請 AI 協助翻譯。暖暖沒有專用翻譯功能；點餐前請務必向店家確認。",
+  practiceWhere: "mixed",
+  capabilityNote:
+    "暖暖可陪您翻譯與整理選項；過敏與實際菜色請向現場人員確認。",
   printCardTitle: "安心點餐確認卡",
   printCardDescription: "可列印：菜單摘要、飲食需要、需向店家確認的事項。",
   printButtonLabel: "列印點菜卡",
@@ -163,8 +177,8 @@ export const CHAPTER_0203: ChapterOpening = {
     "AI 整理可能選項，但菜名與食材仍可能因店家而不同。",
     "若有嚴重過敏，應使用過敏翻譯卡或尋求專業協助。",
   ],
-  guideFooterNote: "情境音頻即將推出；目前請先閱讀文字案例。",
-  footerGuideLabel: "聽點餐情境",
+  guideFooterNote: "情境音頻之後再補；目前請先用本頁完成翻譯與確認欄位。",
+  footerGuideLabel: "閱讀點餐情境",
   menuDemos: [
     {
       id: "jp",
@@ -192,7 +206,11 @@ export const CHAPTER_0204: ChapterOpening = {
   reflectPrompt: "哪一個條件最影響我的最後決定？",
   reflectPlaceholder: "例如：使用頻率、收納空間、保固…",
   continueTitle: "暖暖陪您繼續",
-  continueBody: "掃碼進入暖暖，跟著一個生活案例完成價值比較卡。",
+  continueBody:
+    "掃碼進入暖暖，可拍照或語音請 AI 協助整理差異。購買決定請您自己做；本頁也可先填完三問卡。",
+  practiceWhere: "mixed",
+  capabilityNote:
+    "暖暖可整理差異與待確認事項；需要、適合、值得，仍由您判斷。",
   printCardTitle: "需要、適合、值得三問卡",
   printCardDescription: "可列印：兩件商品、三項差異、待確認、最影響決定的一項。",
   printButtonLabel: "列印三問卡",
@@ -203,8 +221,8 @@ export const CHAPTER_0204: ChapterOpening = {
     "AI 比較可能不完整；購買前仍要查看正式標示、保固與可靠評價。",
     "回到使用頻率、預算、收納空間與真正需求。",
   ],
-  guideFooterNote: "案例影片即將推出；目前請先閱讀文字示範。",
-  footerGuideLabel: "看價值比較案例",
+  guideFooterNote: "案例影片之後再補；目前請先用本頁完成比較練習。",
+  footerGuideLabel: "閱讀價值比較案例",
   productCompareDemos: [
     {
       id: "kettle",
@@ -233,19 +251,22 @@ export const CHAPTER_0205: ChapterOpening = {
   reflectPrompt: "哪一個新理解，讓我想繼續探索？",
   reflectPlaceholder: "例如：原來雲的顏色跟水滴大小有關…",
   continueTitle: "暖暖陪您繼續",
-  continueBody: "掃碼進入暖暖，聽 2 分鐘好奇心音頻，完成一張今日問題卡。",
+  continueBody:
+    "掃碼進入暖暖，可用語音問出您的好奇心問題；本頁也可先寫好再列印問題卡。",
+  practiceWhere: "nuannuan",
+  capabilityNote: "好奇提問很適合用語音；重要資訊仍請再查可靠來源。",
   printCardTitle: "每日好奇問題卡",
   printCardDescription: "可列印：今天的問題、新理解、想繼續探索的一點。",
   printButtonLabel: "列印問題卡",
-  guideTitle: "好奇心音頻",
+  guideTitle: "好奇心導讀",
   guideDuration: "約 2 分鐘",
   guideParagraphs: [
     "生活裡常有一閃而過的疑問；願意問，就是學習的開始。",
     "可以追問：「這和我的生活有什麼關係？」或「可以舉一個日常例子嗎？」",
     "學習的目的不是收集所有答案，而是知道哪些事情值得再走一步。",
   ],
-  guideFooterNote: "音頻即將推出；目前請先閱讀文字導讀。",
-  footerGuideLabel: "聽 2 分鐘好奇心音頻",
+  guideFooterNote: "音頻之後再補；目前請先閱讀文字導讀並完成今日問題。",
+  footerGuideLabel: "閱讀好奇心導讀",
   curiosityDemos: [
     {
       id: "cloud",
@@ -272,7 +293,11 @@ export const CHAPTER_0206: ChapterOpening = {
   reflectPrompt: "今天哪一項觀察最貼近我的生活？",
   reflectPlaceholder: "例如：這道菜蔬菜顏色很豐富…",
   continueTitle: "暖暖陪您繼續",
-  continueBody: "掃碼進入暖暖，看一段餐桌示範，完成一張溫和飲食觀察卡。",
+  continueBody:
+    "掃碼進入暖暖，可拍餐點做溫和觀察。這不是營養診斷；有過敏或特殊飲食請查標示或問專業人員。",
+  practiceWhere: "nuannuan",
+  capabilityNote:
+    "暖暖相機適合餐點觀察練習；請把結果當參考，不是醫療建議。",
   printCardTitle: "一道菜觀察卡",
   printCardDescription: "可列印：餐點、可能食材、溫和觀察、最貼近生活的一項。",
   printButtonLabel: "列印觀察卡",
@@ -283,8 +308,8 @@ export const CHAPTER_0206: ChapterOpening = {
     "不必把每一餐變成考試；可以只觀察顏色、蔬菜與蛋白質來源。",
     "身體感受與實際需要仍由您掌握。",
   ],
-  guideFooterNote: "示範影片即將推出；目前請先閱讀文字案例。",
-  footerGuideLabel: "看餐桌示範",
+  guideFooterNote: "示範影片之後再補；目前請先用本頁完成觀察練習。",
+  footerGuideLabel: "閱讀餐桌示範",
   visionSafetyTips: [
     {
       id: "ok",
@@ -325,7 +350,11 @@ export const CHAPTER_0207: ChapterOpening = {
   reflectPrompt: "一週後，我願意保留哪一個小變化？",
   reflectPlaceholder: "例如：午餐多選一份綠色蔬菜…",
   continueTitle: "暖暖陪您繼續",
-  continueBody: "掃碼進入暖暖，使用可填寫食譜卡；不想保存也可只看範例。",
+  continueBody:
+    "請直接在本頁填寫並可列印。暖暖尚無「食譜庫回看」功能；想留下痕跡可點成光點。",
+  practiceWhere: "paper",
+  capabilityNote:
+    "本頁即可完成食譜卡；沒有雲端食譜庫，請用列印或光點保存重點。",
   printCardTitle: "五色高纖食譜卡",
   printCardDescription: "可列印：料理名稱、顏色、纖維來源、一句感受。",
   printButtonLabel: "列印食譜卡",
@@ -336,7 +365,7 @@ export const CHAPTER_0207: ChapterOpening = {
     "AI 可協助整理文字，但照片辨識與營養推估都可能不準確。",
     "一週後回看三到五張卡，找出一個願意保留的小變化。",
   ],
-  guideFooterNote: "互動食譜卡即將推出；目前請先使用下方欄位。",
+  guideFooterNote: "請先使用下方欄位完成一張卡；雲端回看之後再補。",
   footerGuideLabel: "看食譜卡範例",
   recipeCardDemos: [
     {
@@ -360,24 +389,29 @@ export const CHAPTER_0208: ChapterOpening = {
   accentGradient: "linear-gradient(180deg, #F5EEF8 0%, transparent 55%)",
   quote: "一個有溫度的詞，可以讓被埋沒的回憶重新浮現。",
   atAGlance:
-    "輸入海邊、生日、台南、朋友等詞，讓相簿提出候選，再由您找出真正想找的照片。請先確認雲端同步與分享權限。",
-  tryPrompt: "在自己的相簿搜尋一個有溫度的詞，選一張照片寫下一句回憶。",
+    "請在手機「照片／相簿」App 搜尋海邊、生日、台南、朋友等詞。暖暖尚無相簿搜尋；回來後可在本頁寫回憶與列印。",
+  tryPrompt:
+    "打開手機相簿，搜尋一個有溫度的詞，選一張照片，回到本頁寫下一句回憶。",
   reflectPrompt: "這張照片讓我想起誰、哪裡或哪段人生？",
   reflectPlaceholder: "例如：想起在台南與老朋友散步的那個黃昏…",
   continueTitle: "暖暖陪您繼續",
-  continueBody: "掃碼進入暖暖，看相簿搜尋微短劇，完成一張私人回憶卡。",
+  continueBody:
+    "搜尋請在您的手機相簿完成。回本頁寫下回憶、列印卡片，或把這句話點成光點。",
+  practiceWhere: "phone",
+  capabilityNote:
+    "請用手機系統相簿搜尋；暖暖幫您留下回憶與光點，不取代相簿功能。",
   printCardTitle: "相簿搜尋關鍵字卡",
   printCardDescription: "可列印：搜尋詞、一句回憶、這張照片讓我想起…",
   printButtonLabel: "列印關鍵字卡",
-  guideTitle: "相簿搜尋微短劇",
-  guideDuration: "微短劇",
+  guideTitle: "相簿搜尋示範",
+  guideDuration: "文字案例",
   guideParagraphs: [
     "手機裡有很多照片，真正想找時卻常滑不到。",
     "搜尋讓相簿從堆疊檔案，變成會回應的記憶花園。",
     "選出一張最有感覺的照片，寫下一句回憶。",
   ],
-  guideFooterNote: "微短劇即將推出；目前請先閱讀文字案例。",
-  footerGuideLabel: "看相簿搜尋微短劇",
+  guideFooterNote: "微短劇之後再補；現在請先在手機相簿試搜尋，再回本頁書寫。",
+  footerGuideLabel: "閱讀相簿搜尋示範",
   warmKeywordSuggestions: ["海邊", "生日", "台南", "咖啡", "朋友"],
   photoSearchDemos: [
     {
@@ -400,12 +434,17 @@ export const CHAPTER_0209: ChapterOpening = {
   accentGradient: CH2_ACCENT,
   quote: "先備份原檔，再移除干擾；修圖可以整理回憶，不應改寫事實。",
   atAGlance:
-    "先複製一份照片或確認原檔仍在，再移除小範圍干擾。證件、新聞、交易或需真實性的照片，不應誤導；涉及他人影像要尊重隱私。",
-  tryPrompt: "挑一張非重要紀錄照片，先備份，再移除一個小干擾並比較前後。",
+    "請用手機系統的照片編輯功能練習。開始前先複製一份或確認原檔仍在。證件、新聞、交易或需真實性的照片，不應誤導。",
+  tryPrompt:
+    "挑一張非重要紀錄照片，在手機相簿先備份，再移除一個小干擾並比較前後；回本頁勾選檢查清單。",
   reflectPrompt: "修改後更接近我想留下的感受嗎？",
   reflectPlaceholder: "例如：路人走開後，焦點回到孫子的笑容…",
   continueTitle: "暖暖陪您繼續",
-  continueBody: "掃碼進入暖暖，看 30 秒前後比較示範與原檔備份清單。",
+  continueBody:
+    "修圖請在手機照片編輯完成（暖暖尚無橡皮擦功能）。本頁幫您完成「先備份、再比較」的安全檢查。",
+  practiceWhere: "phone",
+  capabilityNote:
+    "請用手機系統修圖；暖暖提供安全檢查卡與回望，不提供生成式擦除。",
   printCardTitle: "安全修圖檢查卡",
   printCardDescription: "可列印：已備份原檔、移除項目、前後感受比較。",
   printButtonLabel: "列印檢查卡",
@@ -416,8 +455,8 @@ export const CHAPTER_0209: ChapterOpening = {
     "開始前先複製一份；結果不理想可以撤回或保留原貌。",
     "修圖是整理回憶，不是改寫事實。",
   ],
-  guideFooterNote: "示範影片即將推出；目前請先閱讀文字案例。",
-  footerGuideLabel: "看 30 秒修圖示範",
+  guideFooterNote: "示範影片之後再補；請先在手機完成修圖，再回本頁填寫檢查卡。",
+  footerGuideLabel: "閱讀安全修圖要點",
   photoEditDemos: [
     {
       id: "passerby",
@@ -439,12 +478,16 @@ export const CHAPTER_0210: ChapterOpening = {
   accentGradient: "linear-gradient(180deg, #E8F0FA 0%, transparent 55%)",
   quote: "三張照片、一個主題，就能把零散記錄變成自己的生活作品。",
   atAGlance:
-    "選三張照片、取一個主題，為每張寫一句說明。不需要公開，哪些照片值得留下、是否與他人分享，都由您決定。",
-  tryPrompt: "選三張照片，取一個主題，為每張寫一句說明。",
+    "在手機相簿選三張照片，回到本頁取一個主題、為每張寫一句說明。不需要公開，也不必上傳照片到暖暖。",
+  tryPrompt: "在手機相簿選三張照片，取一個主題，為每張寫一句說明。",
   reflectPrompt: "這組照片最想替我保留什麼？",
   reflectPlaceholder: "例如：這一段時間我們常一起出門散步…",
   continueTitle: "暖暖陪您繼續",
-  continueBody: "掃碼進入暖暖，看 4–6 張微型作品集範例，再完成私人策展卡。",
+  continueBody:
+    "選照片請在手機相簿完成；策展卡請在本頁填寫或列印。暖暖尚無作品集相簿功能。",
+  practiceWhere: "paper",
+  capabilityNote:
+    "照片留在您的手機；暖暖幫您整理主題與說明，並可點成光點。",
   printCardTitle: "三張照片策展卡",
   printCardDescription: "可列印：主題、三張照片各一句說明、最想保留的意義。",
   printButtonLabel: "列印策展卡",
@@ -455,8 +498,8 @@ export const CHAPTER_0210: ChapterOpening = {
     "例如「我走過的海邊」「家裡的味道」「和朋友的好時光」。",
     "策展不是包裝得完美，而是重新看見自己走過的路。",
   ],
-  guideFooterNote: "作品集範例即將推出；目前請先閱讀文字案例。",
-  footerGuideLabel: "看微型作品集範例",
+  guideFooterNote: "作品集瀏覽之後再補；目前請先用本頁完成私人策展卡。",
+  footerGuideLabel: "閱讀微型作品集範例",
   photoCurateDemos: [
     {
       id: "sea",
@@ -487,7 +530,11 @@ export const CHAPTER_0211: ChapterOpening = {
   reflectPrompt: "哪一種生活場景，最容易讓我自然重新開始？",
   reflectPlaceholder: "例如：散步時看到花、吃外食時看菜單…",
   continueTitle: "暖暖陪您繼續",
-  continueBody: "掃碼進入暖暖，參加七天溫和挑戰；沒有連續紀錄也不會失敗。",
+  continueBody:
+    "請在本頁規劃三天並可列印七天卡。暖暖尚無連續打卡；沒有紀錄也不會失敗，隨時能重新開始。",
+  practiceWhere: "paper",
+  capabilityNote:
+    "這是溫和計劃，不是打卡競賽；本頁／紙本即可完成，也可把一句話點成光點。",
   printCardTitle: "七天感官覺醒卡",
   printCardDescription: "可列印：選三天、各場景打勾、最容易重新開始的場景。",
   printButtonLabel: "列印七天卡",
@@ -498,22 +545,22 @@ export const CHAPTER_0211: ChapterOpening = {
     "AI 的回答需要判斷；重要資訊要查證，私人內容要保護。",
     "當看見、提問、保存成為生活反射，感官便重新打開。",
   ],
-  guideFooterNote: "挑戰紀錄功能即將推出；目前請先用下方欄位規劃。",
-  footerGuideLabel: "參加七天溫和挑戰",
+  guideFooterNote: "沒有連續紀錄功能；請用下方欄位或紙本卡自己規劃即可。",
+  footerGuideLabel: "閱讀七天溫和挑戰說明",
   habitSceneOptions: [
     { id: "nature", label: "自然｜看見一朵花", hint: "0202 識花" },
     { id: "menu", label: "旅行｜看懂菜單", hint: "0203 點餐" },
     { id: "shop", label: "消費｜比較商品", hint: "0204 價值" },
     { id: "ask", label: "知識｜問一個問題", hint: "0205 好奇" },
     { id: "food", label: "飲食｜觀察一道菜", hint: "0206 餐桌" },
-    { id: "album", label: "相簿｜找回照片", hint: "0208 搜尋" },
+    { id: "album", label: "相簿｜找回照片", hint: "0208 搜尋（手機相簿）" },
   ],
   habitDemos: [
     {
       id: "week",
       label: "案例｜溫和三天計畫",
       pickedScenes: ["nature", "food", "album"],
-      planNote: "週二散步識花、週四午餐觀察、週日搜尋「朋友」。",
+      planNote: "週二散步識花、週四午餐觀察、週日在手機相簿搜尋「朋友」。",
       reflectNote: "散步時最容易自然停下來看見新事物。",
     },
   ],
