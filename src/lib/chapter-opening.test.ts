@@ -105,6 +105,29 @@ describe("chapter-opening", () => {
     expect(ch?.habitSceneOptions?.length).toBeGreaterThan(3);
   });
 
+  it("getChapterOpening 0700–0710 chapter 7", () => {
+    const hub = getChapterOpening("0700");
+    expect(hub?.layout).toBe("routes");
+    expect(hub?.title).toContain("城市漫遊");
+    expect(hub?.entries).toHaveLength(4);
+
+    expect(getChapterOpening("0701")?.layout).toBe("city-radius");
+    expect(getChapterOpening("0702")?.layout).toBe("day-rehearsal");
+    expect(getChapterOpening("0702")?.samplePrompt).toContain("不要把行程塞滿");
+    expect(getChapterOpening("0703")?.layout).toBe("moment-place");
+    expect(getChapterOpening("0704")?.layout).toBe("pass-prep");
+    expect(getChapterOpening("0704")?.practiceWhere).toBe("phone");
+    expect(getChapterOpening("0705")?.layout).toBe("safe-corner");
+    expect(getChapterOpening("0706")?.layout).toBe("activity-guide");
+    expect(getChapterOpening("0707")?.layout).toBe("curiosity-ask");
+    expect(getChapterOpening("0708")?.layout).toBe("elegant-replan");
+    expect(getChapterOpening("0709")?.layout).toBe("three-sight");
+    const lights = getChapterOpening("0710");
+    expect(lights?.layout).toBe("city-lights");
+    expect(lights?.appDeepLink?.href).toBe("/smart/radar");
+    expect(lights?.capabilityNote).toContain("圓夢藍圖");
+  });
+
   it("buildMenuTranslatePrompt", () => {
     expect(buildMenuTranslatePrompt("少辣")).toContain("少辣");
   });

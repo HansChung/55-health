@@ -54,6 +54,26 @@ import {
   type ChapterPhotoEditDraft,
   type ChapterPhotoCurateDraft,
   type ChapterSensoryHabitDraft,
+  type CityRadiusDemo,
+  type DayRehearsalDemo,
+  type MomentPlaceDemo,
+  type PassPrepDemo,
+  type SafeCornerDemo,
+  type ActivityGuideDemo,
+  type ElegantReplanDemo,
+  type ThreeSightDemo,
+  type CityLightsDemo,
+  type ChapterCityRadiusDraft,
+  type ChapterDayRehearsalDraft,
+  type ChapterMomentPlaceDraft,
+  type ChapterPassPrepDraft,
+  type ChapterSafeCornerDraft,
+  type ChapterActivityGuideDraft,
+  type ChapterElegantReplanDraft,
+  type ChapterThreeSightDraft,
+  type ChapterCityLightsDraft,
+  buildDayRehearsalPrompt,
+  buildUrbanDayCirclePrompt,
 } from "@/lib/chapter-opening";
 import { trackEvent } from "@/lib/telemetry";
 import { useToast } from "@/hooks/use-toast";
@@ -113,6 +133,42 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const [captions, setCaptions] = useState<[string, string, string]>(["", "", ""]);
   const [pickedScenes, setPickedScenes] = useState<string[]>([]);
   const [planNote, setPlanNote] = useState("");
+  const [cityPlace, setCityPlace] = useState("");
+  const [cityMeaning, setCityMeaning] = useState("");
+  const [fromPlace, setFromPlace] = useState("");
+  const [toPlace, setToPlace] = useState("");
+  const [restPoint, setRestPoint] = useState("");
+  const [rehearsalBackup, setRehearsalBackup] = useState("");
+  const [officialCheck, setOfficialCheck] = useState("");
+  const [momentActivity, setMomentActivity] = useState("");
+  const [departAt, setDepartAt] = useState("");
+  const [arriveAt, setArriveAt] = useState("");
+  const [restAt, setRestAt] = useState("");
+  const [returnAt, setReturnAt] = useState("");
+  const [ticketWhere, setTicketWhere] = useState("");
+  const [openHow, setOpenHow] = useState("");
+  const [officialSource, setOfficialSource] = useState("");
+  const [passBackup, setPassBackup] = useState("");
+  const [safeDestination, setSafeDestination] = useState("");
+  const [routeNote, setRouteNote] = useState("");
+  const [restSpot, setRestSpot] = useState("");
+  const [cornerBackup, setCornerBackup] = useState("");
+  const [activityType, setActivityType] = useState("");
+  const [activityDuration, setActivityDuration] = useState("");
+  const [restStyle, setRestStyle] = useState("");
+  const [transitPref, setTransitPref] = useState("");
+  const [companion, setCompanion] = useState("");
+  const [replanTrigger, setReplanTrigger] = useState("");
+  const [planA, setPlanA] = useState("");
+  const [planB, setPlanB] = useState("");
+  const [softReminder, setSoftReminder] = useState("");
+  const [sawNote, setSawNote] = useState("");
+  const [feltNote, setFeltNote] = useState("");
+  const [bringHome, setBringHome] = useState("");
+  const [lightArrange, setLightArrange] = useState("");
+  const [lightVerify, setLightVerify] = useState("");
+  const [lightReplan, setLightReplan] = useState("");
+  const [lightKeep, setLightKeep] = useState("");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -248,7 +304,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           if (d.reflectNote) setReflectNote(d.reflectNote);
         }
       }
-      if (layout === "sensory-habit") {
+            if (layout === "sensory-habit") {
         const draftRaw = localStorage.getItem(draftKey);
         if (draftRaw) {
           const d = JSON.parse(draftRaw) as ChapterSensoryHabitDraft;
@@ -257,10 +313,120 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           if (d.reflectNote) setReflectNote(d.reflectNote);
         }
       }
+      const layoutKeyLoad: string = layout;
+      if (layoutKeyLoad === "city-radius") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterCityRadiusDraft;
+          if (d.place) setCityPlace(d.place);
+          if (d.meaning) setCityMeaning(d.meaning);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "day-rehearsal") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterDayRehearsalDraft;
+          if (d.fromPlace) setFromPlace(d.fromPlace);
+          if (d.toPlace) setToPlace(d.toPlace);
+          if (d.restPoint) setRestPoint(d.restPoint);
+          if (d.backup) setRehearsalBackup(d.backup);
+          if (d.officialCheck) setOfficialCheck(d.officialCheck);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "moment-place") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterMomentPlaceDraft;
+          if (d.activity) setMomentActivity(d.activity);
+          if (d.departAt) setDepartAt(d.departAt);
+          if (d.arriveAt) setArriveAt(d.arriveAt);
+          if (d.restAt) setRestAt(d.restAt);
+          if (d.returnAt) setReturnAt(d.returnAt);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "pass-prep") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterPassPrepDraft;
+          if (d.ticketWhere) setTicketWhere(d.ticketWhere);
+          if (d.openHow) setOpenHow(d.openHow);
+          if (d.officialSource) setOfficialSource(d.officialSource);
+          if (d.backup) setPassBackup(d.backup);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "safe-corner") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterSafeCornerDraft;
+          if (d.destination) setSafeDestination(d.destination);
+          if (d.routeNote) setRouteNote(d.routeNote);
+          if (d.restSpot) setRestSpot(d.restSpot);
+          if (d.backup) setCornerBackup(d.backup);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "activity-guide") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterActivityGuideDraft;
+          if (d.activityType) setActivityType(d.activityType);
+          if (d.duration) setActivityDuration(d.duration);
+          if (d.restStyle) setRestStyle(d.restStyle);
+          if (d.transitPref) setTransitPref(d.transitPref);
+          if (d.companion) setCompanion(d.companion);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "elegant-replan") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterElegantReplanDraft;
+          if (d.trigger) setReplanTrigger(d.trigger);
+          if (d.planA) setPlanA(d.planA);
+          if (d.planB) setPlanB(d.planB);
+          if (d.softReminder) setSoftReminder(d.softReminder);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "three-sight") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterThreeSightDraft;
+          if (d.saw) setSawNote(d.saw);
+          if (d.felt) setFeltNote(d.felt);
+          if (d.bringHome) setBringHome(d.bringHome);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "city-lights") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterCityLightsDraft;
+          if (d.arrange) setLightArrange(d.arrange);
+          if (d.verify) setLightVerify(d.verify);
+          if (d.replan) setLightReplan(d.replan);
+          if (d.keep) setLightKeep(d.keep);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "curiosity-ask" && chapter.samplePrompt) {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (!draftRaw) {
+          setQuestion(chapter.samplePrompt);
+        } else {
+          const d = JSON.parse(draftRaw) as ChapterCuriosityDraft;
+          if (!d.question) setQuestion(chapter.samplePrompt);
+        }
+      }
     } catch {
+
       /* ignore */
     }
-  }, [pickKey, draftKey, layout, chapter.defaultNoteTitle]);
+  }, [pickKey, draftKey, layout, chapter.defaultNoteTitle, chapter.samplePrompt]);
 
   const saveDraft = (
     patch: Partial<
@@ -276,7 +442,16 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         ChapterRecipeDraft &
         ChapterPhotoEditDraft &
         ChapterPhotoCurateDraft &
-        ChapterSensoryHabitDraft
+        ChapterSensoryHabitDraft &
+        ChapterCityRadiusDraft &
+        ChapterDayRehearsalDraft &
+        ChapterMomentPlaceDraft &
+        ChapterPassPrepDraft &
+        ChapterSafeCornerDraft &
+        ChapterActivityGuideDraft &
+        ChapterElegantReplanDraft &
+        ChapterThreeSightDraft &
+        ChapterCityLightsDraft
     >
   ) => {
     if (typeof window === "undefined") return;
@@ -391,7 +566,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
       };
       localStorage.setItem(draftKey, JSON.stringify(next));
     }
-    if (layout === "sensory-habit") {
+        if (layout === "sensory-habit") {
       const next: ChapterSensoryHabitDraft = {
         pickedScenes: patch.pickedScenes ?? pickedScenes,
         planNote: patch.planNote ?? planNote,
@@ -399,7 +574,99 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
       };
       localStorage.setItem(draftKey, JSON.stringify(next));
     }
+    const layoutKey: string = layout;
+    if (layoutKey === "city-radius") {
+      const next: ChapterCityRadiusDraft = {
+        place: patch.place ?? cityPlace,
+        meaning: patch.meaning ?? cityMeaning,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "day-rehearsal") {
+      const next: ChapterDayRehearsalDraft = {
+        fromPlace: patch.fromPlace ?? fromPlace,
+        toPlace: patch.toPlace ?? toPlace,
+        restPoint: patch.restPoint ?? restPoint,
+        backup: patch.backup ?? rehearsalBackup,
+        officialCheck: patch.officialCheck ?? officialCheck,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "moment-place") {
+      const next: ChapterMomentPlaceDraft = {
+        activity: patch.activity ?? momentActivity,
+        departAt: patch.departAt ?? departAt,
+        arriveAt: patch.arriveAt ?? arriveAt,
+        restAt: patch.restAt ?? restAt,
+        returnAt: patch.returnAt ?? returnAt,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "pass-prep") {
+      const next: ChapterPassPrepDraft = {
+        ticketWhere: patch.ticketWhere ?? ticketWhere,
+        openHow: patch.openHow ?? openHow,
+        officialSource: patch.officialSource ?? officialSource,
+        backup: patch.backup ?? passBackup,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "safe-corner") {
+      const next: ChapterSafeCornerDraft = {
+        destination: patch.destination ?? safeDestination,
+        routeNote: patch.routeNote ?? routeNote,
+        restSpot: patch.restSpot ?? restSpot,
+        backup: patch.backup ?? cornerBackup,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "activity-guide") {
+      const next: ChapterActivityGuideDraft = {
+        activityType: patch.activityType ?? activityType,
+        duration: patch.duration ?? activityDuration,
+        restStyle: patch.restStyle ?? restStyle,
+        transitPref: patch.transitPref ?? transitPref,
+        companion: patch.companion ?? companion,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "elegant-replan") {
+      const next: ChapterElegantReplanDraft = {
+        trigger: patch.trigger ?? replanTrigger,
+        planA: patch.planA ?? planA,
+        planB: patch.planB ?? planB,
+        softReminder: patch.softReminder ?? softReminder,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "three-sight") {
+      const next: ChapterThreeSightDraft = {
+        saw: patch.saw ?? sawNote,
+        felt: patch.felt ?? feltNote,
+        bringHome: patch.bringHome ?? bringHome,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "city-lights") {
+      const next: ChapterCityLightsDraft = {
+        arrange: patch.arrange ?? lightArrange,
+        verify: patch.verify ?? lightVerify,
+        replan: patch.replan ?? lightReplan,
+        keep: patch.keep ?? lightKeep,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
   };
+
 
   const savePick = (id: string, note?: string) => {
     setPicked(id);
@@ -484,6 +751,39 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         break;
       case "sensory-habit":
         action = planNote.trim() || pickedScenes.join("、");
+        break;
+      case "city-radius":
+        action = cityPlace.trim() || cityMeaning.trim();
+        break;
+      case "day-rehearsal":
+        action =
+          (fromPlace.trim() || toPlace.trim()
+            ? `從${fromPlace.trim() || "＿＿"}到${toPlace.trim() || "＿＿"}`
+            : "") ||
+          restPoint.trim();
+        break;
+      case "moment-place":
+        action = momentActivity.trim() || [departAt, returnAt].filter(Boolean).join("｜");
+        break;
+      case "pass-prep":
+        action = ticketWhere.trim() || openHow.trim();
+        break;
+      case "safe-corner":
+        action = safeDestination.trim() || restSpot.trim();
+        break;
+      case "activity-guide":
+        action = [activityType, activityDuration, restStyle].filter(Boolean).join("｜");
+        break;
+      case "elegant-replan":
+        action =
+          (replanTrigger.trim() ? `如果${replanTrigger.trim()}` : "") ||
+          softReminder.trim();
+        break;
+      case "three-sight":
+        action = [sawNote, feltNote, bringHome].filter(Boolean).join("｜");
+        break;
+      case "city-lights":
+        action = [lightArrange, lightVerify, lightReplan, lightKeep].filter(Boolean).join("｜");
         break;
       case "routes":
       case "ai-entry":
@@ -716,13 +1016,174 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   };
 
   const copyCuriosityAsk = async () => {
-    const text = buildCuriosityPrompt(question);
+    const text =
+      chapter.id === "0707"
+        ? (question.trim() || chapter.samplePrompt || buildUrbanDayCirclePrompt())
+        : chapter.samplePrompt && (!question.trim() || question.trim() === chapter.samplePrompt.trim())
+          ? (question.trim() || chapter.samplePrompt)
+          : buildCuriosityPrompt(question);
     try {
       await navigator.clipboard.writeText(text);
-      toast.success("已複製好奇心提問句，可以貼給 AI 或說出來。");
+      toast.success(
+        chapter.id === "0707"
+          ? "已複製一日生活圈提問句，可以貼給 AI 或說出來。"
+          : "已複製好奇心提問句，可以貼給 AI 或說出來。"
+      );
     } catch {
       toast.info("請長按文字框手動複製。");
     }
+  };
+
+  const copyDayRehearsalAsk = async () => {
+    const text =
+      chapter.samplePrompt?.trim() ||
+      buildDayRehearsalPrompt(fromPlace, toPlace);
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("已複製一日彩排提問句，可以貼給 AI。");
+    } catch {
+      toast.info("請長按文字框手動複製。");
+    }
+  };
+
+  const applyCityRadiusDemo = (demo: CityRadiusDemo) => {
+    setCityPlace(demo.place);
+    setCityMeaning(demo.meaning);
+    setReflectNote(demo.reflectNote);
+    saveDraft({ place: demo.place, meaning: demo.meaning, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}，您可以改成自己的起點。`);
+  };
+
+  const applyDayRehearsalDemo = (demo: DayRehearsalDemo) => {
+    setFromPlace(demo.fromPlace);
+    setToPlace(demo.toPlace);
+    setRestPoint(demo.restPoint);
+    setRehearsalBackup(demo.backup);
+    setOfficialCheck(demo.officialCheck);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      fromPlace: demo.fromPlace,
+      toPlace: demo.toPlace,
+      restPoint: demo.restPoint,
+      backup: demo.backup,
+      officialCheck: demo.officialCheck,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的彩排。`);
+  };
+
+  const applyMomentPlaceDemo = (demo: MomentPlaceDemo) => {
+    setMomentActivity(demo.activity);
+    setDepartAt(demo.departAt);
+    setArriveAt(demo.arriveAt);
+    setRestAt(demo.restAt);
+    setReturnAt(demo.returnAt);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      activity: demo.activity,
+      departAt: demo.departAt,
+      arriveAt: demo.arriveAt,
+      restAt: demo.restAt,
+      returnAt: demo.returnAt,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的時刻。`);
+  };
+
+  const applyPassPrepDemo = (demo: PassPrepDemo) => {
+    setTicketWhere(demo.ticketWhere);
+    setOpenHow(demo.openHow);
+    setOfficialSource(demo.officialSource);
+    setPassBackup(demo.backup);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      ticketWhere: demo.ticketWhere,
+      openHow: demo.openHow,
+      officialSource: demo.officialSource,
+      backup: demo.backup,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的通行準備。`);
+  };
+
+  const applySafeCornerDemo = (demo: SafeCornerDemo) => {
+    setSafeDestination(demo.destination);
+    setRouteNote(demo.routeNote);
+    setRestSpot(demo.restSpot);
+    setCornerBackup(demo.backup);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      destination: demo.destination,
+      routeNote: demo.routeNote,
+      restSpot: demo.restSpot,
+      backup: demo.backup,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的安心角落。`);
+  };
+
+  const applyActivityGuideDemo = (demo: ActivityGuideDemo) => {
+    setActivityType(demo.activityType);
+    setActivityDuration(demo.duration);
+    setRestStyle(demo.restStyle);
+    setTransitPref(demo.transitPref);
+    setCompanion(demo.companion);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      activityType: demo.activityType,
+      duration: demo.duration,
+      restStyle: demo.restStyle,
+      transitPref: demo.transitPref,
+      companion: demo.companion,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的指南。`);
+  };
+
+  const applyElegantReplanDemo = (demo: ElegantReplanDemo) => {
+    setReplanTrigger(demo.trigger);
+    setPlanA(demo.planA);
+    setPlanB(demo.planB);
+    setSoftReminder(demo.softReminder);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      trigger: demo.trigger,
+      planA: demo.planA,
+      planB: demo.planB,
+      softReminder: demo.softReminder,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的重排。`);
+  };
+
+  const applyThreeSightDemo = (demo: ThreeSightDemo) => {
+    setSawNote(demo.saw);
+    setFeltNote(demo.felt);
+    setBringHome(demo.bringHome);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      saw: demo.saw,
+      felt: demo.felt,
+      bringHome: demo.bringHome,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的見聞。`);
+  };
+
+  const applyCityLightsDemo = (demo: CityLightsDemo) => {
+    setLightArrange(demo.arrange);
+    setLightVerify(demo.verify);
+    setLightReplan(demo.replan);
+    setLightKeep(demo.keep);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      arrange: demo.arrange,
+      verify: demo.verify,
+      replan: demo.replan,
+      keep: demo.keep,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的光點。`);
   };
 
   const applyRecipeDemo = (demo: RecipeCardDemo) => {
@@ -1725,7 +2186,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
               />
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
                 <button type="button" onClick={copyCuriosityAsk} style={secondaryBtnStyle}>
-                  複製好奇心提問句
+                  {chapter.id === "0707" ? "複製一日生活圈提問句" : "複製好奇心提問句"}
                 </button>
                 <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>
                   在暖暖問一句 →
@@ -2052,6 +2513,207 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
             </div>
           )}
 
+
+          {layout === "city-radius" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>我想重新打開的城市角落</div>
+                <textarea value={cityPlace} onChange={(e) => { setCityPlace(e.target.value); saveDraft({ place: e.target.value }); }}
+                  placeholder="例如：巷口那間好久沒去的書店…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>它對我的生活意義</div>
+                <textarea value={cityMeaning} onChange={(e) => { setCityMeaning(e.target.value); saveDraft({ meaning: e.target.value }); }}
+                  placeholder="例如：想慢慢翻書，重新感覺城市還能連上線…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
+          {layout === "day-rehearsal" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>從哪裡出發</div>
+                <input value={fromPlace} onChange={(e) => { setFromPlace(e.target.value); saveDraft({ fromPlace: e.target.value }); }}
+                  placeholder="例如：住家附近…"
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>想到哪裡</div>
+                <input value={toPlace} onChange={(e) => { setToPlace(e.target.value); saveDraft({ toPlace: e.target.value }); }}
+                  placeholder="例如：市中心展覽館（大範圍即可）…"
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>休息點</div>
+                <input value={restPoint} onChange={(e) => { setRestPoint(e.target.value); saveDraft({ restPoint: e.target.value }); }}
+                  placeholder="例如：館內咖啡座或附近公園長椅…"
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>備案</div>
+                <input value={rehearsalBackup} onChange={(e) => { setRehearsalBackup(e.target.value); saveDraft({ backup: e.target.value }); }}
+                  placeholder="例如：人太多就改去附近書店…"
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>需向官方確認</div>
+                <input value={officialCheck} onChange={(e) => { setOfficialCheck(e.target.value); saveDraft({ officialCheck: e.target.value }); }}
+                  placeholder="例如：開館時間、是否需預約…"
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", boxSizing: "border-box" }} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button type="button" onClick={copyDayRehearsalAsk} style={secondaryBtnStyle}>複製一日彩排提問句</button>
+                <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>在暖暖問一句 →</button>
+              </div>
+            </div>
+          )}
+
+          {layout === "moment-place" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { label: "我想安放的活動", value: momentActivity, set: setMomentActivity, key: "activity", ph: "例如：市立美術館特展…" },
+                { label: "出門時間", value: departAt, set: setDepartAt, key: "departAt", ph: "例如：13:00 出門…" },
+                { label: "抵達時間（含緩衝）", value: arriveAt, set: setArriveAt, key: "arriveAt", ph: "例如：14:00 前抵達…" },
+                { label: "休息時刻", value: restAt, set: setRestAt, key: "restAt", ph: "例如：15:30 坐一下喝茶…" },
+                { label: "回程時間", value: returnAt, set: setReturnAt, key: "returnAt", ph: "例如：17:00 前從容回家…" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{f.label}</div>
+                  <input value={f.value} onChange={(e) => { f.set(e.target.value); saveDraft({ [f.key]: e.target.value }); }}
+                    placeholder={f.ph}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", boxSizing: "border-box" }} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "pass-prep" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { label: "票券或通行資訊在", value: ticketWhere, set: setTicketWhere, key: "ticketWhere", ph: "例如：主辦 App／Email 票券頁…" },
+                { label: "開啟方式", value: openHow, set: setOpenHow, key: "openHow", ph: "例如：入場前先開啟並確認可離線顯示…" },
+                { label: "官方來源", value: officialSource, set: setOfficialSource, key: "officialSource", ph: "例如：主辦單位官網與票務信…" },
+                { label: "備案（勿寫完整 QR）", value: passBackup, set: setPassBackup, key: "backup", ph: "例如：預先截圖或紙本備援…" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{f.label}</div>
+                  <input value={f.value} onChange={(e) => { f.set(e.target.value); saveDraft({ [f.key]: e.target.value }); }}
+                    placeholder={f.ph}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", boxSizing: "border-box" }} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "safe-corner" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { label: "我想去的地方", value: safeDestination, set: setSafeDestination, key: "destination", ph: "例如：市中心展覽館（大範圍即可）…" },
+                { label: "路線／出口提醒", value: routeNote, set: setRouteNote, key: "routeNote", ph: "例如：捷運出口較近的那一側…" },
+                { label: "安心休息點", value: restSpot, set: setRestSpot, key: "restSpot", ph: "例如：館外公園長椅／附近咖啡館…" },
+                { label: "備案", value: cornerBackup, set: setCornerBackup, key: "backup", ph: "例如：下雨就改去書店…" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{f.label}</div>
+                  <input value={f.value} onChange={(e) => { f.set(e.target.value); saveDraft({ [f.key]: e.target.value }); }}
+                    placeholder={f.ph}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", boxSizing: "border-box" }} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "activity-guide" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { label: "我喜歡的活動類型", value: activityType, set: setActivityType, key: "activityType", ph: "例如：展覽、書店、小型講座…" },
+                { label: "可接受的時間長度", value: activityDuration, set: setActivityDuration, key: "duration", ph: "例如：單場 1.5–2 小時…" },
+                { label: "休息方式", value: restStyle, set: setRestStyle, key: "restStyle", ph: "例如：中途一定要有座位休息…" },
+                { label: "交通偏好", value: transitPref, set: setTransitPref, key: "transitPref", ph: "例如：少轉乘、可慢慢走…" },
+                { label: "同行偏好", value: companion, set: setCompanion, key: "companion", ph: "例如：可一人或一位朋友…" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{f.label}</div>
+                  <textarea value={f.value} onChange={(e) => { f.set(e.target.value); saveDraft({ [f.key]: e.target.value }); }}
+                    placeholder={f.ph} rows={2}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "elegant-replan" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>如果這個變數發生</div>
+                <textarea value={replanTrigger} onChange={(e) => { setReplanTrigger(e.target.value); saveDraft({ trigger: e.target.value }); }}
+                  placeholder="例如：忽然下雨或展覽人太多…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>備案 A</div>
+                <textarea value={planA} onChange={(e) => { setPlanA(e.target.value); saveDraft({ planA: e.target.value }); }}
+                  placeholder="例如：縮短停留，改去附近咖啡館…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>備案 B</div>
+                <textarea value={planB} onChange={(e) => { setPlanB(e.target.value); saveDraft({ planB: e.target.value }); }}
+                  placeholder="例如：把活動優雅改到下一週…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>一句不硬撐提醒</div>
+                <textarea value={softReminder} onChange={(e) => { setSoftReminder(e.target.value); saveDraft({ softReminder: e.target.value }); }}
+                  placeholder="例如：今天不適合再硬撐，從容回來也很好…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
+          {layout === "three-sight" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>今天我看見的是</div>
+                <textarea value={sawNote} onChange={(e) => { setSawNote(e.target.value); saveDraft({ saw: e.target.value }); }}
+                  placeholder="例如：書店窗邊那一小片午後光…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>今天的感受</div>
+                <textarea value={feltNote} onChange={(e) => { setFeltNote(e.target.value); saveDraft({ felt: e.target.value }); }}
+                  placeholder="例如：原來城市還可以這樣慢慢靠近…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>想帶回生活裡的一件小事</div>
+                <textarea value={bringHome} onChange={(e) => { setBringHome(e.target.value); saveDraft({ bringHome: e.target.value }); }}
+                  placeholder="例如：下次出門前，先安放一個休息點…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
+          {layout === "city-lights" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { label: "安排光點", value: lightArrange, set: setLightArrange, key: "arrange", ph: "例如：出門前先彩排一天…" },
+                { label: "查證光點", value: lightVerify, set: setLightVerify, key: "verify", ph: "例如：票券與開放時間向官方確認…" },
+                { label: "重排光點", value: lightReplan, set: setLightReplan, key: "replan", ph: "例如：變數來了可以縮短或改天…" },
+                { label: "留下光點", value: lightKeep, set: setLightKeep, key: "keep", ph: "例如：用三格見聞溫柔保存…" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{f.label}</div>
+                  <textarea value={f.value} onChange={(e) => { f.set(e.target.value); saveDraft({ [f.key]: e.target.value }); }}
+                    placeholder={f.ph} rows={2}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                </div>
+              ))}
+            </div>
+          )}
+
           {layout === "routes" && chapter.entries && chapter.entries.length > 0 && (
             <div style={{
               display: "grid", gridTemplateColumns: "1fr 1fr",
@@ -2135,19 +2797,29 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                 saveDraft({ userDecision: e.target.value });
               } else {
                 setReflectNote(e.target.value);
+                const reflectLayout: string = layout;
                 if (
-                  layout === "question-rewrite" ||
-                  layout === "vision-identify" ||
-                  layout === "photo-search" ||
-                  layout === "note-capture" ||
-                  layout === "smart-flow" ||
-                  layout === "menu-translate" ||
-                  layout === "product-compare" ||
-                  layout === "curiosity-ask" ||
-                  layout === "recipe-card" ||
-                  layout === "photo-edit-safe" ||
-                  layout === "photo-curate" ||
-                  layout === "sensory-habit"
+                  reflectLayout === "question-rewrite" ||
+                  reflectLayout === "vision-identify" ||
+                  reflectLayout === "photo-search" ||
+                  reflectLayout === "note-capture" ||
+                  reflectLayout === "smart-flow" ||
+                  reflectLayout === "menu-translate" ||
+                  reflectLayout === "product-compare" ||
+                  reflectLayout === "curiosity-ask" ||
+                  reflectLayout === "recipe-card" ||
+                  reflectLayout === "photo-edit-safe" ||
+                  reflectLayout === "photo-curate" ||
+                  reflectLayout === "sensory-habit" ||
+                  reflectLayout === "city-radius" ||
+                  reflectLayout === "day-rehearsal" ||
+                  reflectLayout === "moment-place" ||
+                  reflectLayout === "pass-prep" ||
+                  reflectLayout === "safe-corner" ||
+                  reflectLayout === "activity-guide" ||
+                  reflectLayout === "elegant-replan" ||
+                  reflectLayout === "three-sight" ||
+                  reflectLayout === "city-lights"
                 ) {
                   saveDraft({ reflectNote: e.target.value });
                 } else if (picked) {
@@ -2737,7 +3409,117 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                   ))}
                 </div>
               )}
-              {chapter.guideFooterNote && (
+              
+              {layout === "city-radius" && chapter.cityRadiusDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.cityRadiusDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>角落：</strong>{demo.place}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>意義：</strong>{demo.meaning}</p>
+                      <button type="button" onClick={() => applyCityRadiusDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "day-rehearsal" && chapter.dayRehearsalDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.dayRehearsalDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>從→到：</strong>{demo.fromPlace} → {demo.toPlace}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>休息：</strong>{demo.restPoint}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>備案：</strong>{demo.backup}</p>
+                      <button type="button" onClick={() => applyDayRehearsalDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "moment-place" && chapter.momentPlaceDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.momentPlaceDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>活動：</strong>{demo.activity}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>節奏：</strong>{demo.departAt} → {demo.returnAt}</p>
+                      <button type="button" onClick={() => applyMomentPlaceDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "pass-prep" && chapter.passPrepDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.passPrepDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>票在：</strong>{demo.ticketWhere}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>備案：</strong>{demo.backup}</p>
+                      <button type="button" onClick={() => applyPassPrepDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "safe-corner" && chapter.safeCornerDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.safeCornerDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>目的地：</strong>{demo.destination}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>休息點：</strong>{demo.restSpot}</p>
+                      <button type="button" onClick={() => applySafeCornerDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "activity-guide" && chapter.activityGuideDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.activityGuideDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>類型：</strong>{demo.activityType}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>時長：</strong>{demo.duration}</p>
+                      <button type="button" onClick={() => applyActivityGuideDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "elegant-replan" && chapter.elegantReplanDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.elegantReplanDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>變數：</strong>{demo.trigger}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>提醒：</strong>{demo.softReminder}</p>
+                      <button type="button" onClick={() => applyElegantReplanDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "three-sight" && chapter.threeSightDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.threeSightDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>看見：</strong>{demo.saw}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>帶回：</strong>{demo.bringHome}</p>
+                      <button type="button" onClick={() => applyThreeSightDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "city-lights" && chapter.cityLightsDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.cityLightsDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>安排：</strong>{demo.arrange}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>留下：</strong>{demo.keep}</p>
+                      <button type="button" onClick={() => applyCityLightsDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+{chapter.guideFooterNote && (
                 <p style={{
                   fontSize: "var(--fs-xs)", color: "var(--ink-3)",
                   marginTop: 14, marginBottom: 0,
@@ -2782,6 +3564,27 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           }}>
             {chapter.continueBody}
           </p>
+
+          {chapter.appDeepLink && (
+            <button
+              type="button"
+              onClick={() => {
+                trackEvent("chapter_app_deep_link", {
+                  chapter: chapter.id,
+                  href: chapter.appDeepLink!.href,
+                });
+                router.push(chapter.appDeepLink!.href);
+              }}
+              style={{
+                width: "100%", padding: "14px", marginBottom: 16,
+                background: "var(--surface)", border: "2px solid var(--primary)",
+                borderRadius: "var(--r-pill)", fontWeight: 800,
+                fontSize: "var(--fs-sm)", color: "var(--primary-deep)", cursor: "pointer",
+              }}
+            >
+              {chapter.appDeepLink.label}
+            </button>
+          )}
 
           <div style={{
             padding: 16, borderRadius: "var(--r-lg)",
@@ -2906,6 +3709,42 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           captions={captions}
           pickedScenes={pickedScenes}
           planNote={planNote}
+          cityPlace={cityPlace}
+          cityMeaning={cityMeaning}
+          fromPlace={fromPlace}
+          toPlace={toPlace}
+          restPoint={restPoint}
+          rehearsalBackup={rehearsalBackup}
+          officialCheck={officialCheck}
+          momentActivity={momentActivity}
+          departAt={departAt}
+          arriveAt={arriveAt}
+          restAt={restAt}
+          returnAt={returnAt}
+          ticketWhere={ticketWhere}
+          openHow={openHow}
+          officialSource={officialSource}
+          passBackup={passBackup}
+          safeDestination={safeDestination}
+          routeNote={routeNote}
+          restSpot={restSpot}
+          cornerBackup={cornerBackup}
+          activityType={activityType}
+          activityDuration={activityDuration}
+          restStyle={restStyle}
+          transitPref={transitPref}
+          companion={companion}
+          replanTrigger={replanTrigger}
+          planA={planA}
+          planB={planB}
+          softReminder={softReminder}
+          sawNote={sawNote}
+          feltNote={feltNote}
+          bringHome={bringHome}
+          lightArrange={lightArrange}
+          lightVerify={lightVerify}
+          lightReplan={lightReplan}
+          lightKeep={lightKeep}
         />
       </div>
     </>
@@ -3074,6 +3913,42 @@ function PrintCard({
   captions = ["", "", ""],
   pickedScenes = [],
   planNote = "",
+  cityPlace = "",
+  cityMeaning = "",
+  fromPlace = "",
+  toPlace = "",
+  restPoint = "",
+  rehearsalBackup = "",
+  officialCheck = "",
+  momentActivity = "",
+  departAt = "",
+  arriveAt = "",
+  restAt = "",
+  returnAt = "",
+  ticketWhere = "",
+  openHow = "",
+  officialSource = "",
+  passBackup = "",
+  safeDestination = "",
+  routeNote = "",
+  restSpot = "",
+  cornerBackup = "",
+  activityType = "",
+  activityDuration = "",
+  restStyle = "",
+  transitPref = "",
+  companion = "",
+  replanTrigger = "",
+  planA = "",
+  planB = "",
+  softReminder = "",
+  sawNote = "",
+  feltNote = "",
+  bringHome = "",
+  lightArrange = "",
+  lightVerify = "",
+  lightReplan = "",
+  lightKeep = "",
 }: {
   chapter: ChapterOpening;
   picked: string | null;
@@ -3120,6 +3995,42 @@ function PrintCard({
   captions?: [string, string, string];
   pickedScenes?: string[];
   planNote?: string;
+  cityPlace?: string;
+  cityMeaning?: string;
+  fromPlace?: string;
+  toPlace?: string;
+  restPoint?: string;
+  rehearsalBackup?: string;
+  officialCheck?: string;
+  momentActivity?: string;
+  departAt?: string;
+  arriveAt?: string;
+  restAt?: string;
+  returnAt?: string;
+  ticketWhere?: string;
+  openHow?: string;
+  officialSource?: string;
+  passBackup?: string;
+  safeDestination?: string;
+  routeNote?: string;
+  restSpot?: string;
+  cornerBackup?: string;
+  activityType?: string;
+  activityDuration?: string;
+  restStyle?: string;
+  transitPref?: string;
+  companion?: string;
+  replanTrigger?: string;
+  planA?: string;
+  planB?: string;
+  softReminder?: string;
+  sawNote?: string;
+  feltNote?: string;
+  bringHome?: string;
+  lightArrange?: string;
+  lightVerify?: string;
+  lightReplan?: string;
+  lightKeep?: string;
 }) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const bgLabels = chapter.backgroundOptions
@@ -3360,6 +4271,133 @@ function PrintCard({
         <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>
           掃碼網址：{origin}/smart/chapter/{chapter.id}
         </p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "city-radius") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="城市角落" minHeight={56}>{cityPlace || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="生活意義" minHeight={56}>{cityMeaning || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "day-rehearsal") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="從 → 到" minHeight={48}>{(fromPlace || "＿＿") + " → " + (toPlace || "＿＿")}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="休息點" minHeight={40}>{restPoint || "＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="備案" minHeight={40}>{rehearsalBackup || "＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="官方確認" minHeight={40}>{officialCheck || "＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "moment-place") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="活動" minHeight={40}>{momentActivity || "＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="出門／抵達" minHeight={40}>{(departAt || "＿＿") + "／" + (arriveAt || "＿＿")}</PrintGridCell></div>
+        <PrintGridCell title="休息／回程" minHeight={40}>{(restAt || "＿＿") + "／" + (returnAt || "＿＿")}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "pass-prep") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="票券位置" minHeight={40}>{ticketWhere || "＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="開啟方式" minHeight={40}>{openHow || "＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="官方來源／備案" minHeight={48}>{(officialSource || "＿＿") + "／" + (passBackup || "＿＿")}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "safe-corner") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="目的地" minHeight={40}>{safeDestination || "＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="路線／休息點" minHeight={48}>{(routeNote || "＿＿") + "／" + (restSpot || "＿＿")}</PrintGridCell></div>
+        <PrintGridCell title="備案" minHeight={40}>{cornerBackup || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "activity-guide") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="活動類型" minHeight={40}>{activityType || "＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="時長／休息" minHeight={48}>{(activityDuration || "＿＿") + "／" + (restStyle || "＿＿")}</PrintGridCell></div>
+        <PrintGridCell title="交通／同行" minHeight={48}>{(transitPref || "＿＿") + "／" + (companion || "＿＿")}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "elegant-replan") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="變數" minHeight={48}>{replanTrigger || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="備案 A／B" minHeight={56}>{(planA || "＿＿") + "／" + (planB || "＿＿")}</PrintGridCell></div>
+        <PrintGridCell title="不硬撐提醒" minHeight={48}>{softReminder || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "three-sight") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="今天看見" minHeight={48}>{sawNote || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="今天感受" minHeight={48}>{feltNote || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="帶回生活" minHeight={48}>{bringHome || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "city-lights") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="安排" minHeight={40}>{lightArrange || "＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="查證" minHeight={40}>{lightVerify || "＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="重排" minHeight={40}>{lightReplan || "＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="留下" minHeight={40}>{lightKeep || "＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
       </div>
     );
   }
