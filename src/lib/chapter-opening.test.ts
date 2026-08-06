@@ -105,6 +105,29 @@ describe("chapter-opening", () => {
     expect(ch?.habitSceneOptions?.length).toBeGreaterThan(3);
   });
 
+  it("getChapterOpening 0800-0810 chapter 8", () => {
+    const hub = getChapterOpening("0800");
+    expect(hub?.layout).toBe("decision-start");
+    expect(hub?.title).toContain("財富智囊");
+    expect(hub?.entries).toHaveLength(4);
+    expect(hub?.capabilityNote).toContain("不推薦商品");
+
+    expect(getChapterOpening("0801")?.layout).toBe("decision-seat");
+    expect(getChapterOpening("0802")?.layout).toBe("source-ladder");
+    expect(getChapterOpening("0803")?.layout).toBe("clause-translate");
+    expect(getChapterOpening("0804")?.layout).toBe("life-baselines");
+    expect(getChapterOpening("0805")?.layout).toBe("six-hats");
+    expect(getChapterOpening("0805")?.samplePrompt).toContain("不投票");
+    expect(getChapterOpening("0806")?.layout).toBe("same-scale");
+    expect(getChapterOpening("0807")?.layout).toBe("stress-test");
+    expect(getChapterOpening("0808")?.layout).toBe("third-path");
+    expect(getChapterOpening("0809")?.layout).toBe("pro-confirm");
+    const memo = getChapterOpening("0810");
+    expect(memo?.layout).toBe("decision-memo");
+    expect(memo?.appDeepLink?.href).toBe("/smart/radar");
+    expect(memo?.atAGlance).toContain("不構成投資");
+  });
+
   it("buildMenuTranslatePrompt", () => {
     expect(buildMenuTranslatePrompt("少辣")).toContain("少辣");
   });

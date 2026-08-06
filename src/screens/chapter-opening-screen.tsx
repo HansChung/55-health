@@ -54,6 +54,30 @@ import {
   type ChapterPhotoEditDraft,
   type ChapterPhotoCurateDraft,
   type ChapterSensoryHabitDraft,
+  type DecisionStartDemo,
+  type DecisionSeatDemo,
+  type SourceLadderDemo,
+  type ClauseTranslateDemo,
+  type LifeBaselinesDemo,
+  type SixHatsDemo,
+  type SameScaleDemo,
+  type StressTestDemo,
+  type ThirdPathDemo,
+  type ProConfirmDemo,
+  type DecisionMemoDemo,
+  type ChapterDecisionStartDraft,
+  type ChapterDecisionSeatDraft,
+  type ChapterSourceLadderDraft,
+  type ChapterClauseTranslateDraft,
+  type ChapterLifeBaselinesDraft,
+  type ChapterSixHatsDraft,
+  type ChapterSameScaleDraft,
+  type ChapterStressTestDraft,
+  type ChapterThirdPathDraft,
+  type ChapterProConfirmDraft,
+  type ChapterDecisionMemoDraft,
+  buildDecisionSeatPrompt,
+  buildSixHatsPrompt,
 } from "@/lib/chapter-opening";
 import { trackEvent } from "@/lib/telemetry";
 import { useToast } from "@/hooks/use-toast";
@@ -113,6 +137,43 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const [captions, setCaptions] = useState<[string, string, string]>(["", "", ""]);
   const [pickedScenes, setPickedScenes] = useState<string[]>([]);
   const [planNote, setPlanNote] = useState("");
+  const [dsChoice, setDsChoice] = useState("");
+  const [dsLifeImpact, setDsLifeImpact] = useState("");
+  const [dsWantClear, setDsWantClear] = useState("");
+  const [seatSurfaceQ, setSeatSurfaceQ] = useState("");
+  const [seatKnown, setSeatKnown] = useState("");
+  const [seatExpect, setSeatExpect] = useState("");
+  const [seatRealQ, setSeatRealQ] = useState("");
+  const [seatMustKeep, setSeatMustKeep] = useState("");
+  const [srcMeta, setSrcMeta] = useState("");
+  const [srcLayer, setSrcLayer] = useState("");
+  const [srcConfirms, setSrcConfirms] = useState("");
+  const [srcCannot, setSrcCannot] = useState("");
+  const [srcToCheck, setSrcToCheck] = useState("");
+  const [clauseSummary, setClauseSummary] = useState("");
+  const [clausePayLimit, setClausePayLimit] = useState("");
+  const [clauseLifeUnknown, setClauseLifeUnknown] = useState("");
+  const [baseSafety, setBaseSafety] = useState("");
+  const [baseLife, setBaseLife] = useState("");
+  const [baseRel, setBaseRel] = useState("");
+  const [hatsToCheck, setHatsToCheck] = useState("");
+  const [hatsNext, setHatsNext] = useState("");
+  const [hatsReview, setHatsReview] = useState("");
+  const [scaleOptions, setScaleOptions] = useState("");
+  const [scaleNotes, setScaleNotes] = useState("");
+  const [scaleIgnored, setScaleIgnored] = useState("");
+  const [stressWorst, setStressWorst] = useState("");
+  const [stressStop, setStressStop] = useState("");
+  const [stressPro, setStressPro] = useState("");
+  const [thirdStalemate, setThirdStalemate] = useState("");
+  const [thirdKnob, setThirdKnob] = useState("");
+  const [thirdPlan, setThirdPlan] = useState("");
+  const [proQ1, setProQ1] = useState("");
+  const [proQ2, setProQ2] = useState("");
+  const [proQ3, setProQ3] = useState("");
+  const [memoStatus, setMemoStatus] = useState("");
+  const [memoReason, setMemoReason] = useState("");
+  const [memoPending, setMemoPending] = useState("");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -248,7 +309,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           if (d.reflectNote) setReflectNote(d.reflectNote);
         }
       }
-      if (layout === "sensory-habit") {
+            if (layout === "sensory-habit") {
         const draftRaw = localStorage.getItem(draftKey);
         if (draftRaw) {
           const d = JSON.parse(draftRaw) as ChapterSensoryHabitDraft;
@@ -257,7 +318,123 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           if (d.reflectNote) setReflectNote(d.reflectNote);
         }
       }
+      const layoutKeyLoad: string = layout;
+      if (layoutKeyLoad === "decision-start") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterDecisionStartDraft;
+          if (d.choice) setDsChoice(d.choice);
+          if (d.lifeImpact) setDsLifeImpact(d.lifeImpact);
+          if (d.wantClear) setDsWantClear(d.wantClear);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "decision-seat") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterDecisionSeatDraft;
+          if (d.surfaceQ) setSeatSurfaceQ(d.surfaceQ);
+          if (d.knownUnknown) setSeatKnown(d.knownUnknown);
+          if (d.expectWorry) setSeatExpect(d.expectWorry);
+          if (d.realQ) setSeatRealQ(d.realQ);
+          if (d.mustKeep) setSeatMustKeep(d.mustKeep);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "source-ladder") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterSourceLadderDraft;
+          if (d.sourceMeta) setSrcMeta(d.sourceMeta);
+          if (d.layer) setSrcLayer(d.layer);
+          if (d.confirms) setSrcConfirms(d.confirms);
+          if (d.cannotProve) setSrcCannot(d.cannotProve);
+          if (d.toCheck) setSrcToCheck(d.toCheck);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "clause-translate") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterClauseTranslateDraft;
+          if (d.clauseSummary) setClauseSummary(d.clauseSummary);
+          if (d.payLimit) setClausePayLimit(d.payLimit);
+          if (d.lifeUnknown) setClauseLifeUnknown(d.lifeUnknown);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "life-baselines") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterLifeBaselinesDraft;
+          if (d.safety) setBaseSafety(d.safety);
+          if (d.life) setBaseLife(d.life);
+          if (d.relationship) setBaseRel(d.relationship);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "six-hats") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterSixHatsDraft;
+          if (d.toCheck) setHatsToCheck(d.toCheck);
+          if (d.nextStep) setHatsNext(d.nextStep);
+          if (d.reviewDate) setHatsReview(d.reviewDate);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "same-scale") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterSameScaleDraft;
+          if (d.optionsNote) setScaleOptions(d.optionsNote);
+          if (d.scalesNote) setScaleNotes(d.scalesNote);
+          if (d.ignoredCost) setScaleIgnored(d.ignoredCost);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "stress-test") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterStressTestDraft;
+          if (d.worstCase) setStressWorst(d.worstCase);
+          if (d.stopSignal) setStressStop(d.stopSignal);
+          if (d.proCheck) setStressPro(d.proCheck);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "third-path") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterThirdPathDraft;
+          if (d.stalemate) setThirdStalemate(d.stalemate);
+          if (d.knob) setThirdKnob(d.knob);
+          if (d.newPlan) setThirdPlan(d.newPlan);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "pro-confirm") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterProConfirmDraft;
+          if (d.q1) setProQ1(d.q1);
+          if (d.q2) setProQ2(d.q2);
+          if (d.q3) setProQ3(d.q3);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "decision-memo") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterDecisionMemoDraft;
+          if (d.status) setMemoStatus(d.status);
+          if (d.reasonBaseline) setMemoReason(d.reasonBaseline);
+          if (d.pendingReview) setMemoPending(d.pendingReview);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
     } catch {
+
       /* ignore */
     }
   }, [pickKey, draftKey, layout, chapter.defaultNoteTitle]);
@@ -276,7 +453,18 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         ChapterRecipeDraft &
         ChapterPhotoEditDraft &
         ChapterPhotoCurateDraft &
-        ChapterSensoryHabitDraft
+        ChapterSensoryHabitDraft &
+        ChapterDecisionStartDraft &
+        ChapterDecisionSeatDraft &
+        ChapterSourceLadderDraft &
+        ChapterClauseTranslateDraft &
+        ChapterLifeBaselinesDraft &
+        ChapterSixHatsDraft &
+        ChapterSameScaleDraft &
+        ChapterStressTestDraft &
+        ChapterThirdPathDraft &
+        ChapterProConfirmDraft &
+        ChapterDecisionMemoDraft
     >
   ) => {
     if (typeof window === "undefined") return;
@@ -391,7 +579,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
       };
       localStorage.setItem(draftKey, JSON.stringify(next));
     }
-    if (layout === "sensory-habit") {
+        if (layout === "sensory-habit") {
       const next: ChapterSensoryHabitDraft = {
         pickedScenes: patch.pickedScenes ?? pickedScenes,
         planNote: patch.planNote ?? planNote,
@@ -399,7 +587,112 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
       };
       localStorage.setItem(draftKey, JSON.stringify(next));
     }
+    const layoutKey: string = layout;
+    if (layoutKey === "decision-start") {
+      const next: ChapterDecisionStartDraft = {
+        choice: patch.choice ?? dsChoice,
+        lifeImpact: patch.lifeImpact ?? dsLifeImpact,
+        wantClear: patch.wantClear ?? dsWantClear,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "decision-seat") {
+      const next: ChapterDecisionSeatDraft = {
+        surfaceQ: patch.surfaceQ ?? seatSurfaceQ,
+        knownUnknown: patch.knownUnknown ?? seatKnown,
+        expectWorry: patch.expectWorry ?? seatExpect,
+        realQ: patch.realQ ?? seatRealQ,
+        mustKeep: patch.mustKeep ?? seatMustKeep,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "source-ladder") {
+      const next: ChapterSourceLadderDraft = {
+        sourceMeta: patch.sourceMeta ?? srcMeta,
+        layer: patch.layer ?? srcLayer,
+        confirms: patch.confirms ?? srcConfirms,
+        cannotProve: patch.cannotProve ?? srcCannot,
+        toCheck: patch.toCheck ?? srcToCheck,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "clause-translate") {
+      const next: ChapterClauseTranslateDraft = {
+        clauseSummary: patch.clauseSummary ?? clauseSummary,
+        payLimit: patch.payLimit ?? clausePayLimit,
+        lifeUnknown: patch.lifeUnknown ?? clauseLifeUnknown,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "life-baselines") {
+      const next: ChapterLifeBaselinesDraft = {
+        safety: patch.safety ?? baseSafety,
+        life: patch.life ?? baseLife,
+        relationship: patch.relationship ?? baseRel,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "six-hats") {
+      const next: ChapterSixHatsDraft = {
+        toCheck: patch.toCheck ?? hatsToCheck,
+        nextStep: patch.nextStep ?? hatsNext,
+        reviewDate: patch.reviewDate ?? hatsReview,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "same-scale") {
+      const next: ChapterSameScaleDraft = {
+        optionsNote: patch.optionsNote ?? scaleOptions,
+        scalesNote: patch.scalesNote ?? scaleNotes,
+        ignoredCost: patch.ignoredCost ?? scaleIgnored,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "stress-test") {
+      const next: ChapterStressTestDraft = {
+        worstCase: patch.worstCase ?? stressWorst,
+        stopSignal: patch.stopSignal ?? stressStop,
+        proCheck: patch.proCheck ?? stressPro,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "third-path") {
+      const next: ChapterThirdPathDraft = {
+        stalemate: patch.stalemate ?? thirdStalemate,
+        knob: patch.knob ?? thirdKnob,
+        newPlan: patch.newPlan ?? thirdPlan,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "pro-confirm") {
+      const next: ChapterProConfirmDraft = {
+        q1: patch.q1 ?? proQ1,
+        q2: patch.q2 ?? proQ2,
+        q3: patch.q3 ?? proQ3,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "decision-memo") {
+      const next: ChapterDecisionMemoDraft = {
+        status: patch.status ?? memoStatus,
+        reasonBaseline: patch.reasonBaseline ?? memoReason,
+        pendingReview: patch.pendingReview ?? memoPending,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
   };
+
 
   const savePick = (id: string, note?: string) => {
     setPicked(id);
@@ -484,6 +777,39 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         break;
       case "sensory-habit":
         action = planNote.trim() || pickedScenes.join("、");
+        break;
+      case "decision-start":
+        action = dsChoice.trim() || dsWantClear.trim();
+        break;
+      case "decision-seat":
+        action = seatRealQ.trim() || seatMustKeep.trim() || seatSurfaceQ.trim();
+        break;
+      case "source-ladder":
+        action = srcMeta.trim() || srcToCheck.trim();
+        break;
+      case "clause-translate":
+        action = clauseSummary.trim() || clausePayLimit.trim();
+        break;
+      case "life-baselines":
+        action = [baseSafety, baseLife, baseRel].filter(Boolean).join("｜");
+        break;
+      case "six-hats":
+        action = [hatsToCheck, hatsNext, hatsReview].filter(Boolean).join("｜");
+        break;
+      case "same-scale":
+        action = scaleIgnored.trim() || scaleOptions.trim();
+        break;
+      case "stress-test":
+        action = stressStop.trim() || stressWorst.trim();
+        break;
+      case "third-path":
+        action = thirdPlan.trim() || thirdKnob.trim();
+        break;
+      case "pro-confirm":
+        action = [proQ1, proQ2, proQ3].filter(Boolean).join("；");
+        break;
+      case "decision-memo":
+        action = [memoStatus, memoReason, memoPending].filter(Boolean).join("｜");
         break;
       case "routes":
       case "ai-entry":
@@ -723,6 +1049,83 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
     } catch {
       toast.info("請長按文字框手動複製。");
     }
+  };
+
+  const copyDecisionSeatAsk = async () => {
+    const text = chapter.samplePrompt?.trim() || buildDecisionSeatPrompt();
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("已複製問題改寫提問句。");
+    } catch {
+      toast.info("請長按文字框手動複製。");
+    }
+  };
+
+  const copySixHatsAsk = async () => {
+    const text = chapter.samplePrompt?.trim() || buildSixHatsPrompt();
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("已複製一人董事會提問句。");
+    } catch {
+      toast.info("請長按文字框手動複製。");
+    }
+  };
+
+  const applyDecisionStartDemo = (demo: DecisionStartDemo) => {
+    setDsChoice(demo.choice); setDsLifeImpact(demo.lifeImpact); setDsWantClear(demo.wantClear); setReflectNote(demo.reflectNote);
+    saveDraft({ choice: demo.choice, lifeImpact: demo.lifeImpact, wantClear: demo.wantClear, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyDecisionSeatDemo = (demo: DecisionSeatDemo) => {
+    setSeatSurfaceQ(demo.surfaceQ); setSeatKnown(demo.knownUnknown); setSeatExpect(demo.expectWorry);
+    setSeatRealQ(demo.realQ); setSeatMustKeep(demo.mustKeep); setReflectNote(demo.reflectNote);
+    saveDraft({ surfaceQ: demo.surfaceQ, knownUnknown: demo.knownUnknown, expectWorry: demo.expectWorry, realQ: demo.realQ, mustKeep: demo.mustKeep, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applySourceLadderDemo = (demo: SourceLadderDemo) => {
+    setSrcMeta(demo.sourceMeta); setSrcLayer(demo.layer); setSrcConfirms(demo.confirms); setSrcCannot(demo.cannotProve); setSrcToCheck(demo.toCheck); setReflectNote(demo.reflectNote);
+    saveDraft({ sourceMeta: demo.sourceMeta, layer: demo.layer, confirms: demo.confirms, cannotProve: demo.cannotProve, toCheck: demo.toCheck, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyClauseTranslateDemo = (demo: ClauseTranslateDemo) => {
+    setClauseSummary(demo.clauseSummary); setClausePayLimit(demo.payLimit); setClauseLifeUnknown(demo.lifeUnknown); setReflectNote(demo.reflectNote);
+    saveDraft({ clauseSummary: demo.clauseSummary, payLimit: demo.payLimit, lifeUnknown: demo.lifeUnknown, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyLifeBaselinesDemo = (demo: LifeBaselinesDemo) => {
+    setBaseSafety(demo.safety); setBaseLife(demo.life); setBaseRel(demo.relationship); setReflectNote(demo.reflectNote);
+    saveDraft({ safety: demo.safety, life: demo.life, relationship: demo.relationship, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applySixHatsDemo = (demo: SixHatsDemo) => {
+    setHatsToCheck(demo.toCheck); setHatsNext(demo.nextStep); setHatsReview(demo.reviewDate); setReflectNote(demo.reflectNote);
+    saveDraft({ toCheck: demo.toCheck, nextStep: demo.nextStep, reviewDate: demo.reviewDate, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applySameScaleDemo = (demo: SameScaleDemo) => {
+    setScaleOptions(demo.optionsNote); setScaleNotes(demo.scalesNote); setScaleIgnored(demo.ignoredCost); setReflectNote(demo.reflectNote);
+    saveDraft({ optionsNote: demo.optionsNote, scalesNote: demo.scalesNote, ignoredCost: demo.ignoredCost, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyStressTestDemo = (demo: StressTestDemo) => {
+    setStressWorst(demo.worstCase); setStressStop(demo.stopSignal); setStressPro(demo.proCheck); setReflectNote(demo.reflectNote);
+    saveDraft({ worstCase: demo.worstCase, stopSignal: demo.stopSignal, proCheck: demo.proCheck, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyThirdPathDemo = (demo: ThirdPathDemo) => {
+    setThirdStalemate(demo.stalemate); setThirdKnob(demo.knob); setThirdPlan(demo.newPlan); setReflectNote(demo.reflectNote);
+    saveDraft({ stalemate: demo.stalemate, knob: demo.knob, newPlan: demo.newPlan, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyProConfirmDemo = (demo: ProConfirmDemo) => {
+    setProQ1(demo.q1); setProQ2(demo.q2); setProQ3(demo.q3); setReflectNote(demo.reflectNote);
+    saveDraft({ q1: demo.q1, q2: demo.q2, q3: demo.q3, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyDecisionMemoDemo = (demo: DecisionMemoDemo) => {
+    setMemoStatus(demo.status); setMemoReason(demo.reasonBaseline); setMemoPending(demo.pendingReview); setReflectNote(demo.reflectNote);
+    saveDraft({ status: demo.status, reasonBaseline: demo.reasonBaseline, pendingReview: demo.pendingReview, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
   };
 
   const applyRecipeDemo = (demo: RecipeCardDemo) => {
@@ -2052,6 +2455,234 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
             </div>
           )}
 
+
+          {layout === "decision-start" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>我最近反覆思考的一個重要選擇</div>
+                <textarea value={dsChoice} onChange={(e) => { setDsChoice(e.target.value); saveDraft({ choice: e.target.value }); }}
+                  placeholder="例如：是否接受一項期限緊、看起來機會難得的安排…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>它真正影響的生活（除了金錢）</div>
+                <textarea value={dsLifeImpact} onChange={(e) => { setDsLifeImpact(e.target.value); saveDraft({ lifeImpact: e.target.value }); }}
+                  placeholder="例如：陪家人旅行的餘裕、臨時支援家人的從容…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>今天最想先看清楚的是</div>
+                <textarea value={dsWantClear} onChange={(e) => { setDsWantClear(e.target.value); saveDraft({ wantClear: e.target.value }); }}
+                  placeholder="例如：退出與重新選擇的空間到底有多大…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              {chapter.entries && chapter.entries.length > 0 && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
+                  {chapter.entries.map((entry) => (
+                    <EntryButton key={entry.id} entry={entry} selected={picked === entry.id}
+                      onSelect={() => savePick(entry.id)} onGo={() => goEntry(entry)} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {layout === "decision-seat" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { label: "我表面上在問", value: seatSurfaceQ, set: setSeatSurfaceQ, key: "surfaceQ", ph: "例如：這個安排好不好…" },
+                { label: "目前已知／仍未知", value: seatKnown, set: setSeatKnown, key: "knownUnknown", ph: "例如：已知費用；未知退出條件…" },
+                { label: "真正期待／最擔心", value: seatExpect, set: setSeatExpect, key: "expectWorry", ph: "例如：期待抓住機會；擔心失去餘裕…" },
+                { label: "我真正想解決的是", value: seatRealQ, set: setSeatRealQ, key: "realQ", ph: "例如：能否守住未來的從容…" },
+                { label: "最不能犧牲的是", value: seatMustKeep, set: setSeatMustKeep, key: "mustKeep", ph: "例如：照顧家人時仍有餘裕…" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{f.label}</div>
+                  <textarea value={f.value} onChange={(e) => { f.set(e.target.value); saveDraft({ [f.key]: e.target.value }); }}
+                    placeholder={f.ph} rows={2}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                </div>
+              ))}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button type="button" onClick={copyDecisionSeatAsk} style={secondaryBtnStyle}>複製問題改寫提問句</button>
+                <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>在暖暖一次一題 →</button>
+              </div>
+            </div>
+          )}
+
+          {layout === "source-ladder" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { label: "資料名稱／發布者／更新日期", value: srcMeta, set: setSrcMeta, key: "sourceMeta", ph: "例如：官方說明／○○／2026-03…" },
+                { label: "它位於第幾層", value: srcLayer, set: setSrcLayer, key: "layer", ph: "例如：第 1 層｜官方或原始文件…" },
+                { label: "目前可以幫我確認", value: srcConfirms, set: setSrcConfirms, key: "confirms", ph: "例如：費用項目名稱…" },
+                { label: "它不能單獨證明", value: srcCannot, set: setSrcCannot, key: "cannotProve", ph: "例如：是否適合我的生活底線…" },
+                { label: "還要補查", value: srcToCheck, set: setSrcToCheck, key: "toCheck", ph: "例如：提前終止例外條件…" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{f.label}</div>
+                  <input value={f.value} onChange={(e) => { f.set(e.target.value); saveDraft({ [f.key]: e.target.value }); }}
+                    placeholder={f.ph}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", boxSizing: "border-box" }} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "clause-translate" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { label: "這段在說什麼（含頁碼／段落）", value: clauseSummary, set: setClauseSummary, key: "clauseSummary", ph: "例如：可提前終止（第 12 頁第 3 段）…" },
+                { label: "我要付什麼、何時受限制", value: clausePayLimit, set: setClausePayLimit, key: "payLimit", ph: "例如：可能需手續費；特定期間限制取回…" },
+                { label: "生活後果／仍待確認", value: clauseLifeUnknown, set: setClauseLifeUnknown, key: "lifeUnknown", ph: "例如：臨時需要用錢時可能無法立即取回…" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{f.label}</div>
+                  <textarea value={f.value} onChange={(e) => { f.set(e.target.value); saveDraft({ [f.key]: e.target.value }); }}
+                    placeholder={f.ph} rows={2}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "life-baselines" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { label: "安全底線｜如果＿＿發生，我就暫停或重新評估", value: baseSafety, set: setBaseSafety, key: "safety", ph: "例如：臨時需要支援卻無法取用…" },
+                { label: "生活底線｜這個選擇不能讓我失去", value: baseLife, set: setBaseLife, key: "life", ph: "例如：每年與家人短旅行的餘裕…" },
+                { label: "關係底線｜決定前要先和誰說清楚什麼", value: baseRel, set: setBaseRel, key: "relationship", ph: "例如：先和配偶說清楚退出條件…" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{f.label}</div>
+                  <textarea value={f.value} onChange={(e) => { f.set(e.target.value); saveDraft({ [f.key]: e.target.value }); }}
+                    placeholder={f.ph} rows={2}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "six-hats" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <p style={{ fontSize: "var(--fs-xs)", color: "var(--ink-2)", margin: 0, lineHeight: 1.55 }}>
+                先說問題與三項底線，再依序：白帽事實、紅帽感受、黃帽價值、黑帽風險、綠帽替代、藍帽下一步。一次一題。
+              </p>
+              {[
+                { label: "待查事項", value: hatsToCheck, set: setHatsToCheck, key: "toCheck", ph: "例如：提前終止費用的正式頁碼…" },
+                { label: "下一小步", value: hatsNext, set: setHatsNext, key: "nextStep", ph: "例如：先完成條款白話摘要…" },
+                { label: "重看日", value: hatsReview, set: setHatsReview, key: "reviewDate", ph: "例如：兩週後重看文件是否補齊…" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{f.label}</div>
+                  <textarea value={f.value} onChange={(e) => { f.set(e.target.value); saveDraft({ [f.key]: e.target.value }); }}
+                    placeholder={f.ph} rows={2}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                </div>
+              ))}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button type="button" onClick={copySixHatsAsk} style={secondaryBtnStyle}>複製一人董事會提問句</button>
+                <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>在暖暖召開會議 →</button>
+              </div>
+            </div>
+          )}
+
+          {layout === "same-scale" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { label: "方案 A／方案 B／維持現況", value: scaleOptions, set: setScaleOptions, key: "optionsNote", ph: "例如：方案 A／方案 B／維持現況…" },
+                { label: "四項尺度筆記（費用、彈性、最不利影響、未知）", value: scaleNotes, set: setScaleNotes, key: "scalesNote", ph: "例如：費用清楚；彈性不足；未知退出時程…" },
+                { label: "原先忽略的代價", value: scaleIgnored, set: setScaleIgnored, key: "ignoredCost", ph: "例如：退出時間可能打亂臨時支援家人…" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{f.label}</div>
+                  <textarea value={f.value} onChange={(e) => { f.set(e.target.value); saveDraft({ [f.key]: e.target.value }); }}
+                    placeholder={f.ph} rows={2}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "stress-test" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { label: "最不利情況／可能持續多久", value: stressWorst, set: setStressWorst, key: "worstCase", ph: "例如：資金暫時不能取用超過三個月…" },
+                { label: "出現＿＿時，我就暫停、退出或重新評估", value: stressStop, set: setStressStop, key: "stopSignal", ph: "例如：無法在約定時間取用…" },
+                { label: "仍需向合格專業人士確認", value: stressPro, set: setStressPro, key: "proCheck", ph: "例如：退出程序時程與費用計算…" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{f.label}</div>
+                  <textarea value={f.value} onChange={(e) => { f.set(e.target.value); saveDraft({ [f.key]: e.target.value }); }}
+                    placeholder={f.ph} rows={2}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "third-path" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { label: "目前的僵局", value: thirdStalemate, set: setThirdStalemate, key: "stalemate", ph: "例如：現在立刻做 vs 完全放棄…" },
+                { label: "我先調整的旋鈕（時間／範圍／條件／資料／目標）", value: thirdKnob, set: setThirdKnob, key: "knob", ph: "例如：時間…" },
+                { label: "新的小方案／重看條件", value: thirdPlan, set: setThirdPlan, key: "newPlan", ph: "例如：先補齊文件，兩週後重看…" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{f.label}</div>
+                  <textarea value={f.value} onChange={(e) => { f.set(e.target.value); saveDraft({ [f.key]: e.target.value }); }}
+                    placeholder={f.ph} rows={2}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "pro-confirm" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { label: "問題 1｜正式文件或依據在哪", value: proQ1, set: setProQ1, key: "q1", ph: "例如：依據在哪一頁、哪一條？" },
+                { label: "問題 2｜限制與例外", value: proQ2, set: setProQ2, key: "q2", ph: "例如：適用情況、限制與例外？" },
+                { label: "問題 3｜事實／判斷／假設與利益關係", value: proQ3, set: setProQ3, key: "q3", ph: "例如：是否有佣酬或轉介利益？" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{f.label}</div>
+                  <textarea value={f.value} onChange={(e) => { f.set(e.target.value); saveDraft({ [f.key]: e.target.value }); }}
+                    placeholder={f.ph} rows={2}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "decision-memo" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>目前狀態</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+                  {["繼續查證", "暫停", "停止", "設定重看日", "條件清楚後執行"].map((s) => (
+                    <button key={s} type="button" onClick={() => { setMemoStatus(s); saveDraft({ status: s }); }}
+                      style={{ padding: "8px 12px", borderRadius: "var(--r-pill)", border: `2px solid ${memoStatus === s ? "var(--primary)" : "var(--line-strong)"}`, background: memoStatus === s ? "var(--primary-soft)" : "var(--surface)", fontSize: "var(--fs-xs)", fontWeight: 700, cursor: "pointer" }}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>我的理由／不能犧牲的底線</div>
+                <textarea value={memoReason} onChange={(e) => { setMemoReason(e.target.value); saveDraft({ reasonBaseline: e.target.value }); }}
+                  placeholder="例如：在退出條件未確認前不執行…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>仍待確認／重看日期與條件</div>
+                <textarea value={memoPending} onChange={(e) => { setMemoPending(e.target.value); saveDraft({ pendingReview: e.target.value }); }}
+                  placeholder="例如：兩週後重看正式文件是否補齊…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
           {layout === "routes" && chapter.entries && chapter.entries.length > 0 && (
             <div style={{
               display: "grid", gridTemplateColumns: "1fr 1fr",
@@ -2135,19 +2766,31 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                 saveDraft({ userDecision: e.target.value });
               } else {
                 setReflectNote(e.target.value);
+                const reflectLayout: string = layout;
                 if (
-                  layout === "question-rewrite" ||
-                  layout === "vision-identify" ||
-                  layout === "photo-search" ||
-                  layout === "note-capture" ||
-                  layout === "smart-flow" ||
-                  layout === "menu-translate" ||
-                  layout === "product-compare" ||
-                  layout === "curiosity-ask" ||
-                  layout === "recipe-card" ||
-                  layout === "photo-edit-safe" ||
-                  layout === "photo-curate" ||
-                  layout === "sensory-habit"
+                  reflectLayout === "question-rewrite" ||
+                  reflectLayout === "vision-identify" ||
+                  reflectLayout === "photo-search" ||
+                  reflectLayout === "note-capture" ||
+                  reflectLayout === "smart-flow" ||
+                  reflectLayout === "menu-translate" ||
+                  reflectLayout === "product-compare" ||
+                  reflectLayout === "curiosity-ask" ||
+                  reflectLayout === "recipe-card" ||
+                  reflectLayout === "photo-edit-safe" ||
+                  reflectLayout === "photo-curate" ||
+                  reflectLayout === "sensory-habit" ||
+                  reflectLayout === "decision-start" ||
+                  reflectLayout === "decision-seat" ||
+                  reflectLayout === "source-ladder" ||
+                  reflectLayout === "clause-translate" ||
+                  reflectLayout === "life-baselines" ||
+                  reflectLayout === "six-hats" ||
+                  reflectLayout === "same-scale" ||
+                  reflectLayout === "stress-test" ||
+                  reflectLayout === "third-path" ||
+                  reflectLayout === "pro-confirm" ||
+                  reflectLayout === "decision-memo"
                 ) {
                   saveDraft({ reflectNote: e.target.value });
                 } else if (picked) {
@@ -2737,7 +3380,130 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                   ))}
                 </div>
               )}
-              {chapter.guideFooterNote && (
+              
+              {layout === "decision-start" && chapter.decisionStartDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.decisionStartDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>選擇：</strong>{demo.choice}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>想看清：</strong>{demo.wantClear}</p>
+                      <button type="button" onClick={() => applyDecisionStartDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "decision-seat" && chapter.decisionSeatDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.decisionSeatDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>真正問題：</strong>{demo.realQ}</p>
+                      <button type="button" onClick={() => applyDecisionSeatDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "source-ladder" && chapter.sourceLadderDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.sourceLadderDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}>{demo.sourceMeta}｜{demo.layer}</p>
+                      <button type="button" onClick={() => applySourceLadderDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "clause-translate" && chapter.clauseTranslateDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.clauseTranslateDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}>{demo.clauseSummary}</p>
+                      <button type="button" onClick={() => applyClauseTranslateDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "life-baselines" && chapter.lifeBaselinesDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.lifeBaselinesDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>生活：</strong>{demo.life}</p>
+                      <button type="button" onClick={() => applyLifeBaselinesDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "six-hats" && chapter.sixHatsDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.sixHatsDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>下一步：</strong>{demo.nextStep}</p>
+                      <button type="button" onClick={() => applySixHatsDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "same-scale" && chapter.sameScaleDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.sameScaleDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>忽略的代價：</strong>{demo.ignoredCost}</p>
+                      <button type="button" onClick={() => applySameScaleDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "stress-test" && chapter.stressTestDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.stressTestDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>出口：</strong>{demo.stopSignal}</p>
+                      <button type="button" onClick={() => applyStressTestDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "third-path" && chapter.thirdPathDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.thirdPathDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>旋鈕：</strong>{demo.knob}｜{demo.newPlan}</p>
+                      <button type="button" onClick={() => applyThirdPathDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "pro-confirm" && chapter.proConfirmDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.proConfirmDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}>{demo.q1}</p>
+                      <button type="button" onClick={() => applyProConfirmDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "decision-memo" && chapter.decisionMemoDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.decisionMemoDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>狀態：</strong>{demo.status}</p>
+                      <button type="button" onClick={() => applyDecisionMemoDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+{chapter.guideFooterNote && (
                 <p style={{
                   fontSize: "var(--fs-xs)", color: "var(--ink-3)",
                   marginTop: 14, marginBottom: 0,
@@ -2782,6 +3548,27 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           }}>
             {chapter.continueBody}
           </p>
+
+          {chapter.appDeepLink && (
+            <button
+              type="button"
+              onClick={() => {
+                trackEvent("chapter_app_deep_link", {
+                  chapter: chapter.id,
+                  href: chapter.appDeepLink!.href,
+                });
+                router.push(chapter.appDeepLink!.href);
+              }}
+              style={{
+                width: "100%", padding: "14px", marginBottom: 16,
+                background: "var(--surface)", border: "2px solid var(--primary)",
+                borderRadius: "var(--r-pill)", fontWeight: 800,
+                fontSize: "var(--fs-sm)", color: "var(--primary-deep)", cursor: "pointer",
+              }}
+            >
+              {chapter.appDeepLink.label}
+            </button>
+          )}
 
           <div style={{
             padding: 16, borderRadius: "var(--r-lg)",
@@ -2906,6 +3693,43 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           captions={captions}
           pickedScenes={pickedScenes}
           planNote={planNote}
+          dsChoice={dsChoice}
+          dsLifeImpact={dsLifeImpact}
+          dsWantClear={dsWantClear}
+          seatSurfaceQ={seatSurfaceQ}
+          seatKnown={seatKnown}
+          seatExpect={seatExpect}
+          seatRealQ={seatRealQ}
+          seatMustKeep={seatMustKeep}
+          srcMeta={srcMeta}
+          srcLayer={srcLayer}
+          srcConfirms={srcConfirms}
+          srcCannot={srcCannot}
+          srcToCheck={srcToCheck}
+          clauseSummary={clauseSummary}
+          clausePayLimit={clausePayLimit}
+          clauseLifeUnknown={clauseLifeUnknown}
+          baseSafety={baseSafety}
+          baseLife={baseLife}
+          baseRel={baseRel}
+          hatsToCheck={hatsToCheck}
+          hatsNext={hatsNext}
+          hatsReview={hatsReview}
+          scaleOptions={scaleOptions}
+          scaleNotes={scaleNotes}
+          scaleIgnored={scaleIgnored}
+          stressWorst={stressWorst}
+          stressStop={stressStop}
+          stressPro={stressPro}
+          thirdStalemate={thirdStalemate}
+          thirdKnob={thirdKnob}
+          thirdPlan={thirdPlan}
+          proQ1={proQ1}
+          proQ2={proQ2}
+          proQ3={proQ3}
+          memoStatus={memoStatus}
+          memoReason={memoReason}
+          memoPending={memoPending}
         />
       </div>
     </>
@@ -3074,6 +3898,43 @@ function PrintCard({
   captions = ["", "", ""],
   pickedScenes = [],
   planNote = "",
+  dsChoice = "",
+  dsLifeImpact = "",
+  dsWantClear = "",
+  seatSurfaceQ = "",
+  seatKnown = "",
+  seatExpect = "",
+  seatRealQ = "",
+  seatMustKeep = "",
+  srcMeta = "",
+  srcLayer = "",
+  srcConfirms = "",
+  srcCannot = "",
+  srcToCheck = "",
+  clauseSummary = "",
+  clausePayLimit = "",
+  clauseLifeUnknown = "",
+  baseSafety = "",
+  baseLife = "",
+  baseRel = "",
+  hatsToCheck = "",
+  hatsNext = "",
+  hatsReview = "",
+  scaleOptions = "",
+  scaleNotes = "",
+  scaleIgnored = "",
+  stressWorst = "",
+  stressStop = "",
+  stressPro = "",
+  thirdStalemate = "",
+  thirdKnob = "",
+  thirdPlan = "",
+  proQ1 = "",
+  proQ2 = "",
+  proQ3 = "",
+  memoStatus = "",
+  memoReason = "",
+  memoPending = "",
 }: {
   chapter: ChapterOpening;
   picked: string | null;
@@ -3120,6 +3981,43 @@ function PrintCard({
   captions?: [string, string, string];
   pickedScenes?: string[];
   planNote?: string;
+  dsChoice?: string;
+  dsLifeImpact?: string;
+  dsWantClear?: string;
+  seatSurfaceQ?: string;
+  seatKnown?: string;
+  seatExpect?: string;
+  seatRealQ?: string;
+  seatMustKeep?: string;
+  srcMeta?: string;
+  srcLayer?: string;
+  srcConfirms?: string;
+  srcCannot?: string;
+  srcToCheck?: string;
+  clauseSummary?: string;
+  clausePayLimit?: string;
+  clauseLifeUnknown?: string;
+  baseSafety?: string;
+  baseLife?: string;
+  baseRel?: string;
+  hatsToCheck?: string;
+  hatsNext?: string;
+  hatsReview?: string;
+  scaleOptions?: string;
+  scaleNotes?: string;
+  scaleIgnored?: string;
+  stressWorst?: string;
+  stressStop?: string;
+  stressPro?: string;
+  thirdStalemate?: string;
+  thirdKnob?: string;
+  thirdPlan?: string;
+  proQ1?: string;
+  proQ2?: string;
+  proQ3?: string;
+  memoStatus?: string;
+  memoReason?: string;
+  memoPending?: string;
 }) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const bgLabels = chapter.backgroundOptions
@@ -3360,6 +4258,160 @@ function PrintCard({
         <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>
           掃碼網址：{origin}/smart/chapter/{chapter.id}
         </p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "decision-start") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="重要選擇" minHeight={48}>{dsChoice || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="真正影響的生活" minHeight={48}>{dsLifeImpact || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="今天最想看清楚" minHeight={48}>{dsWantClear || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "decision-seat") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="表面問題／已知未知" minHeight={48}>{(seatSurfaceQ || "＿＿") + "／" + (seatKnown || "＿＿")}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="真正問題" minHeight={48}>{seatRealQ || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="最不能犧牲" minHeight={48}>{seatMustKeep || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "source-ladder") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="資料／層級" minHeight={48}>{(srcMeta || "＿＿") + "／" + (srcLayer || "＿＿")}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="可確認／不能證明" minHeight={48}>{(srcConfirms || "＿＿") + "／" + (srcCannot || "＿＿")}</PrintGridCell></div>
+        <PrintGridCell title="待補查" minHeight={40}>{srcToCheck || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "clause-translate") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="條款要旨" minHeight={48}>{clauseSummary || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="費用／限制" minHeight={48}>{clausePayLimit || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="生活後果／待確認" minHeight={48}>{clauseLifeUnknown || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "life-baselines") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="安全底線" minHeight={48}>{baseSafety || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="生活底線" minHeight={48}>{baseLife || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="關係底線" minHeight={48}>{baseRel || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "six-hats") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="待查事項" minHeight={48}>{hatsToCheck || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="下一小步" minHeight={40}>{hatsNext || "＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="重看日" minHeight={40}>{hatsReview || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "same-scale") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="三條路" minHeight={40}>{scaleOptions || "＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="四項尺度" minHeight={48}>{scaleNotes || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="忽略的代價" minHeight={48}>{scaleIgnored || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "stress-test") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="最不利情況" minHeight={48}>{stressWorst || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="停止條件" minHeight={48}>{stressStop || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="專業確認" minHeight={40}>{stressPro || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "third-path") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="僵局" minHeight={48}>{thirdStalemate || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="旋鈕" minHeight={40}>{thirdKnob || "＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="新方案／重看條件" minHeight={48}>{thirdPlan || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "pro-confirm") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="問題 1" minHeight={40}>{proQ1 || "＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="問題 2" minHeight={40}>{proQ2 || "＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="問題 3" minHeight={40}>{proQ3 || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "decision-memo") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="目前狀態" minHeight={40}>{memoStatus || "＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="理由／底線" minHeight={48}>{memoReason || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="待確認／重看" minHeight={48}>{memoPending || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
       </div>
     );
   }

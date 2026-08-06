@@ -1,5 +1,6 @@
 /** 章節開篇 QR 深連結（例：0100 → /smart/chapter/0100） */
 import { CHAPTER_2_OPENINGS } from "./chapter-opening-ch2";
+import { CHAPTER_8_OPENINGS } from "./chapter-opening-ch8";
 
 export type ChapterLayout =
   | "routes"
@@ -16,7 +17,18 @@ export type ChapterLayout =
   | "recipe-card"
   | "photo-edit-safe"
   | "photo-curate"
-  | "sensory-habit";
+  | "sensory-habit"
+  | "decision-start"
+  | "decision-seat"
+  | "source-ladder"
+  | "clause-translate"
+  | "life-baselines"
+  | "six-hats"
+  | "same-scale"
+  | "stress-test"
+  | "third-path"
+  | "pro-confirm"
+  | "decision-memo";
 
 export type VisionTrustLevel = "enjoy" | "verify";
 
@@ -183,6 +195,125 @@ export interface SensoryHabitDemo {
   reflectNote: string;
 }
 
+/** Chapter 8：真實問題起點（0800） */
+export interface DecisionStartDemo {
+  id: string;
+  label: string;
+  choice: string;
+  lifeImpact: string;
+  wantClear: string;
+  reflectNote: string;
+}
+
+/** Chapter 8：決策主位改寫（0801） */
+export interface DecisionSeatDemo {
+  id: string;
+  label: string;
+  surfaceQ: string;
+  knownUnknown: string;
+  expectWorry: string;
+  realQ: string;
+  mustKeep: string;
+  reflectNote: string;
+}
+
+/** Chapter 8：來源階梯（0802） */
+export interface SourceLadderDemo {
+  id: string;
+  label: string;
+  sourceMeta: string;
+  layer: string;
+  confirms: string;
+  cannotProve: string;
+  toCheck: string;
+  reflectNote: string;
+}
+
+/** Chapter 8：條款白話（0803） */
+export interface ClauseTranslateDemo {
+  id: string;
+  label: string;
+  clauseSummary: string;
+  payLimit: string;
+  lifeUnknown: string;
+  reflectNote: string;
+}
+
+/** Chapter 8：三項生活底線（0804） */
+export interface LifeBaselinesDemo {
+  id: string;
+  label: string;
+  safety: string;
+  life: string;
+  relationship: string;
+  reflectNote: string;
+}
+
+/** Chapter 8：一人董事會（0805） */
+export interface SixHatsDemo {
+  id: string;
+  label: string;
+  toCheck: string;
+  nextStep: string;
+  reviewDate: string;
+  reflectNote: string;
+}
+
+/** Chapter 8：同尺比較（0806） */
+export interface SameScaleDemo {
+  id: string;
+  label: string;
+  optionsNote: string;
+  scalesNote: string;
+  ignoredCost: string;
+  reflectNote: string;
+}
+
+/** Chapter 8：壓力測試（0807） */
+export interface StressTestDemo {
+  id: string;
+  label: string;
+  worstCase: string;
+  stopSignal: string;
+  proCheck: string;
+  reflectNote: string;
+}
+
+/** Chapter 8：第三條路（0808） */
+export interface ThirdPathDemo {
+  id: string;
+  label: string;
+  stalemate: string;
+  knob: string;
+  newPlan: string;
+  reflectNote: string;
+}
+
+/** Chapter 8：專業確認（0809） */
+export interface ProConfirmDemo {
+  id: string;
+  label: string;
+  q1: string;
+  q2: string;
+  q3: string;
+  reflectNote: string;
+}
+
+/** Chapter 8：決策備忘錄（0810） */
+export interface DecisionMemoDemo {
+  id: string;
+  label: string;
+  status: string;
+  reasonBaseline: string;
+  pendingReview: string;
+  reflectNote: string;
+}
+
+export interface ChapterAppDeepLink {
+  href: string;
+  label: string;
+}
+
 /** 「整理三點，不替我決定」生活案例（0104 用） */
 export interface OrganizeDecideDemo {
   id: string;
@@ -266,6 +397,19 @@ export interface ChapterOpening {
   /** sensory-habit 版型：生活場景選項 */
   habitSceneOptions?: HabitSceneOption[];
   habitDemos?: SensoryHabitDemo[];
+  /** Chapter 8 版型資料 */
+  decisionStartDemos?: DecisionStartDemo[];
+  decisionSeatDemos?: DecisionSeatDemo[];
+  sourceLadderDemos?: SourceLadderDemo[];
+  clauseTranslateDemos?: ClauseTranslateDemo[];
+  lifeBaselinesDemos?: LifeBaselinesDemo[];
+  sixHatsDemos?: SixHatsDemo[];
+  sameScaleDemos?: SameScaleDemo[];
+  stressTestDemos?: StressTestDemo[];
+  thirdPathDemos?: ThirdPathDemo[];
+  proConfirmDemos?: ProConfirmDemo[];
+  decisionMemoDemos?: DecisionMemoDemo[];
+  appDeepLink?: ChapterAppDeepLink;
 }
 
 export const CHAPTER_0100: ChapterOpening = {
@@ -800,6 +944,7 @@ const CHAPTERS: Record<string, ChapterOpening> = {
   "0107": CHAPTER_0107,
   "0108": CHAPTER_0108,
   ...CHAPTER_2_OPENINGS,
+  ...CHAPTER_8_OPENINGS,
 };
 
 export function getChapterOpening(id: string): ChapterOpening | null {
@@ -907,6 +1052,87 @@ export interface ChapterSensoryHabitDraft {
   reflectNote: string;
 }
 
+export interface ChapterDecisionStartDraft {
+  choice: string;
+  lifeImpact: string;
+  wantClear: string;
+  reflectNote: string;
+}
+
+export interface ChapterDecisionSeatDraft {
+  surfaceQ: string;
+  knownUnknown: string;
+  expectWorry: string;
+  realQ: string;
+  mustKeep: string;
+  reflectNote: string;
+}
+
+export interface ChapterSourceLadderDraft {
+  sourceMeta: string;
+  layer: string;
+  confirms: string;
+  cannotProve: string;
+  toCheck: string;
+  reflectNote: string;
+}
+
+export interface ChapterClauseTranslateDraft {
+  clauseSummary: string;
+  payLimit: string;
+  lifeUnknown: string;
+  reflectNote: string;
+}
+
+export interface ChapterLifeBaselinesDraft {
+  safety: string;
+  life: string;
+  relationship: string;
+  reflectNote: string;
+}
+
+export interface ChapterSixHatsDraft {
+  toCheck: string;
+  nextStep: string;
+  reviewDate: string;
+  reflectNote: string;
+}
+
+export interface ChapterSameScaleDraft {
+  optionsNote: string;
+  scalesNote: string;
+  ignoredCost: string;
+  reflectNote: string;
+}
+
+export interface ChapterStressTestDraft {
+  worstCase: string;
+  stopSignal: string;
+  proCheck: string;
+  reflectNote: string;
+}
+
+export interface ChapterThirdPathDraft {
+  stalemate: string;
+  knob: string;
+  newPlan: string;
+  reflectNote: string;
+}
+
+export interface ChapterProConfirmDraft {
+  q1: string;
+  q2: string;
+  q3: string;
+  reflectNote: string;
+}
+
+export interface ChapterDecisionMemoDraft {
+  status: string;
+  reasonBaseline: string;
+  pendingReview: string;
+  reflectNote: string;
+}
+
 /** 0202：植物辨識提問句 */
 export function buildPlantAskPrompt(): string {
   return "這可能是什麼植物？請說明特徵。如果不確定，請說明不確定的部分。";
@@ -933,6 +1159,16 @@ export function buildCuriosityPrompt(question?: string): string {
   const q = question?.trim();
   if (!q) return "請用簡單中文解釋，並舉一個日常生活例子。";
   return `${q} 請用簡單中文解釋，並舉一個日常生活例子。`;
+}
+
+/** 0801：決策主位問題改寫 */
+export function buildDecisionSeatPrompt(): string {
+  return "請一次只問一題，幫我把決策問題說清楚。請依序問：我表面上在問什麼？目前已知與仍未知是什麼？我真正期待與最擔心的是什麼？最後請用我的語言整理：我真正想解決的是什麼，以及最不能犧牲的是什麼。請不要替我下結論，也不要推薦商品。";
+}
+
+/** 0805：一人董事會六帽會議 */
+export function buildSixHatsPrompt(): string {
+  return "請主持一次可暫停的一人董事會。先確認我的問題與三項生活底線，再依序只問一題：白帽（事實與未知）、紅帽（期待與擔心）、黃帽（可能價值）、黑帽（風險與底線）、綠帽（替代方案）、藍帽（下一步與重看時間）。完成後只整理摘要，不投票、不打分，也不替我決定。請勿要求帳號、證件或不必要的完整資產資料。";
 }
 
 /** 0206：餐點觀察提問句 */
@@ -1075,6 +1311,14 @@ export function getChapterDeepLinkHint(from: string | null | undefined): Chapter
     "0206": {
       label: "美食篇｜觀察",
       tips: ["拍一道餐點", "請整理可能食材與溫和觀察", "這不是醫療或營養診斷"],
+    },
+    "0801": {
+      label: "坐回決策主位",
+      tips: ["一次只問一題", "分開已知／未知與期待／擔心", "不替您下結論、不推薦商品"],
+    },
+    "0805": {
+      label: "一人董事會",
+      tips: ["六帽一次一題", "不投票、不打分", "勿輸入帳號證件或不必要資產資料"],
     },
   };
   const hit = known[chapterId] ?? {
