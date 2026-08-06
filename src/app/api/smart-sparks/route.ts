@@ -12,6 +12,7 @@ import {
   scoresFromSparkCounts,
   type SmartSpark,
 } from "@/lib/smart-blueprint";
+import { isSparkSource } from "@/lib/chapter-opening";
 
 const checklistIds = CHECKLIST_ITEMS.map((c) => c.id) as [string, ...string[]];
 
@@ -20,7 +21,10 @@ const PostSchema = z.object({
   action_text: z.string().trim().min(1).max(200),
   feeling_text: z.string().trim().min(1).max(200),
   checklist: z.array(z.enum(checklistIds)).max(10).optional(),
-  source: z.enum(["spark_card", "chapter3", "chapter0100"]).optional(),
+  source: z
+    .string()
+    .refine((v) => isSparkSource(v), { message: "invalid spark source" })
+    .optional(),
 });
 
 export async function GET() {

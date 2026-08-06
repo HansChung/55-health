@@ -4,6 +4,7 @@
 // ────────────────────────────────────────────────
 
 import type { SmartDimension, SmartScores } from "@/lib/smart";
+import type { SparkSource } from "@/lib/chapter-opening";
 
 export interface BlueprintDimension {
   key: SmartDimension;
@@ -81,7 +82,7 @@ export interface SmartSpark {
   action_text: string;
   feeling_text: string;
   checklist: ChecklistId[];
-  source: "spark_card" | "chapter3" | "chapter0100";
+  source: SparkSource;
   created_at: string;
 }
 
@@ -90,7 +91,7 @@ export interface SparkInput {
   action_text: string;
   feeling_text: string;
   checklist?: ChecklistId[];
-  source?: "spark_card" | "chapter3" | "chapter0100";
+  source?: SparkSource;
 }
 
 /** 光點數量 → 雷達顯示分數（0–100），讓第一個光點就看得見 */

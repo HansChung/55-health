@@ -47,6 +47,11 @@ import type { FoodItem } from "@/lib/types";
 import { getPendingMedicationReminders, isSameLocalDay } from "@/lib/medication-utils";
 import { generateHealthAlerts } from "@/lib/health-alerts";
 import { hasFeature, requiredTierLabel, type FeatureKey, type SubscriptionTier } from "@/lib/feature-gates";
+import {
+  CHAPTER_INTENT_KEY,
+  getChapterDeepLinkHint,
+  type ChapterIntentHint,
+} from "@/lib/chapter-opening";
 
 export default function Page() {
   const { user, profile, loading, refreshProfile, setProfileDirectly } = useAuth();
@@ -89,6 +94,7 @@ export default function Page() {
   const [showPhotoSource, setShowPhotoSource] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const pendingOpenRef = useRef<string | null>(null);
+  const [chapterIntent, setChapterIntent] = useState<ChapterIntentHint | null>(null);
 
   // 章節開篇 QR 深連結：/?open=voice|camera|photo&from=chapter0100
   useEffect(() => {
@@ -97,6 +103,14 @@ export default function Page() {
     const open = url.searchParams.get("open");
     if (open && ["voice", "camera", "photo"].includes(open)) {
       pendingOpenRef.current = open;
+    }
+    const from = url.searchParams.get("from");
+    const hint = getChapterDeepLinkHint(from);
+    if (hint) {
+      try {
+        sessionStorage.setItem(CHAPTER_INTENT_KEY, JSON.stringify(hint));
+      } catch { /* ignore */ }
+      setChapterIntent(hint);
     }
   }, []);
 
@@ -108,6 +122,15 @@ export default function Page() {
     const url = new URL(window.location.href);
     const from = url.searchParams.get("from");
     if (from) trackEvent("chapter_entry_open", { from, open });
+
+    // 若首屏 effect 尚未寫入，再補一次意圖
+    const hint = getChapterDeepLinkHint(from) ?? chapterIntent;
+    if (hint) {
+      try {
+        sessionStorage.setItem(CHAPTER_INTENT_KEY, JSON.stringify(hint));
+      } catch { /* ignore */ }
+      setChapterIntent(hint);
+    }
 
     if (open === "voice") setModal("voice");
     else if (open === "camera") setModal("camera");
@@ -625,6 +648,7 @@ export default function Page() {
             smartSummary={{ shi: smartShi }}
             onSmart={() => setSubpage("smart")}
             onBlueprint={() => setSubpage("blueprint")}
+            onBookPractice={() => { window.location.href = "/smart/guide"; }}
             onIot={() => setSubpage("iot")}
             caregiver={careElderCount > 0 ? { count: careElderCount, needsAttention: careNeedsAttention } : null}
             onCaregiver={() => setSubpage("caregiver")}
@@ -706,6 +730,7 @@ export default function Page() {
         <CameraScreen
           onClose={() => setModal(null)}
           onCapture={handleCapture}
+          chapterIntent={chapterIntent}
         />
       )}
       {modal === "result" && pendingResult && (
@@ -720,6 +745,7 @@ export default function Page() {
         <VoiceScreen
           onClose={() => setModal(null)}
           voiceTone={profile?.voice_tone ?? "warm"}
+          chapterIntent={chapterIntent}
         />
       )}
       {modal === "suggestion" && (

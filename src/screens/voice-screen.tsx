@@ -7,10 +7,12 @@ import { Mascot } from "@/components/mascot";
 import { api } from "@/lib/api-client";
 import { RealtimeClient } from "@/lib/realtime-client";
 import { trackEvent } from "@/lib/telemetry";
+import type { ChapterIntentHint } from "@/lib/chapter-opening";
 
 interface VoiceScreenProps {
   onClose: () => void;
   voiceTone?: VoiceTone;
+  chapterIntent?: ChapterIntentHint | null;
 }
 
 function generateUuid(): string {
@@ -37,7 +39,7 @@ function WaveformDots() {
   );
 }
 
-export function VoiceScreen({ onClose, voiceTone = "warm" }: VoiceScreenProps) {
+export function VoiceScreen({ onClose, voiceTone = "warm", chapterIntent }: VoiceScreenProps) {
   const [state, setState] = useState<"connecting" | "idle" | "listening" | "thinking" | "speaking" | "error">("idle");
   const [transcript, setTranscript] = useState<TranscriptMessage[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
@@ -224,6 +226,21 @@ export function VoiceScreen({ onClose, voiceTone = "warm" }: VoiceScreenProps) {
         </div>
         <div style={{ width: 48 }} />
       </div>
+
+      {chapterIntent && (
+        <div style={{
+          margin: "0 20px 8px", padding: "12px 14px",
+          background: "var(--primary-soft)", borderRadius: 14,
+          border: "1px solid var(--primary)",
+        }}>
+          <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", color: "var(--primary-deep)" }}>
+            書本練習｜{chapterIntent.label}
+          </div>
+          <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-2)", marginTop: 4, lineHeight: 1.45 }}>
+            二問：{chapterIntent.tips.join(" · ")}
+          </div>
+        </div>
+      )}
 
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "12px 24px 8px" }}>
         <Mascot

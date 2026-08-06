@@ -30,7 +30,10 @@ import {
   chapterEntryHref,
   chapterPhotoTryHref,
   chapterPickKey,
+  chapterSparkHref,
+  chapterSparkSource,
   chapterVoiceTryHref,
+  saveChapterSparkSeed,
   type ChapterVisionDraft,
   type ChapterPhotoSearchDraft,
   type ChapterNoteCaptureDraft,
@@ -426,6 +429,89 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const tryPhotoInNuannuan = () => {
     trackEvent("chapter_photo_try", { chapter: chapter.id });
     router.push(chapterPhotoTryHref(chapter.id));
+  };
+
+  /** 從當前練習草稿抽出最適合點成光點的一句話 */
+  const buildSparkSeedTexts = (): { action: string; feeling: string } => {
+    const feeling =
+      (layout === "organize-decide" ? userDecision : reflectNote).trim() ||
+      "這是我從書本練習留下的一句話。";
+
+    let action = "";
+    switch (layout) {
+      case "question-rewrite":
+        action = naturalQuestion.trim() || keywords.filter(Boolean).join(" · ");
+        break;
+      case "organize-decide":
+        action = nextStep.trim() || threePoints.filter(Boolean).join("；") || messyTask.trim();
+        break;
+      case "vision-identify":
+        action = aiAnswerNote.trim() || itemLabel.trim();
+        break;
+      case "photo-search":
+        action = memoryNote.trim() || (searchKeyword.trim() ? `搜尋「${searchKeyword.trim()}」找回的回憶` : "");
+        break;
+      case "note-capture":
+        action = noteContent.trim() || noteTitle.trim();
+        break;
+      case "smart-flow":
+        action = savedLine.trim() || askAnswer.trim() || snapNote.trim();
+        break;
+      case "menu-translate":
+        action = translationSummary.trim() || menuSnippet.trim();
+        break;
+      case "product-compare":
+        action =
+          threeDiffs.filter(Boolean).join("；") ||
+          (productA.trim() && productB.trim() ? `${productA} vs ${productB}` : "");
+        break;
+      case "curiosity-ask":
+        action = insight.trim() || aiAnswer.trim() || question.trim();
+        break;
+      case "recipe-card":
+        action =
+          [dishName, colors, fiberSource, feeling].filter(Boolean).join("｜") ||
+          dishName.trim();
+        break;
+      case "photo-edit-safe":
+        action = compareNote.trim() || editAction.trim();
+        break;
+      case "photo-curate":
+        action =
+          (theme.trim() ? `主題：${theme.trim()}。` : "") +
+          captions.filter(Boolean).join("／");
+        break;
+      case "sensory-habit":
+        action = planNote.trim() || pickedScenes.join("、");
+        break;
+      case "routes":
+      case "ai-entry":
+      default:
+        action = reflectNote.trim() || (picked ? `今天想先試：${picked}` : "");
+        break;
+    }
+
+    if (!action.trim()) {
+      action = chapter.quote?.trim() || chapter.tryPrompt.trim();
+    }
+    return { action: action.trim().slice(0, 200), feeling: feeling.slice(0, 200) };
+  };
+
+  const saveAsSpark = () => {
+    const { action, feeling } = buildSparkSeedTexts();
+    if (!action) {
+      toast.info("請先完成一小步練習，再點成光點。");
+      return;
+    }
+    saveChapterSparkSeed({
+      source: chapterSparkSource(chapter.id),
+      action_text: action,
+      feeling_text: feeling,
+      chapterId: chapter.id,
+      chapterTitle: chapter.title,
+    });
+    trackEvent("chapter_spark_save", { chapter: chapter.id });
+    router.push(chapterSparkHref(chapter.id));
   };
 
   const copyNaturalQuestion = async () => {
@@ -2668,6 +2754,38 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           }}>
             {chapter.continueBody}
           </p>
+
+          <div style={{
+            padding: 16, borderRadius: "var(--r-lg)",
+            background: "linear-gradient(135deg, #FBE6D4 0%, #FFF8EE 100%)",
+            border: "2px solid var(--primary)",
+            marginBottom: 16,
+          }}>
+            <div style={{
+              fontSize: "var(--fs-sm)", fontWeight: 800, marginBottom: 6,
+              color: "var(--primary-deep)",
+            }}>
+              把這句話點成光點
+            </div>
+            <p style={{
+              fontSize: "var(--fs-xs)", color: "var(--ink-2)",
+              lineHeight: 1.5, margin: "0 0 12px",
+            }}>
+              書教節奏；暖暖幫您留下痕跡。一拍、二問、三記下之後，可把最有用的一句話存進圓夢藍圖（需登入）。
+            </p>
+            <button
+              type="button"
+              onClick={saveAsSpark}
+              style={{
+                width: "100%", padding: "14px",
+                background: "var(--primary)", border: "none",
+                borderRadius: "var(--r-pill)", fontWeight: 800,
+                fontSize: "var(--fs-sm)", color: "#fff", cursor: "pointer",
+              }}
+            >
+              把這句話點成光點 →
+            </button>
+          </div>
 
           <div style={{
             padding: 16, borderRadius: "var(--r-lg)",

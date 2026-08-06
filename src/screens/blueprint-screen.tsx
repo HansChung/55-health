@@ -23,6 +23,7 @@ import {
 } from "@/lib/smart-blueprint";
 
 import type { SparkSource } from "@/lib/chapter-opening";
+import { consumeChapterSparkSeed, sparkFormTitle } from "@/lib/chapter-opening";
 
 interface BlueprintScreenProps {
   onBack: () => void;
@@ -64,6 +65,16 @@ export function BlueprintScreen({ onBack, initialMode = "home", sparkSource }: B
   const [lastSpark, setLastSpark] = useState<SmartSpark | null>(null);
   /** 這次送出前的光點總數，用來判斷文案「第一個」還是「又點亮」 */
   const [sparkCountBeforeSubmit, setSparkCountBeforeSubmit] = useState(0);
+  const [chapterSeedLabel, setChapterSeedLabel] = useState("");
+
+  useEffect(() => {
+    if (view !== "spark") return;
+    const seed = consumeChapterSparkSeed(source);
+    if (!seed) return;
+    if (seed.action_text) setActionText(seed.action_text);
+    if (seed.feeling_text) setFeelingText(seed.feeling_text);
+    setChapterSeedLabel(seed.chapterTitle);
+  }, [view, source]);
 
   const resetForm = () => {
     setActionText("");
@@ -218,13 +229,7 @@ export function BlueprintScreen({ onBack, initialMode = "home", sparkSource }: B
   if (view === "spark") {
     return (
       <SubPage
-        title={
-          source === "chapter3"
-            ? "Chapter 3 打卡"
-            : source === "chapter0100"
-              ? "記下一句話"
-              : "點亮光點"
-        }
+        title={sparkFormTitle(source)}
         onBack={() => (initialMode === "home" ? setView("home") : onBack())}
         accent="linear-gradient(180deg, #FBE6D4 0%, transparent 100%)"
         footer={
@@ -240,9 +245,24 @@ export function BlueprintScreen({ onBack, initialMode = "home", sparkSource }: B
       >
         <InsightBlock />
 
+        {chapterSeedLabel && (
+          <p style={{
+            fontSize: "var(--fs-sm)", color: "var(--primary-deep)",
+            background: "var(--primary-soft)", borderRadius: 12, padding: "12px 14px",
+            marginBottom: 16, lineHeight: 1.5, fontWeight: 700,
+          }}>
+            來自書本練習：{chapterSeedLabel}
+            <span style={{ display: "block", fontWeight: 600, color: "var(--ink-2)", marginTop: 4 }}>
+              一拍、二問、三記下 — 把留下的一句話變成光點
+            </span>
+          </p>
+        )}
+
         <SectionTitle>3. 一個核心行動</SectionTitle>
         <p style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", marginBottom: 14, lineHeight: 1.5 }}>
-          請選出最近一週的一件日常小事。
+          {/^chapter\d{4}$/.test(source)
+            ? "請確認或改寫您從章節練習留下的那句話。"
+            : "請選出最近一週的一件日常小事。"}
         </p>
 
         <FieldLabel>我最近做了一件小事</FieldLabel>

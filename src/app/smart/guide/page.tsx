@@ -197,6 +197,14 @@ export default function SmartGuidePage() {
         }}>
           第二章｜感官覺醒
         </div>
+        <p style={{
+          fontSize: "var(--fs-xs)", color: "var(--ink-2)", lineHeight: 1.55,
+          margin: "0 0 12px", padding: "12px 14px",
+          background: "var(--surface)", borderRadius: 12, border: "1px solid var(--line)",
+        }}>
+          <strong>書教節奏，暖暖留下痕跡。</strong>
+          {" "}共同節奏：一拍、二問、三記下。練習完可把最有用的一句話「點成光點」。
+        </p>
         {CHAPTER_2_LINKS.map((ch) => (
           <button
             key={ch.id}

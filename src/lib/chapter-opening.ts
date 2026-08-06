@@ -22,7 +22,7 @@ export type VisionTrustLevel = "enjoy" | "verify";
 
 export type ChapterEntryId = string;
 
-export type SparkSource = "spark_card" | "chapter3" | "chapter0100";
+export type SparkSource = "spark_card" | "chapter3" | `chapter${string}`;
 
 export interface ChapterEntry {
   id: ChapterEntryId;
@@ -962,8 +962,109 @@ export function chapterPhotoTryHref(chapterId: string): string {
   return `/?${params.toString()}`;
 }
 
+/** 章節練習 → 光點來源（例：0104 → chapter0104） */
+export function chapterSparkSource(chapterId: string): SparkSource {
+  return `chapter${chapterId}`;
+}
+
+export function chapterSparkHref(chapterId: string): string {
+  return `/smart/spark?source=${chapterSparkSource(chapterId)}`;
+}
+
 export function isSparkSource(value: string | null | undefined): value is SparkSource {
-  return value === "spark_card" || value === "chapter3" || value === "chapter0100";
+  if (!value) return false;
+  return value === "spark_card" || value === "chapter3" || /^chapter\d{4}$/.test(value);
+}
+
+export function sparkFormTitle(source: SparkSource): string {
+  if (source === "chapter3") return "Chapter 3 打卡";
+  if (source === "chapter0100") return "記下一句話";
+  if (/^chapter\d{4}$/.test(source)) return "把這句話點成光點";
+  return "點亮光點";
+}
+
+/** 深連結意圖提示（相機／語音上方顯示） */
+export const CHAPTER_INTENT_KEY = "nuannuan_chapter_intent";
+
+export interface ChapterIntentHint {
+  from: string;
+  chapterId: string;
+  label: string;
+  tips: string[];
+}
+
+export function getChapterDeepLinkHint(from: string | null | undefined): ChapterIntentHint | null {
+  if (!from?.startsWith("chapter")) return null;
+  const chapterId = from.replace(/^chapter/, "");
+  const known: Record<string, { label: string; tips: string[] }> = {
+    "0105": {
+      label: "萬物皆可問",
+      tips: ["拍低風險物品", "請 AI 用簡單中文說明", "牽涉安全請再查證"],
+    },
+    "0108": {
+      label: "一拍、二問、三記下",
+      tips: ["一拍：先拍下來", "二問：用自然的話問一句", "三記下：留下最有用的一句"],
+    },
+    "0201": {
+      label: "數位華爾滋",
+      tips: ["一拍：先拍下來", "二問：用自然的話問一句", "三記下：留下最有用的一句"],
+    },
+    "0202": {
+      label: "自然篇｜識花",
+      tips: ["拍花朵與葉片", "問：這可能是什麼植物？", "食用／藥用請再查證"],
+    },
+    "0203": {
+      label: "旅行篇｜菜單",
+      tips: ["拍清楚一小段菜單", "補上自己的飲食需要", "點餐前向店家確認"],
+    },
+    "0204": {
+      label: "消費篇｜比較",
+      tips: ["拍公開標籤即可", "勿拍收據個資", "需要／適合／值得由您判斷"],
+    },
+    "0205": {
+      label: "知識篇｜好奇",
+      tips: ["用自己的話問", "請舉一個生活例子", "重要資訊再查可靠來源"],
+    },
+    "0206": {
+      label: "美食篇｜觀察",
+      tips: ["拍一道餐點", "請整理可能食材與溫和觀察", "這不是醫療或營養診斷"],
+    },
+  };
+  const hit = known[chapterId] ?? {
+    label: "書本練習",
+    tips: ["一拍：先拍下來", "二問：用自然的話問一句", "三記下：留下有用的一句"],
+  };
+  return { from, chapterId, ...hit };
+}
+
+/** 章節練習預填光點（跨頁帶到 /smart/spark） */
+export const CHAPTER_SPARK_SEED_KEY = "nuannuan_spark_seed";
+
+export interface ChapterSparkSeed {
+  source: SparkSource;
+  action_text: string;
+  feeling_text: string;
+  chapterId: string;
+  chapterTitle: string;
+}
+
+export function saveChapterSparkSeed(seed: ChapterSparkSeed): void {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem(CHAPTER_SPARK_SEED_KEY, JSON.stringify(seed));
+}
+
+export function consumeChapterSparkSeed(expectedSource?: SparkSource): ChapterSparkSeed | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(CHAPTER_SPARK_SEED_KEY);
+    if (!raw) return null;
+    const seed = JSON.parse(raw) as ChapterSparkSeed;
+    if (expectedSource && seed.source !== expectedSource) return null;
+    sessionStorage.removeItem(CHAPTER_SPARK_SEED_KEY);
+    return seed;
+  } catch {
+    return null;
+  }
 }
 
 /** @deprecated 請改用 chapterPickKey(id) */

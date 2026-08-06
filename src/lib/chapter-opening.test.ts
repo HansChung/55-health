@@ -12,7 +12,10 @@ import {
   chapterPhotoTryHref,
   chapterPickKey,
   chapterDraftKey,
+  chapterSparkHref,
+  chapterSparkSource,
   chapterVoiceTryHref,
+  getChapterDeepLinkHint,
   getChapterOpening,
   isSparkSource,
 } from "./chapter-opening";
@@ -152,6 +155,14 @@ describe("chapter-opening", () => {
 
   it("isSparkSource", () => {
     expect(isSparkSource("chapter0100")).toBe(true);
+    expect(isSparkSource("chapter0202")).toBe(true);
     expect(isSparkSource("invalid")).toBe(false);
+  });
+
+  it("chapterSparkSource / getChapterDeepLinkHint", () => {
+    expect(chapterSparkSource("0202")).toBe("chapter0202");
+    expect(chapterSparkHref("0202")).toContain("source=chapter0202");
+    expect(getChapterDeepLinkHint("chapter0202")?.label).toContain("識花");
+    expect(getChapterDeepLinkHint("chapter9999")?.tips[0]).toContain("一拍");
   });
 });

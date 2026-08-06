@@ -40,6 +40,7 @@ interface HomeScreenProps {
   smartSummary?: { shi: number | null } | null;
   onSmart?: () => void;
   onBlueprint?: () => void;
+  onBookPractice?: () => void;
   onIot?: () => void;
   caregiver?: { count: number; needsAttention: boolean } | null;
   onCaregiver?: () => void;
@@ -59,7 +60,7 @@ function getDateLabel(): string {
   return `${d.getMonth() + 1}月${d.getDate()}日　星期${WEEKDAYS[d.getDay()]}`;
 }
 
-export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart, onBlueprint, onIot, caregiver = null, onCaregiver }: HomeScreenProps) {
+export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart, onBlueprint, onBookPractice, onIot, caregiver = null, onCaregiver }: HomeScreenProps) {
   // 從餐點計算今日營養
   const totals = meals.reduce(
     (s, m) => {
@@ -180,6 +181,18 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
           background="linear-gradient(135deg, #FBF3E8 0%, #FFFFFF 100%)"
           borderColor="#E8D4B8"
           iconBg="#F5E6D0"
+        />
+      )}
+
+      {onBookPractice && (
+        <NavCard
+          onClick={onBookPractice}
+          emoji="📖"
+          title="書本練習"
+          subtitle="一拍、二問、三記下｜智慧啟航／感官覺醒"
+          background="linear-gradient(135deg, #E8F5EE 0%, #FFFFFF 100%)"
+          borderColor="#C3DDBB"
+          iconBg="#D5E8CE"
         />
       )}
 

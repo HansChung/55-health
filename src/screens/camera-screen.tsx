@@ -5,15 +5,17 @@ import { Icon } from "@/components/icons";
 import { Mascot } from "@/components/mascot";
 import { api } from "@/lib/api-client";
 import type { FoodAnalysisResult } from "@/lib/ai/gemini";
+import type { ChapterIntentHint } from "@/lib/chapter-opening";
 
 interface CameraScreenProps {
   onClose: () => void;
   onCapture: (result: FoodAnalysisResult, photoDataUrl: string) => void;
+  chapterIntent?: ChapterIntentHint | null;
 }
 
 type Stage = "init" | "ready" | "analyzing" | "error";
 
-export function CameraScreen({ onClose, onCapture }: CameraScreenProps) {
+export function CameraScreen({ onClose, onCapture, chapterIntent }: CameraScreenProps) {
   const [stage, setStage] = useState<Stage>("init");
   const [errorMsg, setErrorMsg] = useState("");
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
@@ -23,7 +25,9 @@ export function CameraScreen({ onClose, onCapture }: CameraScreenProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const tips = ["對準餐盤", "光線充足會更準", "可以拍多樣食物"];
+  const tips = chapterIntent?.tips?.length
+    ? chapterIntent.tips
+    : ["對準餐盤", "光線充足會更準", "可以拍多樣食物"];
 
   // 啟動攝影機
   useEffect(() => {
@@ -227,6 +231,21 @@ export function CameraScreen({ onClose, onCapture }: CameraScreenProps) {
           )}
           <div style={{ width: 52 }} />
         </div>
+
+        {chapterIntent && stage === "ready" && (
+          <div style={{
+            position: "absolute", top: 80, left: 16, right: 16,
+            background: "rgba(232,245,238,0.95)", borderRadius: 14,
+            padding: "12px 14px", color: "#2F4F3A",
+          }}>
+            <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 4 }}>
+              書本練習｜{chapterIntent.label}
+            </div>
+            <div style={{ fontSize: "var(--fs-xs)", lineHeight: 1.45 }}>
+              一拍、二問、三記下 — {tips.join(" · ")}
+            </div>
+          </div>
+        )}
 
         {/* 取景框（四個角）*/}
         {stage === "ready" && !photoDataUrl && (

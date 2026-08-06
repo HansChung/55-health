@@ -44,3 +44,9 @@ stack works well for auth + meal/diary CRUD:
    `[auth.email.template.magic_link]` in `config.toml`) to expose the code, then read it from the local
    Mailpit inbox at http://127.0.0.1:54324. Create a pre-confirmed test user with the Auth admin API
    (`POST /auth/v1/admin/users` with `email_confirm: true`) using the service-role key.
+
+### Book × App light coupling（書本／App）
+- Chapter openings live at `/smart/chapter/[id]` (public, printable). Shared rhythm: **一拍、二問、三記下**.
+- Optional save: 「把這句話點成光點」→ `/smart/spark?source=chapterXXXX` (sessionStorage seed).
+- Home 「書本練習」→ `/smart/guide`. Deep links `/?open=voice|camera&from=chapterXXXX` show intent tips.
+- Production DB may need `supabase/add-chapter-opening-sources.sql` if the old source check is still in place.
