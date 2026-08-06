@@ -89,7 +89,19 @@ export default function SmartGuidePage() {
             fontSize: "var(--fs-sm)", color: "#5BA0C9", cursor: "pointer",
           }}
         >
-          章節開篇｜風起了，調整風帆 →
+          章節 0100｜風起了，調整風帆 →
+        </button>
+        <button
+          type="button"
+          onClick={() => router.push("/smart/chapter/0102")}
+          style={{
+            width: "100%", marginTop: 10, padding: "16px",
+            background: "var(--surface)", border: "2px solid #9B7AD4",
+            borderRadius: "var(--r-lg)", fontWeight: 700,
+            fontSize: "var(--fs-sm)", color: "#7B5BB8", cursor: "pointer",
+          }}
+        >
+          章節 0102｜先找得到，再慢慢用 →
         </button>
       </SubPage>
     </div>
