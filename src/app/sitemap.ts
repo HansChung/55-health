@@ -17,6 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/smart/chapter/0100",
     "/smart/chapter/0102",
     "/smart/chapter/0103",
+    "/smart/chapter/0104",
   ].map((path) => ({
     url: `${BASE_URL}${path}`,
     lastModified: now,

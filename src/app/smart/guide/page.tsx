@@ -115,6 +115,18 @@ export default function SmartGuidePage() {
         >
           章節 0103｜把關鍵字丟掉：用人話對話 →
         </button>
+        <button
+          type="button"
+          onClick={() => router.push("/smart/chapter/0104")}
+          style={{
+            width: "100%", marginTop: 10, padding: "16px",
+            background: "var(--surface)", border: "2px solid var(--sage)",
+            borderRadius: "var(--r-lg)", fontWeight: 700,
+            fontSize: "var(--fs-sm)", color: "var(--sage)", cursor: "pointer",
+          }}
+        >
+          章節 0104｜第二個大腦：把繁雜交給 AI →
+        </button>
       </SubPage>
     </div>
   );

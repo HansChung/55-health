@@ -7,9 +7,12 @@ import { Icon } from "@/components/icons";
 import {
   type ChapterEntry,
   type ChapterOpening,
+  type ChapterOrganizeDraft,
   type ChapterRewriteDraft,
   type PhoneEntryPath,
   type QuestionRewriteDemo,
+  type OrganizeDecideDemo,
+  buildOrganizeAskPrompt,
   chapterDraftKey,
   chapterEntryHref,
   chapterPickKey,
@@ -35,6 +38,10 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const [keywords, setKeywords] = useState<[string, string, string]>(["", "", ""]);
   const [naturalQuestion, setNaturalQuestion] = useState("");
   const [backgrounds, setBackgrounds] = useState<string[]>([]);
+  const [messyTask, setMessyTask] = useState("");
+  const [threePoints, setThreePoints] = useState<[string, string, string]>(["", "", ""]);
+  const [nextStep, setNextStep] = useState("");
+  const [userDecision, setUserDecision] = useState("");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -55,20 +62,43 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           if (d.backgrounds) setBackgrounds(d.backgrounds);
         }
       }
+      if (layout === "organize-decide") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterOrganizeDraft;
+          if (d.messyTask) setMessyTask(d.messyTask);
+          if (d.threePoints) setThreePoints(d.threePoints);
+          if (d.nextStep) setNextStep(d.nextStep);
+          if (d.userDecision) setUserDecision(d.userDecision);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
     } catch {
       /* ignore */
     }
   }, [pickKey, draftKey, layout]);
 
-  const saveDraft = (patch: Partial<ChapterRewriteDraft>) => {
-    if (layout !== "question-rewrite" || typeof window === "undefined") return;
-    const next: ChapterRewriteDraft = {
-      keywords: patch.keywords ?? keywords,
-      naturalQuestion: patch.naturalQuestion ?? naturalQuestion,
-      reflectNote: patch.reflectNote ?? reflectNote,
-      backgrounds: patch.backgrounds ?? backgrounds,
-    };
-    localStorage.setItem(draftKey, JSON.stringify(next));
+  const saveDraft = (patch: Partial<ChapterRewriteDraft & ChapterOrganizeDraft>) => {
+    if (typeof window === "undefined") return;
+    if (layout === "question-rewrite") {
+      const next: ChapterRewriteDraft = {
+        keywords: patch.keywords ?? keywords,
+        naturalQuestion: patch.naturalQuestion ?? naturalQuestion,
+        reflectNote: patch.reflectNote ?? reflectNote,
+        backgrounds: patch.backgrounds ?? backgrounds,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layout === "organize-decide") {
+      const next: ChapterOrganizeDraft = {
+        messyTask: patch.messyTask ?? messyTask,
+        threePoints: patch.threePoints ?? threePoints,
+        nextStep: patch.nextStep ?? nextStep,
+        userDecision: patch.userDecision ?? userDecision,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
   };
 
   const savePick = (id: string, note?: string) => {
@@ -114,6 +144,34 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
       naturalQuestion: demo.naturalQuestion,
     });
     toast.success(`已帶入${demo.label}，您可以再改成自己的問題。`);
+  };
+
+  const applyOrganizeDemo = (demo: OrganizeDecideDemo) => {
+    setMessyTask(demo.messyTask);
+    setThreePoints(demo.threePoints);
+    setNextStep(demo.nextStep);
+    setUserDecision(demo.userDecision);
+    saveDraft({
+      messyTask: demo.messyTask,
+      threePoints: demo.threePoints,
+      nextStep: demo.nextStep,
+      userDecision: demo.userDecision,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的狀況。`);
+  };
+
+  const copyOrganizeAsk = async () => {
+    const text = buildOrganizeAskPrompt(messyTask);
+    if (!messyTask.trim()) {
+      toast.info("請先寫下繁雜的事（請勿含敏感資料）。");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("已複製整理提問，可以貼給 AI。");
+    } catch {
+      toast.info("請長按文字框手動複製。");
+    }
   };
 
   const toggleBackground = (id: string) => {
@@ -352,6 +410,79 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
             </div>
           )}
 
+          {layout === "organize-decide" && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                繁雜的事（請勿含身分證、密碼、完整病歷等敏感資料）
+              </div>
+              <textarea
+                value={messyTask}
+                onChange={(e) => {
+                  setMessyTask(e.target.value);
+                  saveDraft({ messyTask: e.target.value });
+                }}
+                placeholder="例如：回診拿回家一疊衛教單，不知道先看什麼…"
+                rows={3}
+                style={{
+                  width: "100%", padding: "14px 16px", marginBottom: 10,
+                  borderRadius: 12, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                }}
+              />
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+                <button type="button" onClick={copyOrganizeAsk} style={secondaryBtnStyle}>
+                  複製「請 AI 整理」提問句
+                </button>
+                <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>
+                  在暖暖試問這件事 →
+                </button>
+              </div>
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                AI 整理後，填入三個重點與下一步
+              </div>
+              {(["一", "二", "三"] as const).map((label, i) => (
+                <input
+                  key={label}
+                  value={threePoints[i]}
+                  onChange={(e) => {
+                    const next = [...threePoints] as [string, string, string];
+                    next[i] = e.target.value;
+                    setThreePoints(next);
+                    saveDraft({ threePoints: next });
+                  }}
+                  placeholder={`重點${label}`}
+                  style={{
+                    width: "100%", padding: "12px 14px", marginBottom: 8,
+                    borderRadius: 10, border: "2px solid var(--line-strong)",
+                    background: "var(--surface)", fontSize: "var(--fs-sm)",
+                    fontFamily: "inherit", boxSizing: "border-box",
+                  }}
+                />
+              ))}
+              <input
+                value={nextStep}
+                onChange={(e) => {
+                  setNextStep(e.target.value);
+                  saveDraft({ nextStep: e.target.value });
+                }}
+                placeholder="可先做的小步驟"
+                style={{
+                  width: "100%", padding: "12px 14px",
+                  borderRadius: 10, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", boxSizing: "border-box",
+                }}
+              />
+            </div>
+          )}
+
           {layout === "routes" && chapter.entries && chapter.entries.length > 0 && (
             <div style={{
               display: "grid", gridTemplateColumns: "1fr 1fr",
@@ -428,16 +559,25 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           )}
 
           <textarea
-            value={reflectNote}
+            value={layout === "organize-decide" ? userDecision : reflectNote}
             onChange={(e) => {
-              setReflectNote(e.target.value);
-              if (layout === "question-rewrite") {
-                saveDraft({ reflectNote: e.target.value });
-              } else if (picked) {
-                savePick(picked, e.target.value);
+              if (layout === "organize-decide") {
+                setUserDecision(e.target.value);
+                saveDraft({ userDecision: e.target.value });
+              } else {
+                setReflectNote(e.target.value);
+                if (layout === "question-rewrite") {
+                  saveDraft({ reflectNote: e.target.value });
+                } else if (picked) {
+                  savePick(picked, e.target.value);
+                }
               }
             }}
-            placeholder={chapter.reflectPlaceholder ?? "寫下您的想法…"}
+            placeholder={
+              layout === "organize-decide"
+                ? chapter.reflectPlaceholder ?? "寫下仍需您自己決定的事…"
+                : chapter.reflectPlaceholder ?? "寫下您的想法…"
+            }
             rows={3}
             style={{
               width: "100%", padding: "14px 16px", marginBottom: 24,
@@ -533,6 +673,52 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                   ))}
                 </div>
               )}
+              {layout === "organize-decide" && chapter.organizeDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.organizeDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8,
+                        color: "var(--sage)",
+                      }}>
+                        {demo.label}
+                      </div>
+                      <p style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.55, margin: "0 0 8px" }}>
+                        繁雜：{demo.messyTask}
+                      </p>
+                      <ol style={{
+                        margin: "0 0 8px", paddingLeft: 20,
+                        fontSize: "var(--fs-xs)", color: "var(--ink-2)", lineHeight: 1.55,
+                      }}>
+                        {demo.threePoints.map((p, i) => (
+                          <li key={i}>{p}</li>
+                        ))}
+                      </ol>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}>
+                        <strong>可先做：</strong>{demo.nextStep}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--primary-deep)" }}>
+                        <strong>仍由我決定：</strong>{demo.userDecision}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => applyOrganizeDemo(demo)}
+                        style={{
+                          padding: "8px 14px", borderRadius: "var(--r-pill)",
+                          border: "1px solid var(--sage)", background: "var(--surface)",
+                          color: "var(--sage)", fontWeight: 700,
+                          fontSize: "var(--fs-xs)", cursor: "pointer",
+                        }}
+                      >
+                        帶入這則案例
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
               {chapter.guideFooterNote && (
                 <p style={{
                   fontSize: "var(--fs-xs)", color: "var(--ink-3)",
@@ -605,6 +791,10 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           keywords={keywords}
           naturalQuestion={naturalQuestion}
           backgrounds={backgrounds}
+          messyTask={messyTask}
+          threePoints={threePoints}
+          nextStep={nextStep}
+          userDecision={userDecision}
         />
       </div>
     </>
@@ -735,6 +925,10 @@ function PrintCard({
   keywords = ["", "", ""],
   naturalQuestion = "",
   backgrounds = [],
+  messyTask = "",
+  threePoints = ["", "", ""],
+  nextStep = "",
+  userDecision = "",
 }: {
   chapter: ChapterOpening;
   picked: string | null;
@@ -743,12 +937,54 @@ function PrintCard({
   keywords?: [string, string, string];
   naturalQuestion?: string;
   backgrounds?: string[];
+  messyTask?: string;
+  threePoints?: [string, string, string];
+  nextStep?: string;
+  userDecision?: string;
 }) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const bgLabels = chapter.backgroundOptions
     ?.filter((o) => backgrounds.includes(o.id))
     .map((o) => o.label)
     .join("、");
+
+  if (layout === "organize-decide") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <PrintGridCell title="繁雜的事" minHeight={48}>
+          {messyTask || "＿＿＿＿＿＿＿＿＿＿"}
+        </PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="三個重點" minHeight={72}>
+            <ol style={{ margin: 0, paddingLeft: 18 }}>
+              {(threePoints.some(Boolean) ? threePoints : ["＿＿＿", "＿＿＿", "＿＿＿"]).map((p, i) => (
+                <li key={i} style={{ marginBottom: 4 }}>{p || "＿＿＿"}</li>
+              ))}
+            </ol>
+          </PrintGridCell>
+        </div>
+        <div style={{
+          display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16,
+        }}>
+          <PrintGridCell title="可先做的下一步" minHeight={64}>
+            {nextStep || "＿＿＿＿＿＿"}
+          </PrintGridCell>
+          <PrintGridCell title="我真正要決定的" minHeight={64}>
+            {userDecision || "＿＿＿＿＿＿"}
+          </PrintGridCell>
+        </div>
+        <p style={{ fontSize: 12, color: "#666" }}>
+          掃碼網址：{origin}/smart/chapter/{chapter.id}
+        </p>
+      </div>
+    );
+  }
 
   if (layout === "question-rewrite") {
     return (
@@ -871,3 +1107,18 @@ function PrintGridCell({
     </div>
   );
 }
+
+const secondaryBtnStyle: React.CSSProperties = {
+  width: "100%", padding: "14px",
+  background: "var(--surface)", border: "2px solid var(--line-strong)",
+  borderRadius: "var(--r-pill)", fontWeight: 700,
+  fontSize: "var(--fs-sm)", cursor: "pointer",
+};
+
+const primaryOutlineBtnStyle: React.CSSProperties = {
+  width: "100%", padding: "14px",
+  background: "var(--primary-soft)", border: "2px solid var(--primary)",
+  borderRadius: "var(--r-pill)", fontWeight: 700,
+  fontSize: "var(--fs-sm)", color: "var(--primary-deep)",
+  cursor: "pointer",
+};

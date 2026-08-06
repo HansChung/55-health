@@ -3,6 +3,7 @@ import {
   CHAPTER_0100,
   CHAPTER_0102,
   CHAPTER_0103,
+  buildOrganizeAskPrompt,
   chapterEntryHref,
   chapterPickKey,
   chapterDraftKey,
@@ -33,6 +34,21 @@ describe("chapter-opening", () => {
     expect(ch?.layout).toBe("question-rewrite");
     expect(ch?.rewriteDemos).toHaveLength(3);
     expect(ch?.backgroundOptions?.length).toBeGreaterThan(2);
+  });
+
+  it("getChapterOpening 0104 organize-decide", () => {
+    const ch = getChapterOpening("0104");
+    expect(ch?.title).toContain("第二個大腦");
+    expect(ch?.layout).toBe("organize-decide");
+    expect(ch?.quote).toContain("仍然由您掌握");
+    expect(ch?.organizeDemos).toHaveLength(2);
+    expect(ch?.printCardTitle).toBe("三點一決定整理卡");
+  });
+
+  it("buildOrganizeAskPrompt", () => {
+    expect(buildOrganizeAskPrompt("")).toContain("不要替我決定");
+    expect(buildOrganizeAskPrompt("  出門要帶什麼  ")).toContain("出門要帶什麼");
+    expect(buildOrganizeAskPrompt("出門要帶什麼")).not.toContain("  ");
   });
 
   it("未知章節回 null", () => {

@@ -1,5 +1,5 @@
 /** 章節開篇 QR 深連結（例：0100 → /smart/chapter/0100） */
-export type ChapterLayout = "routes" | "ai-entry" | "question-rewrite";
+export type ChapterLayout = "routes" | "ai-entry" | "question-rewrite" | "organize-decide";
 
 export type ChapterEntryId = "ask" | "snap" | "photo" | "note";
 
@@ -37,6 +37,17 @@ export interface QuestionBackgroundOption {
   hint: string;
 }
 
+/** 「整理三點，不替我決定」生活案例（0104 用） */
+export interface OrganizeDecideDemo {
+  id: string;
+  label: string;
+  messyTask: string;
+  askPrompt: string;
+  threePoints: [string, string, string];
+  nextStep: string;
+  userDecision: string;
+}
+
 export interface ChapterOpening {
   id: string;
   qrCode: string;
@@ -70,6 +81,8 @@ export interface ChapterOpening {
   /** question-rewrite 版型：三組示範 + 背景選項 */
   rewriteDemos?: QuestionRewriteDemo[];
   backgroundOptions?: QuestionBackgroundOption[];
+  /** organize-decide 版型：生活案例示範 */
+  organizeDemos?: OrganizeDecideDemo[];
 }
 
 export const CHAPTER_0100: ChapterOpening = {
@@ -292,10 +305,74 @@ export const CHAPTER_0103: ChapterOpening = {
   ],
 };
 
+export const CHAPTER_0104: ChapterOpening = {
+  id: "0104",
+  qrCode: "0104",
+  title: "第二個大腦：把繁雜交給 AI",
+  subtitle: "章節開篇",
+  layout: "organize-decide",
+  headerEmoji: "🧠",
+  accentGradient: "linear-gradient(180deg, #E8F5EE 0%, transparent 55%)",
+  quote: "AI 可以整理資訊；方向、價值與最後決定，仍然由您掌握。",
+  atAGlance:
+    "這一章練習把「覺得繁雜」的事交給 AI 整理成三個重點與一個小步驟——但決定權留在您手上。請選不含敏感資料的生活小事來試。",
+  tryPrompt:
+    "拿一件最近覺得繁雜、但不含敏感資料的事，請 AI 整理成三個重點與一個可先做的下一步。",
+  reflectPrompt: "整理之後，我真正需要決定的是什麼？",
+  reflectPlaceholder: "例如：要不要改變作息可以我自己想，但調藥必須問醫生…",
+  continueTitle: "暖暖陪您繼續",
+  continueBody:
+    "掃碼進入暖暖，跟著一個生活案例練習「整理三點，不替我決定」。",
+  printCardTitle: "三點一決定整理卡",
+  printCardDescription:
+    "可列印：繁雜的事、三個重點、可先做的下一步、我真正要決定的。",
+  printButtonLabel: "列印整理卡",
+  guideTitle: "整理三點，不替我決定",
+  guideDuration: "一則生活案例",
+  guideParagraphs: [
+    "請 AI 整理，不是請 AI 替您選。整理完，您仍要問：這件事最後誰來決定？",
+    "對照下方案例，看 AI 怎麼幫忙「變清楚」，而決定權如何留在您手上。",
+    "改完可在暖暖語音用同樣方式試一件您自己的小事。",
+  ],
+  guideFooterNote: "互動案例影片即將推出；目前請先閱讀文字案例。",
+  footerGuideLabel: "看生活案例：整理三點，不替我決定",
+  organizeDemos: [
+    {
+      id: "handout",
+      label: "案例｜回診衛教單太多",
+      messyTask: "回診拿回家一疊衛教單和用藥說明，紙張多、字又小，不知道先看什麼。",
+      askPrompt:
+        "請幫我把下面這件事整理成三個重點，和一個今天可以先做的小步驟。請用簡單中文，不要替我決定，只要整理資訊：回診拿回家一疊衛教單和用藥說明，不知道先看什麼。",
+      threePoints: [
+        "先找出跟「今天就要做」有關的部分（例如用藥時間）",
+        "其次看飲食或運動建議，可以週末再細讀",
+        "其餘資料先收好，下次回診可問醫師",
+      ],
+      nextStep: "今晚先把用藥時間抄在一張大卡上，貼在藥盒旁。",
+      userDecision: "要不要調整用藥時間——這必須問醫師，不能自己改。",
+    },
+    {
+      id: "trip",
+      label: "案例｜出門要帶什麼",
+      messyTask: "下週要跟朋友出遊，要帶的東西越想越亂，怕漏帶藥又怕冷。",
+      askPrompt:
+        "請幫我把下面這件事整理成三個重點，和一個今天可以先做的小步驟。請用簡單中文，不要替我決定，只要整理資訊：下週出遊要帶什麼，怕漏帶藥又怕冷。",
+      threePoints: [
+        "必帶：日常藥物、健保卡、一件外套",
+        "可選：雨具、備用鞋襪（看天氣再決定）",
+        "出發前夜再檢查一次清單即可",
+      ],
+      nextStep: "今天先寫一張「必帶三樣」小卡放錢包。",
+      userDecision: "要不要多帶一件厚外套——看我自己對冷暖的感覺。",
+    },
+  ],
+};
+
 const CHAPTERS: Record<string, ChapterOpening> = {
   "0100": CHAPTER_0100,
   "0102": CHAPTER_0102,
   "0103": CHAPTER_0103,
+  "0104": CHAPTER_0104,
 };
 
 export function getChapterOpening(id: string): ChapterOpening | null {
@@ -315,6 +392,23 @@ export interface ChapterRewriteDraft {
   naturalQuestion: string;
   reflectNote: string;
   backgrounds: string[];
+}
+
+export interface ChapterOrganizeDraft {
+  messyTask: string;
+  threePoints: [string, string, string];
+  nextStep: string;
+  userDecision: string;
+  reflectNote: string;
+}
+
+/** 0104：請 AI 整理用的提問句（不含敏感資料） */
+export function buildOrganizeAskPrompt(task: string): string {
+  const t = task.trim();
+  if (!t) {
+    return "請幫我把下面這件事整理成三個重點，和一個今天可以先做的小步驟。請用簡單中文，不要替我決定，只要整理資訊：";
+  }
+  return `請幫我把下面這件事整理成三個重點，和一個今天可以先做的小步驟。請用簡單中文，不要替我決定，只要整理資訊：${t}`;
 }
 
 export function chapterEntryHref(
