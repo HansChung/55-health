@@ -20,6 +20,11 @@ import {
   buildOrganizeAskPrompt,
   buildSmartFlowAskPrompt,
   buildVisionAskPrompt,
+  buildPlantAskPrompt,
+  buildMenuTranslatePrompt,
+  buildProductComparePrompt,
+  buildCuriosityPrompt,
+  buildFoodObservePrompt,
   chapterCameraTryHref,
   chapterDraftKey,
   chapterEntryHref,
@@ -30,6 +35,21 @@ import {
   type ChapterPhotoSearchDraft,
   type ChapterNoteCaptureDraft,
   type ChapterSmartFlowDraft,
+  type MenuTranslateDemo,
+  type ProductCompareDemo,
+  type CuriosityAskDemo,
+  type RecipeCardDemo,
+  type PhotoEditSafeDemo,
+  type PhotoCurateDemo,
+  type HabitSceneOption,
+  type SensoryHabitDemo,
+  type ChapterMenuDraft,
+  type ChapterProductCompareDraft,
+  type ChapterCuriosityDraft,
+  type ChapterRecipeDraft,
+  type ChapterPhotoEditDraft,
+  type ChapterPhotoCurateDraft,
+  type ChapterSensoryHabitDraft,
 } from "@/lib/chapter-opening";
 import { trackEvent } from "@/lib/telemetry";
 import { useToast } from "@/hooks/use-toast";
@@ -67,6 +87,28 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const [askQuestion, setAskQuestion] = useState("");
   const [askAnswer, setAskAnswer] = useState("");
   const [savedLine, setSavedLine] = useState("");
+  const [menuSnippet, setMenuSnippet] = useState("");
+  const [dietaryNeed, setDietaryNeed] = useState("");
+  const [translationSummary, setTranslationSummary] = useState("");
+  const [confirmWithStaff, setConfirmWithStaff] = useState("");
+  const [productA, setProductA] = useState("");
+  const [productB, setProductB] = useState("");
+  const [threeDiffs, setThreeDiffs] = useState<[string, string, string]>(["", "", ""]);
+  const [verifyItem, setVerifyItem] = useState("");
+  const [question, setQuestion] = useState("");
+  const [aiAnswer, setAiAnswer] = useState("");
+  const [insight, setInsight] = useState("");
+  const [dishName, setDishName] = useState("");
+  const [colors, setColors] = useState("");
+  const [fiberSource, setFiberSource] = useState("");
+  const [feeling, setFeeling] = useState("");
+  const [backupDone, setBackupDone] = useState(false);
+  const [editAction, setEditAction] = useState("");
+  const [compareNote, setCompareNote] = useState("");
+  const [theme, setTheme] = useState("");
+  const [captions, setCaptions] = useState<[string, string, string]>(["", "", ""]);
+  const [pickedScenes, setPickedScenes] = useState<string[]>([]);
+  const [planNote, setPlanNote] = useState("");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -140,6 +182,77 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           if (d.reflectNote) setReflectNote(d.reflectNote);
         }
       }
+      if (layout === "menu-translate") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterMenuDraft;
+          if (d.menuSnippet) setMenuSnippet(d.menuSnippet);
+          if (d.dietaryNeed) setDietaryNeed(d.dietaryNeed);
+          if (d.translationSummary) setTranslationSummary(d.translationSummary);
+          if (d.confirmWithStaff) setConfirmWithStaff(d.confirmWithStaff);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "product-compare") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterProductCompareDraft;
+          if (d.productA) setProductA(d.productA);
+          if (d.productB) setProductB(d.productB);
+          if (d.threeDiffs) setThreeDiffs(d.threeDiffs);
+          if (d.verifyItem) setVerifyItem(d.verifyItem);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "curiosity-ask") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterCuriosityDraft;
+          if (d.question) setQuestion(d.question);
+          if (d.aiAnswer) setAiAnswer(d.aiAnswer);
+          if (d.insight) setInsight(d.insight);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "recipe-card") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterRecipeDraft;
+          if (d.dishName) setDishName(d.dishName);
+          if (d.colors) setColors(d.colors);
+          if (d.fiberSource) setFiberSource(d.fiberSource);
+          if (d.feeling) setFeeling(d.feeling);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "photo-edit-safe") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterPhotoEditDraft;
+          if (d.backupDone) setBackupDone(d.backupDone);
+          if (d.editAction) setEditAction(d.editAction);
+          if (d.compareNote) setCompareNote(d.compareNote);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "photo-curate") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterPhotoCurateDraft;
+          if (d.theme) setTheme(d.theme);
+          if (d.captions) setCaptions(d.captions);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "sensory-habit") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterSensoryHabitDraft;
+          if (d.pickedScenes) setPickedScenes(d.pickedScenes);
+          if (d.planNote) setPlanNote(d.planNote);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
     } catch {
       /* ignore */
     }
@@ -152,7 +265,14 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         ChapterVisionDraft &
         ChapterPhotoSearchDraft &
         ChapterNoteCaptureDraft &
-        ChapterSmartFlowDraft
+        ChapterSmartFlowDraft &
+        ChapterMenuDraft &
+        ChapterProductCompareDraft &
+        ChapterCuriosityDraft &
+        ChapterRecipeDraft &
+        ChapterPhotoEditDraft &
+        ChapterPhotoCurateDraft &
+        ChapterSensoryHabitDraft
     >
   ) => {
     if (typeof window === "undefined") return;
@@ -207,6 +327,70 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         askQuestion: patch.askQuestion ?? askQuestion,
         askAnswer: patch.askAnswer ?? askAnswer,
         savedLine: patch.savedLine ?? savedLine,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layout === "menu-translate") {
+      const next: ChapterMenuDraft = {
+        menuSnippet: patch.menuSnippet ?? menuSnippet,
+        dietaryNeed: patch.dietaryNeed ?? dietaryNeed,
+        translationSummary: patch.translationSummary ?? translationSummary,
+        confirmWithStaff: patch.confirmWithStaff ?? confirmWithStaff,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layout === "product-compare") {
+      const next: ChapterProductCompareDraft = {
+        productA: patch.productA ?? productA,
+        productB: patch.productB ?? productB,
+        threeDiffs: patch.threeDiffs ?? threeDiffs,
+        verifyItem: patch.verifyItem ?? verifyItem,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layout === "curiosity-ask") {
+      const next: ChapterCuriosityDraft = {
+        question: patch.question ?? question,
+        aiAnswer: patch.aiAnswer ?? aiAnswer,
+        insight: patch.insight ?? insight,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layout === "recipe-card") {
+      const next: ChapterRecipeDraft = {
+        dishName: patch.dishName ?? dishName,
+        colors: patch.colors ?? colors,
+        fiberSource: patch.fiberSource ?? fiberSource,
+        feeling: patch.feeling ?? feeling,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layout === "photo-edit-safe") {
+      const next: ChapterPhotoEditDraft = {
+        backupDone: patch.backupDone ?? backupDone,
+        editAction: patch.editAction ?? editAction,
+        compareNote: patch.compareNote ?? compareNote,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layout === "photo-curate") {
+      const next: ChapterPhotoCurateDraft = {
+        theme: patch.theme ?? theme,
+        captions: patch.captions ?? captions,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layout === "sensory-habit") {
+      const next: ChapterSensoryHabitDraft = {
+        pickedScenes: patch.pickedScenes ?? pickedScenes,
+        planNote: patch.planNote ?? planNote,
         reflectNote: patch.reflectNote ?? reflectNote,
       };
       localStorage.setItem(draftKey, JSON.stringify(next));
@@ -297,7 +481,12 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   };
 
   const copyVisionAsk = async () => {
-    const text = buildVisionAskPrompt(itemLabel);
+    const text =
+      chapter.id === "0202"
+        ? buildPlantAskPrompt()
+        : chapter.id === "0206"
+          ? buildFoodObservePrompt()
+          : buildVisionAskPrompt(itemLabel);
     try {
       await navigator.clipboard.writeText(text);
       toast.success("已複製拍照提問句，拍完可貼給 AI。");
@@ -375,6 +564,136 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
     } catch {
       toast.info("請長按文字框手動複製。");
     }
+  };
+
+  const applyMenuDemo = (demo: MenuTranslateDemo) => {
+    setMenuSnippet(demo.menuSnippet);
+    setDietaryNeed(demo.dietaryNeed);
+    setTranslationSummary(demo.translationSummary);
+    setConfirmWithStaff(demo.confirmWithStaff);
+    saveDraft({
+      menuSnippet: demo.menuSnippet,
+      dietaryNeed: demo.dietaryNeed,
+      translationSummary: demo.translationSummary,
+      confirmWithStaff: demo.confirmWithStaff,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的菜單。`);
+  };
+
+  const copyMenuAsk = async () => {
+    const text = buildMenuTranslatePrompt(dietaryNeed);
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("已複製菜單翻譯提問句，拍完可貼給 AI。");
+    } catch {
+      toast.info("請長按文字框手動複製。");
+    }
+  };
+
+  const applyProductDemo = (demo: ProductCompareDemo) => {
+    setProductA(demo.productA);
+    setProductB(demo.productB);
+    setThreeDiffs(demo.threeDiffs);
+    setVerifyItem(demo.verifyItem);
+    setReflectNote(demo.decisionFactor);
+    saveDraft({
+      productA: demo.productA,
+      productB: demo.productB,
+      threeDiffs: demo.threeDiffs,
+      verifyItem: demo.verifyItem,
+      reflectNote: demo.decisionFactor,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的商品。`);
+  };
+
+  const copyProductAsk = async () => {
+    const text = buildProductComparePrompt(productA, productB);
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("已複製商品比較提問句，拍完可貼給 AI。");
+    } catch {
+      toast.info("請長按文字框手動複製。");
+    }
+  };
+
+  const applyCuriosityDemo = (demo: CuriosityAskDemo) => {
+    setQuestion(demo.question);
+    setAiAnswer(demo.aiAnswer);
+    setInsight(demo.insight);
+    saveDraft({
+      question: demo.question,
+      aiAnswer: demo.aiAnswer,
+      insight: demo.insight,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的問題。`);
+  };
+
+  const copyCuriosityAsk = async () => {
+    const text = buildCuriosityPrompt(question);
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("已複製好奇心提問句，可以貼給 AI 或說出來。");
+    } catch {
+      toast.info("請長按文字框手動複製。");
+    }
+  };
+
+  const applyRecipeDemo = (demo: RecipeCardDemo) => {
+    setDishName(demo.dishName);
+    setColors(demo.colors);
+    setFiberSource(demo.fiberSource);
+    setFeeling(demo.feeling);
+    saveDraft({
+      dishName: demo.dishName,
+      colors: demo.colors,
+      fiberSource: demo.fiberSource,
+      feeling: demo.feeling,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的料理。`);
+  };
+
+  const applyPhotoEditDemo = (demo: PhotoEditSafeDemo) => {
+    setBackupDone(true);
+    setEditAction(demo.editAction);
+    setCompareNote(demo.compareNote);
+    saveDraft({
+      backupDone: true,
+      editAction: demo.editAction,
+      compareNote: demo.compareNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的修圖計畫。`);
+  };
+
+  const applyPhotoCurateDemo = (demo: PhotoCurateDemo) => {
+    setTheme(demo.theme);
+    setCaptions(demo.captions);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      theme: demo.theme,
+      captions: demo.captions,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的策展。`);
+  };
+
+  const applyHabitDemo = (demo: SensoryHabitDemo) => {
+    setPickedScenes(demo.pickedScenes);
+    setPlanNote(demo.planNote);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      pickedScenes: demo.pickedScenes,
+      planNote: demo.planNote,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的計畫。`);
+  };
+
+  const toggleHabitScene = (id: string) => {
+    setPickedScenes((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      saveDraft({ pickedScenes: next });
+      return next;
+    });
   };
 
   const copyNoteTemplate = async () => {
@@ -1092,6 +1411,560 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
             </div>
           )}
 
+          {layout === "menu-translate" && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                菜單片段（可選填）
+              </div>
+              <input
+                value={menuSnippet}
+                onChange={(e) => {
+                  setMenuSnippet(e.target.value);
+                  saveDraft({ menuSnippet: e.target.value });
+                }}
+                placeholder="例如：焼き鳥定食、野菜サラダ…"
+                style={{
+                  width: "100%", padding: "12px 14px", marginBottom: 10,
+                  borderRadius: 10, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", boxSizing: "border-box",
+                }}
+              />
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                我的飲食需要
+              </div>
+              <input
+                value={dietaryNeed}
+                onChange={(e) => {
+                  setDietaryNeed(e.target.value);
+                  saveDraft({ dietaryNeed: e.target.value });
+                }}
+                placeholder="例如：少油、不要太辣、不含堅果…"
+                style={{
+                  width: "100%", padding: "12px 14px", marginBottom: 10,
+                  borderRadius: 10, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", boxSizing: "border-box",
+                }}
+              />
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+                <button type="button" onClick={copyMenuAsk} style={secondaryBtnStyle}>
+                  複製「請 AI 翻譯菜單」提問句
+                </button>
+                <button type="button" onClick={tryCameraInNuannuan} style={primaryOutlineBtnStyle}>
+                  在暖暖拍一下 →
+                </button>
+                <button
+                  type="button"
+                  onClick={tryPhotoInNuannuan}
+                  style={{
+                    ...secondaryBtnStyle,
+                    border: "2px solid var(--primary)",
+                    color: "var(--primary-deep)",
+                  }}
+                >
+                  從相簿選照片 →
+                </button>
+              </div>
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                AI 翻譯摘要（自己記下重點）
+              </div>
+              <textarea
+                value={translationSummary}
+                onChange={(e) => {
+                  setTranslationSummary(e.target.value);
+                  saveDraft({ translationSummary: e.target.value });
+                }}
+                placeholder="例如：烤雞定食、蔬菜沙拉；醬料可能含醬油與糖…"
+                rows={3}
+                style={{
+                  width: "100%", padding: "14px 16px", marginBottom: 10,
+                  borderRadius: 12, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                }}
+              />
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                需向店家確認
+              </div>
+              <input
+                value={confirmWithStaff}
+                onChange={(e) => {
+                  setConfirmWithStaff(e.target.value);
+                  saveDraft({ confirmWithStaff: e.target.value });
+                }}
+                placeholder="例如：定食是否含白飯、醬料能否另放…"
+                style={{
+                  width: "100%", padding: "12px 14px",
+                  borderRadius: 10, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", boxSizing: "border-box",
+                }}
+              />
+            </div>
+          )}
+
+          {layout === "product-compare" && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                商品 A（請勿含收據個資）
+              </div>
+              <input
+                value={productA}
+                onChange={(e) => {
+                  setProductA(e.target.value);
+                  saveDraft({ productA: e.target.value });
+                }}
+                placeholder="例如：A 牌 1.7L 快煮壺…"
+                style={{
+                  width: "100%", padding: "12px 14px", marginBottom: 10,
+                  borderRadius: 10, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", boxSizing: "border-box",
+                }}
+              />
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                商品 B
+              </div>
+              <input
+                value={productB}
+                onChange={(e) => {
+                  setProductB(e.target.value);
+                  saveDraft({ productB: e.target.value });
+                }}
+                placeholder="例如：B 牌 1.5L 保溫壺…"
+                style={{
+                  width: "100%", padding: "12px 14px", marginBottom: 10,
+                  borderRadius: 10, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", boxSizing: "border-box",
+                }}
+              />
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+                <button type="button" onClick={copyProductAsk} style={secondaryBtnStyle}>
+                  複製「請 AI 比較商品」提問句
+                </button>
+                <button type="button" onClick={tryCameraInNuannuan} style={primaryOutlineBtnStyle}>
+                  在暖暖拍一下 →
+                </button>
+              </div>
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                三項差異
+              </div>
+              {(["一", "二", "三"] as const).map((label, i) => (
+                <input
+                  key={label}
+                  value={threeDiffs[i]}
+                  onChange={(e) => {
+                    const next = [...threeDiffs] as [string, string, string];
+                    next[i] = e.target.value;
+                    setThreeDiffs(next);
+                    saveDraft({ threeDiffs: next });
+                  }}
+                  placeholder={`差異${label}`}
+                  style={{
+                    width: "100%", padding: "12px 14px", marginBottom: 8,
+                    borderRadius: 10, border: "2px solid var(--line-strong)",
+                    background: "var(--surface)", fontSize: "var(--fs-sm)",
+                    fontFamily: "inherit", boxSizing: "border-box",
+                  }}
+                />
+              ))}
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                待向標示或店員確認
+              </div>
+              <input
+                value={verifyItem}
+                onChange={(e) => {
+                  setVerifyItem(e.target.value);
+                  saveDraft({ verifyItem: e.target.value });
+                }}
+                placeholder="例如：實際耗電量與退換貨條件需看盒裝標示…"
+                style={{
+                  width: "100%", padding: "12px 14px",
+                  borderRadius: 10, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", boxSizing: "border-box",
+                }}
+              />
+            </div>
+          )}
+
+          {layout === "curiosity-ask" && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                今天想問的問題
+              </div>
+              <input
+                value={question}
+                onChange={(e) => {
+                  setQuestion(e.target.value);
+                  saveDraft({ question: e.target.value });
+                }}
+                placeholder="例如：傍晚的雲為什麼有時特別紅？"
+                style={{
+                  width: "100%", padding: "12px 14px", marginBottom: 10,
+                  borderRadius: 10, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", boxSizing: "border-box",
+                }}
+              />
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+                <button type="button" onClick={copyCuriosityAsk} style={secondaryBtnStyle}>
+                  複製好奇心提問句
+                </button>
+                <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>
+                  在暖暖問一句 →
+                </button>
+              </div>
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                AI 回答摘要
+              </div>
+              <textarea
+                value={aiAnswer}
+                onChange={(e) => {
+                  setAiAnswer(e.target.value);
+                  saveDraft({ aiAnswer: e.target.value });
+                }}
+                placeholder="例如：光線穿過大氣時，較長波長的紅光更容易被看見…"
+                rows={3}
+                style={{
+                  width: "100%", padding: "14px 16px", marginBottom: 10,
+                  borderRadius: 12, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                }}
+              />
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                與生活的連結
+              </div>
+              <input
+                value={insight}
+                onChange={(e) => {
+                  setInsight(e.target.value);
+                  saveDraft({ insight: e.target.value });
+                }}
+                placeholder="例如：以後看夕陽時，可以留意雲層厚薄與顏色變化…"
+                style={{
+                  width: "100%", padding: "12px 14px",
+                  borderRadius: 10, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", boxSizing: "border-box",
+                }}
+              />
+            </div>
+          )}
+
+          {layout === "recipe-card" && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                料理名稱
+              </div>
+              <input
+                value={dishName}
+                onChange={(e) => {
+                  setDishName(e.target.value);
+                  saveDraft({ dishName: e.target.value });
+                }}
+                placeholder="例如：綜合蔬菜沙拉…"
+                style={{
+                  width: "100%", padding: "12px 14px", marginBottom: 10,
+                  borderRadius: 10, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", boxSizing: "border-box",
+                }}
+              />
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                主要顏色
+              </div>
+              <input
+                value={colors}
+                onChange={(e) => {
+                  setColors(e.target.value);
+                  saveDraft({ colors: e.target.value });
+                }}
+                placeholder="例如：綠、紅、黃…"
+                style={{
+                  width: "100%", padding: "12px 14px", marginBottom: 10,
+                  borderRadius: 10, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", boxSizing: "border-box",
+                }}
+              />
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                可能的蔬菜或全穀來源
+              </div>
+              <input
+                value={fiberSource}
+                onChange={(e) => {
+                  setFiberSource(e.target.value);
+                  saveDraft({ fiberSource: e.target.value });
+                }}
+                placeholder="例如：葉菜、番茄、玉米…"
+                style={{
+                  width: "100%", padding: "12px 14px", marginBottom: 10,
+                  borderRadius: 10, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", boxSizing: "border-box",
+                }}
+              />
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                一句感受
+              </div>
+              <input
+                value={feeling}
+                onChange={(e) => {
+                  setFeeling(e.target.value);
+                  saveDraft({ feeling: e.target.value });
+                }}
+                placeholder="例如：清爽，但醬料可以少一點…"
+                style={{
+                  width: "100%", padding: "12px 14px",
+                  borderRadius: 10, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", boxSizing: "border-box",
+                }}
+              />
+            </div>
+          )}
+
+          {layout === "photo-edit-safe" && (
+            <div style={{ marginBottom: 16 }}>
+              <label
+                style={{
+                  display: "flex", gap: 12, alignItems: "flex-start",
+                  padding: 12, marginBottom: 14,
+                  background: backupDone ? "var(--primary-soft)" : "var(--surface)",
+                  borderRadius: 12,
+                  border: `2px solid ${backupDone ? "var(--primary)" : "var(--line-strong)"}`,
+                  cursor: "pointer", fontSize: "var(--fs-sm)",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={backupDone}
+                  onChange={(e) => {
+                    setBackupDone(e.target.checked);
+                    saveDraft({ backupDone: e.target.checked });
+                  }}
+                  style={{ width: 22, height: 22, marginTop: 2, flexShrink: 0 }}
+                />
+                <span>
+                  <strong>已備份原檔</strong>
+                  <span style={{ color: "var(--ink-3)", display: "block", marginTop: 2 }}>
+                    開始修圖前，先複製一份或確認原檔仍在
+                  </span>
+                </span>
+              </label>
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                移除或調整項目
+              </div>
+              <input
+                value={editAction}
+                onChange={(e) => {
+                  setEditAction(e.target.value);
+                  saveDraft({ editAction: e.target.value });
+                }}
+                placeholder="例如：移除右側一半的路人剪影…"
+                style={{
+                  width: "100%", padding: "12px 14px", marginBottom: 10,
+                  borderRadius: 10, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", boxSizing: "border-box",
+                }}
+              />
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                修改前後感受比較
+              </div>
+              <textarea
+                value={compareNote}
+                onChange={(e) => {
+                  setCompareNote(e.target.value);
+                  saveDraft({ compareNote: e.target.value });
+                }}
+                placeholder="例如：焦點回到孫子與海浪，邊緣略需放大檢查…"
+                rows={3}
+                style={{
+                  width: "100%", padding: "14px 16px",
+                  borderRadius: 12, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                }}
+              />
+            </div>
+          )}
+
+          {layout === "photo-curate" && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                策展主題
+              </div>
+              <input
+                value={theme}
+                onChange={(e) => {
+                  setTheme(e.target.value);
+                  saveDraft({ theme: e.target.value });
+                }}
+                placeholder="例如：我走過的海邊…"
+                style={{
+                  width: "100%", padding: "12px 14px", marginBottom: 12,
+                  borderRadius: 10, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", boxSizing: "border-box",
+                }}
+              />
+              {(["一", "二", "三"] as const).map((label, i) => (
+                <div key={label} style={{ marginBottom: 10 }}>
+                  <div style={{
+                    fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                    marginBottom: 8,
+                  }}>
+                    照片{label}說明
+                  </div>
+                  <input
+                    value={captions[i]}
+                    onChange={(e) => {
+                      const next = [...captions] as [string, string, string];
+                      next[i] = e.target.value;
+                      setCaptions(next);
+                      saveDraft({ captions: next });
+                    }}
+                    placeholder={`第${label}張照片想說的話…`}
+                    style={{
+                      width: "100%", padding: "12px 14px",
+                      borderRadius: 10, border: "2px solid var(--line-strong)",
+                      background: "var(--surface)", fontSize: "var(--fs-sm)",
+                      fontFamily: "inherit", boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "sensory-habit" && (
+            <div style={{ marginBottom: 16 }}>
+              {chapter.habitSceneOptions && (
+                <>
+                  <div style={{
+                    fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                    marginBottom: 8,
+                  }}>
+                    選三個生活場景（任選三天各完成一次）
+                  </div>
+                  <div style={{
+                    display: "flex", flexDirection: "column", gap: 8, marginBottom: 14,
+                  }}>
+                    {chapter.habitSceneOptions.map((opt) => {
+                      const on = pickedScenes.includes(opt.id);
+                      return (
+                        <label
+                          key={opt.id}
+                          style={{
+                            display: "flex", gap: 12, alignItems: "flex-start",
+                            padding: 12,
+                            background: on ? "var(--primary-soft)" : "var(--surface)",
+                            borderRadius: 12,
+                            border: `2px solid ${on ? "var(--primary)" : "var(--line)"}`,
+                            cursor: "pointer", fontSize: "var(--fs-sm)",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={on}
+                            onChange={() => toggleHabitScene(opt.id)}
+                            style={{ width: 22, height: 22, marginTop: 2, flexShrink: 0 }}
+                          />
+                          <span>
+                            <strong>{opt.label}</strong>
+                            <span style={{ color: "var(--ink-3)", display: "block", marginTop: 2 }}>
+                              {opt.hint}
+                            </span>
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                三天溫和計畫
+              </div>
+              <textarea
+                value={planNote}
+                onChange={(e) => {
+                  setPlanNote(e.target.value);
+                  saveDraft({ planNote: e.target.value });
+                }}
+                placeholder="例如：週二散步識花、週四午餐觀察、週日搜尋「朋友」…"
+                rows={3}
+                style={{
+                  width: "100%", padding: "14px 16px",
+                  borderRadius: 12, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                }}
+              />
+            </div>
+          )}
+
           {layout === "routes" && chapter.entries && chapter.entries.length > 0 && (
             <div style={{
               display: "grid", gridTemplateColumns: "1fr 1fr",
@@ -1180,7 +2053,14 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                   layout === "vision-identify" ||
                   layout === "photo-search" ||
                   layout === "note-capture" ||
-                  layout === "smart-flow"
+                  layout === "smart-flow" ||
+                  layout === "menu-translate" ||
+                  layout === "product-compare" ||
+                  layout === "curiosity-ask" ||
+                  layout === "recipe-card" ||
+                  layout === "photo-edit-safe" ||
+                  layout === "photo-curate" ||
+                  layout === "sensory-habit"
                 ) {
                   saveDraft({ reflectNote: e.target.value });
                 } else if (picked) {
@@ -1371,6 +2251,283 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                           border: "1px solid #5BA0C9", background: "var(--surface)",
                           color: "#5BA0C9", fontWeight: 700,
                           fontSize: "var(--fs-xs)", cursor: "pointer",
+                        }}
+                      >
+                        帶入這則案例
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "menu-translate" && chapter.menuDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.menuDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "#E8845A",
+                      }}>
+                        {demo.label}
+                      </div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}>
+                        <strong>菜單：</strong>{demo.menuSnippet}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}>
+                        <strong>飲食需要：</strong>{demo.dietaryNeed}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.55, margin: "0 0 8px" }}>
+                        {demo.translationSummary}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--primary-deep)" }}>
+                        <strong>向店家確認：</strong>{demo.confirmWithStaff}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => applyMenuDemo(demo)}
+                        style={{
+                          padding: "8px 14px", borderRadius: "var(--r-pill)",
+                          border: "1px solid #E8845A", background: "var(--surface)",
+                          color: "#C45A2A", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                        }}
+                      >
+                        帶入這則案例
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "product-compare" && chapter.productCompareDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.productCompareDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--sage)",
+                      }}>
+                        {demo.label}
+                      </div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}>
+                        <strong>A：</strong>{demo.productA}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 8px" }}>
+                        <strong>B：</strong>{demo.productB}
+                      </p>
+                      <ol style={{
+                        margin: "0 0 8px", paddingLeft: 20,
+                        fontSize: "var(--fs-xs)", color: "var(--ink-2)", lineHeight: 1.55,
+                      }}>
+                        {demo.threeDiffs.map((p, i) => (
+                          <li key={i}>{p}</li>
+                        ))}
+                      </ol>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}>
+                        <strong>待確認：</strong>{demo.verifyItem}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--primary-deep)" }}>
+                        <strong>最影響決定：</strong>{demo.decisionFactor}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => applyProductDemo(demo)}
+                        style={{
+                          padding: "8px 14px", borderRadius: "var(--r-pill)",
+                          border: "1px solid var(--sage)", background: "var(--surface)",
+                          color: "var(--sage)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                        }}
+                      >
+                        帶入這則案例
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "curiosity-ask" && chapter.curiosityDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.curiosityDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "#5BA0C9",
+                      }}>
+                        {demo.label}
+                      </div>
+                      <p style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.55, margin: "0 0 8px" }}>
+                        <strong>問：</strong>{demo.question}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}>
+                        <strong>答：</strong>{demo.aiAnswer}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>
+                        {demo.insight}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => applyCuriosityDemo(demo)}
+                        style={{
+                          padding: "8px 14px", borderRadius: "var(--r-pill)",
+                          border: "1px solid #5BA0C9", background: "var(--surface)",
+                          color: "#5BA0C9", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                        }}
+                      >
+                        帶入這則案例
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "recipe-card" && chapter.recipeCardDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.recipeCardDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--sage)",
+                      }}>
+                        {demo.label}
+                      </div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}>
+                        <strong>料理：</strong>{demo.dishName}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}>
+                        <strong>顏色：</strong>{demo.colors}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}>
+                        <strong>纖維來源：</strong>{demo.fiberSource}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>
+                        {demo.feeling}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => applyRecipeDemo(demo)}
+                        style={{
+                          padding: "8px 14px", borderRadius: "var(--r-pill)",
+                          border: "1px solid var(--sage)", background: "var(--surface)",
+                          color: "var(--sage)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                        }}
+                      >
+                        帶入這則案例
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "photo-edit-safe" && chapter.photoEditDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.photoEditDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)",
+                      }}>
+                        {demo.label}
+                      </div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}>
+                        <strong>備份：</strong>{demo.backupNote}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}>
+                        <strong>調整：</strong>{demo.editAction}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>
+                        {demo.compareNote}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => applyPhotoEditDemo(demo)}
+                        style={{
+                          padding: "8px 14px", borderRadius: "var(--r-pill)",
+                          border: "1px solid var(--primary)", background: "var(--surface)",
+                          color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                        }}
+                      >
+                        帶入這則案例
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "photo-curate" && chapter.photoCurateDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.photoCurateDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "#5BA0C9",
+                      }}>
+                        {demo.label}
+                      </div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 8px" }}>
+                        <strong>主題：</strong>{demo.theme}
+                      </p>
+                      <ol style={{
+                        margin: "0 0 8px", paddingLeft: 20,
+                        fontSize: "var(--fs-xs)", color: "var(--ink-2)", lineHeight: 1.55,
+                      }}>
+                        {demo.captions.map((c, i) => (
+                          <li key={i}>{c}</li>
+                        ))}
+                      </ol>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>
+                        {demo.reflectNote}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => applyPhotoCurateDemo(demo)}
+                        style={{
+                          padding: "8px 14px", borderRadius: "var(--r-pill)",
+                          border: "1px solid #5BA0C9", background: "var(--surface)",
+                          color: "#5BA0C9", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                        }}
+                      >
+                        帶入這則案例
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "sensory-habit" && chapter.habitDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.habitDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)",
+                      }}>
+                        {demo.label}
+                      </div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}>
+                        <strong>場景：</strong>
+                        {demo.pickedScenes.map((id) =>
+                          chapter.habitSceneOptions?.find((o) => o.id === id)?.label ?? id
+                        ).join("、")}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}>
+                        <strong>計畫：</strong>{demo.planNote}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>
+                        {demo.reflectNote}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => applyHabitDemo(demo)}
+                        style={{
+                          padding: "8px 14px", borderRadius: "var(--r-pill)",
+                          border: "1px solid var(--primary)", background: "var(--surface)",
+                          color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
                         }}
                       >
                         帶入這則案例
@@ -1581,6 +2738,28 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           askQuestion={askQuestion}
           askAnswer={askAnswer}
           savedLine={savedLine}
+          menuSnippet={menuSnippet}
+          dietaryNeed={dietaryNeed}
+          translationSummary={translationSummary}
+          confirmWithStaff={confirmWithStaff}
+          productA={productA}
+          productB={productB}
+          threeDiffs={threeDiffs}
+          verifyItem={verifyItem}
+          question={question}
+          aiAnswer={aiAnswer}
+          insight={insight}
+          dishName={dishName}
+          colors={colors}
+          fiberSource={fiberSource}
+          feeling={feeling}
+          backupDone={backupDone}
+          editAction={editAction}
+          compareNote={compareNote}
+          theme={theme}
+          captions={captions}
+          pickedScenes={pickedScenes}
+          planNote={planNote}
         />
       </div>
     </>
@@ -1727,6 +2906,28 @@ function PrintCard({
   askQuestion = "",
   askAnswer = "",
   savedLine = "",
+  menuSnippet = "",
+  dietaryNeed = "",
+  translationSummary = "",
+  confirmWithStaff = "",
+  productA = "",
+  productB = "",
+  threeDiffs = ["", "", ""],
+  verifyItem = "",
+  question = "",
+  aiAnswer = "",
+  insight = "",
+  dishName = "",
+  colors = "",
+  fiberSource = "",
+  feeling = "",
+  backupDone = false,
+  editAction = "",
+  compareNote = "",
+  theme = "",
+  captions = ["", "", ""],
+  pickedScenes = [],
+  planNote = "",
 }: {
   chapter: ChapterOpening;
   picked: string | null;
@@ -1751,6 +2952,28 @@ function PrintCard({
   askQuestion?: string;
   askAnswer?: string;
   savedLine?: string;
+  menuSnippet?: string;
+  dietaryNeed?: string;
+  translationSummary?: string;
+  confirmWithStaff?: string;
+  productA?: string;
+  productB?: string;
+  threeDiffs?: [string, string, string];
+  verifyItem?: string;
+  question?: string;
+  aiAnswer?: string;
+  insight?: string;
+  dishName?: string;
+  colors?: string;
+  fiberSource?: string;
+  feeling?: string;
+  backupDone?: boolean;
+  editAction?: string;
+  compareNote?: string;
+  theme?: string;
+  captions?: [string, string, string];
+  pickedScenes?: string[];
+  planNote?: string;
 }) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const bgLabels = chapter.backgroundOptions
@@ -1767,6 +2990,233 @@ function PrintCard({
 
   const noteTagLabel =
     chapter.noteTagOptions?.find((t) => t.id === noteTagId)?.label ?? "";
+
+  const habitSceneLabels = chapter.habitSceneOptions
+    ?.filter((o) => pickedScenes.includes(o.id))
+    .map((o) => o.label)
+    .join("、");
+
+  if (layout === "menu-translate") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <PrintGridCell title="菜單摘要" minHeight={48}>
+          {menuSnippet || translationSummary || "＿＿＿＿＿＿"}
+        </PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="飲食需要" minHeight={48}>
+            {dietaryNeed || "＿＿＿＿＿＿"}
+          </PrintGridCell>
+        </div>
+        <PrintGridCell title="需向店家確認" minHeight={64}>
+          {confirmWithStaff || reflectNote || "＿＿＿＿＿＿＿＿＿＿"}
+        </PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>
+          掃碼網址：{origin}/smart/chapter/{chapter.id}
+        </p>
+      </div>
+    );
+  }
+
+  if (layout === "product-compare") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <div style={{
+          display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12,
+        }}>
+          <PrintGridCell title="商品 A" minHeight={48}>
+            {productA || "＿＿＿＿＿＿"}
+          </PrintGridCell>
+          <PrintGridCell title="商品 B" minHeight={48}>
+            {productB || "＿＿＿＿＿＿"}
+          </PrintGridCell>
+        </div>
+        <PrintGridCell title="三項差異" minHeight={72}>
+          <ol style={{ margin: 0, paddingLeft: 18 }}>
+            {(threeDiffs.some(Boolean) ? threeDiffs : ["＿＿＿", "＿＿＿", "＿＿＿"]).map((p, i) => (
+              <li key={i} style={{ marginBottom: 4 }}>{p || "＿＿＿"}</li>
+            ))}
+          </ol>
+        </PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="待確認" minHeight={48}>
+            {verifyItem || "＿＿＿＿＿＿"}
+          </PrintGridCell>
+        </div>
+        <PrintGridCell title="最影響決定的一項" minHeight={64}>
+          {reflectNote || "＿＿＿＿＿＿＿＿＿＿"}
+        </PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>
+          掃碼網址：{origin}/smart/chapter/{chapter.id}
+        </p>
+      </div>
+    );
+  }
+
+  if (layout === "curiosity-ask") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <PrintGridCell title="今天的問題" minHeight={48}>
+          {question || "＿＿＿＿＿＿＿＿＿＿"}
+        </PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="新理解" minHeight={64}>
+            {aiAnswer || insight || "＿＿＿＿＿＿＿＿＿＿"}
+          </PrintGridCell>
+        </div>
+        <PrintGridCell title="想繼續探索的一點" minHeight={64}>
+          {reflectNote || insight || "＿＿＿＿＿＿＿＿＿＿"}
+        </PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>
+          掃碼網址：{origin}/smart/chapter/{chapter.id}
+        </p>
+      </div>
+    );
+  }
+
+  if (layout === "recipe-card") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <PrintGridCell title="料理名稱" minHeight={40}>
+          {dishName || "＿＿＿＿＿＿"}
+        </PrintGridCell>
+        <div style={{
+          display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, margin: "12px 0",
+        }}>
+          <PrintGridCell title="主要顏色" minHeight={48}>
+            {colors || "＿＿＿＿"}
+          </PrintGridCell>
+          <PrintGridCell title="纖維來源" minHeight={48}>
+            {fiberSource || "＿＿＿＿"}
+          </PrintGridCell>
+        </div>
+        <PrintGridCell title="一句感受" minHeight={48}>
+          {feeling || "＿＿＿＿＿＿"}
+        </PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="一週後想保留的小變化" minHeight={64}>
+            {reflectNote || "＿＿＿＿＿＿＿＿＿＿"}
+          </PrintGridCell>
+        </div>
+        <p style={{ fontSize: 12, color: "#666" }}>
+          掃碼網址：{origin}/smart/chapter/{chapter.id}
+        </p>
+      </div>
+    );
+  }
+
+  if (layout === "photo-edit-safe") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <PrintGridCell title="已備份原檔" minHeight={40}>
+          {backupDone ? "✓ 已備份" : "＿＿＿＿"}
+        </PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="移除項目" minHeight={48}>
+            {editAction || "＿＿＿＿＿＿"}
+          </PrintGridCell>
+        </div>
+        <PrintGridCell title="前後感受比較" minHeight={64}>
+          {compareNote || "＿＿＿＿＿＿＿＿＿＿"}
+        </PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="修改後更接近想留下的感受嗎" minHeight={64}>
+            {reflectNote || "＿＿＿＿＿＿＿＿＿＿"}
+          </PrintGridCell>
+        </div>
+        <p style={{ fontSize: 12, color: "#666" }}>
+          掃碼網址：{origin}/smart/chapter/{chapter.id}
+        </p>
+      </div>
+    );
+  }
+
+  if (layout === "photo-curate") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <PrintGridCell title="策展主題" minHeight={48}>
+          {theme || "＿＿＿＿＿＿"}
+        </PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="三張照片各一句說明" minHeight={96}>
+            <ol style={{ margin: 0, paddingLeft: 18 }}>
+              {(captions.some(Boolean) ? captions : ["＿＿＿", "＿＿＿", "＿＿＿"]).map((c, i) => (
+                <li key={i} style={{ marginBottom: 4 }}>{c || "＿＿＿"}</li>
+              ))}
+            </ol>
+          </PrintGridCell>
+        </div>
+        <PrintGridCell title="最想保留的意義" minHeight={64}>
+          {reflectNote || "＿＿＿＿＿＿＿＿＿＿"}
+        </PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>
+          掃碼網址：{origin}/smart/chapter/{chapter.id}
+        </p>
+      </div>
+    );
+  }
+
+  if (layout === "sensory-habit") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <PrintGridCell title="選三天場景" minHeight={64}>
+          {habitSceneLabels || "＿＿＿＿＿＿＿＿＿＿"}
+        </PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="溫和計畫" minHeight={64}>
+            {planNote || "＿＿＿＿＿＿＿＿＿＿"}
+          </PrintGridCell>
+        </div>
+        <PrintGridCell title="最容易重新開始的場景" minHeight={64}>
+          {reflectNote || "＿＿＿＿＿＿＿＿＿＿"}
+        </PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>
+          掃碼網址：{origin}/smart/chapter/{chapter.id}
+        </p>
+      </div>
+    );
+  }
 
   if (layout === "photo-search") {
     return (
