@@ -105,6 +105,28 @@ describe("chapter-opening", () => {
     expect(ch?.habitSceneOptions?.length).toBeGreaterThan(3);
   });
 
+  it("getChapterOpening 0600–0610 chapter 6", () => {
+    const hub = getChapterOpening("0600");
+    expect(hub?.layout).toBe("routes");
+    expect(hub?.title).toContain("動能維修");
+    expect(hub?.entries).toHaveLength(4);
+
+    expect(getChapterOpening("0601")?.layout).toBe("mindset-shift");
+    expect(getChapterOpening("0602")?.layout).toBe("dual-signal");
+    expect(getChapterOpening("0603")?.layout).toBe("ground-snap");
+    expect(getChapterOpening("0604")?.layout).toBe("curiosity-ask");
+    expect(getChapterOpening("0604")?.samplePrompt).toContain("不要做醫療診斷");
+    expect(getChapterOpening("0605")?.layout).toBe("week-rhythm");
+    expect(getChapterOpening("0606")?.layout).toBe("kinetic-guide");
+    expect(getChapterOpening("0607")?.layout).toBe("curiosity-ask");
+    expect(getChapterOpening("0608")?.weekRhythmLabels?.[0]).toContain("亮點");
+    expect(getChapterOpening("0609")?.weekRhythmLabels?.[1]).toContain("感謝");
+    const atr = getChapterOpening("0610");
+    expect(atr?.layout).toBe("atr-light");
+    expect(atr?.appDeepLink?.href).toBe("/smart/radar");
+    expect(atr?.capabilityNote).toContain("不是醫師");
+  });
+
   it("buildMenuTranslatePrompt", () => {
     expect(buildMenuTranslatePrompt("少辣")).toContain("少辣");
   });

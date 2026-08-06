@@ -1,5 +1,6 @@
 /** 章節開篇 QR 深連結（例：0100 → /smart/chapter/0100） */
 import { CHAPTER_2_OPENINGS } from "./chapter-opening-ch2";
+import { CHAPTER_6_OPENINGS } from "./chapter-opening-ch6";
 
 export type ChapterLayout =
   | "routes"
@@ -16,7 +17,13 @@ export type ChapterLayout =
   | "recipe-card"
   | "photo-edit-safe"
   | "photo-curate"
-  | "sensory-habit";
+  | "sensory-habit"
+  | "mindset-shift"
+  | "dual-signal"
+  | "ground-snap"
+  | "week-rhythm"
+  | "kinetic-guide"
+  | "atr-light";
 
 export type VisionTrustLevel = "enjoy" | "verify";
 
@@ -183,6 +190,67 @@ export interface SensoryHabitDemo {
   reflectNote: string;
 }
 
+/** Chapter 6：運動轉念（0601） */
+export interface MindsetShiftDemo {
+  id: string;
+  label: string;
+  pressurePhrase: string;
+  carePhrase: string;
+  reflectNote: string;
+}
+
+/** Chapter 6：感覺 × 數據雙軌（0602） */
+export interface DualSignalDemo {
+  id: string;
+  label: string;
+  feelingSignal: string;
+  dataSignal: string;
+  reflectNote: string;
+}
+
+/** Chapter 6：一拍 Ground Truth（0603） */
+export interface GroundSnapDemo {
+  id: string;
+  label: string;
+  snapSource: string;
+  softReminder: string;
+  reflectNote: string;
+}
+
+/** Chapter 6：一週節奏／週報／身體會議（0605／0608／0609） */
+export interface WeekRhythmDemo {
+  id: string;
+  label: string;
+  lines: [string, string, string];
+  reflectNote: string;
+}
+
+/** Chapter 6：動能指南（0606） */
+export interface KineticGuideDemo {
+  id: string;
+  label: string;
+  goal: string;
+  prefer: string;
+  avoid: string;
+  boundary: string;
+  reflectNote: string;
+}
+
+/** Chapter 6：動能黃金三角 A／T／R（0610） */
+export interface AtrLightDemo {
+  id: string;
+  label: string;
+  autonomyAction: string;
+  trustAction: string;
+  resilienceAction: string;
+  reflectNote: string;
+}
+
+export interface ChapterAppDeepLink {
+  href: string;
+  label: string;
+}
+
 /** 「整理三點，不替我決定」生活案例（0104 用） */
 export interface OrganizeDecideDemo {
   id: string;
@@ -266,6 +334,16 @@ export interface ChapterOpening {
   /** sensory-habit 版型：生活場景選項 */
   habitSceneOptions?: HabitSceneOption[];
   habitDemos?: SensoryHabitDemo[];
+  /** Chapter 6 版型資料 */
+  mindsetShiftDemos?: MindsetShiftDemo[];
+  dualSignalDemos?: DualSignalDemo[];
+  groundSnapDemos?: GroundSnapDemo[];
+  weekRhythmLabels?: [string, string, string];
+  weekRhythmPlaceholders?: [string, string, string];
+  weekRhythmDemos?: WeekRhythmDemo[];
+  kineticGuideDemos?: KineticGuideDemo[];
+  atrLightDemos?: AtrLightDemo[];
+  appDeepLink?: ChapterAppDeepLink;
 }
 
 export const CHAPTER_0100: ChapterOpening = {
@@ -800,6 +878,7 @@ const CHAPTERS: Record<string, ChapterOpening> = {
   "0107": CHAPTER_0107,
   "0108": CHAPTER_0108,
   ...CHAPTER_2_OPENINGS,
+  ...CHAPTER_6_OPENINGS,
 };
 
 export function getChapterOpening(id: string): ChapterOpening | null {
@@ -907,6 +986,44 @@ export interface ChapterSensoryHabitDraft {
   reflectNote: string;
 }
 
+export interface ChapterMindsetShiftDraft {
+  pressurePhrase: string;
+  carePhrase: string;
+  reflectNote: string;
+}
+
+export interface ChapterDualSignalDraft {
+  feelingSignal: string;
+  dataSignal: string;
+  reflectNote: string;
+}
+
+export interface ChapterGroundSnapDraft {
+  snapSource: string;
+  softReminder: string;
+  reflectNote: string;
+}
+
+export interface ChapterWeekRhythmDraft {
+  lines: [string, string, string];
+  reflectNote: string;
+}
+
+export interface ChapterKineticGuideDraft {
+  goal: string;
+  prefer: string;
+  avoid: string;
+  boundary: string;
+  reflectNote: string;
+}
+
+export interface ChapterAtrLightDraft {
+  autonomyAction: string;
+  trustAction: string;
+  resilienceAction: string;
+  reflectNote: string;
+}
+
 /** 0202：植物辨識提問句 */
 export function buildPlantAskPrompt(): string {
   return "這可能是什麼植物？請說明特徵。如果不確定，請說明不確定的部分。";
@@ -933,6 +1050,16 @@ export function buildCuriosityPrompt(question?: string): string {
   const q = question?.trim();
   if (!q) return "請用簡單中文解釋，並舉一個日常生活例子。";
   return `${q} 請用簡單中文解釋，並舉一個日常生活例子。`;
+}
+
+/** 0604：安全解讀身體數據提問句（不診斷、不評分） */
+export function buildBodyInterpretPrompt(): string {
+  return "請用簡單語言幫我看懂這些數字，給我一個安全、溫和、可執行的下次微調建議。請不要做醫療診斷，也不要用分數評價我。";
+}
+
+/** 0607：喚醒 AI Coach 啟動句 */
+export function buildKineticCoachPrompt(): string {
+  return "請依照我的 55+ 動能指南，幫我整理這週的身體提醒，並給我一個安全、低壓力、可持續的下週微調建議。如果無法讀取資料，請提醒我貼上照片、截圖或一週身體提醒。";
 }
 
 /** 0206：餐點觀察提問句 */
@@ -1075,6 +1202,18 @@ export function getChapterDeepLinkHint(from: string | null | undefined): Chapter
     "0206": {
       label: "美食篇｜觀察",
       tips: ["拍一道餐點", "請整理可能食材與溫和觀察", "這不是醫療或營養診斷"],
+    },
+    "0603": {
+      label: "一拍｜Ground Truth",
+      tips: ["拍跑步機／手錶／健康 App 畫面", "先遮蔽個資", "這只是提醒，不是分數"],
+    },
+    "0604": {
+      label: "二問｜聽懂身體",
+      tips: ["可附上照片或截圖", "請給溫和微調建議", "不診斷、不評分"],
+    },
+    "0607": {
+      label: "喚醒 AI Coach",
+      tips: ["依 55+ 動能指南回應", "可貼照片或一週提醒", "安全、低壓力微調"],
     },
   };
   const hit = known[chapterId] ?? {

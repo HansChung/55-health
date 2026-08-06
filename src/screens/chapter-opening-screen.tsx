@@ -54,6 +54,20 @@ import {
   type ChapterPhotoEditDraft,
   type ChapterPhotoCurateDraft,
   type ChapterSensoryHabitDraft,
+  type MindsetShiftDemo,
+  type DualSignalDemo,
+  type GroundSnapDemo,
+  type WeekRhythmDemo,
+  type KineticGuideDemo,
+  type AtrLightDemo,
+  type ChapterMindsetShiftDraft,
+  type ChapterDualSignalDraft,
+  type ChapterGroundSnapDraft,
+  type ChapterWeekRhythmDraft,
+  type ChapterKineticGuideDraft,
+  type ChapterAtrLightDraft,
+  buildBodyInterpretPrompt,
+  buildKineticCoachPrompt,
 } from "@/lib/chapter-opening";
 import { trackEvent } from "@/lib/telemetry";
 import { useToast } from "@/hooks/use-toast";
@@ -113,6 +127,20 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const [captions, setCaptions] = useState<[string, string, string]>(["", "", ""]);
   const [pickedScenes, setPickedScenes] = useState<string[]>([]);
   const [planNote, setPlanNote] = useState("");
+  const [pressurePhrase, setPressurePhrase] = useState("");
+  const [carePhrase, setCarePhrase] = useState("");
+  const [feelingSignal, setFeelingSignal] = useState("");
+  const [dataSignal, setDataSignal] = useState("");
+  const [snapSource, setSnapSource] = useState("");
+  const [softReminder, setSoftReminder] = useState("");
+  const [rhythmLines, setRhythmLines] = useState<[string, string, string]>(["", "", ""]);
+  const [guideGoal, setGuideGoal] = useState("");
+  const [guidePrefer, setGuidePrefer] = useState("");
+  const [guideAvoid, setGuideAvoid] = useState("");
+  const [guideBoundary, setGuideBoundary] = useState("");
+  const [autonomyAction, setAutonomyAction] = useState("");
+  const [trustAction, setTrustAction] = useState("");
+  const [resilienceAction, setResilienceAction] = useState("");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -248,7 +276,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           if (d.reflectNote) setReflectNote(d.reflectNote);
         }
       }
-      if (layout === "sensory-habit") {
+            if (layout === "sensory-habit") {
         const draftRaw = localStorage.getItem(draftKey);
         if (draftRaw) {
           const d = JSON.parse(draftRaw) as ChapterSensoryHabitDraft;
@@ -257,10 +285,77 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           if (d.reflectNote) setReflectNote(d.reflectNote);
         }
       }
+      const layoutKeyLoad: string = layout;
+      if (layoutKeyLoad === "mindset-shift") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterMindsetShiftDraft;
+          if (d.pressurePhrase) setPressurePhrase(d.pressurePhrase);
+          if (d.carePhrase) setCarePhrase(d.carePhrase);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "dual-signal") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterDualSignalDraft;
+          if (d.feelingSignal) setFeelingSignal(d.feelingSignal);
+          if (d.dataSignal) setDataSignal(d.dataSignal);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "ground-snap") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterGroundSnapDraft;
+          if (d.snapSource) setSnapSource(d.snapSource);
+          if (d.softReminder) setSoftReminder(d.softReminder);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "week-rhythm") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterWeekRhythmDraft;
+          if (d.lines) setRhythmLines(d.lines);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "kinetic-guide") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterKineticGuideDraft;
+          if (d.goal) setGuideGoal(d.goal);
+          if (d.prefer) setGuidePrefer(d.prefer);
+          if (d.avoid) setGuideAvoid(d.avoid);
+          if (d.boundary) setGuideBoundary(d.boundary);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "atr-light") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterAtrLightDraft;
+          if (d.autonomyAction) setAutonomyAction(d.autonomyAction);
+          if (d.trustAction) setTrustAction(d.trustAction);
+          if (d.resilienceAction) setResilienceAction(d.resilienceAction);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "curiosity-ask" && chapter.samplePrompt) {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (!draftRaw) {
+          setQuestion(chapter.samplePrompt);
+        } else {
+          const d = JSON.parse(draftRaw) as ChapterCuriosityDraft;
+          if (!d.question) setQuestion(chapter.samplePrompt);
+        }
+      }
     } catch {
+
       /* ignore */
     }
-  }, [pickKey, draftKey, layout, chapter.defaultNoteTitle]);
+  }, [pickKey, draftKey, layout, chapter.defaultNoteTitle, chapter.samplePrompt]);
 
   const saveDraft = (
     patch: Partial<
@@ -276,7 +371,13 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         ChapterRecipeDraft &
         ChapterPhotoEditDraft &
         ChapterPhotoCurateDraft &
-        ChapterSensoryHabitDraft
+        ChapterSensoryHabitDraft &
+        ChapterMindsetShiftDraft &
+        ChapterDualSignalDraft &
+        ChapterGroundSnapDraft &
+        ChapterWeekRhythmDraft &
+        ChapterKineticGuideDraft &
+        ChapterAtrLightDraft
     >
   ) => {
     if (typeof window === "undefined") return;
@@ -391,7 +492,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
       };
       localStorage.setItem(draftKey, JSON.stringify(next));
     }
-    if (layout === "sensory-habit") {
+        if (layout === "sensory-habit") {
       const next: ChapterSensoryHabitDraft = {
         pickedScenes: patch.pickedScenes ?? pickedScenes,
         planNote: patch.planNote ?? planNote,
@@ -399,7 +500,59 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
       };
       localStorage.setItem(draftKey, JSON.stringify(next));
     }
+    const layoutKey: string = layout;
+    if (layoutKey === "mindset-shift") {
+      const next: ChapterMindsetShiftDraft = {
+        pressurePhrase: patch.pressurePhrase ?? pressurePhrase,
+        carePhrase: patch.carePhrase ?? carePhrase,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "dual-signal") {
+      const next: ChapterDualSignalDraft = {
+        feelingSignal: patch.feelingSignal ?? feelingSignal,
+        dataSignal: patch.dataSignal ?? dataSignal,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "ground-snap") {
+      const next: ChapterGroundSnapDraft = {
+        snapSource: patch.snapSource ?? snapSource,
+        softReminder: patch.softReminder ?? softReminder,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "week-rhythm") {
+      const next: ChapterWeekRhythmDraft = {
+        lines: patch.lines ?? rhythmLines,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "kinetic-guide") {
+      const next: ChapterKineticGuideDraft = {
+        goal: patch.goal ?? guideGoal,
+        prefer: patch.prefer ?? guidePrefer,
+        avoid: patch.avoid ?? guideAvoid,
+        boundary: patch.boundary ?? guideBoundary,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "atr-light") {
+      const next: ChapterAtrLightDraft = {
+        autonomyAction: patch.autonomyAction ?? autonomyAction,
+        trustAction: patch.trustAction ?? trustAction,
+        resilienceAction: patch.resilienceAction ?? resilienceAction,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
   };
+
 
   const savePick = (id: string, note?: string) => {
     setPicked(id);
@@ -484,6 +637,36 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         break;
       case "sensory-habit":
         action = planNote.trim() || pickedScenes.join("、");
+        break;
+      case "mindset-shift":
+        action =
+          (carePhrase.trim() ? `我想改成「${carePhrase.trim()}」` : "") ||
+          pressurePhrase.trim();
+        break;
+      case "dual-signal":
+        action =
+          [feelingSignal, dataSignal].filter(Boolean).join(" × ") ||
+          dataSignal.trim();
+        break;
+      case "ground-snap":
+        action =
+          (snapSource.trim() ? `今天拍下：${snapSource.trim()}` : "") ||
+          softReminder.trim();
+        break;
+      case "week-rhythm":
+        action = rhythmLines.filter(Boolean).join("；");
+        break;
+      case "kinetic-guide":
+        action =
+          [guideGoal, guidePrefer, guideAvoid, guideBoundary]
+            .filter(Boolean)
+            .join("｜");
+        break;
+      case "atr-light":
+        action =
+          [autonomyAction, trustAction, resilienceAction]
+            .filter(Boolean)
+            .join("｜");
         break;
       case "routes":
       case "ai-entry":
@@ -716,13 +899,99 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   };
 
   const copyCuriosityAsk = async () => {
-    const text = buildCuriosityPrompt(question);
+    const text =
+      chapter.id === "0604"
+        ? (question.trim() || chapter.samplePrompt || buildBodyInterpretPrompt())
+        : chapter.id === "0607"
+          ? (question.trim() || chapter.samplePrompt || buildKineticCoachPrompt())
+          : chapter.samplePrompt && !question.trim()
+            ? chapter.samplePrompt
+            : chapter.samplePrompt && question.trim() === chapter.samplePrompt.trim()
+              ? question.trim()
+              : buildCuriosityPrompt(question);
     try {
       await navigator.clipboard.writeText(text);
-      toast.success("已複製好奇心提問句，可以貼給 AI 或說出來。");
+      toast.success(
+        chapter.id === "0604" || chapter.id === "0607"
+          ? "已複製提問句，可以貼給 AI 或說出來。"
+          : "已複製好奇心提問句，可以貼給 AI 或說出來。"
+      );
     } catch {
       toast.info("請長按文字框手動複製。");
     }
+  };
+
+  const applyMindsetShiftDemo = (demo: MindsetShiftDemo) => {
+    setPressurePhrase(demo.pressurePhrase);
+    setCarePhrase(demo.carePhrase);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      pressurePhrase: demo.pressurePhrase,
+      carePhrase: demo.carePhrase,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的轉念。`);
+  };
+
+  const applyDualSignalDemo = (demo: DualSignalDemo) => {
+    setFeelingSignal(demo.feelingSignal);
+    setDataSignal(demo.dataSignal);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      feelingSignal: demo.feelingSignal,
+      dataSignal: demo.dataSignal,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的雙軌判斷。`);
+  };
+
+  const applyGroundSnapDemo = (demo: GroundSnapDemo) => {
+    setSnapSource(demo.snapSource);
+    setSoftReminder(demo.softReminder);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      snapSource: demo.snapSource,
+      softReminder: demo.softReminder,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的第一拍。`);
+  };
+
+  const applyWeekRhythmDemo = (demo: WeekRhythmDemo) => {
+    setRhythmLines(demo.lines);
+    setReflectNote(demo.reflectNote);
+    saveDraft({ lines: demo.lines, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}，您可以改成自己的節奏。`);
+  };
+
+  const applyKineticGuideDemo = (demo: KineticGuideDemo) => {
+    setGuideGoal(demo.goal);
+    setGuidePrefer(demo.prefer);
+    setGuideAvoid(demo.avoid);
+    setGuideBoundary(demo.boundary);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      goal: demo.goal,
+      prefer: demo.prefer,
+      avoid: demo.avoid,
+      boundary: demo.boundary,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的指南。`);
+  };
+
+  const applyAtrLightDemo = (demo: AtrLightDemo) => {
+    setAutonomyAction(demo.autonomyAction);
+    setTrustAction(demo.trustAction);
+    setResilienceAction(demo.resilienceAction);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      autonomyAction: demo.autonomyAction,
+      trustAction: demo.trustAction,
+      resilienceAction: demo.resilienceAction,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的光點。`);
   };
 
   const applyRecipeDemo = (demo: RecipeCardDemo) => {
@@ -1725,8 +1994,13 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
               />
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
                 <button type="button" onClick={copyCuriosityAsk} style={secondaryBtnStyle}>
-                  複製好奇心提問句
+                  {chapter.id === "0604" || chapter.id === "0607" ? "複製提問句" : "複製好奇心提問句"}
                 </button>
+                {(chapter.id === "0604") && (
+                  <button type="button" onClick={tryCameraInNuannuan} style={primaryOutlineBtnStyle}>
+                    在暖暖拍一下再問 →
+                  </button>
+                )}
                 <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>
                   在暖暖問一句 →
                 </button>
@@ -2052,6 +2326,186 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
             </div>
           )}
 
+
+          {layout === "mindset-shift" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>
+                  我不想再只用這句判斷運動有效
+                </div>
+                <textarea
+                  value={pressurePhrase}
+                  onChange={(e) => {
+                    setPressurePhrase(e.target.value);
+                    saveDraft({ pressurePhrase: e.target.value });
+                  }}
+                  placeholder="例如：一定要流很多汗、很喘，才算有運動…"
+                  rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }}
+                />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>
+                  我想改成
+                </div>
+                <textarea
+                  value={carePhrase}
+                  onChange={(e) => {
+                    setCarePhrase(e.target.value);
+                    saveDraft({ carePhrase: e.target.value });
+                  }}
+                  placeholder="例如：身體是否更穩、更舒服、更能持續…"
+                  rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }}
+                />
+              </div>
+            </div>
+          )}
+
+          {layout === "dual-signal" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>
+                  我平常最常用的感覺判斷
+                </div>
+                <textarea
+                  value={feelingSignal}
+                  onChange={(e) => {
+                    setFeelingSignal(e.target.value);
+                    saveDraft({ feelingSignal: e.target.value });
+                  }}
+                  placeholder="例如：今天有沒有流很多汗…"
+                  rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }}
+                />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>
+                  我願意多看的一個身體訊號
+                </div>
+                <textarea
+                  value={dataSignal}
+                  onChange={(e) => {
+                    setDataSignal(e.target.value);
+                    saveDraft({ dataSignal: e.target.value });
+                  }}
+                  placeholder="例如：昨晚睡眠與運動後的疲勞感…"
+                  rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }}
+                />
+              </div>
+            </div>
+          )}
+
+          {layout === "ground-snap" && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 8 }}>
+                今天我拍下的是
+              </div>
+              <input
+                value={snapSource}
+                onChange={(e) => {
+                  setSnapSource(e.target.value);
+                  saveDraft({ snapSource: e.target.value });
+                }}
+                placeholder="例如：健走後的步數與時間…"
+                style={{ width: "100%", padding: "12px 14px", marginBottom: 10, borderRadius: 10, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", boxSizing: "border-box" }}
+              />
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+                <button type="button" onClick={tryCameraInNuannuan} style={primaryOutlineBtnStyle}>
+                  在暖暖拍一下 →
+                </button>
+                <button type="button" onClick={tryPhotoInNuannuan} style={secondaryBtnStyle}>
+                  從相簿選畫面 →
+                </button>
+              </div>
+              <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 8 }}>
+                一句低敏感提醒
+              </div>
+              <input
+                value={softReminder}
+                onChange={(e) => {
+                  setSoftReminder(e.target.value);
+                  saveDraft({ softReminder: e.target.value });
+                }}
+                placeholder="例如：這只是提醒，不是分數…"
+                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", boxSizing: "border-box" }}
+              />
+            </div>
+          )}
+
+          {layout === "week-rhythm" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {(chapter.weekRhythmLabels ?? ["第一句", "第二句", "第三句"]).map((label, i) => (
+                <div key={i}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>
+                    {label}
+                  </div>
+                  <textarea
+                    value={rhythmLines[i]}
+                    onChange={(e) => {
+                      const next: [string, string, string] = [...rhythmLines];
+                      next[i] = e.target.value;
+                      setRhythmLines(next);
+                      saveDraft({ lines: next });
+                    }}
+                    placeholder={chapter.weekRhythmPlaceholders?.[i] ?? "寫下一句…"}
+                    rows={2}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "kinetic-guide" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { label: "我的運動目標是", value: guideGoal, key: "goal" as const, set: setGuideGoal, ph: "例如：穩定活動、舒服續航…" },
+                { label: "我希望 AI 提醒我", value: guidePrefer, key: "prefer" as const, set: setGuidePrefer, ph: "例如：簡單、溫和、可執行…" },
+                { label: "我希望 AI 避免", value: guideAvoid, key: "avoid" as const, set: setGuideAvoid, ph: "例如：命令式語氣、分數評價…" },
+                { label: "我的安全邊界是", value: guideBoundary, key: "boundary" as const, set: setGuideBoundary, ph: "例如：不診斷；不適時停止並尋求專業建議…" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{f.label}</div>
+                  <textarea
+                    value={f.value}
+                    onChange={(e) => {
+                      f.set(e.target.value);
+                      saveDraft({ [f.key]: e.target.value });
+                    }}
+                    placeholder={f.ph}
+                    rows={2}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "atr-light" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>A｜自主光點</div>
+                <textarea value={autonomyAction} onChange={(e) => { setAutonomyAction(e.target.value); saveDraft({ autonomyAction: e.target.value }); }}
+                  placeholder="例如：節奏由我決定，不跟別人比流汗…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>T｜信賴光點</div>
+                <textarea value={trustAction} onChange={(e) => { setTrustAction(e.target.value); saveDraft({ trustAction: e.target.value }); }}
+                  placeholder="例如：願意看數據，但不把數字當成分數…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>R｜韌性光點</div>
+                <textarea value={resilienceAction} onChange={(e) => { setResilienceAction(e.target.value); saveDraft({ resilienceAction: e.target.value }); }}
+                  placeholder="例如：不靠一天硬撐，用一週節奏穩定回來…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
           {layout === "routes" && chapter.entries && chapter.entries.length > 0 && (
             <div style={{
               display: "grid", gridTemplateColumns: "1fr 1fr",
@@ -2135,19 +2589,26 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                 saveDraft({ userDecision: e.target.value });
               } else {
                 setReflectNote(e.target.value);
+                const reflectLayout: string = layout;
                 if (
-                  layout === "question-rewrite" ||
-                  layout === "vision-identify" ||
-                  layout === "photo-search" ||
-                  layout === "note-capture" ||
-                  layout === "smart-flow" ||
-                  layout === "menu-translate" ||
-                  layout === "product-compare" ||
-                  layout === "curiosity-ask" ||
-                  layout === "recipe-card" ||
-                  layout === "photo-edit-safe" ||
-                  layout === "photo-curate" ||
-                  layout === "sensory-habit"
+                  reflectLayout === "question-rewrite" ||
+                  reflectLayout === "vision-identify" ||
+                  reflectLayout === "photo-search" ||
+                  reflectLayout === "note-capture" ||
+                  reflectLayout === "smart-flow" ||
+                  reflectLayout === "menu-translate" ||
+                  reflectLayout === "product-compare" ||
+                  reflectLayout === "curiosity-ask" ||
+                  reflectLayout === "recipe-card" ||
+                  reflectLayout === "photo-edit-safe" ||
+                  reflectLayout === "photo-curate" ||
+                  reflectLayout === "sensory-habit" ||
+                  reflectLayout === "mindset-shift" ||
+                  reflectLayout === "dual-signal" ||
+                  reflectLayout === "ground-snap" ||
+                  reflectLayout === "week-rhythm" ||
+                  reflectLayout === "kinetic-guide" ||
+                  reflectLayout === "atr-light"
                 ) {
                   saveDraft({ reflectNote: e.target.value });
                 } else if (picked) {
@@ -2623,6 +3084,83 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                   ))}
                 </div>
               )}
+
+              {layout === "mindset-shift" && chapter.mindsetShiftDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.mindsetShiftDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>壓力句：</strong>{demo.pressurePhrase}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>保養句：</strong>{demo.carePhrase}</p>
+                      <button type="button" onClick={() => applyMindsetShiftDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "dual-signal" && chapter.dualSignalDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.dualSignalDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>感覺：</strong>{demo.feelingSignal}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>多看：</strong>{demo.dataSignal}</p>
+                      <button type="button" onClick={() => applyDualSignalDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "ground-snap" && chapter.groundSnapDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.groundSnapDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>拍下：</strong>{demo.snapSource}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>提醒：</strong>{demo.softReminder}</p>
+                      <button type="button" onClick={() => applyGroundSnapDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "week-rhythm" && chapter.weekRhythmDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.weekRhythmDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <ol style={{ margin: "0 0 10px", paddingLeft: 20, fontSize: "var(--fs-xs)", color: "var(--ink-2)", lineHeight: 1.55 }}>
+                        {demo.lines.map((line, i) => (<li key={i}>{line}</li>))}
+                      </ol>
+                      <button type="button" onClick={() => applyWeekRhythmDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "kinetic-guide" && chapter.kineticGuideDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.kineticGuideDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>目標：</strong>{demo.goal}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>提醒：</strong>{demo.prefer}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>避免：</strong>{demo.avoid}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>邊界：</strong>{demo.boundary}</p>
+                      <button type="button" onClick={() => applyKineticGuideDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "atr-light" && chapter.atrLightDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.atrLightDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>A：</strong>{demo.autonomyAction}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>T：</strong>{demo.trustAction}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>R：</strong>{demo.resilienceAction}</p>
+                      <button type="button" onClick={() => applyAtrLightDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
               {layout === "photo-search" && chapter.photoSearchDemos && (
                 <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
                   {chapter.photoSearchDemos.map((demo) => (
@@ -2783,6 +3321,27 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
             {chapter.continueBody}
           </p>
 
+          {chapter.appDeepLink && (
+            <button
+              type="button"
+              onClick={() => {
+                trackEvent("chapter_app_deep_link", {
+                  chapter: chapter.id,
+                  href: chapter.appDeepLink!.href,
+                });
+                router.push(chapter.appDeepLink!.href);
+              }}
+              style={{
+                width: "100%", padding: "14px", marginBottom: 16,
+                background: "var(--surface)", border: "2px solid var(--primary)",
+                borderRadius: "var(--r-pill)", fontWeight: 800,
+                fontSize: "var(--fs-sm)", color: "var(--primary-deep)", cursor: "pointer",
+              }}
+            >
+              {chapter.appDeepLink.label}
+            </button>
+          )}
+
           <div style={{
             padding: 16, borderRadius: "var(--r-lg)",
             background: "linear-gradient(135deg, #FBE6D4 0%, #FFF8EE 100%)",
@@ -2906,6 +3465,20 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           captions={captions}
           pickedScenes={pickedScenes}
           planNote={planNote}
+          pressurePhrase={pressurePhrase}
+          carePhrase={carePhrase}
+          feelingSignal={feelingSignal}
+          dataSignal={dataSignal}
+          snapSource={snapSource}
+          softReminder={softReminder}
+          rhythmLines={rhythmLines}
+          guideGoal={guideGoal}
+          guidePrefer={guidePrefer}
+          guideAvoid={guideAvoid}
+          guideBoundary={guideBoundary}
+          autonomyAction={autonomyAction}
+          trustAction={trustAction}
+          resilienceAction={resilienceAction}
         />
       </div>
     </>
@@ -3074,6 +3647,20 @@ function PrintCard({
   captions = ["", "", ""],
   pickedScenes = [],
   planNote = "",
+  pressurePhrase = "",
+  carePhrase = "",
+  feelingSignal = "",
+  dataSignal = "",
+  snapSource = "",
+  softReminder = "",
+  rhythmLines = ["", "", ""] as [string, string, string],
+  guideGoal = "",
+  guidePrefer = "",
+  guideAvoid = "",
+  guideBoundary = "",
+  autonomyAction = "",
+  trustAction = "",
+  resilienceAction = "",
 }: {
   chapter: ChapterOpening;
   picked: string | null;
@@ -3120,6 +3707,20 @@ function PrintCard({
   captions?: [string, string, string];
   pickedScenes?: string[];
   planNote?: string;
+  pressurePhrase?: string;
+  carePhrase?: string;
+  feelingSignal?: string;
+  dataSignal?: string;
+  snapSource?: string;
+  softReminder?: string;
+  rhythmLines?: [string, string, string];
+  guideGoal?: string;
+  guidePrefer?: string;
+  guideAvoid?: string;
+  guideBoundary?: string;
+  autonomyAction?: string;
+  trustAction?: string;
+  resilienceAction?: string;
 }) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const bgLabels = chapter.backgroundOptions
@@ -3360,6 +3961,98 @@ function PrintCard({
         <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>
           掃碼網址：{origin}/smart/chapter/{chapter.id}
         </p>
+      </div>
+    );
+  }
+
+
+  if ((layout as string) === "mindset-shift") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="我不想再只用這句判斷" minHeight={64}>{pressurePhrase || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="我想改成" minHeight={64}>{carePhrase || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        </div>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "dual-signal") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="最常用的感覺判斷" minHeight={64}>{feelingSignal || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="願意多看的訊號" minHeight={64}>{dataSignal || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        </div>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "ground-snap") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="今天拍下的是" minHeight={48}>{snapSource || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="低敏感提醒" minHeight={48}>{softReminder || "這只是提醒，不是分數"}</PrintGridCell>
+        </div>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "week-rhythm") {
+    const labels = chapter.weekRhythmLabels ?? ["第一句", "第二句", "第三句"];
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        {labels.map((label, i) => (
+          <div key={i} style={{ marginBottom: 12 }}>
+            <PrintGridCell title={label} minHeight={56}>{rhythmLines[i] || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+          </div>
+        ))}
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "kinetic-guide") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="運動目標" minHeight={48}>{guideGoal || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="希望 AI 提醒" minHeight={48}>{guidePrefer || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="希望 AI 避免" minHeight={48}>{guideAvoid || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="安全邊界" minHeight={48}>{guideBoundary || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "atr-light") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="A｜自主光點" minHeight={48}>{autonomyAction || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="T｜信賴光點" minHeight={48}>{trustAction || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="R｜韌性光點" minHeight={48}>{resilienceAction || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="想帶進日常" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell></div>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
       </div>
     );
   }
