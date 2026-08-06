@@ -1,5 +1,6 @@
 /** 章節開篇 QR 深連結（例：0100 → /smart/chapter/0100） */
 import { CHAPTER_2_OPENINGS } from "./chapter-opening-ch2";
+import { CHAPTER_5_OPENINGS } from "./chapter-opening-ch5";
 
 export type ChapterLayout =
   | "routes"
@@ -16,7 +17,15 @@ export type ChapterLayout =
   | "recipe-card"
   | "photo-edit-safe"
   | "photo-curate"
-  | "sensory-habit";
+  | "sensory-habit"
+  | "verify-first"
+  | "pause-reflex"
+  | "rock-check"
+  | "muscle-record"
+  | "trust-lists"
+  | "list-entry"
+  | "family-weekly"
+  | "tr-light";
 
 export type VisionTrustLevel = "enjoy" | "verify";
 
@@ -183,6 +192,83 @@ export interface SensoryHabitDemo {
   reflectNote: string;
 }
 
+/** Chapter 5：先驗證再信任（0501） */
+export interface VerifyFirstDemo {
+  id: string;
+  label: string;
+  firstAction: string;
+  thenAction: string;
+  reflectNote: string;
+}
+
+export interface PauseReflexOption {
+  id: string;
+  label: string;
+  hint: string;
+}
+
+export interface PauseReflexDemo {
+  id: string;
+  label: string;
+  focusId: string;
+  reflectNote: string;
+}
+
+/** Chapter 5：ROCK 查證卡（0503／0504） */
+export interface RockCheckDemo {
+  id: string;
+  label: string;
+  scenario: string;
+  flags: [string, string, string] | string[];
+  safeAction: string;
+  reflectNote: string;
+}
+
+export interface MuscleRecordDemo {
+  id: string;
+  label: string;
+  scamPattern: string;
+  safeAction: string;
+  reflectNote: string;
+}
+
+export interface TrustListsDemo {
+  id: string;
+  label: string;
+  blackSummary: string;
+  whiteSummary: string;
+  reflectNote: string;
+}
+
+export interface ListEntryDemo {
+  id: string;
+  label: string;
+  entryType: string;
+  features: string;
+  safeAction: string;
+  reflectNote: string;
+}
+
+export interface FamilyWeeklyDemo {
+  id: string;
+  label: string;
+  lines: [string, string, string];
+  reflectNote: string;
+}
+
+export interface TrLightDemo {
+  id: string;
+  label: string;
+  trustAction: string;
+  resilienceAction: string;
+  reflectNote: string;
+}
+
+export interface ChapterAppDeepLink {
+  href: string;
+  label: string;
+}
+
 /** 「整理三點，不替我決定」生活案例（0104 用） */
 export interface OrganizeDecideDemo {
   id: string;
@@ -266,6 +352,18 @@ export interface ChapterOpening {
   /** sensory-habit 版型：生活場景選項 */
   habitSceneOptions?: HabitSceneOption[];
   habitDemos?: SensoryHabitDemo[];
+  /** Chapter 5 版型資料 */
+  verifyFirstDemos?: VerifyFirstDemo[];
+  pauseReflexOptions?: PauseReflexOption[];
+  pauseReflexDemos?: PauseReflexDemo[];
+  rockCheckDemos?: RockCheckDemo[];
+  muscleRecordDemos?: MuscleRecordDemo[];
+  trustListsDemos?: TrustListsDemo[];
+  listEntryMode?: "blacklist" | "whitelist";
+  listEntryDemos?: ListEntryDemo[];
+  familyWeeklyDemos?: FamilyWeeklyDemo[];
+  trLightDemos?: TrLightDemo[];
+  appDeepLink?: ChapterAppDeepLink;
 }
 
 export const CHAPTER_0100: ChapterOpening = {
@@ -800,6 +898,7 @@ const CHAPTERS: Record<string, ChapterOpening> = {
   "0107": CHAPTER_0107,
   "0108": CHAPTER_0108,
   ...CHAPTER_2_OPENINGS,
+  ...CHAPTER_5_OPENINGS,
 };
 
 export function getChapterOpening(id: string): ChapterOpening | null {
@@ -904,6 +1003,54 @@ export interface ChapterPhotoCurateDraft {
 export interface ChapterSensoryHabitDraft {
   pickedScenes: string[];
   planNote: string;
+  reflectNote: string;
+}
+
+export interface ChapterVerifyFirstDraft {
+  firstAction: string;
+  thenAction: string;
+  reflectNote: string;
+}
+
+export interface ChapterPauseReflexDraft {
+  focusId: string;
+  reflectNote: string;
+}
+
+export interface ChapterRockCheckDraft {
+  scenario: string;
+  flags: [string, string, string];
+  safeAction: string;
+  reflectNote: string;
+}
+
+export interface ChapterMuscleRecordDraft {
+  scamPattern: string;
+  safeAction: string;
+  reflectNote: string;
+}
+
+export interface ChapterTrustListsDraft {
+  blackSummary: string;
+  whiteSummary: string;
+  reflectNote: string;
+}
+
+export interface ChapterListEntryDraft {
+  entryType: string;
+  features: string;
+  safeAction: string;
+  reflectNote: string;
+}
+
+export interface ChapterFamilyWeeklyDraft {
+  lines: [string, string, string];
+  reflectNote: string;
+}
+
+export interface ChapterTrLightDraft {
+  trustAction: string;
+  resilienceAction: string;
   reflectNote: string;
 }
 
@@ -1075,6 +1222,14 @@ export function getChapterDeepLinkHint(from: string | null | undefined): Chapter
     "0206": {
       label: "美食篇｜觀察",
       tips: ["拍一道餐點", "請整理可能食材與溫和觀察", "這不是醫療或營養診斷"],
+    },
+    "0503": {
+      label: "投資邀約查證",
+      tips: ["只用模擬邀約練習", "請 AI 只列疑點、不給投資建議", "不加入、不下載、不匯款"],
+    },
+    "0504": {
+      label: "恐懼訊息查證",
+      tips: ["先停、不回、不輸入", "打原本電話確認", "不要回撥對方提供的號碼"],
     },
   };
   const hit = known[chapterId] ?? {

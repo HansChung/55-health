@@ -19,6 +19,20 @@ const CHAPTER_2_LINKS: { id: string; label: string; color: string }[] = [
   { id: "0211", label: "感官全開：把好奇變成生活反射", color: "#E8845A" },
 ];
 
+const CHAPTER_5_LINKS: { id: string; label: string; color: string }[] = [
+  { id: "0500", label: "理財防詐｜章節開篇", color: "#5BA0C9" },
+  { id: "0501", label: "從恐懼躲避到優雅過濾", color: "#9B7AD4" },
+  { id: "0502", label: "先暫停，後查證", color: "var(--sage)" },
+  { id: "0503", label: "當貪婪來敲門", color: "#E8845A" },
+  { id: "0504", label: "當恐懼來襲擊", color: "#7B5BB8" },
+  { id: "0505", label: "練出防詐肌肉", color: "#5BA0C9" },
+  { id: "0506", label: "建立信任資料庫", color: "var(--primary-deep)" },
+  { id: "0507", label: "防詐黑名單", color: "#E8845A" },
+  { id: "0508", label: "信任白名單", color: "var(--sage)" },
+  { id: "0509", label: "家族資安週報", color: "#9B7AD4" },
+  { id: "0510", label: "點亮信賴與韌性", color: "#5BA0C9" },
+];
+
 /**
  * QR：SMART RADAR 溫暖導讀（文字版；之後可換成音檔）
  * 對應 KU05 左頁文案精華
@@ -206,6 +220,50 @@ export default function SmartGuidePage() {
           {" "}共同節奏：一拍、二問、三記下。練習完可把最有用的一句話「點成光點」。
         </p>
         {CHAPTER_2_LINKS.map((ch) => (
+          <button
+            key={ch.id}
+            type="button"
+            onClick={() => router.push(`/smart/chapter/${ch.id}`)}
+            style={{
+              width: "100%", marginTop: 8, padding: "14px 16px",
+              background: "var(--surface)", border: `2px solid ${ch.color}`,
+              borderRadius: "var(--r-lg)", fontWeight: 700,
+              fontSize: "var(--fs-sm)", color: ch.color, cursor: "pointer",
+              textAlign: "left",
+            }}
+          >
+            章節 {ch.id}｜{ch.label} →
+          </button>
+        ))}
+
+        <div style={{
+          fontSize: "var(--fs-sm)", fontWeight: 800, color: "#5BA0C9",
+          marginTop: 24, marginBottom: 10,
+        }}>
+          第五章｜理財防詐
+        </div>
+        <p style={{
+          fontSize: "var(--fs-xs)", color: "var(--ink-2)", lineHeight: 1.55,
+          margin: "0 0 12px", padding: "12px 14px",
+          background: "var(--surface)", borderRadius: 12, border: "1px solid var(--line)",
+        }}>
+          <strong>先暫停，後查證；先驗證，再信任。</strong>
+          {" "}也可開啟「安心保鑣」做 ROCK 練習與本機黑白名單。
+        </p>
+        <button
+          type="button"
+          onClick={() => router.push("/smart/fraud")}
+          style={{
+            width: "100%", marginBottom: 10, padding: "14px 16px",
+            background: "linear-gradient(135deg, #E8F0FA 0%, #FFFFFF 100%)",
+            border: "2px solid #5BA0C9", borderRadius: "var(--r-lg)",
+            fontWeight: 800, fontSize: "var(--fs-sm)", color: "#5BA0C9",
+            cursor: "pointer", textAlign: "left",
+          }}
+        >
+          🛡 安心保鑣練習（非自動偵測）→
+        </button>
+        {CHAPTER_5_LINKS.map((ch) => (
           <button
             key={ch.id}
             type="button"

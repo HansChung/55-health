@@ -105,6 +105,35 @@ describe("chapter-opening", () => {
     expect(ch?.habitSceneOptions?.length).toBeGreaterThan(3);
   });
 
+  it("getChapterOpening 0500 Chapter 5 routes", () => {
+    const ch = getChapterOpening("0500");
+    expect(ch?.title).toContain("理財防詐");
+    expect(ch?.layout).toBe("routes");
+    expect(ch?.entries?.length).toBe(4);
+    expect(ch?.appDeepLink?.href).toBe("/smart/fraud");
+  });
+
+  it("getChapterOpening 0503 rock-check", () => {
+    const ch = getChapterOpening("0503");
+    expect(ch?.layout).toBe("rock-check");
+    expect(ch?.rockCheckDemos?.length).toBe(1);
+    expect(ch?.samplePrompt).toContain("不要提供任何投資建議");
+  });
+
+  it("getChapterOpening 0506 trust-lists capability", () => {
+    const ch = getChapterOpening("0506");
+    expect(ch?.layout).toBe("trust-lists");
+    expect(ch?.capabilityNote).toContain("密碼本");
+    expect(ch?.appDeepLink?.href).toBe("/smart/fraud");
+  });
+
+  it("getChapterOpening 0510 tr-light links radar", () => {
+    const ch = getChapterOpening("0510");
+    expect(ch?.layout).toBe("tr-light");
+    expect(ch?.trLightDemos?.length).toBe(1);
+    expect(ch?.appDeepLink?.href).toBe("/smart/radar");
+  });
+
   it("buildMenuTranslatePrompt", () => {
     expect(buildMenuTranslatePrompt("少辣")).toContain("少辣");
   });
@@ -170,6 +199,7 @@ describe("chapter-opening", () => {
   it("isSparkSource", () => {
     expect(isSparkSource("chapter0100")).toBe(true);
     expect(isSparkSource("chapter0202")).toBe(true);
+    expect(isSparkSource("chapter0503")).toBe(true);
     expect(isSparkSource("invalid")).toBe(false);
   });
 
