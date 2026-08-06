@@ -105,6 +105,44 @@ describe("chapter-opening", () => {
     expect(ch?.habitSceneOptions?.length).toBeGreaterThan(3);
   });
 
+  it("getChapterOpening 0300 Chapter 3 routes", () => {
+    const ch = getChapterOpening("0300");
+    expect(ch?.title).toBe("優雅導航");
+    expect(ch?.layout).toBe("routes");
+    expect(ch?.entries?.length).toBe(5);
+    expect(ch?.quote).toContain("知道自己要往哪裡走");
+  });
+
+  it("getChapterOpening 0301 elevator-wish", () => {
+    const ch = getChapterOpening("0301");
+    expect(ch?.layout).toBe("elevator-wish");
+    expect(ch?.elevatorDemos?.length).toBe(1);
+    expect(ch?.printCardTitle).toContain("願望卡");
+  });
+
+  it("getChapterOpening 0305 five-reflect links radar", () => {
+    const ch = getChapterOpening("0305");
+    expect(ch?.layout).toBe("five-reflect");
+    expect(ch?.fiveReflectMode).toBe("status");
+    expect(ch?.smartDirections?.length).toBe(5);
+    expect(ch?.appDeepLink?.href).toBe("/smart/radar");
+    expect(ch?.practiceWhere).toBe("nuannuan");
+  });
+
+  it("getChapterOpening 0303 life-match is phone practice", () => {
+    const ch = getChapterOpening("0303");
+    expect(ch?.layout).toBe("life-match");
+    expect(ch?.practiceWhere).toBe("phone");
+    expect(ch?.capabilityNote).toContain("不是暖暖內建");
+  });
+
+  it("getChapterOpening 0310 embark-card", () => {
+    const ch = getChapterOpening("0310");
+    expect(ch?.layout).toBe("embark-card");
+    expect(ch?.embarkDemos?.length).toBe(1);
+    expect(ch?.appDeepLink?.href).toBe("/smart/radar");
+  });
+
   it("buildMenuTranslatePrompt", () => {
     expect(buildMenuTranslatePrompt("少辣")).toContain("少辣");
   });
@@ -170,6 +208,7 @@ describe("chapter-opening", () => {
   it("isSparkSource", () => {
     expect(isSparkSource("chapter0100")).toBe(true);
     expect(isSparkSource("chapter0202")).toBe(true);
+    expect(isSparkSource("chapter0305")).toBe(true);
     expect(isSparkSource("invalid")).toBe(false);
   });
 
