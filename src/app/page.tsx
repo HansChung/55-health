@@ -28,6 +28,7 @@ import { WeeklyReportScreen } from "@/screens/weekly-report-screen";
 import { AlertsCenterScreen } from "@/screens/alerts-center-screen";
 import { AchievementsScreen } from "@/screens/achievements-screen";
 import { SmartScreen } from "@/screens/smart-screen";
+import { BlueprintScreen } from "@/screens/blueprint-screen";
 import { IotScreen } from "@/screens/iot-screen";
 import { CaregiverScreen } from "@/screens/caregiver-screen";
 import { MealDetailSheet } from "@/screens/meal-detail-sheet";
@@ -593,6 +594,7 @@ export default function Page() {
             onAchievements={() => setSubpage("achievements")}
             smartSummary={{ shi: smartShi }}
             onSmart={() => setSubpage("smart")}
+            onBlueprint={() => setSubpage("blueprint")}
             onIot={() => setSubpage("iot")}
             caregiver={careElderCount > 0 ? { count: careElderCount, needsAttention: careNeedsAttention } : null}
             onCaregiver={() => setSubpage("caregiver")}
@@ -640,7 +642,13 @@ export default function Page() {
       {subpage === "weekly-report" && <WeeklyReportScreen tier={tier} onBack={() => setSubpage(null)} />}
       {subpage === "alerts-center" && <AlertsCenterScreen alerts={allHealthAlerts} tier={tier} onBack={() => setSubpage(null)} />}
       {subpage === "achievements" && <AchievementsScreen onBack={() => setSubpage(null)} />}
-      {subpage === "smart" && <SmartScreen onBack={() => setSubpage(null)} />}
+      {subpage === "smart" && (
+        <SmartScreen
+          onBack={() => setSubpage(null)}
+          onBlueprint={() => setSubpage("blueprint")}
+        />
+      )}
+      {subpage === "blueprint" && <BlueprintScreen onBack={() => setSubpage(null)} />}
       {subpage === "iot" && <IotScreen onBack={() => setSubpage(null)} />}
       {subpage === "caregiver" && <CaregiverScreen onBack={() => setSubpage(null)} />}
       {subpage === "prescription" && <PrescriptionScanScreen onBack={() => setSubpage("chronic")} />}
