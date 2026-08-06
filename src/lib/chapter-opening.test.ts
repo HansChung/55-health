@@ -4,7 +4,10 @@ import {
   CHAPTER_0102,
   CHAPTER_0103,
   buildOrganizeAskPrompt,
+  buildVisionAskPrompt,
+  chapterCameraTryHref,
   chapterEntryHref,
+  chapterPhotoTryHref,
   chapterPickKey,
   chapterDraftKey,
   chapterVoiceTryHref,
@@ -45,10 +48,30 @@ describe("chapter-opening", () => {
     expect(ch?.printCardTitle).toBe("三點一決定整理卡");
   });
 
+  it("getChapterOpening 0105 vision-identify", () => {
+    const ch = getChapterOpening("0105");
+    expect(ch?.title).toContain("萬物皆可問");
+    expect(ch?.layout).toBe("vision-identify");
+    expect(ch?.quote).toContain("理解世界的入口");
+    expect(ch?.visionDemos).toHaveLength(2);
+    expect(ch?.printCardTitle).toBe("影像辨識安全卡");
+  });
+
   it("buildOrganizeAskPrompt", () => {
     expect(buildOrganizeAskPrompt("")).toContain("不要替我決定");
     expect(buildOrganizeAskPrompt("  出門要帶什麼  ")).toContain("出門要帶什麼");
     expect(buildOrganizeAskPrompt("出門要帶什麼")).not.toContain("  ");
+  });
+
+  it("buildVisionAskPrompt", () => {
+    expect(buildVisionAskPrompt()).toContain("簡單中文");
+    expect(buildVisionAskPrompt("  小白花  ")).toContain("我拍的是：小白花");
+  });
+
+  it("chapterCameraTryHref 0105", () => {
+    expect(chapterCameraTryHref("0105")).toContain("open=camera");
+    expect(chapterPhotoTryHref("0105")).toContain("open=photo");
+    expect(chapterCameraTryHref("0105")).toContain("from=chapter0105");
   });
 
   it("未知章節回 null", () => {

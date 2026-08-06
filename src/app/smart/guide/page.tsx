@@ -127,6 +127,18 @@ export default function SmartGuidePage() {
         >
           章節 0104｜第二個大腦：把繁雜交給 AI →
         </button>
+        <button
+          type="button"
+          onClick={() => router.push("/smart/chapter/0105")}
+          style={{
+            width: "100%", marginTop: 10, padding: "16px",
+            background: "var(--surface)", border: "2px solid #5BA0C9",
+            borderRadius: "var(--r-lg)", fontWeight: 700,
+            fontSize: "var(--fs-sm)", color: "#5BA0C9", cursor: "pointer",
+          }}
+        >
+          章節 0105｜為手機裝上眼睛：萬物皆可問 →
+        </button>
       </SubPage>
     </div>
   );

@@ -12,11 +12,17 @@ import {
   type PhoneEntryPath,
   type QuestionRewriteDemo,
   type OrganizeDecideDemo,
+  type VisionIdentifyDemo,
+  type VisionTrustLevel,
   buildOrganizeAskPrompt,
+  buildVisionAskPrompt,
+  chapterCameraTryHref,
   chapterDraftKey,
   chapterEntryHref,
+  chapterPhotoTryHref,
   chapterPickKey,
   chapterVoiceTryHref,
+  type ChapterVisionDraft,
 } from "@/lib/chapter-opening";
 import { trackEvent } from "@/lib/telemetry";
 import { useToast } from "@/hooks/use-toast";
@@ -42,6 +48,9 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const [threePoints, setThreePoints] = useState<[string, string, string]>(["", "", ""]);
   const [nextStep, setNextStep] = useState("");
   const [userDecision, setUserDecision] = useState("");
+  const [itemLabel, setItemLabel] = useState("");
+  const [aiAnswerNote, setAiAnswerNote] = useState("");
+  const [trustLevel, setTrustLevel] = useState<VisionTrustLevel | "">("");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -73,12 +82,22 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           if (d.reflectNote) setReflectNote(d.reflectNote);
         }
       }
+      if (layout === "vision-identify") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterVisionDraft;
+          if (d.itemLabel) setItemLabel(d.itemLabel);
+          if (d.aiAnswerNote) setAiAnswerNote(d.aiAnswerNote);
+          if (d.trustLevel) setTrustLevel(d.trustLevel);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
     } catch {
       /* ignore */
     }
   }, [pickKey, draftKey, layout]);
 
-  const saveDraft = (patch: Partial<ChapterRewriteDraft & ChapterOrganizeDraft>) => {
+  const saveDraft = (patch: Partial<ChapterRewriteDraft & ChapterOrganizeDraft & ChapterVisionDraft>) => {
     if (typeof window === "undefined") return;
     if (layout === "question-rewrite") {
       const next: ChapterRewriteDraft = {
@@ -95,6 +114,15 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         threePoints: patch.threePoints ?? threePoints,
         nextStep: patch.nextStep ?? nextStep,
         userDecision: patch.userDecision ?? userDecision,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layout === "vision-identify") {
+      const next: ChapterVisionDraft = {
+        itemLabel: patch.itemLabel ?? itemLabel,
+        aiAnswerNote: patch.aiAnswerNote ?? aiAnswerNote,
+        trustLevel: patch.trustLevel ?? trustLevel,
         reflectNote: patch.reflectNote ?? reflectNote,
       };
       localStorage.setItem(draftKey, JSON.stringify(next));
@@ -120,6 +148,16 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const tryInNuannuan = () => {
     trackEvent("chapter_voice_try", { chapter: chapter.id });
     router.push(chapterVoiceTryHref(chapter.id));
+  };
+
+  const tryCameraInNuannuan = () => {
+    trackEvent("chapter_camera_try", { chapter: chapter.id });
+    router.push(chapterCameraTryHref(chapter.id));
+  };
+
+  const tryPhotoInNuannuan = () => {
+    trackEvent("chapter_photo_try", { chapter: chapter.id });
+    router.push(chapterPhotoTryHref(chapter.id));
   };
 
   const copyNaturalQuestion = async () => {
@@ -172,6 +210,35 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
     } catch {
       toast.info("請長按文字框手動複製。");
     }
+  };
+
+  const copyVisionAsk = async () => {
+    const text = buildVisionAskPrompt(itemLabel);
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("已複製拍照提問句，拍完可貼給 AI。");
+    } catch {
+      toast.info("請長按文字框手動複製。");
+    }
+  };
+
+  const applyVisionDemo = (demo: VisionIdentifyDemo) => {
+    setItemLabel(demo.itemLabel);
+    setAiAnswerNote(demo.aiAnswerSummary);
+    setTrustLevel(demo.trustLevel);
+    setReflectNote(demo.verifyNote);
+    saveDraft({
+      itemLabel: demo.itemLabel,
+      aiAnswerNote: demo.aiAnswerSummary,
+      trustLevel: demo.trustLevel,
+      reflectNote: demo.verifyNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的物品。`);
+  };
+
+  const setVisionTrust = (level: VisionTrustLevel) => {
+    setTrustLevel(level);
+    saveDraft({ trustLevel: level });
   };
 
   const toggleBackground = (id: string) => {
@@ -483,6 +550,135 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
             </div>
           )}
 
+          {layout === "vision-identify" && (
+            <div style={{ marginBottom: 16 }}>
+              {chapter.visionSafetyTips && (
+                <div style={{
+                  display: "flex", flexDirection: "column", gap: 8, marginBottom: 14,
+                }}>
+                  {chapter.visionSafetyTips.map((tip) => (
+                    <div
+                      key={tip.id}
+                      style={{
+                        padding: "12px 14px", borderRadius: 12,
+                        background: tip.id === "avoid" ? "#FFF5F0" : "var(--surface)",
+                        border: `2px solid ${tip.id === "avoid" ? "#E8845A" : "var(--line)"}`,
+                      }}
+                    >
+                      <div style={{
+                        fontSize: "var(--fs-xs)", fontWeight: 800,
+                        color: tip.id === "avoid" ? "#C45A2A" : "var(--ink-2)",
+                        marginBottom: 6,
+                      }}>
+                        {tip.label}
+                      </div>
+                      <ul style={{
+                        margin: 0, paddingLeft: 18,
+                        fontSize: "var(--fs-xs)", color: "var(--ink-2)", lineHeight: 1.55,
+                      }}>
+                        {tip.items.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                我拍的是（低風險物品，可選填）
+              </div>
+              <input
+                value={itemLabel}
+                onChange={(e) => {
+                  setItemLabel(e.target.value);
+                  saveDraft({ itemLabel: e.target.value });
+                }}
+                placeholder="例如：公園長椅旁的小白花…"
+                style={{
+                  width: "100%", padding: "12px 14px", marginBottom: 10,
+                  borderRadius: 10, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", boxSizing: "border-box",
+                }}
+              />
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+                <button type="button" onClick={copyVisionAsk} style={secondaryBtnStyle}>
+                  複製「拍照後請 AI 說明」提問句
+                </button>
+                <button type="button" onClick={tryCameraInNuannuan} style={primaryOutlineBtnStyle}>
+                  在暖暖拍一下 →
+                </button>
+                <button
+                  type="button"
+                  onClick={tryPhotoInNuannuan}
+                  style={{
+                    ...secondaryBtnStyle,
+                    border: "2px solid var(--primary)",
+                    color: "var(--primary-deep)",
+                  }}
+                >
+                  從相簿選照片 →
+                </button>
+              </div>
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                AI 回答摘要（自己記下重點）
+              </div>
+              <textarea
+                value={aiAnswerNote}
+                onChange={(e) => {
+                  setAiAnswerNote(e.target.value);
+                  saveDraft({ aiAnswerNote: e.target.value });
+                }}
+                placeholder="例如：可能是某種野花，春天常見…"
+                rows={3}
+                style={{
+                  width: "100%", padding: "14px 16px", marginBottom: 12,
+                  borderRadius: 12, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                }}
+              />
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                marginBottom: 8,
+              }}>
+                這個回答比較像？
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 4 }}>
+                <button
+                  type="button"
+                  onClick={() => setVisionTrust("enjoy")}
+                  style={{
+                    padding: "14px 10px", borderRadius: 12, cursor: "pointer",
+                    border: `2px solid ${trustLevel === "enjoy" ? "#5BA0C9" : "var(--line-strong)"}`,
+                    background: trustLevel === "enjoy" ? "#E8F4FA" : "var(--surface)",
+                    fontWeight: 800, fontSize: "var(--fs-sm)", color: "var(--ink-1)",
+                  }}
+                >
+                  🌸 可直接欣賞
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVisionTrust("verify")}
+                  style={{
+                    padding: "14px 10px", borderRadius: 12, cursor: "pointer",
+                    border: `2px solid ${trustLevel === "verify" ? "#E8845A" : "var(--line-strong)"}`,
+                    background: trustLevel === "verify" ? "#FFF0E8" : "var(--surface)",
+                    fontWeight: 800, fontSize: "var(--fs-sm)", color: "var(--ink-1)",
+                  }}
+                >
+                  🔍 需要查證
+                </button>
+              </div>
+            </div>
+          )}
+
           {layout === "routes" && chapter.entries && chapter.entries.length > 0 && (
             <div style={{
               display: "grid", gridTemplateColumns: "1fr 1fr",
@@ -566,7 +762,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                 saveDraft({ userDecision: e.target.value });
               } else {
                 setReflectNote(e.target.value);
-                if (layout === "question-rewrite") {
+                if (layout === "question-rewrite" || layout === "vision-identify") {
                   saveDraft({ reflectNote: e.target.value });
                 } else if (picked) {
                   savePick(picked, e.target.value);
@@ -719,6 +915,51 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                   ))}
                 </div>
               )}
+              {layout === "vision-identify" && chapter.visionDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.visionDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8,
+                        color: "#5BA0C9",
+                      }}>
+                        {demo.label}
+                      </div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}>
+                        <strong>物品：</strong>{demo.itemLabel}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.55, margin: "0 0 8px" }}>
+                        AI 摘要：{demo.aiAnswerSummary}
+                      </p>
+                      <p style={{
+                        fontSize: "var(--fs-xs)", margin: "0 0 6px",
+                        color: demo.trustLevel === "enjoy" ? "#5BA0C9" : "#C45A2A",
+                        fontWeight: 700,
+                      }}>
+                        {demo.trustLevel === "enjoy" ? "🌸 可直接欣賞" : "🔍 需要查證"}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>
+                        {demo.verifyNote}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => applyVisionDemo(demo)}
+                        style={{
+                          padding: "8px 14px", borderRadius: "var(--r-pill)",
+                          border: "1px solid #5BA0C9", background: "var(--surface)",
+                          color: "#5BA0C9", fontWeight: 700,
+                          fontSize: "var(--fs-xs)", cursor: "pointer",
+                        }}
+                      >
+                        帶入這則案例
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
               {chapter.guideFooterNote && (
                 <p style={{
                   fontSize: "var(--fs-xs)", color: "var(--ink-3)",
@@ -795,6 +1036,9 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           threePoints={threePoints}
           nextStep={nextStep}
           userDecision={userDecision}
+          itemLabel={itemLabel}
+          aiAnswerNote={aiAnswerNote}
+          trustLevel={trustLevel}
         />
       </div>
     </>
@@ -929,6 +1173,9 @@ function PrintCard({
   threePoints = ["", "", ""],
   nextStep = "",
   userDecision = "",
+  itemLabel = "",
+  aiAnswerNote = "",
+  trustLevel = "",
 }: {
   chapter: ChapterOpening;
   picked: string | null;
@@ -941,12 +1188,65 @@ function PrintCard({
   threePoints?: [string, string, string];
   nextStep?: string;
   userDecision?: string;
+  itemLabel?: string;
+  aiAnswerNote?: string;
+  trustLevel?: VisionTrustLevel | "";
 }) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const bgLabels = chapter.backgroundOptions
     ?.filter((o) => backgrounds.includes(o.id))
     .map((o) => o.label)
     .join("、");
+
+  const trustLabel =
+    trustLevel === "enjoy"
+      ? "可直接欣賞"
+      : trustLevel === "verify"
+        ? "需要查證"
+        : "";
+
+  if (layout === "vision-identify") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <PrintGridCell title="我拍的物品" minHeight={48}>
+          {itemLabel || "＿＿＿＿＿＿＿＿＿＿"}
+        </PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="AI 回答摘要" minHeight={72}>
+            {aiAnswerNote || "＿＿＿＿＿＿＿＿＿＿"}
+          </PrintGridCell>
+        </div>
+        <div style={{
+          display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16,
+        }}>
+          <PrintGridCell title="可直接欣賞／需要查證" minHeight={48}>
+            {trustLabel || "＿＿＿＿＿＿"}
+          </PrintGridCell>
+          <PrintGridCell title="值得再查證的一點" minHeight={48}>
+            {reflectNote || "＿＿＿＿＿＿"}
+          </PrintGridCell>
+        </div>
+        {chapter.visionSafetyTips && (
+          <div style={{ marginBottom: 16, fontSize: 12, lineHeight: 1.5 }}>
+            {chapter.visionSafetyTips.map((tip) => (
+              <p key={tip.id} style={{ margin: "0 0 8px" }}>
+                <strong>{tip.label}：</strong>{tip.items.join("、")}
+              </p>
+            ))}
+          </div>
+        )}
+        <p style={{ fontSize: 12, color: "#666" }}>
+          掃碼網址：{origin}/smart/chapter/{chapter.id}
+        </p>
+      </div>
+    );
+  }
 
   if (layout === "organize-decide") {
     return (

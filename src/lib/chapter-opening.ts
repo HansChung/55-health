@@ -1,5 +1,12 @@
 /** 章節開篇 QR 深連結（例：0100 → /smart/chapter/0100） */
-export type ChapterLayout = "routes" | "ai-entry" | "question-rewrite" | "organize-decide";
+export type ChapterLayout =
+  | "routes"
+  | "ai-entry"
+  | "question-rewrite"
+  | "organize-decide"
+  | "vision-identify";
+
+export type VisionTrustLevel = "enjoy" | "verify";
 
 export type ChapterEntryId = "ask" | "snap" | "photo" | "note";
 
@@ -35,6 +42,24 @@ export interface QuestionBackgroundOption {
   id: string;
   label: string;
   hint: string;
+}
+
+/** 影像辨識：可直接欣賞 vs 需要查證（0105 用） */
+export interface VisionIdentifyDemo {
+  id: string;
+  label: string;
+  itemLabel: string;
+  askPrompt: string;
+  aiAnswerSummary: string;
+  trustLevel: VisionTrustLevel;
+  verifyNote: string;
+}
+
+/** 拍照安全提醒（0105 用） */
+export interface VisionSafetyTip {
+  id: string;
+  label: string;
+  items: string[];
 }
 
 /** 「整理三點，不替我決定」生活案例（0104 用） */
@@ -83,6 +108,9 @@ export interface ChapterOpening {
   backgroundOptions?: QuestionBackgroundOption[];
   /** organize-decide 版型：生活案例示範 */
   organizeDemos?: OrganizeDecideDemo[];
+  /** vision-identify 版型：影像辨識示範 + 安全提醒 */
+  visionDemos?: VisionIdentifyDemo[];
+  visionSafetyTips?: VisionSafetyTip[];
 }
 
 export const CHAPTER_0100: ChapterOpening = {
@@ -368,11 +396,81 @@ export const CHAPTER_0104: ChapterOpening = {
   ],
 };
 
+export const CHAPTER_0105: ChapterOpening = {
+  id: "0105",
+  qrCode: "0105",
+  title: "為手機裝上眼睛：萬物皆可問",
+  subtitle: "章節開篇",
+  layout: "vision-identify",
+  headerEmoji: "👁",
+  accentGradient: "linear-gradient(180deg, #E8F0FA 0%, transparent 55%)",
+  quote: "手機多一雙眼睛，生活就多一個理解世界的入口。",
+  atAGlance:
+    "這一章練習用手機拍照，請 AI 用簡單中文說明「看得見、但叫不出名字」的低風險物品——並學會分辨：哪些回答可以直接欣賞，哪些還需要查證。",
+  tryPrompt:
+    "選一樣看得見、但叫不出名字的低風險物品，拍下來請 AI 用簡單中文說明。",
+  reflectPrompt: "AI 的回答中，哪一點值得我再查證？",
+  reflectPlaceholder: "例如：AI 說這是某種草藥，但能不能吃還要問藥師…",
+  continueTitle: "暖暖陪您繼續",
+  continueBody:
+    "掃碼進入暖暖，看 30 秒影像辨識示範，並練習分辨「可直接欣賞」與「需要查證」。",
+  printCardTitle: "影像辨識安全卡",
+  printCardDescription:
+    "可列印：拍的物品、AI 說了什麼、可直接欣賞或需查證、值得再查證的一點。",
+  printButtonLabel: "列印安全卡",
+  guideTitle: "影像辨識：欣賞 vs 查證",
+  guideDuration: "約 30 秒",
+  guideParagraphs: [
+    "拍照問 AI 很方便，但不是每個答案都能直接相信。先問：這件事「聽聽就好」，還是「會影響健康或安全」？",
+    "可直接欣賞：認識路邊花草、看包裝上的外文說明——錯了頂多有趣，傷害不大。",
+    "需要查證：跟吃、用藥、過敏、投資、詐騙有關——請再問專業人士或官方來源。",
+  ],
+  guideFooterNote: "示範影片即將推出；目前請先閱讀下方文字案例。",
+  footerGuideLabel: "看 30 秒影像辨識示範",
+  visionSafetyTips: [
+    {
+      id: "ok",
+      label: "適合試拍（低風險）",
+      items: ["路邊花草、公園樹木", "包裝上的外文或圖示", "不認識的日用品外觀"],
+    },
+    {
+      id: "avoid",
+      label: "請勿拍攝（含敏感資料）",
+      items: ["身分證、健保卡、信用卡", "完整處方或病歷", "他人臉部特寫未經同意"],
+    },
+  ],
+  visionDemos: [
+    {
+      id: "flower",
+      label: "案例｜路邊不知名小花",
+      itemLabel: "公園長椅旁的小白花",
+      askPrompt:
+        "請用簡單中文告訴我，照片裡這是什麼花、大概什麼季節開、能不能隨便摘。如果不確定，請說明不確定的部分。",
+      aiAnswerSummary:
+        "可能是某種菊科或十字花科的野花，春天常見；觀賞即可，不建議隨意採摘。",
+      trustLevel: "enjoy",
+      verifyNote: "認識花草純屬欣賞，錯了也無妨；不必為此特別查證。",
+    },
+    {
+      id: "label",
+      label: "案例｜食品包裝英文成分",
+      itemLabel: "點心包裝背面的英文成分表",
+      askPrompt:
+        "請用簡單中文告訴我，照片裡這段英文成分大概寫什麼、有沒有常見過敏原。如果不確定，請說明不確定的部分。",
+      aiAnswerSummary:
+        "可能含有小麥、牛奶、堅果等字樣；但過敏與否必須對照完整標示。",
+      trustLevel: "verify",
+      verifyNote: "跟過敏、能不能吃有關——要對照包裝原文或問藥師，不能只信 AI。",
+    },
+  ],
+};
+
 const CHAPTERS: Record<string, ChapterOpening> = {
   "0100": CHAPTER_0100,
   "0102": CHAPTER_0102,
   "0103": CHAPTER_0103,
   "0104": CHAPTER_0104,
+  "0105": CHAPTER_0105,
 };
 
 export function getChapterOpening(id: string): ChapterOpening | null {
@@ -402,6 +500,22 @@ export interface ChapterOrganizeDraft {
   reflectNote: string;
 }
 
+export interface ChapterVisionDraft {
+  itemLabel: string;
+  aiAnswerNote: string;
+  trustLevel: VisionTrustLevel | "";
+  reflectNote: string;
+}
+
+/** 0105：拍照後請 AI 說明用的提問句 */
+export function buildVisionAskPrompt(itemHint?: string): string {
+  const base =
+    "請用簡單中文告訴我，照片裡這是什麼、有什麼用途或特色。如果不確定，請說明您不確定的部分。";
+  const hint = itemHint?.trim();
+  if (!hint) return base;
+  return `${base}（我拍的是：${hint}）`;
+}
+
 /** 0104：請 AI 整理用的提問句（不含敏感資料） */
 export function buildOrganizeAskPrompt(task: string): string {
   const t = task.trim();
@@ -424,6 +538,18 @@ export function chapterEntryHref(
 /** 0102：在暖暖用同一句話試語音 */
 export function chapterVoiceTryHref(chapterId: string): string {
   const params = new URLSearchParams({ open: "voice", from: `chapter${chapterId}` });
+  return `/?${params.toString()}`;
+}
+
+/** 0105：在暖暖開相機拍照辨識 */
+export function chapterCameraTryHref(chapterId: string): string {
+  const params = new URLSearchParams({ open: "camera", from: `chapter${chapterId}` });
+  return `/?${params.toString()}`;
+}
+
+/** 0105：在暖暖從相簿選照片 */
+export function chapterPhotoTryHref(chapterId: string): string {
+  const params = new URLSearchParams({ open: "photo", from: `chapter${chapterId}` });
   return `/?${params.toString()}`;
 }
 
