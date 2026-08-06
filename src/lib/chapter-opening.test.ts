@@ -105,6 +105,42 @@ describe("chapter-opening", () => {
     expect(ch?.habitSceneOptions?.length).toBeGreaterThan(3);
   });
 
+  it("getChapterOpening 0400 Chapter 4 routes", () => {
+    const ch = getChapterOpening("0400");
+    expect(ch?.title).toContain("飲食文化");
+    expect(ch?.layout).toBe("routes");
+    expect(ch?.entries?.length).toBe(4);
+    expect(ch?.quote).toContain("回到平衡");
+  });
+
+  it("getChapterOpening 0401 boundary-choose", () => {
+    const ch = getChapterOpening("0401");
+    expect(ch?.layout).toBe("boundary-choose");
+    expect(ch?.boundaryChooseDemos?.length).toBe(1);
+    expect(ch?.printCardTitle).toContain("自主句");
+  });
+
+  it("getChapterOpening 0404 market ground truth", () => {
+    const ch = getChapterOpening("0404");
+    expect(ch?.layout).toBe("vision-identify");
+    expect(ch?.visionDemos?.[0]?.trustLevel).toBe("verify");
+    expect(ch?.capabilityNote).toContain("現場");
+  });
+
+  it("getChapterOpening 0406 dual-track is paper", () => {
+    const ch = getChapterOpening("0406");
+    expect(ch?.layout).toBe("dual-track");
+    expect(ch?.practiceWhere).toBe("paper");
+    expect(ch?.dualTrackDemos?.length).toBe(1);
+  });
+
+  it("getChapterOpening 0410 ar-light links radar", () => {
+    const ch = getChapterOpening("0410");
+    expect(ch?.layout).toBe("ar-light");
+    expect(ch?.arLightDemos?.length).toBe(1);
+    expect(ch?.appDeepLink?.href).toBe("/smart/radar");
+  });
+
   it("buildMenuTranslatePrompt", () => {
     expect(buildMenuTranslatePrompt("少辣")).toContain("少辣");
   });
@@ -170,6 +206,7 @@ describe("chapter-opening", () => {
   it("isSparkSource", () => {
     expect(isSparkSource("chapter0100")).toBe(true);
     expect(isSparkSource("chapter0202")).toBe(true);
+    expect(isSparkSource("chapter0405")).toBe(true);
     expect(isSparkSource("invalid")).toBe(false);
   });
 

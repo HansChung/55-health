@@ -19,6 +19,20 @@ const CHAPTER_2_LINKS: { id: string; label: string; color: string }[] = [
   { id: "0211", label: "感官全開：把好奇變成生活反射", color: "#E8845A" },
 ];
 
+const CHAPTER_4_LINKS: { id: string; label: string; color: string }[] = [
+  { id: "0400", label: "飲食文化｜章節開篇", color: "#E8845A" },
+  { id: "0401", label: "做自己餐桌的主人", color: "var(--primary-deep)" },
+  { id: "0402", label: "日常才是飲食修煉場", color: "var(--sage)" },
+  { id: "0403", label: "一杯茶裡的數位風土", color: "#5BA0C9" },
+  { id: "0404", label: "菜市場的 Ground Truth", color: "#9B7AD4" },
+  { id: "0405", label: "放縱的韌性管理", color: "#E8845A" },
+  { id: "0406", label: "建立 55+ 日常飲食指南", color: "var(--sage)" },
+  { id: "0407", label: "一句「55+ 日常」喚醒雙軌輸出", color: "#7B5BB8" },
+  { id: "0408", label: "韌性除錯：Plan B", color: "#5BA0C9" },
+  { id: "0409", label: "55+ 品味週記", color: "#9B7AD4" },
+  { id: "0410", label: "點亮自主與韌性", color: "#E8845A" },
+];
+
 /**
  * QR：SMART RADAR 溫暖導讀（文字版；之後可換成音檔）
  * 對應 KU05 左頁文案精華
@@ -206,6 +220,37 @@ export default function SmartGuidePage() {
           {" "}共同節奏：一拍、二問、三記下。練習完可把最有用的一句話「點成光點」。
         </p>
         {CHAPTER_2_LINKS.map((ch) => (
+          <button
+            key={ch.id}
+            type="button"
+            onClick={() => router.push(`/smart/chapter/${ch.id}`)}
+            style={{
+              width: "100%", marginTop: 8, padding: "14px 16px",
+              background: "var(--surface)", border: `2px solid ${ch.color}`,
+              borderRadius: "var(--r-lg)", fontWeight: 700,
+              fontSize: "var(--fs-sm)", color: ch.color, cursor: "pointer",
+              textAlign: "left",
+            }}
+          >
+            章節 {ch.id}｜{ch.label} →
+          </button>
+        ))}
+
+        <div style={{
+          fontSize: "var(--fs-sm)", fontWeight: 800, color: "#E8845A",
+          marginTop: 24, marginBottom: 10,
+        }}>
+          第四章｜飲食文化
+        </div>
+        <p style={{
+          fontSize: "var(--fs-xs)", color: "var(--ink-2)", lineHeight: 1.55,
+          margin: "0 0 12px", padding: "12px 14px",
+          background: "var(--surface)", borderRadius: 12, border: "1px solid var(--line)",
+        }}>
+          <strong>餐桌是練習自主與韌性的地方。</strong>
+          {" "}有底線地選擇、現場確認、偏離後回來；練習完可點成光點。
+        </p>
+        {CHAPTER_4_LINKS.map((ch) => (
           <button
             key={ch.id}
             type="button"

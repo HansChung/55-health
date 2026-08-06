@@ -1,5 +1,6 @@
 /** 章節開篇 QR 深連結（例：0100 → /smart/chapter/0100） */
 import { CHAPTER_2_OPENINGS } from "./chapter-opening-ch2";
+import { CHAPTER_4_OPENINGS } from "./chapter-opening-ch4";
 
 export type ChapterLayout =
   | "routes"
@@ -16,7 +17,12 @@ export type ChapterLayout =
   | "recipe-card"
   | "photo-edit-safe"
   | "photo-curate"
-  | "sensory-habit";
+  | "sensory-habit"
+  | "boundary-choose"
+  | "plan-b"
+  | "dual-track"
+  | "taste-journal"
+  | "ar-light";
 
 export type VisionTrustLevel = "enjoy" | "verify";
 
@@ -183,6 +189,57 @@ export interface SensoryHabitDemo {
   reflectNote: string;
 }
 
+/** Chapter 4：餐桌自主句改寫（0401） */
+export interface BoundaryChooseDemo {
+  id: string;
+  label: string;
+  cannotLine: string;
+  canChooseLine: string;
+  reflectNote: string;
+}
+
+/** Chapter 4：有底線享受／Plan B（0405） */
+export interface PlanBDemo {
+  id: string;
+  label: string;
+  scene: string;
+  boundary: string;
+  returnAction: string;
+  reflectNote: string;
+}
+
+/** Chapter 4：雙軌飲食指南（0406） */
+export interface DualTrackDemo {
+  id: string;
+  label: string;
+  bodyTrack: string;
+  soulTrack: string;
+  reflectNote: string;
+}
+
+/** Chapter 4：品味週記（0409） */
+export interface TasteJournalDemo {
+  id: string;
+  label: string;
+  lines: [string, string, string, string];
+  keepPractice: string;
+  reflectNote: string;
+}
+
+/** Chapter 4：A／R 點燈（0410） */
+export interface ArLightDemo {
+  id: string;
+  label: string;
+  agencyAction: string;
+  resilienceAction: string;
+  reflectNote: string;
+}
+
+export interface ChapterAppDeepLink {
+  href: string;
+  label: string;
+}
+
 /** 「整理三點，不替我決定」生活案例（0104 用） */
 export interface OrganizeDecideDemo {
   id: string;
@@ -266,6 +323,13 @@ export interface ChapterOpening {
   /** sensory-habit 版型：生活場景選項 */
   habitSceneOptions?: HabitSceneOption[];
   habitDemos?: SensoryHabitDemo[];
+  /** Chapter 4 版型資料 */
+  boundaryChooseDemos?: BoundaryChooseDemo[];
+  planBDemos?: PlanBDemo[];
+  dualTrackDemos?: DualTrackDemo[];
+  tasteJournalDemos?: TasteJournalDemo[];
+  arLightDemos?: ArLightDemo[];
+  appDeepLink?: ChapterAppDeepLink;
 }
 
 export const CHAPTER_0100: ChapterOpening = {
@@ -800,6 +864,7 @@ const CHAPTERS: Record<string, ChapterOpening> = {
   "0107": CHAPTER_0107,
   "0108": CHAPTER_0108,
   ...CHAPTER_2_OPENINGS,
+  ...CHAPTER_4_OPENINGS,
 };
 
 export function getChapterOpening(id: string): ChapterOpening | null {
@@ -904,6 +969,37 @@ export interface ChapterPhotoCurateDraft {
 export interface ChapterSensoryHabitDraft {
   pickedScenes: string[];
   planNote: string;
+  reflectNote: string;
+}
+
+export interface ChapterBoundaryChooseDraft {
+  cannotLine: string;
+  canChooseLine: string;
+  reflectNote: string;
+}
+
+export interface ChapterPlanBDraft {
+  scene: string;
+  boundary: string;
+  returnAction: string;
+  reflectNote: string;
+}
+
+export interface ChapterDualTrackDraft {
+  bodyTrack: string;
+  soulTrack: string;
+  reflectNote: string;
+}
+
+export interface ChapterTasteJournalDraft {
+  lines: [string, string, string, string];
+  keepPractice: string;
+  reflectNote: string;
+}
+
+export interface ChapterArLightDraft {
+  agencyAction: string;
+  resilienceAction: string;
   reflectNote: string;
 }
 
@@ -1075,6 +1171,18 @@ export function getChapterDeepLinkHint(from: string | null | undefined): Chapter
     "0206": {
       label: "美食篇｜觀察",
       tips: ["拍一道餐點", "請整理可能食材與溫和觀察", "這不是醫療或營養診斷"],
+    },
+    "0403": {
+      label: "數位風土｜飲品",
+      tips: ["拍公開包裝或菜單", "請 AI 簡單解釋風味詞", "真正味道由自己感官確認"],
+    },
+    "0404": {
+      label: "市場 Ground Truth",
+      tips: ["先拍陌生食材", "請 AI 提出可能名稱", "現場標示／攤商再確認"],
+    },
+    "0407": {
+      label: "雙軌提問",
+      tips: ["用一句 55+ 日常開場", "請同時給身體軌與靈魂軌", "涉及醫療請停止推測"],
     },
   };
   const hit = known[chapterId] ?? {
