@@ -19,6 +19,20 @@ const CHAPTER_2_LINKS: { id: string; label: string; color: string }[] = [
   { id: "0211", label: "感官全開：把好奇變成生活反射", color: "#E8845A" },
 ];
 
+const CHAPTER_8_LINKS: { id: string; label: string; color: string }[] = [
+  { id: "0800", label: "財富智囊｜把複雜選擇放上自己的決策桌", color: "#8B6F47" },
+  { id: "0801", label: "坐回決策主位", color: "#5BA0C9" },
+  { id: "0802", label: "建立可信來源階梯", color: "#9B7AD4" },
+  { id: "0803", label: "把條款翻成生活語言", color: "#E8845A" },
+  { id: "0804", label: "守住三項生活底線", color: "#7B5BB8" },
+  { id: "0805", label: "召開一人董事會", color: "var(--sage)" },
+  { id: "0806", label: "用同一把生活尺度比較", color: "#8B6F47" },
+  { id: "0807", label: "進行最壞情境壓力測試", color: "#5BA0C9" },
+  { id: "0808", label: "打開第三條路", color: "#9B7AD4" },
+  { id: "0809", label: "決定前完成專業確認", color: "#E8845A" },
+  { id: "0810", label: "完成私人決策備忘錄", color: "#7B5BB8" },
+];
+
 /**
  * QR：SMART RADAR 溫暖導讀（文字版；之後可換成音檔）
  * 對應 KU05 左頁文案精華
@@ -206,6 +220,52 @@ export default function SmartGuidePage() {
           {" "}共同節奏：一拍、二問、三記下。練習完可把最有用的一句話「點成光點」。
         </p>
         {CHAPTER_2_LINKS.map((ch) => (
+          <button
+            key={ch.id}
+            type="button"
+            onClick={() => router.push(`/smart/chapter/${ch.id}`)}
+            style={{
+              width: "100%", marginTop: 8, padding: "14px 16px",
+              background: "var(--surface)", border: `2px solid ${ch.color}`,
+              borderRadius: "var(--r-lg)", fontWeight: 700,
+              fontSize: "var(--fs-sm)", color: ch.color, cursor: "pointer",
+              textAlign: "left",
+            }}
+          >
+            章節 {ch.id}｜{ch.label} →
+          </button>
+        ))}
+
+        <div style={{
+          fontSize: "var(--fs-sm)", fontWeight: 800, color: "#8B6F47",
+          marginTop: 24, marginBottom: 10,
+        }}>
+          第三部｜躍升
+        </div>
+        <p style={{
+          fontSize: "var(--fs-xs)", color: "var(--ink-2)", lineHeight: 1.55,
+          margin: "0 0 12px", padding: "12px 14px",
+          background: "var(--surface)", borderRadius: 12, border: "1px solid var(--line)",
+        }}>
+          <strong>從會使用，到會主持自己的判斷。</strong>
+          {" "}工具可以擴大視野；生活方向，始終由您主持。第八章先帶走一頁私人決策備忘錄。
+        </p>
+
+        <div style={{
+          fontSize: "var(--fs-sm)", fontWeight: 800, color: "#8B6F47",
+          marginTop: 8, marginBottom: 10,
+        }}>
+          第八章｜財富智囊
+        </div>
+        <p style={{
+          fontSize: "var(--fs-xs)", color: "var(--ink-2)", lineHeight: 1.55,
+          margin: "0 0 12px", padding: "12px 14px",
+          background: "var(--surface)", borderRadius: 12, border: "1px solid var(--line)",
+        }}>
+          <strong>資訊可由 AI 整理；生活的答案，不能外包。</strong>
+          {" "}不推薦商品、不預測報酬；留下可重看的決策備忘錄。
+        </p>
+        {CHAPTER_8_LINKS.map((ch) => (
           <button
             key={ch.id}
             type="button"
