@@ -208,21 +208,39 @@ describe("chapter-opening", () => {
     expect(getChapterDeepLinkHint("chapter9999")?.tips[0]).toContain("一拍");
   });
 
-  it("getBookGuideSections covers ch1/ch2/ch8", () => {
+  it("getBookGuideSections covers ch1–ch8", () => {
     const sections = getBookGuideSections();
-    expect(sections.map((s) => s.id)).toEqual(["ch1", "ch2", "ch8"]);
+    expect(sections.map((s) => s.id)).toEqual([
+      "ch1",
+      "ch2",
+      "ch3",
+      "ch4",
+      "ch5",
+      "ch6",
+      "ch7",
+      "ch8",
+    ]);
     expect(listChapterOpenings().length).toBe(
       sections.reduce((n, s) => n + s.chapters.length, 0)
     );
     expect(sections[0].chapters.some((c) => c.id === "0102")).toBe(true);
     expect(sections[1].chapters.some((c) => c.id === "0203")).toBe(true);
-    expect(sections[2].chapters.some((c) => c.id === "0800")).toBe(true);
+    expect(sections[2].title).toBe("第三章｜優雅導航");
+    expect(sections[2].chapters.some((c) => c.id === "0300")).toBe(true);
+    expect(sections[3].title).toBe("第四章｜飲食文化");
+    expect(sections[3].chapters.some((c) => c.id === "0400")).toBe(true);
+    expect(sections[4].title).toBe("第五章｜理財防詐");
+    expect(sections[4].chapters.some((c) => c.id === "0500")).toBe(true);
+    expect(sections[5].title).toBe("第六章｜運動健身");
+    expect(sections[5].chapters.some((c) => c.id === "0600")).toBe(true);
+    expect(sections[6].title).toBe("第七章｜城市漫遊");
+    expect(sections[6].chapters.some((c) => c.id === "0700")).toBe(true);
+    expect(sections[7].chapters.some((c) => c.id === "0800")).toBe(true);
   });
 
   it("filterBookGuideSections by QR and keyword", () => {
     const byQr = filterBookGuideSections("0203");
-    expect(byQr).toHaveLength(1);
-    expect(byQr[0].chapters.map((c) => c.id)).toEqual(["0203"]);
+    expect(byQr.some((s) => s.chapters.some((c) => c.id === "0203"))).toBe(true);
 
     const byKeyword = filterBookGuideSections("點菜");
     expect(byKeyword.some((s) => s.chapters.some((c) => c.id === "0203"))).toBe(true);
@@ -230,7 +248,18 @@ describe("chapter-opening", () => {
     const byAlias = filterBookGuideSections("Gemini");
     expect(byAlias.some((s) => s.chapters.some((c) => c.id === "0102"))).toBe(true);
 
+    const by0400 = filterBookGuideSections("0400");
+    expect(by0400.some((s) => s.chapters.some((c) => c.id === "0400"))).toBe(true);
+
+    const byFraud = filterBookGuideSections("防詐");
+    expect(byFraud.some((s) => s.id === "ch5")).toBe(true);
+    expect(byFraud.some((s) => s.chapters.some((c) => c.id === "0500"))).toBe(true);
+
+    const byCity = filterBookGuideSections("城市");
+    expect(byCity.some((s) => s.id === "ch7")).toBe(true);
+    expect(byCity.some((s) => s.chapters.some((c) => c.id === "0700"))).toBe(true);
+
     expect(filterBookGuideSections("不存在的關鍵字zzz")).toHaveLength(0);
-    expect(filterBookGuideSections("").length).toBe(3);
+    expect(filterBookGuideSections("").length).toBe(8);
   });
 });
