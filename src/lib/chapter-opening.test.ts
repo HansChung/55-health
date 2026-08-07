@@ -34,6 +34,8 @@ describe("chapter-opening", () => {
     expect(ch?.layout).toBe("ai-entry");
     expect(ch?.samplePrompt).toContain("簡單中文");
     expect(ch?.phonePaths?.length).toBeGreaterThan(3);
+    expect(ch?.phonePaths?.some((p) => p.id === "gemini")).toBe(true);
+    expect(ch?.phonePaths?.some((p) => p.id === "chatgpt")).toBe(true);
     expect(ch?.entries).toBeUndefined();
   });
 

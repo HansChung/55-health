@@ -488,16 +488,16 @@ export const CHAPTER_0102: ChapterOpening = {
   atAGlance:
     "這一章只做一件事：在手機裡找到可以跟 AI 說話的入口，並試問第一句。不同品牌路徑不太一樣，下面有文字版指引。",
   tryPrompt:
-    "在手機中找一個 AI 對話入口，輸入或說出下面這句話（可以複製）：",
+    "在手機中找一個 AI 對話入口，輸入或說出下面這句話（可以複製；也可一點開 Gemini／ChatGPT）：",
   samplePrompt: "請用簡單中文告訴我，你可以怎麼幫助生活。",
   reflectPrompt: "我最希望 AI 先協助生活中的哪一件小事？",
   reflectPlaceholder: "例如：幫我記得吃藥、幫我辨識食物熱量、陪我聊天解悶…",
   continueTitle: "暖暖陪您繼續",
   continueBody:
-    "掃碼進入暖暖，可用語音試同一句話；下方也有文字版入口路徑。示範影片之後再補。",
+    "掃碼進入暖暖，可用語音試同一句話；也可一點開 Gemini／ChatGPT 練習同一範例。下方有文字版入口路徑。",
   practiceWhere: "mixed",
   capabilityNote:
-    "暖暖提供語音試問；各品牌手機 AI 入口仍請在您的手機裡找。",
+    "暖暖提供語音試問；也可一點開 Gemini／ChatGPT 練習。各品牌手機助理入口仍請在您的手機裡找。",
   printCardTitle: "常見入口辨識卡",
   printCardDescription:
     "沒有手機掃碼時，可列印這張卡，對照自己的手機品牌找入口。",
@@ -512,6 +512,26 @@ export const CHAPTER_0102: ChapterOpening = {
   guideFooterNote: "示範影片即將推出；目前請先閱讀文字版路徑（約 30 秒）。",
   footerGuideLabel: "觀看／閱讀 30 秒入口示範",
   phonePaths: [
+    {
+      id: "gemini",
+      label: "Gemini（網頁／App）",
+      emoji: "✦",
+      steps: [
+        "在瀏覽器開 gemini.google.com，或安裝 Gemini App",
+        "點本頁「用 Gemini 試」會開啟並複製範例",
+        "在對話框貼上後送出即可",
+      ],
+    },
+    {
+      id: "chatgpt",
+      label: "ChatGPT（網頁／App）",
+      emoji: "◉",
+      steps: [
+        "在瀏覽器開 chatgpt.com，或安裝 ChatGPT App",
+        "點本頁「用 ChatGPT 試」通常會直接帶入範例",
+        "若沒看到文字，貼上剪貼簿內容後送出",
+      ],
+    },
     {
       id: "iphone",
       label: "iPhone（Siri）",
