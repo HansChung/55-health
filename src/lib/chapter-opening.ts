@@ -6,6 +6,7 @@ import { CHAPTER_5_OPENINGS } from "./chapter-opening-ch5";
 import { CHAPTER_6_OPENINGS } from "./chapter-opening-ch6";
 import { CHAPTER_7_OPENINGS } from "./chapter-opening-ch7";
 import { CHAPTER_8_OPENINGS } from "./chapter-opening-ch8";
+import { CHAPTER_11_OPENINGS } from "./chapter-opening-ch11";
 
 export type ChapterLayout =
   | "routes"
@@ -34,6 +35,18 @@ export type ChapterLayout =
   | "third-path"
   | "pro-confirm"
   | "decision-memo"
+  | "part4-start"
+  | "story-start"
+  | "theme-boundary"
+  | "three-clues"
+  | "three-color-check"
+  | "story-core"
+  | "voice-draft"
+  | "form-blueprint"
+  | "coedit-truth"
+  | "shared-memory"
+  | "heirloom-kit"
+  | "share-passport"
   | "elevator-wish"
   | "life-match"
   | "five-reflect"
@@ -349,6 +362,127 @@ export interface DecisionMemoDemo {
   reflectNote: string;
 }
 
+/** Part 4：圓夢起點（p4-open） */
+export interface Part4StartDemo {
+  id: string;
+  label: string;
+  wantComplete: string;
+  lifeMeaning: string;
+  shareWho: string;
+  shareDistance: string;
+  reflectNote: string;
+}
+
+/** Chapter 11：作品意向（1100） */
+export interface StoryStartDemo {
+  id: string;
+  label: string;
+  leaveWhat: string;
+  hopeFeel: string;
+  saveStatus: string;
+  reflectNote: string;
+}
+
+/** Chapter 11：主題界線（1101） */
+export interface ThemeBoundaryDemo {
+  id: string;
+  label: string;
+  wantKeep: string;
+  privateOnly: string;
+  notTouch: string;
+  startToday: string;
+  reflectNote: string;
+}
+
+/** Chapter 11：三件線索（1102） */
+export interface ThreeCluesDemo {
+  id: string;
+  label: string;
+  clue1: string;
+  clue2: string;
+  clue3: string;
+  reflectNote: string;
+}
+
+/** Chapter 11：三色核可（1103） */
+export interface ThreeColorCheckDemo {
+  id: string;
+  label: string;
+  redMark: string;
+  yellowMark: string;
+  greenMark: string;
+  reflectNote: string;
+}
+
+/** Chapter 11：故事核心（1104） */
+export interface StoryCoreDemo {
+  id: string;
+  label: string;
+  faced: string;
+  chose: string;
+  leaveToday: string;
+  reflectNote: string;
+}
+
+/** Chapter 11：原聲口述（1105） */
+export interface VoiceDraftDemo {
+  id: string;
+  label: string;
+  startHow: string;
+  changeMoment: string;
+  voiceWords: string;
+  reflectNote: string;
+}
+
+/** Chapter 11：作品形式藍圖（1106） */
+export interface FormBlueprintDemo {
+  id: string;
+  label: string;
+  formAudience: string;
+  materials: string;
+  minDone: string;
+  reflectNote: string;
+}
+
+/** Chapter 11：共編不失真（1107） */
+export interface CoeditTruthDemo {
+  id: string;
+  label: string;
+  checkRed: string;
+  askYellow: string;
+  keepGreen: string;
+  reflectNote: string;
+}
+
+/** Chapter 11：共同記憶（1108） */
+export interface SharedMemoryDemo {
+  id: string;
+  label: string;
+  whoSee: string;
+  presentHow: string;
+  adjustHow: string;
+  reflectNote: string;
+}
+
+/** Chapter 11：數位傳家寶（1109） */
+export interface HeirloomKitDemo {
+  id: string;
+  label: string;
+  kitCheck: string;
+  openTest: string;
+  cheer: string;
+  reflectNote: string;
+}
+
+/** Chapter 11：作品分享護照（1110） */
+export interface SharePassportDemo {
+  id: string;
+  label: string;
+  status: string;
+  intent: string;
+  withdraw: string;
+  reflectNote: string;
+}
 
 /** Chapter 3：SMART 五方向 */
 export interface SmartDirectionOption {
@@ -811,6 +945,19 @@ export interface ChapterOpening {
   thirdPathDemos?: ThirdPathDemo[];
   proConfirmDemos?: ProConfirmDemo[];
   decisionMemoDemos?: DecisionMemoDemo[];
+  /** Chapter 11／第四部版型資料 */
+  part4StartDemos?: Part4StartDemo[];
+  storyStartDemos?: StoryStartDemo[];
+  themeBoundaryDemos?: ThemeBoundaryDemo[];
+  threeCluesDemos?: ThreeCluesDemo[];
+  threeColorCheckDemos?: ThreeColorCheckDemo[];
+  storyCoreDemos?: StoryCoreDemo[];
+  voiceDraftDemos?: VoiceDraftDemo[];
+  formBlueprintDemos?: FormBlueprintDemo[];
+  coeditTruthDemos?: CoeditTruthDemo[];
+  sharedMemoryDemos?: SharedMemoryDemo[];
+  heirloomKitDemos?: HeirloomKitDemo[];
+  sharePassportDemos?: SharePassportDemo[];
   /** Chapter 3 */
   elevatorDemos?: ElevatorWishDemo[];
   lifeRoleOptions?: LifeRoleOption[];
@@ -1420,6 +1567,7 @@ const CHAPTERS: Record<string, ChapterOpening> = {
   ...CHAPTER_6_OPENINGS,
   ...CHAPTER_7_OPENINGS,
   ...CHAPTER_8_OPENINGS,
+  ...CHAPTER_11_OPENINGS,
 };
 
 export function getChapterOpening(id: string): ChapterOpening | null {
@@ -1427,7 +1575,7 @@ export function getChapterOpening(id: string): ChapterOpening | null {
 }
 
 /** 書本首頁／目錄用的章節分組 */
-export type BookGuideSectionId = "ch1" | "ch2" | "ch3" | "ch4" | "ch5" | "ch6" | "ch7" | "ch8";
+export type BookGuideSectionId = "ch1" | "ch2" | "ch3" | "ch4" | "ch5" | "ch6" | "ch7" | "ch8" | "ch11";
 
 export interface BookGuideChapterLink {
   id: string;
@@ -1544,6 +1692,18 @@ const BOOK_GUIDE_ALIASES: Record<string, string[]> = {
   "0808": ["第三條路", "替代"],
   "0809": ["專業確認"],
   "0810": ["決策備忘錄", "備忘錄"],
+  "p4-open": ["第四部", "圓夢", "部開篇"],
+  "1100": ["故事傳承", "第十一章", "作品意向"],
+  "1101": ["主題界線", "想留下", "珍藏"],
+  "1102": ["三件線索", "故事地圖"],
+  "1103": ["三色核可", "查紅", "問黃", "留綠"],
+  "1104": ["故事核心", "核心句"],
+  "1105": ["原聲", "口述", "聲音"],
+  "1106": ["作品形式", "故事卡", "創藝工坊"],
+  "1107": ["共編", "不失真"],
+  "1108": ["共同記憶", "彼此尊重"],
+  "1109": ["數位傳家寶", "五件套"],
+  "1110": ["分享護照", "珍藏", "分享距離"],
 };
 
 function bookGuideSectionForId(id: string): BookGuideSectionId | null {
@@ -1555,6 +1715,7 @@ function bookGuideSectionForId(id: string): BookGuideSectionId | null {
   if (id.startsWith("06")) return "ch6";
   if (id.startsWith("07")) return "ch7";
   if (id.startsWith("08")) return "ch8";
+  if (id === "p4-open" || /^11\d{2}$/.test(id)) return "ch11";
   return null;
 }
 
@@ -1574,6 +1735,7 @@ export function getBookGuideSections(): BookGuideSection[] {
     ch6: [],
     ch7: [],
     ch8: [],
+    ch11: [],
   };
 
   for (const ch of listChapterOpenings()) {
@@ -1647,6 +1809,13 @@ export function getBookGuideSections(): BookGuideSection[] {
       intro: "資訊可由 AI 整理；生活的答案，不能外包。不推薦商品、不預測報酬。",
       accent: "#8B6F47",
       chapters: buckets.ch8,
+    },
+    {
+      id: "ch11",
+      title: "第十一章｜故事傳承",
+      intro: "把生命經驗完成為可珍藏的作品；先珍藏，再由自己決定分享距離。",
+      accent: "#8B6F47",
+      chapters: buckets.ch11,
     },
   ];
   return sections.filter((s) => s.chapters.length > 0);
@@ -1867,6 +2036,91 @@ export interface ChapterDecisionMemoDraft {
   reflectNote: string;
 }
 
+export interface ChapterPart4StartDraft {
+  wantComplete: string;
+  lifeMeaning: string;
+  shareWho: string;
+  shareDistance: string;
+  reflectNote: string;
+}
+
+export interface ChapterStoryStartDraft {
+  leaveWhat: string;
+  hopeFeel: string;
+  saveStatus: string;
+  reflectNote: string;
+}
+
+export interface ChapterThemeBoundaryDraft {
+  wantKeep: string;
+  privateOnly: string;
+  notTouch: string;
+  startToday: string;
+  reflectNote: string;
+}
+
+export interface ChapterThreeCluesDraft {
+  clue1: string;
+  clue2: string;
+  clue3: string;
+  reflectNote: string;
+}
+
+export interface ChapterThreeColorCheckDraft {
+  redMark: string;
+  yellowMark: string;
+  greenMark: string;
+  reflectNote: string;
+}
+
+export interface ChapterStoryCoreDraft {
+  faced: string;
+  chose: string;
+  leaveToday: string;
+  reflectNote: string;
+}
+
+export interface ChapterVoiceDraftDraft {
+  startHow: string;
+  changeMoment: string;
+  voiceWords: string;
+  reflectNote: string;
+}
+
+export interface ChapterFormBlueprintDraft {
+  formAudience: string;
+  materials: string;
+  minDone: string;
+  reflectNote: string;
+}
+
+export interface ChapterCoeditTruthDraft {
+  checkRed: string;
+  askYellow: string;
+  keepGreen: string;
+  reflectNote: string;
+}
+
+export interface ChapterSharedMemoryDraft {
+  whoSee: string;
+  presentHow: string;
+  adjustHow: string;
+  reflectNote: string;
+}
+
+export interface ChapterHeirloomKitDraft {
+  kitCheck: string;
+  openTest: string;
+  cheer: string;
+  reflectNote: string;
+}
+
+export interface ChapterSharePassportDraft {
+  status: string;
+  intent: string;
+  withdraw: string;
+  reflectNote: string;
+}
 
 export interface ChapterElevatorWishDraft {
   want: string;
@@ -2142,6 +2396,11 @@ export function buildSixHatsPrompt(): string {
   return "請主持一次可暫停的一人董事會。先確認我的問題與三項生活底線，再依序只問一題：白帽（事實與未知）、紅帽（期待與擔心）、黃帽（可能價值）、黑帽（風險與底線）、綠帽（替代方案）、藍帽（下一步與重看時間）。完成後只整理摘要，不投票、不打分，也不替我決定。請勿要求帳號、證件或不必要的完整資產資料。";
 }
 
+/** 1104：故事核心句 */
+export function buildStoryCorePrompt(): string {
+  return "請一次只問一題，幫我寫出故事核心句。請依序問：那時我面對什麼？我做了什麼選擇？今天我想留下的是什麼？請用我的語言整理成一句可朗讀的話，不要替我升華或總結人生。";
+}
+
 /** 0206：餐點觀察提問句 */
 export function buildFoodObservePrompt(): string {
   return "請整理這道餐點可能的主要食材、烹調特色，以及一項溫和的飲食觀察。請用簡單中文，這不是醫療或營養診斷。";
@@ -2249,13 +2508,18 @@ export function chapterSparkHref(chapterId: string): string {
 
 export function isSparkSource(value: string | null | undefined): value is SparkSource {
   if (!value) return false;
-  return value === "spark_card" || value === "chapter3" || /^chapter\d{4}$/.test(value);
+  return (
+    value === "spark_card" ||
+    value === "chapter3" ||
+    /^chapter\d{4}$/.test(value) ||
+    value === "chapterp4-open"
+  );
 }
 
 export function sparkFormTitle(source: SparkSource): string {
   if (source === "chapter3") return "Chapter 3 打卡";
   if (source === "chapter0100") return "記下一句話";
-  if (/^chapter\d{4}$/.test(source)) return "把這句話點成光點";
+  if (/^chapter\d{4}$/.test(source) || source === "chapterp4-open") return "把這句話點成光點";
   return "點亮光點";
 }
 
@@ -2352,6 +2616,18 @@ export function getChapterDeepLinkHint(from: string | null | undefined): Chapter
     "0805": {
       label: "一人董事會",
       tips: ["六帽一次一題", "不投票、不打分", "勿輸入帳號證件或不必要資產資料"],
+    },
+    "1104": {
+      label: "故事核心",
+      tips: ["一次只問一題", "用自己的語言整理", "不要替您升華或總結人生"],
+    },
+    "1105": {
+      label: "原聲口述",
+      tips: ["先說三分鐘", "保留原話與節奏", "含他人聲音需另行同意"],
+    },
+    "1107": {
+      label: "共編不失真",
+      tips: ["查紅、問黃、留綠", "最後由本人朗讀核可", "不替任何人同意"],
     },
   };
   const hit = known[chapterId] ?? {

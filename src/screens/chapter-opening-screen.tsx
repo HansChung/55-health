@@ -65,6 +65,18 @@ import {
   type ThirdPathDemo,
   type ProConfirmDemo,
   type DecisionMemoDemo,
+  type Part4StartDemo,
+  type StoryStartDemo,
+  type ThemeBoundaryDemo,
+  type ThreeCluesDemo,
+  type ThreeColorCheckDemo,
+  type StoryCoreDemo,
+  type VoiceDraftDemo,
+  type FormBlueprintDemo,
+  type CoeditTruthDemo,
+  type SharedMemoryDemo,
+  type HeirloomKitDemo,
+  type SharePassportDemo,
   type ChapterDecisionStartDraft,
   type ChapterDecisionSeatDraft,
   type ChapterSourceLadderDraft,
@@ -76,8 +88,21 @@ import {
   type ChapterThirdPathDraft,
   type ChapterProConfirmDraft,
   type ChapterDecisionMemoDraft,
+  type ChapterPart4StartDraft,
+  type ChapterStoryStartDraft,
+  type ChapterThemeBoundaryDraft,
+  type ChapterThreeCluesDraft,
+  type ChapterThreeColorCheckDraft,
+  type ChapterStoryCoreDraft,
+  type ChapterVoiceDraftDraft,
+  type ChapterFormBlueprintDraft,
+  type ChapterCoeditTruthDraft,
+  type ChapterSharedMemoryDraft,
+  type ChapterHeirloomKitDraft,
+  type ChapterSharePassportDraft,
   buildDecisionSeatPrompt,
   buildSixHatsPrompt,
+  buildStoryCorePrompt,
   type ElevatorWishDemo,
   type LifeMatchDemo,
   type FiveReflectDemo,
@@ -250,6 +275,44 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const [memoStatus, setMemoStatus] = useState("");
   const [memoReason, setMemoReason] = useState("");
   const [memoPending, setMemoPending] = useState("");
+  const [p4Want, setP4Want] = useState("");
+  const [p4Meaning, setP4Meaning] = useState("");
+  const [p4Who, setP4Who] = useState("");
+  const [p4Distance, setP4Distance] = useState("");
+  const [ssLeave, setSsLeave] = useState("");
+  const [ssHope, setSsHope] = useState("");
+  const [ssStatus, setSsStatus] = useState("");
+  const [tbKeep, setTbKeep] = useState("");
+  const [tbPrivate, setTbPrivate] = useState("");
+  const [tbNotTouch, setTbNotTouch] = useState("");
+  const [tbStart, setTbStart] = useState("");
+  const [tc1, setTc1] = useState("");
+  const [tc2, setTc2] = useState("");
+  const [tc3, setTc3] = useState("");
+  const [tcolRed, setTcolRed] = useState("");
+  const [tcolYellow, setTcolYellow] = useState("");
+  const [tcolGreen, setTcolGreen] = useState("");
+  const [scFaced, setScFaced] = useState("");
+  const [scChose, setScChose] = useState("");
+  const [scLeave, setScLeave] = useState("");
+  const [vdStart, setVdStart] = useState("");
+  const [vdChange, setVdChange] = useState("");
+  const [vdWords, setVdWords] = useState("");
+  const [fbForm, setFbForm] = useState("");
+  const [fbMaterials, setFbMaterials] = useState("");
+  const [fbMin, setFbMin] = useState("");
+  const [ceRed, setCeRed] = useState("");
+  const [ceYellow, setCeYellow] = useState("");
+  const [ceGreen, setCeGreen] = useState("");
+  const [smWho, setSmWho] = useState("");
+  const [smPresent, setSmPresent] = useState("");
+  const [smAdjust, setSmAdjust] = useState("");
+  const [hkCheck, setHkCheck] = useState("");
+  const [hkOpen, setHkOpen] = useState("");
+  const [hkCheer, setHkCheer] = useState("");
+  const [spStatus, setSpStatus] = useState("");
+  const [spIntent, setSpIntent] = useState("");
+  const [spWithdraw, setSpWithdraw] = useState("");
   const [wishWant, setWishWant] = useState("");
   const [wishStuck, setWishStuck] = useState("");
   const [wishAiHelp, setWishAiHelp] = useState("");
@@ -600,6 +663,128 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           if (d.status) setMemoStatus(d.status);
           if (d.reasonBaseline) setMemoReason(d.reasonBaseline);
           if (d.pendingReview) setMemoPending(d.pendingReview);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "part4-start") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterPart4StartDraft;
+          if (d.wantComplete) setP4Want(d.wantComplete);
+          if (d.lifeMeaning) setP4Meaning(d.lifeMeaning);
+          if (d.shareWho) setP4Who(d.shareWho);
+          if (d.shareDistance) setP4Distance(d.shareDistance);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "story-start") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterStoryStartDraft;
+          if (d.leaveWhat) setSsLeave(d.leaveWhat);
+          if (d.hopeFeel) setSsHope(d.hopeFeel);
+          if (d.saveStatus) setSsStatus(d.saveStatus);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "theme-boundary") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterThemeBoundaryDraft;
+          if (d.wantKeep) setTbKeep(d.wantKeep);
+          if (d.privateOnly) setTbPrivate(d.privateOnly);
+          if (d.notTouch) setTbNotTouch(d.notTouch);
+          if (d.startToday) setTbStart(d.startToday);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "three-clues") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterThreeCluesDraft;
+          if (d.clue1) setTc1(d.clue1);
+          if (d.clue2) setTc2(d.clue2);
+          if (d.clue3) setTc3(d.clue3);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "three-color-check") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterThreeColorCheckDraft;
+          if (d.redMark) setTcolRed(d.redMark);
+          if (d.yellowMark) setTcolYellow(d.yellowMark);
+          if (d.greenMark) setTcolGreen(d.greenMark);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "story-core") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterStoryCoreDraft;
+          if (d.faced) setScFaced(d.faced);
+          if (d.chose) setScChose(d.chose);
+          if (d.leaveToday) setScLeave(d.leaveToday);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "voice-draft") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterVoiceDraftDraft;
+          if (d.startHow) setVdStart(d.startHow);
+          if (d.changeMoment) setVdChange(d.changeMoment);
+          if (d.voiceWords) setVdWords(d.voiceWords);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "form-blueprint") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterFormBlueprintDraft;
+          if (d.formAudience) setFbForm(d.formAudience);
+          if (d.materials) setFbMaterials(d.materials);
+          if (d.minDone) setFbMin(d.minDone);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "coedit-truth") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterCoeditTruthDraft;
+          if (d.checkRed) setCeRed(d.checkRed);
+          if (d.askYellow) setCeYellow(d.askYellow);
+          if (d.keepGreen) setCeGreen(d.keepGreen);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "shared-memory") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterSharedMemoryDraft;
+          if (d.whoSee) setSmWho(d.whoSee);
+          if (d.presentHow) setSmPresent(d.presentHow);
+          if (d.adjustHow) setSmAdjust(d.adjustHow);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "heirloom-kit") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterHeirloomKitDraft;
+          if (d.kitCheck) setHkCheck(d.kitCheck);
+          if (d.openTest) setHkOpen(d.openTest);
+          if (d.cheer) setHkCheer(d.cheer);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "share-passport") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterSharePassportDraft;
+          if (d.status) setSpStatus(d.status);
+          if (d.intent) setSpIntent(d.intent);
+          if (d.withdraw) setSpWithdraw(d.withdraw);
           if (d.reflectNote) setReflectNote(d.reflectNote);
         }
       }
@@ -976,6 +1161,18 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         ChapterThirdPathDraft &
         ChapterProConfirmDraft &
         ChapterDecisionMemoDraft &
+        ChapterPart4StartDraft &
+        ChapterStoryStartDraft &
+        ChapterThemeBoundaryDraft &
+        ChapterThreeCluesDraft &
+        ChapterThreeColorCheckDraft &
+        ChapterStoryCoreDraft &
+        ChapterVoiceDraftDraft &
+        ChapterFormBlueprintDraft &
+        ChapterCoeditTruthDraft &
+        ChapterSharedMemoryDraft &
+        ChapterHeirloomKitDraft &
+        ChapterSharePassportDraft &
         ChapterElevatorWishDraft &
         ChapterLifeMatchDraft &
         ChapterFiveReflectDraft &
@@ -1233,6 +1430,116 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         status: patch.status ?? memoStatus,
         reasonBaseline: patch.reasonBaseline ?? memoReason,
         pendingReview: patch.pendingReview ?? memoPending,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "part4-start") {
+      const next: ChapterPart4StartDraft = {
+        wantComplete: patch.wantComplete ?? p4Want,
+        lifeMeaning: patch.lifeMeaning ?? p4Meaning,
+        shareWho: patch.shareWho ?? p4Who,
+        shareDistance: patch.shareDistance ?? p4Distance,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "story-start") {
+      const next: ChapterStoryStartDraft = {
+        leaveWhat: patch.leaveWhat ?? ssLeave,
+        hopeFeel: patch.hopeFeel ?? ssHope,
+        saveStatus: patch.saveStatus ?? ssStatus,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "theme-boundary") {
+      const next: ChapterThemeBoundaryDraft = {
+        wantKeep: patch.wantKeep ?? tbKeep,
+        privateOnly: patch.privateOnly ?? tbPrivate,
+        notTouch: patch.notTouch ?? tbNotTouch,
+        startToday: patch.startToday ?? tbStart,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "three-clues") {
+      const next: ChapterThreeCluesDraft = {
+        clue1: patch.clue1 ?? tc1,
+        clue2: patch.clue2 ?? tc2,
+        clue3: patch.clue3 ?? tc3,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "three-color-check") {
+      const next: ChapterThreeColorCheckDraft = {
+        redMark: patch.redMark ?? tcolRed,
+        yellowMark: patch.yellowMark ?? tcolYellow,
+        greenMark: patch.greenMark ?? tcolGreen,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "story-core") {
+      const next: ChapterStoryCoreDraft = {
+        faced: patch.faced ?? scFaced,
+        chose: patch.chose ?? scChose,
+        leaveToday: patch.leaveToday ?? scLeave,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "voice-draft") {
+      const next: ChapterVoiceDraftDraft = {
+        startHow: patch.startHow ?? vdStart,
+        changeMoment: patch.changeMoment ?? vdChange,
+        voiceWords: patch.voiceWords ?? vdWords,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "form-blueprint") {
+      const next: ChapterFormBlueprintDraft = {
+        formAudience: patch.formAudience ?? fbForm,
+        materials: patch.materials ?? fbMaterials,
+        minDone: patch.minDone ?? fbMin,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "coedit-truth") {
+      const next: ChapterCoeditTruthDraft = {
+        checkRed: patch.checkRed ?? ceRed,
+        askYellow: patch.askYellow ?? ceYellow,
+        keepGreen: patch.keepGreen ?? ceGreen,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "shared-memory") {
+      const next: ChapterSharedMemoryDraft = {
+        whoSee: patch.whoSee ?? smWho,
+        presentHow: patch.presentHow ?? smPresent,
+        adjustHow: patch.adjustHow ?? smAdjust,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "heirloom-kit") {
+      const next: ChapterHeirloomKitDraft = {
+        kitCheck: patch.kitCheck ?? hkCheck,
+        openTest: patch.openTest ?? hkOpen,
+        cheer: patch.cheer ?? hkCheer,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "share-passport") {
+      const next: ChapterSharePassportDraft = {
+        status: patch.status ?? spStatus,
+        intent: patch.intent ?? spIntent,
+        withdraw: patch.withdraw ?? spWithdraw,
         reflectNote: patch.reflectNote ?? reflectNote,
       };
       localStorage.setItem(draftKey, JSON.stringify(next));
@@ -1680,6 +1987,42 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         break;
       case "decision-memo":
         action = [memoStatus, memoReason, memoPending].filter(Boolean).join("｜");
+        break;
+      case "part4-start":
+        action = [p4Want, p4Meaning, p4Who, p4Distance].filter(Boolean).join("｜");
+        break;
+      case "story-start":
+        action = [ssLeave, ssHope, ssStatus].filter(Boolean).join("｜");
+        break;
+      case "theme-boundary":
+        action = [tbKeep, tbPrivate, tbNotTouch, tbStart].filter(Boolean).join("｜");
+        break;
+      case "three-clues":
+        action = [tc1, tc2, tc3].filter(Boolean).join("｜");
+        break;
+      case "three-color-check":
+        action = [tcolRed, tcolYellow, tcolGreen].filter(Boolean).join("｜");
+        break;
+      case "story-core":
+        action = [scFaced, scChose, scLeave].filter(Boolean).join("｜");
+        break;
+      case "voice-draft":
+        action = [vdStart, vdChange, vdWords].filter(Boolean).join("｜");
+        break;
+      case "form-blueprint":
+        action = [fbForm, fbMaterials, fbMin].filter(Boolean).join("｜");
+        break;
+      case "coedit-truth":
+        action = [ceRed, ceYellow, ceGreen].filter(Boolean).join("｜");
+        break;
+      case "shared-memory":
+        action = [smWho, smPresent, smAdjust].filter(Boolean).join("｜");
+        break;
+      case "heirloom-kit":
+        action = [hkCheck, hkOpen, hkCheer].filter(Boolean).join("｜");
+        break;
+      case "share-passport":
+        action = [spStatus, spIntent, spWithdraw].filter(Boolean).join("｜");
         break;
       case "elevator-wish":
         action =
@@ -2167,6 +2510,73 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const applyDecisionMemoDemo = (demo: DecisionMemoDemo) => {
     setMemoStatus(demo.status); setMemoReason(demo.reasonBaseline); setMemoPending(demo.pendingReview); setReflectNote(demo.reflectNote);
     saveDraft({ status: demo.status, reasonBaseline: demo.reasonBaseline, pendingReview: demo.pendingReview, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
+  const copyStoryCoreAsk = async () => {
+    const textAsk = chapter.samplePrompt?.trim() || buildStoryCorePrompt();
+    try { await navigator.clipboard.writeText(textAsk); toast.success("已複製故事核心提問句。"); }
+    catch { toast.info("請長按文字框手動複製。"); }
+  };
+
+  const applyPart4StartDemo = (demo: Part4StartDemo) => {
+    setP4Want(demo.wantComplete); setP4Meaning(demo.lifeMeaning); setP4Who(demo.shareWho); setP4Distance(demo.shareDistance); setReflectNote(demo.reflectNote);
+    saveDraft({ wantComplete: demo.wantComplete, lifeMeaning: demo.lifeMeaning, shareWho: demo.shareWho, shareDistance: demo.shareDistance, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyStoryStartDemo = (demo: StoryStartDemo) => {
+    setSsLeave(demo.leaveWhat); setSsHope(demo.hopeFeel); setSsStatus(demo.saveStatus); setReflectNote(demo.reflectNote);
+    saveDraft({ leaveWhat: demo.leaveWhat, hopeFeel: demo.hopeFeel, saveStatus: demo.saveStatus, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyThemeBoundaryDemo = (demo: ThemeBoundaryDemo) => {
+    setTbKeep(demo.wantKeep); setTbPrivate(demo.privateOnly); setTbNotTouch(demo.notTouch); setTbStart(demo.startToday); setReflectNote(demo.reflectNote);
+    saveDraft({ wantKeep: demo.wantKeep, privateOnly: demo.privateOnly, notTouch: demo.notTouch, startToday: demo.startToday, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyThreeCluesDemo = (demo: ThreeCluesDemo) => {
+    setTc1(demo.clue1); setTc2(demo.clue2); setTc3(demo.clue3); setReflectNote(demo.reflectNote);
+    saveDraft({ clue1: demo.clue1, clue2: demo.clue2, clue3: demo.clue3, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyThreeColorCheckDemo = (demo: ThreeColorCheckDemo) => {
+    setTcolRed(demo.redMark); setTcolYellow(demo.yellowMark); setTcolGreen(demo.greenMark); setReflectNote(demo.reflectNote);
+    saveDraft({ redMark: demo.redMark, yellowMark: demo.yellowMark, greenMark: demo.greenMark, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyStoryCoreDemo = (demo: StoryCoreDemo) => {
+    setScFaced(demo.faced); setScChose(demo.chose); setScLeave(demo.leaveToday); setReflectNote(demo.reflectNote);
+    saveDraft({ faced: demo.faced, chose: demo.chose, leaveToday: demo.leaveToday, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyVoiceDraftDemo = (demo: VoiceDraftDemo) => {
+    setVdStart(demo.startHow); setVdChange(demo.changeMoment); setVdWords(demo.voiceWords); setReflectNote(demo.reflectNote);
+    saveDraft({ startHow: demo.startHow, changeMoment: demo.changeMoment, voiceWords: demo.voiceWords, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyFormBlueprintDemo = (demo: FormBlueprintDemo) => {
+    setFbForm(demo.formAudience); setFbMaterials(demo.materials); setFbMin(demo.minDone); setReflectNote(demo.reflectNote);
+    saveDraft({ formAudience: demo.formAudience, materials: demo.materials, minDone: demo.minDone, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyCoeditTruthDemo = (demo: CoeditTruthDemo) => {
+    setCeRed(demo.checkRed); setCeYellow(demo.askYellow); setCeGreen(demo.keepGreen); setReflectNote(demo.reflectNote);
+    saveDraft({ checkRed: demo.checkRed, askYellow: demo.askYellow, keepGreen: demo.keepGreen, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applySharedMemoryDemo = (demo: SharedMemoryDemo) => {
+    setSmWho(demo.whoSee); setSmPresent(demo.presentHow); setSmAdjust(demo.adjustHow); setReflectNote(demo.reflectNote);
+    saveDraft({ whoSee: demo.whoSee, presentHow: demo.presentHow, adjustHow: demo.adjustHow, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyHeirloomKitDemo = (demo: HeirloomKitDemo) => {
+    setHkCheck(demo.kitCheck); setHkOpen(demo.openTest); setHkCheer(demo.cheer); setReflectNote(demo.reflectNote);
+    saveDraft({ kitCheck: demo.kitCheck, openTest: demo.openTest, cheer: demo.cheer, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applySharePassportDemo = (demo: SharePassportDemo) => {
+    setSpStatus(demo.status); setSpIntent(demo.intent); setSpWithdraw(demo.withdraw); setReflectNote(demo.reflectNote);
+    saveDraft({ status: demo.status, intent: demo.intent, withdraw: demo.withdraw, reflectNote: demo.reflectNote });
     toast.success(`已帶入${demo.label}。`);
   };
 
@@ -4294,6 +4704,350 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
             </div>
           )}
 
+
+          {layout === "part4-start" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>我想完成的作品</div>
+                <textarea value={p4Want} onChange={(e) => { setP4Want(e.target.value); saveDraft({ wantComplete: e.target.value }); }}
+                  placeholder="例如：為母親做一張三張照片的故事卡…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>它對生命代表什麼</div>
+                <textarea value={p4Meaning} onChange={(e) => { setP4Meaning(e.target.value); saveDraft({ lifeMeaning: e.target.value }); }}
+                  placeholder="例如：把她常說的那句話留下來…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>目前想先讓誰看見</div>
+                <textarea value={p4Who} onChange={(e) => { setP4Who(e.target.value); saveDraft({ shareWho: e.target.value }); }}
+                  placeholder="例如：先給手足看…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>分享距離</div>
+                <textarea value={p4Distance} onChange={(e) => { setP4Distance(e.target.value); saveDraft({ shareDistance: e.target.value }); }}
+                  placeholder="例如：指定分享／只給自己…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              {chapter.entries && chapter.entries.length > 0 && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
+                  {chapter.entries.map((entry) => (
+                    <EntryButton key={entry.id} entry={entry} selected={picked === entry.id}
+                      onSelect={() => savePick(entry.id)} onGo={() => goEntry(entry)} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {layout === "story-start" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>一件想留下的事</div>
+                <textarea value={ssLeave} onChange={(e) => { setSsLeave(e.target.value); saveDraft({ leaveWhat: e.target.value }); }}
+                  placeholder="例如：外婆的滷肉飯做法與那句「慢慢燉」…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>希望後來的人感受到什麼</div>
+                <textarea value={ssHope} onChange={(e) => { setSsHope(e.target.value); saveDraft({ hopeFeel: e.target.value }); }}
+                  placeholder="例如：家的味道與不趕的節奏…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>今天先標記的保存狀態</div>
+                <textarea value={ssStatus} onChange={(e) => { setSsStatus(e.target.value); saveDraft({ saveStatus: e.target.value }); }}
+                  placeholder="例如：只給自己／可與特定人共編／待確認…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              {chapter.entries && chapter.entries.length > 0 && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
+                  {chapter.entries.map((entry) => (
+                    <EntryButton key={entry.id} entry={entry} selected={picked === entry.id}
+                      onSelect={() => savePick(entry.id)} onGo={() => goEntry(entry)} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {layout === "theme-boundary" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>想留下</div>
+                <textarea value={tbKeep} onChange={(e) => { setTbKeep(e.target.value); saveDraft({ wantKeep: e.target.value }); }}
+                  placeholder="例如：第一次搬家那天的選擇…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>只供自己珍藏</div>
+                <textarea value={tbPrivate} onChange={(e) => { setTbPrivate(e.target.value); saveDraft({ privateOnly: e.target.value }); }}
+                  placeholder="例如：與某段關係有關的信件…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>暫時不碰</div>
+                <textarea value={tbNotTouch} onChange={(e) => { setTbNotTouch(e.target.value); saveDraft({ notTouch: e.target.value }); }}
+                  placeholder="例如：仍會刺痛的爭執…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>今天最願意開始的一項</div>
+                <textarea value={tbStart} onChange={(e) => { setTbStart(e.target.value); saveDraft({ startToday: e.target.value }); }}
+                  placeholder="例如：第一次搬家那天的選擇…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
+          {layout === "three-clues" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>線索一｜位置／意義／待詢問</div>
+                <textarea value={tc1} onChange={(e) => { setTc1(e.target.value); saveDraft({ clue1: e.target.value }); }}
+                  placeholder="例如：舊相簿第 3 頁合照｜抽屜｜想起搬家前的最後一頓飯…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>線索二｜位置／意義／待詢問</div>
+                <textarea value={tc2} onChange={(e) => { setTc2(e.target.value); saveDraft({ clue2: e.target.value }); }}
+                  placeholder="例如：錄音裡的笑聲｜手機語音備忘｜想起母親勸我慢慢來…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>線索三｜位置／意義／待詢問</div>
+                <textarea value={tc3} onChange={(e) => { setTc3(e.target.value); saveDraft({ clue3: e.target.value }); }}
+                  placeholder="例如：手寫食譜｜廚房抽屜｜還想問妹妹當時的細節…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
+          {layout === "three-color-check" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "flex", gap: 8, marginBottom: 4 }}>
+                {[
+                  { t: "1 查紅", c: "#C95B5B" },
+                  { t: "2 問黃", c: "#C9A15B" },
+                  { t: "3 留綠", c: "#5BA86B" },
+                ].map((s) => (
+                  <div key={s.t} style={{ flex: 1, textAlign: "center", padding: "8px 6px", borderRadius: 10, background: s.c + "22", border: `1px solid ${s.c}`, color: s.c, fontSize: "var(--fs-xs)", fontWeight: 800 }}>
+                    {s.t}
+                  </div>
+                ))}
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>紅標｜查證或不確定</div>
+                <textarea value={tcolRed} onChange={(e) => { setTcolRed(e.target.value); saveDraft({ redMark: e.target.value }); }}
+                  placeholder="例如：搬家年份仍待確認（大約是那一年）…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>黃標｜共同記憶是否尊重</div>
+                <textarea value={tcolYellow} onChange={(e) => { setTcolYellow(e.target.value); saveDraft({ yellowMark: e.target.value }); }}
+                  placeholder="例如：合照中妹妹是否同意被寫進故事…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>綠標｜保留原話與語調</div>
+                <textarea value={tcolGreen} onChange={(e) => { setTcolGreen(e.target.value); saveDraft({ greenMark: e.target.value }); }}
+                  placeholder="例如：「那時候我選了留下，而不是趕著證明自己。」…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
+          {layout === "story-core" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>那時我面對……</div>
+                <textarea value={scFaced} onChange={(e) => { setScFaced(e.target.value); saveDraft({ faced: e.target.value }); }}
+                  placeholder="例如：要不要離開熟悉的城市…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>我選擇……</div>
+                <textarea value={scChose} onChange={(e) => { setScChose(e.target.value); saveDraft({ chose: e.target.value }); }}
+                  placeholder="例如：先安頓家人，再慢慢找下一步…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>今天我想留下的是……</div>
+                <textarea value={scLeave} onChange={(e) => { setScLeave(e.target.value); saveDraft({ leaveToday: e.target.value }); }}
+                  placeholder="例如：緩慢也是一種負責任的選擇…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button type="button" onClick={copyStoryCoreAsk} style={secondaryBtnStyle}>複製故事核心提問句</button>
+                <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>在暖暖一次一題 →</button>
+              </div>
+            </div>
+          )}
+
+          {layout === "voice-draft" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>事情怎麼開始</div>
+                <textarea value={vdStart} onChange={(e) => { setVdStart(e.target.value); saveDraft({ startHow: e.target.value }); }}
+                  placeholder="例如：先說搬家前那頓飯怎麼開始…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>哪一刻改變了</div>
+                <textarea value={vdChange} onChange={(e) => { setVdChange(e.target.value); saveDraft({ changeMoment: e.target.value }); }}
+                  placeholder="例如：母親說「慢慢來」的那一刻…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>三個原聲詞語</div>
+                <textarea value={vdWords} onChange={(e) => { setVdWords(e.target.value); saveDraft({ voiceWords: e.target.value }); }}
+                  placeholder="例如：慢慢來｜先安頓｜不必證明…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
+          {layout === "form-blueprint" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>形式與受眾</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+                  {["故事卡", "圖文小冊", "聲音故事", "微影音"].map((s) => (
+                    <button key={s} type="button" onClick={() => { const next = fbForm.includes(s) ? fbForm : (fbForm ? `${fbForm}｜${s}` : s); setFbForm(next); saveDraft({ formAudience: next }); }}
+                      style={{ padding: "8px 12px", borderRadius: "var(--r-pill)", border: `2px solid ${fbForm.includes(s) ? "var(--primary)" : "var(--line-strong)"}`, background: fbForm.includes(s) ? "var(--primary-soft)" : "var(--surface)", fontSize: "var(--fs-xs)", fontWeight: 700, cursor: "pointer" }}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+                <textarea value={fbForm} onChange={(e) => { setFbForm(e.target.value); saveDraft({ formAudience: e.target.value }); }}
+                  placeholder="例如：故事卡｜給手足…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>已有材料／還缺一項</div>
+                <textarea value={fbMaterials} onChange={(e) => { setFbMaterials(e.target.value); saveDraft({ materials: e.target.value }); }}
+                  placeholder="例如：三張照片、一句核心句；還缺圖說一句…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>最小完成版與今天第一步</div>
+                <textarea value={fbMin} onChange={(e) => { setFbMin(e.target.value); saveDraft({ minDone: e.target.value }); }}
+                  placeholder="例如：一張完成；今天先選三張照片…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
+          {layout === "coedit-truth" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "flex", gap: 8, marginBottom: 4 }}>
+                {[
+                  { t: "1 查紅", c: "#C95B5B" },
+                  { t: "2 問黃", c: "#C9A15B" },
+                  { t: "3 留綠", c: "#5BA86B" },
+                ].map((s) => (
+                  <div key={s.t} style={{ flex: 1, textAlign: "center", padding: "8px 6px", borderRadius: 10, background: s.c + "22", border: `1px solid ${s.c}`, color: s.c, fontSize: "var(--fs-xs)", fontWeight: 800 }}>
+                    {s.t}
+                  </div>
+                ))}
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>查紅</div>
+                <textarea value={ceRed} onChange={(e) => { setCeRed(e.target.value); saveDraft({ checkRed: e.target.value }); }}
+                  placeholder="例如：刪掉 AI 補上的正確日期，改回「大約那年夏天」…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>問黃</div>
+                <textarea value={ceYellow} onChange={(e) => { setCeYellow(e.target.value); saveDraft({ askYellow: e.target.value }); }}
+                  placeholder="例如：合照說明先改為「家人」，待妹妹確認…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>留綠</div>
+                <textarea value={ceGreen} onChange={(e) => { setCeGreen(e.target.value); saveDraft({ keepGreen: e.target.value }); }}
+                  placeholder="例如：保留原句「我選了留下」…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
+          {layout === "shared-memory" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>故事裡有誰／給誰看</div>
+                <textarea value={smWho} onChange={(e) => { setSmWho(e.target.value); saveDraft({ whoSee: e.target.value }); }}
+                  placeholder="例如：故事裡有妹妹；想給手足看…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>希望如何呈現</div>
+                <textarea value={smPresent} onChange={(e) => { setSmPresent(e.target.value); saveDraft({ presentHow: e.target.value }); }}
+                  placeholder="例如：可用合照，姓名改稱「妹妹」…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>調整或撤回方式</div>
+                <textarea value={smAdjust} onChange={(e) => { setSmAdjust(e.target.value); saveDraft({ adjustHow: e.target.value }); }}
+                  placeholder="例如：若她改心意，改匿名或移除照片…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
+          {layout === "heirloom-kit" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>五件套核對</div>
+                <textarea value={hkCheck} onChange={(e) => { setHkCheck(e.target.value); saveDraft({ kitCheck: e.target.value }); }}
+                  placeholder="例如：主作品 PDF／來源註記／分享說明／圖說／雲端＋外接備份…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>另一台裝置開啟測試</div>
+                <textarea value={hkOpen} onChange={(e) => { setHkOpen(e.target.value); saveDraft({ openTest: e.target.value }); }}
+                  placeholder="例如：已用平板開啟並可閱讀…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>一句喝采</div>
+                <textarea value={hkCheer} onChange={(e) => { setHkCheer(e.target.value); saveDraft({ cheer: e.target.value }); }}
+                  placeholder="例如：我完成了母親的故事卡…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
+          {layout === "share-passport" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>目前狀態</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+                  {["只給自己", "指定分享", "受邀社群", "公開"].map((s) => (
+                    <button key={s} type="button" onClick={() => { setSpStatus(s); saveDraft({ status: s }); }}
+                      style={{ padding: "8px 12px", borderRadius: "var(--r-pill)", border: `2px solid ${spStatus === s ? "var(--primary)" : "var(--line-strong)"}`, background: spStatus === s ? "var(--primary-soft)" : "var(--surface)", fontSize: "var(--fs-xs)", fontWeight: 700, cursor: "pointer" }}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>分享心意與期限</div>
+                <textarea value={spIntent} onChange={(e) => { setSpIntent(e.target.value); saveDraft({ intent: e.target.value }); }}
+                  placeholder="例如：先自己珍藏一季；之後再給手足…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>調整或撤回方式</div>
+                <textarea value={spWithdraw} onChange={(e) => { setSpWithdraw(e.target.value); saveDraft({ withdraw: e.target.value }); }}
+                  placeholder="例如：若要分享，改為指定連結並可隨時關閉…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
           {layout === "elevator-wish" && (
             <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
               {[
@@ -5535,6 +6289,18 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                   reflectLayout === "third-path" ||
                   reflectLayout === "pro-confirm" ||
                   reflectLayout === "decision-memo" ||
+                  reflectLayout === "part4-start" ||
+                  reflectLayout === "story-start" ||
+                  reflectLayout === "theme-boundary" ||
+                  reflectLayout === "three-clues" ||
+                  reflectLayout === "three-color-check" ||
+                  reflectLayout === "story-core" ||
+                  reflectLayout === "voice-draft" ||
+                  reflectLayout === "form-blueprint" ||
+                  reflectLayout === "coedit-truth" ||
+                  reflectLayout === "shared-memory" ||
+                  reflectLayout === "heirloom-kit" ||
+                  reflectLayout === "share-passport" ||
                   reflectLayout === "elevator-wish" ||
                   reflectLayout === "life-match" ||
                   reflectLayout === "five-reflect" ||
@@ -6282,6 +7048,140 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                   ))}
                 </div>
               )}
+              
+              {layout === "part4-start" && chapter.part4StartDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.part4StartDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}>{demo.wantComplete}</p>
+                      <button type="button" onClick={() => applyPart4StartDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "story-start" && chapter.storyStartDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.storyStartDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}>{demo.leaveWhat}</p>
+                      <button type="button" onClick={() => applyStoryStartDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "theme-boundary" && chapter.themeBoundaryDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.themeBoundaryDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}>{demo.wantKeep}</p>
+                      <button type="button" onClick={() => applyThemeBoundaryDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "three-clues" && chapter.threeCluesDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.threeCluesDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}>{demo.clue1}</p>
+                      <button type="button" onClick={() => applyThreeCluesDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "three-color-check" && chapter.threeColorCheckDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.threeColorCheckDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}>{demo.greenMark}</p>
+                      <button type="button" onClick={() => applyThreeColorCheckDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "story-core" && chapter.storyCoreDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.storyCoreDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}>{demo.leaveToday}</p>
+                      <button type="button" onClick={() => applyStoryCoreDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "voice-draft" && chapter.voiceDraftDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.voiceDraftDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}>{demo.voiceWords}</p>
+                      <button type="button" onClick={() => applyVoiceDraftDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "form-blueprint" && chapter.formBlueprintDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.formBlueprintDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}>{demo.formAudience}</p>
+                      <button type="button" onClick={() => applyFormBlueprintDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "coedit-truth" && chapter.coeditTruthDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.coeditTruthDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}>{demo.keepGreen}</p>
+                      <button type="button" onClick={() => applyCoeditTruthDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "shared-memory" && chapter.sharedMemoryDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.sharedMemoryDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}>{demo.whoSee}</p>
+                      <button type="button" onClick={() => applySharedMemoryDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "heirloom-kit" && chapter.heirloomKitDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.heirloomKitDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}>{demo.cheer}</p>
+                      <button type="button" onClick={() => applyHeirloomKitDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "share-passport" && chapter.sharePassportDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.sharePassportDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>狀態：</strong>{demo.status}</p>
+                      <button type="button" onClick={() => applySharePassportDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {layout === "elevator-wish" && chapter.elevatorDemos && (
                 <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
                   {chapter.elevatorDemos.map((demo) => (
@@ -7095,6 +7995,44 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           memoStatus={memoStatus}
           memoReason={memoReason}
           memoPending={memoPending}
+          p4Want={p4Want}
+          p4Meaning={p4Meaning}
+          p4Who={p4Who}
+          p4Distance={p4Distance}
+          ssLeave={ssLeave}
+          ssHope={ssHope}
+          ssStatus={ssStatus}
+          tbKeep={tbKeep}
+          tbPrivate={tbPrivate}
+          tbNotTouch={tbNotTouch}
+          tbStart={tbStart}
+          tc1={tc1}
+          tc2={tc2}
+          tc3={tc3}
+          tcolRed={tcolRed}
+          tcolYellow={tcolYellow}
+          tcolGreen={tcolGreen}
+          scFaced={scFaced}
+          scChose={scChose}
+          scLeave={scLeave}
+          vdStart={vdStart}
+          vdChange={vdChange}
+          vdWords={vdWords}
+          fbForm={fbForm}
+          fbMaterials={fbMaterials}
+          fbMin={fbMin}
+          ceRed={ceRed}
+          ceYellow={ceYellow}
+          ceGreen={ceGreen}
+          smWho={smWho}
+          smPresent={smPresent}
+          smAdjust={smAdjust}
+          hkCheck={hkCheck}
+          hkOpen={hkOpen}
+          hkCheer={hkCheer}
+          spStatus={spStatus}
+          spIntent={spIntent}
+          spWithdraw={spWithdraw}
           wishWant={wishWant}
           wishStuck={wishStuck}
           wishAiHelp={wishAiHelp}
@@ -7394,6 +8332,44 @@ function PrintCard({
   memoStatus = "",
   memoReason = "",
   memoPending = "",
+  p4Want = "",
+  p4Meaning = "",
+  p4Who = "",
+  p4Distance = "",
+  ssLeave = "",
+  ssHope = "",
+  ssStatus = "",
+  tbKeep = "",
+  tbPrivate = "",
+  tbNotTouch = "",
+  tbStart = "",
+  tc1 = "",
+  tc2 = "",
+  tc3 = "",
+  tcolRed = "",
+  tcolYellow = "",
+  tcolGreen = "",
+  scFaced = "",
+  scChose = "",
+  scLeave = "",
+  vdStart = "",
+  vdChange = "",
+  vdWords = "",
+  fbForm = "",
+  fbMaterials = "",
+  fbMin = "",
+  ceRed = "",
+  ceYellow = "",
+  ceGreen = "",
+  smWho = "",
+  smPresent = "",
+  smAdjust = "",
+  hkCheck = "",
+  hkOpen = "",
+  hkCheer = "",
+  spStatus = "",
+  spIntent = "",
+  spWithdraw = "",
   wishWant = "",
   wishStuck = "",
   wishAiHelp = "",
@@ -7571,6 +8547,44 @@ function PrintCard({
   memoStatus?: string;
   memoReason?: string;
   memoPending?: string;
+  p4Want?: string;
+  p4Meaning?: string;
+  p4Who?: string;
+  p4Distance?: string;
+  ssLeave?: string;
+  ssHope?: string;
+  ssStatus?: string;
+  tbKeep?: string;
+  tbPrivate?: string;
+  tbNotTouch?: string;
+  tbStart?: string;
+  tc1?: string;
+  tc2?: string;
+  tc3?: string;
+  tcolRed?: string;
+  tcolYellow?: string;
+  tcolGreen?: string;
+  scFaced?: string;
+  scChose?: string;
+  scLeave?: string;
+  vdStart?: string;
+  vdChange?: string;
+  vdWords?: string;
+  fbForm?: string;
+  fbMaterials?: string;
+  fbMin?: string;
+  ceRed?: string;
+  ceYellow?: string;
+  ceGreen?: string;
+  smWho?: string;
+  smPresent?: string;
+  smAdjust?: string;
+  hkCheck?: string;
+  hkOpen?: string;
+  hkCheer?: string;
+  spStatus?: string;
+  spIntent?: string;
+  spWithdraw?: string;
   wishWant?: string;
   wishStuck?: string;
   wishAiHelp?: string;
@@ -8057,6 +9071,176 @@ function PrintCard({
         <PrintGridCell title="目前狀態" minHeight={40}>{memoStatus || "＿＿＿＿"}</PrintGridCell>
         <div style={{ margin: "12px 0" }}><PrintGridCell title="理由／底線" minHeight={48}>{memoReason || "＿＿＿＿＿＿"}</PrintGridCell></div>
         <PrintGridCell title="待確認／重看" minHeight={48}>{memoPending || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+
+  if ((layout as string) === "part4-start") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="想完成的作品" minHeight={48}>{p4Want || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="生命意義" minHeight={48}>{p4Meaning || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="分享對象／距離" minHeight={48}>{(p4Who || "＿＿") + "／" + (p4Distance || "＿＿")}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "story-start") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="想留下的事" minHeight={48}>{ssLeave || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="希望感受到" minHeight={48}>{ssHope || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="保存狀態" minHeight={40}>{ssStatus || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "theme-boundary") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="想留下" minHeight={40}>{tbKeep || "＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="只供珍藏" minHeight={40}>{tbPrivate || "＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="暫時不碰" minHeight={40}>{tbNotTouch || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="今天開始" minHeight={40}>{tbStart || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "three-clues") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="線索一" minHeight={48}>{tc1 || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="線索二" minHeight={48}>{tc2 || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="線索三" minHeight={48}>{tc3 || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "three-color-check") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="紅標" minHeight={48}>{tcolRed || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="黃標" minHeight={48}>{tcolYellow || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="綠標" minHeight={48}>{tcolGreen || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "story-core") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="面對" minHeight={48}>{scFaced || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="選擇" minHeight={48}>{scChose || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="今天留下" minHeight={48}>{scLeave || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "voice-draft") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="怎麼開始" minHeight={48}>{vdStart || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="改變時刻" minHeight={48}>{vdChange || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="原聲詞語" minHeight={40}>{vdWords || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "form-blueprint") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="形式／受眾" minHeight={48}>{fbForm || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="材料" minHeight={48}>{fbMaterials || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="最小完成版" minHeight={48}>{fbMin || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "coedit-truth") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="查紅" minHeight={48}>{ceRed || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="問黃" minHeight={48}>{ceYellow || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="留綠" minHeight={48}>{ceGreen || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "shared-memory") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="誰／給誰看" minHeight={48}>{smWho || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="如何呈現" minHeight={48}>{smPresent || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="調整／撤回" minHeight={48}>{smAdjust || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "heirloom-kit") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="五件套" minHeight={48}>{hkCheck || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="開啟測試" minHeight={40}>{hkOpen || "＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="喝采" minHeight={40}>{hkCheer || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "share-passport") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="目前狀態" minHeight={40}>{spStatus || "＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="心意／期限" minHeight={48}>{spIntent || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="撤回方式" minHeight={48}>{spWithdraw || "＿＿＿＿＿＿"}</PrintGridCell>
         <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
         <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
       </div>

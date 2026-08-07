@@ -133,6 +133,35 @@ describe("chapter-opening", () => {
     expect(memo?.atAGlance).toContain("不構成投資");
   });
 
+  it("getChapterOpening p4-open and 1100-1110 chapter 11", () => {
+    const part = getChapterOpening("p4-open");
+    expect(part?.layout).toBe("part4-start");
+    expect(part?.title).toContain("作品");
+    expect(part?.entries).toHaveLength(4);
+    expect(part?.capabilityNote).toContain("起點卡");
+
+    const hub = getChapterOpening("1100");
+    expect(hub?.layout).toBe("story-start");
+    expect(hub?.title).toContain("故事傳承");
+    expect(hub?.entries).toHaveLength(4);
+    expect(hub?.capabilityNote).toContain("意向卡");
+
+    expect(getChapterOpening("1101")?.layout).toBe("theme-boundary");
+    expect(getChapterOpening("1102")?.layout).toBe("three-clues");
+    expect(getChapterOpening("1103")?.layout).toBe("three-color-check");
+    expect(getChapterOpening("1104")?.layout).toBe("story-core");
+    expect(getChapterOpening("1104")?.samplePrompt).toContain("不要替我升華");
+    expect(getChapterOpening("1105")?.layout).toBe("voice-draft");
+    expect(getChapterOpening("1106")?.layout).toBe("form-blueprint");
+    expect(getChapterOpening("1107")?.layout).toBe("coedit-truth");
+    expect(getChapterOpening("1108")?.layout).toBe("shared-memory");
+    expect(getChapterOpening("1109")?.layout).toBe("heirloom-kit");
+    const passport = getChapterOpening("1110");
+    expect(passport?.layout).toBe("share-passport");
+    expect(passport?.appDeepLink?.href).toBe("/smart/radar");
+    expect(passport?.atAGlance).toContain("分享護照");
+  });
+
   it("buildMenuTranslatePrompt", () => {
     expect(buildMenuTranslatePrompt("少辣")).toContain("少辣");
   });
@@ -208,7 +237,7 @@ describe("chapter-opening", () => {
     expect(getChapterDeepLinkHint("chapter9999")?.tips[0]).toContain("一拍");
   });
 
-  it("getBookGuideSections covers ch1–ch8", () => {
+  it("getBookGuideSections covers ch1–ch8 and ch11", () => {
     const sections = getBookGuideSections();
     expect(sections.map((s) => s.id)).toEqual([
       "ch1",
@@ -219,6 +248,7 @@ describe("chapter-opening", () => {
       "ch6",
       "ch7",
       "ch8",
+      "ch11",
     ]);
     expect(listChapterOpenings().length).toBe(
       sections.reduce((n, s) => n + s.chapters.length, 0)
@@ -236,6 +266,9 @@ describe("chapter-opening", () => {
     expect(sections[6].title).toBe("第七章｜城市漫遊");
     expect(sections[6].chapters.some((c) => c.id === "0700")).toBe(true);
     expect(sections[7].chapters.some((c) => c.id === "0800")).toBe(true);
+    expect(sections[8].title).toBe("第十一章｜故事傳承");
+    expect(sections[8].chapters.some((c) => c.id === "1100")).toBe(true);
+    expect(sections[8].chapters.some((c) => c.id === "p4-open")).toBe(true);
   });
 
   it("filterBookGuideSections by QR and keyword", () => {
@@ -259,7 +292,11 @@ describe("chapter-opening", () => {
     expect(byCity.some((s) => s.id === "ch7")).toBe(true);
     expect(byCity.some((s) => s.chapters.some((c) => c.id === "0700"))).toBe(true);
 
+    const byStory = filterBookGuideSections("故事傳承");
+    expect(byStory.some((s) => s.id === "ch11")).toBe(true);
+    expect(byStory.some((s) => s.chapters.some((c) => c.id === "1100"))).toBe(true);
+
     expect(filterBookGuideSections("不存在的關鍵字zzz")).toHaveLength(0);
-    expect(filterBookGuideSections("").length).toBe(8);
+    expect(filterBookGuideSections("").length).toBe(9);
   });
 });
