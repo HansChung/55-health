@@ -133,6 +133,29 @@ describe("chapter-opening", () => {
     expect(memo?.atAGlance).toContain("不構成投資");
   });
 
+  it("getChapterOpening 0900-0910 chapter 9", () => {
+    const hub = getChapterOpening("0900");
+    expect(hub?.layout).toBe("health-start");
+    expect(hub?.title).toContain("全人健康");
+    expect(hub?.entries).toHaveLength(4);
+    expect(hub?.capabilityNote).toContain("不診斷");
+
+    expect(getChapterOpening("0901")?.layout).toBe("judgment-rewrite");
+    expect(getChapterOpening("0901")?.samplePrompt).toContain("不要診斷");
+    expect(getChapterOpening("0902")?.layout).toBe("seven-day-clues");
+    expect(getChapterOpening("0903")?.layout).toBe("timeline-nodes");
+    expect(getChapterOpening("0904")?.layout).toBe("cross-observe");
+    expect(getChapterOpening("0905")?.layout).toBe("four-signals");
+    expect(getChapterOpening("0906")?.layout).toBe("source-review");
+    expect(getChapterOpening("0907")?.layout).toBe("gentle-tweak");
+    expect(getChapterOpening("0908")?.layout).toBe("noncausal-summary");
+    expect(getChapterOpening("0909")?.layout).toBe("health-questions");
+    const paper = getChapterOpening("0910");
+    expect(paper?.layout).toBe("health-whitepaper");
+    expect(paper?.appDeepLink?.href).toBe("/smart/radar");
+    expect(paper?.atAGlance).toContain("不構成診斷");
+  });
+
   it("buildMenuTranslatePrompt", () => {
     expect(buildMenuTranslatePrompt("少辣")).toContain("少辣");
   });
@@ -208,7 +231,7 @@ describe("chapter-opening", () => {
     expect(getChapterDeepLinkHint("chapter9999")?.tips[0]).toContain("一拍");
   });
 
-  it("getBookGuideSections covers ch1–ch8", () => {
+  it("getBookGuideSections covers ch1–ch9", () => {
     const sections = getBookGuideSections();
     expect(sections.map((s) => s.id)).toEqual([
       "ch1",
@@ -219,6 +242,7 @@ describe("chapter-opening", () => {
       "ch6",
       "ch7",
       "ch8",
+      "ch9",
     ]);
     expect(listChapterOpenings().length).toBe(
       sections.reduce((n, s) => n + s.chapters.length, 0)
@@ -236,6 +260,8 @@ describe("chapter-opening", () => {
     expect(sections[6].title).toBe("第七章｜城市漫遊");
     expect(sections[6].chapters.some((c) => c.id === "0700")).toBe(true);
     expect(sections[7].chapters.some((c) => c.id === "0800")).toBe(true);
+    expect(sections[8].title).toBe("第九章｜全人健康");
+    expect(sections[8].chapters.some((c) => c.id === "0900")).toBe(true);
   });
 
   it("filterBookGuideSections by QR and keyword", () => {
@@ -259,7 +285,11 @@ describe("chapter-opening", () => {
     expect(byCity.some((s) => s.id === "ch7")).toBe(true);
     expect(byCity.some((s) => s.chapters.some((c) => c.id === "0700"))).toBe(true);
 
+    const byHealth = filterBookGuideSections("全人健康");
+    expect(byHealth.some((s) => s.id === "ch9")).toBe(true);
+    expect(byHealth.some((s) => s.chapters.some((c) => c.id === "0900"))).toBe(true);
+
     expect(filterBookGuideSections("不存在的關鍵字zzz")).toHaveLength(0);
-    expect(filterBookGuideSections("").length).toBe(8);
+    expect(filterBookGuideSections("").length).toBe(9);
   });
 });
