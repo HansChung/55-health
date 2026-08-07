@@ -6,6 +6,7 @@ import { CHAPTER_5_OPENINGS } from "./chapter-opening-ch5";
 import { CHAPTER_6_OPENINGS } from "./chapter-opening-ch6";
 import { CHAPTER_7_OPENINGS } from "./chapter-opening-ch7";
 import { CHAPTER_8_OPENINGS } from "./chapter-opening-ch8";
+import { CHAPTER_9_OPENINGS } from "./chapter-opening-ch9";
 
 export type ChapterLayout =
   | "routes"
@@ -68,7 +69,18 @@ export type ChapterLayout =
   | "activity-guide"
   | "elegant-replan"
   | "three-sight"
-  | "city-lights";
+  | "city-lights"
+  | "health-start"
+  | "judgment-rewrite"
+  | "seven-day-clues"
+  | "timeline-nodes"
+  | "cross-observe"
+  | "four-signals"
+  | "source-review"
+  | "gentle-tweak"
+  | "noncausal-summary"
+  | "health-questions"
+  | "health-whitepaper";
 
 export type VisionTrustLevel = "enjoy" | "verify";
 
@@ -349,6 +361,123 @@ export interface DecisionMemoDemo {
   reflectNote: string;
 }
 
+/** Chapter 9：生活訊號起點（0900） */
+export interface HealthStartDemo {
+  id: string;
+  label: string;
+  signal: string;
+  lifeArea: string;
+  wantClear: string;
+  reflectNote: string;
+}
+
+/** Chapter 9：判決句改寫（0901） */
+export interface JudgmentRewriteDemo {
+  id: string;
+  label: string;
+  feel: string;
+  knownUnknown: string;
+  observeQ: string;
+  reflectNote: string;
+}
+
+/** Chapter 9：七日線索（0902） */
+export interface SevenDayCluesDemo {
+  id: string;
+  label: string;
+  weekNote: string;
+  exceptionNote: string;
+  unknownNote: string;
+  pendingQs: string;
+  reflectNote: string;
+}
+
+/** Chapter 9：時間軸（0903） */
+export interface TimelineNodesDemo {
+  id: string;
+  label: string;
+  nodesNote: string;
+  blankNote: string;
+  openQ: string;
+  reflectNote: string;
+}
+
+/** Chapter 9：交叉觀察（0904） */
+export interface CrossObserveDemo {
+  id: string;
+  label: string;
+  fourClues: string;
+  syncNote: string;
+  exceptionNote: string;
+  gapNote: string;
+  cannotProve: string;
+  reflectNote: string;
+}
+
+/** Chapter 9：四種訊息（0905） */
+export interface FourSignalsDemo {
+  id: string;
+  label: string;
+  fact: string;
+  feeling: string;
+  guess: string;
+  pending: string;
+  reflectNote: string;
+}
+
+/** Chapter 9：來源跨期回看（0906） */
+export interface SourceReviewDemo {
+  id: string;
+  label: string;
+  sources: string;
+  compareNote: string;
+  checkNote: string;
+  reflectNote: string;
+}
+
+/** Chapter 9：可承受微調（0907） */
+export interface GentleTweakDemo {
+  id: string;
+  label: string;
+  value: string;
+  burdenStop: string;
+  thirdPath: string;
+  choiceReview: string;
+  reflectNote: string;
+}
+
+/** Chapter 9：非因果摘要（0908） */
+export interface NoncausalSummaryDemo {
+  id: string;
+  label: string;
+  syncNote: string;
+  exceptionNote: string;
+  limitNote: string;
+  summaryText: string;
+  reflectNote: string;
+}
+
+/** Chapter 9：健康對話問題（0909） */
+export interface HealthQuestionsDemo {
+  id: string;
+  label: string;
+  opening: string;
+  mustAsk: string;
+  laterAsk: string;
+  shareScope: string;
+  reflectNote: string;
+}
+
+/** Chapter 9：全人健康白皮書（0910） */
+export interface HealthWhitepaperDemo {
+  id: string;
+  label: string;
+  lifeQ: string;
+  cluesAntiEx: string;
+  safety: string;
+  actionReview: string;
+  reflectNote: string;
+}
 
 /** Chapter 3：SMART 五方向 */
 export interface SmartDirectionOption {
@@ -811,6 +940,18 @@ export interface ChapterOpening {
   thirdPathDemos?: ThirdPathDemo[];
   proConfirmDemos?: ProConfirmDemo[];
   decisionMemoDemos?: DecisionMemoDemo[];
+  /** Chapter 9 版型資料 */
+  healthStartDemos?: HealthStartDemo[];
+  judgmentRewriteDemos?: JudgmentRewriteDemo[];
+  sevenDayCluesDemos?: SevenDayCluesDemo[];
+  timelineNodesDemos?: TimelineNodesDemo[];
+  crossObserveDemos?: CrossObserveDemo[];
+  fourSignalsDemos?: FourSignalsDemo[];
+  sourceReviewDemos?: SourceReviewDemo[];
+  gentleTweakDemos?: GentleTweakDemo[];
+  noncausalSummaryDemos?: NoncausalSummaryDemo[];
+  healthQuestionsDemos?: HealthQuestionsDemo[];
+  healthWhitepaperDemos?: HealthWhitepaperDemo[];
   /** Chapter 3 */
   elevatorDemos?: ElevatorWishDemo[];
   lifeRoleOptions?: LifeRoleOption[];
@@ -1420,6 +1561,7 @@ const CHAPTERS: Record<string, ChapterOpening> = {
   ...CHAPTER_6_OPENINGS,
   ...CHAPTER_7_OPENINGS,
   ...CHAPTER_8_OPENINGS,
+  ...CHAPTER_9_OPENINGS,
 };
 
 export function getChapterOpening(id: string): ChapterOpening | null {
@@ -1427,7 +1569,7 @@ export function getChapterOpening(id: string): ChapterOpening | null {
 }
 
 /** 書本首頁／目錄用的章節分組 */
-export type BookGuideSectionId = "ch1" | "ch2" | "ch3" | "ch4" | "ch5" | "ch6" | "ch7" | "ch8";
+export type BookGuideSectionId = "ch1" | "ch2" | "ch3" | "ch4" | "ch5" | "ch6" | "ch7" | "ch8" | "ch9";
 
 export interface BookGuideChapterLink {
   id: string;
@@ -1544,6 +1686,17 @@ const BOOK_GUIDE_ALIASES: Record<string, string[]> = {
   "0808": ["第三條路", "替代"],
   "0809": ["專業確認"],
   "0810": ["決策備忘錄", "備忘錄"],
+  "0900": ["全人健康", "第九章", "健康對話"],
+  "0901": ["判決句", "可觀察問題"],
+  "0902": ["七日", "線索", "不急著歸因"],
+  "0903": ["時間軸"],
+  "0904": ["交叉觀察", "重複", "例外"],
+  "0905": ["四種訊息", "事實感受猜測"],
+  "0906": ["來源筆記", "跨期", "Notebook"],
+  "0907": ["微調", "可承受"],
+  "0908": ["非因果", "趨勢摘要"],
+  "0909": ["好問題", "健康對話"],
+  "0910": ["白皮書", "全人健康戰略"],
 };
 
 function bookGuideSectionForId(id: string): BookGuideSectionId | null {
@@ -1555,6 +1708,7 @@ function bookGuideSectionForId(id: string): BookGuideSectionId | null {
   if (id.startsWith("06")) return "ch6";
   if (id.startsWith("07")) return "ch7";
   if (id.startsWith("08")) return "ch8";
+  if (id.startsWith("09")) return "ch9";
   return null;
 }
 
@@ -1574,6 +1728,7 @@ export function getBookGuideSections(): BookGuideSection[] {
     ch6: [],
     ch7: [],
     ch8: [],
+    ch9: [],
   };
 
   for (const ch of listChapterOpenings()) {
@@ -1647,6 +1802,13 @@ export function getBookGuideSections(): BookGuideSection[] {
       intro: "資訊可由 AI 整理；生活的答案，不能外包。不推薦商品、不預測報酬。",
       accent: "#8B6F47",
       chapters: buckets.ch8,
+    },
+    {
+      id: "ch9",
+      title: "第九章｜全人健康",
+      intro: "資料是線索，不是判決；先理解一段生活，再準備一場健康對話。不診斷、不建議改藥。",
+      accent: "#5B9A8B",
+      chapters: buckets.ch9,
     },
   ];
   return sections.filter((s) => s.chapters.length > 0);
@@ -1867,6 +2029,90 @@ export interface ChapterDecisionMemoDraft {
   reflectNote: string;
 }
 
+export interface ChapterHealthStartDraft {
+  signal: string;
+  lifeArea: string;
+  wantClear: string;
+  reflectNote: string;
+}
+
+export interface ChapterJudgmentRewriteDraft {
+  feel: string;
+  knownUnknown: string;
+  observeQ: string;
+  reflectNote: string;
+}
+
+export interface ChapterSevenDayCluesDraft {
+  weekNote: string;
+  exceptionNote: string;
+  unknownNote: string;
+  pendingQs: string;
+  reflectNote: string;
+}
+
+export interface ChapterTimelineNodesDraft {
+  nodesNote: string;
+  blankNote: string;
+  openQ: string;
+  reflectNote: string;
+}
+
+export interface ChapterCrossObserveDraft {
+  fourClues: string;
+  syncNote: string;
+  exceptionNote: string;
+  gapNote: string;
+  cannotProve: string;
+  reflectNote: string;
+}
+
+export interface ChapterFourSignalsDraft {
+  fact: string;
+  feeling: string;
+  guess: string;
+  pending: string;
+  reflectNote: string;
+}
+
+export interface ChapterSourceReviewDraft {
+  sources: string;
+  compareNote: string;
+  checkNote: string;
+  reflectNote: string;
+}
+
+export interface ChapterGentleTweakDraft {
+  value: string;
+  burdenStop: string;
+  thirdPath: string;
+  choiceReview: string;
+  reflectNote: string;
+}
+
+export interface ChapterNoncausalSummaryDraft {
+  syncNote: string;
+  exceptionNote: string;
+  limitNote: string;
+  summaryText: string;
+  reflectNote: string;
+}
+
+export interface ChapterHealthQuestionsDraft {
+  opening: string;
+  mustAsk: string;
+  laterAsk: string;
+  shareScope: string;
+  reflectNote: string;
+}
+
+export interface ChapterHealthWhitepaperDraft {
+  lifeQ: string;
+  cluesAntiEx: string;
+  safety: string;
+  actionReview: string;
+  reflectNote: string;
+}
 
 export interface ChapterElevatorWishDraft {
   want: string;
@@ -2142,6 +2388,21 @@ export function buildSixHatsPrompt(): string {
   return "請主持一次可暫停的一人董事會。先確認我的問題與三項生活底線，再依序只問一題：白帽（事實與未知）、紅帽（期待與擔心）、黃帽（可能價值）、黑帽（風險與底線）、綠帽（替代方案）、藍帽（下一步與重看時間）。完成後只整理摘要，不投票、不打分，也不替我決定。請勿要求帳號、證件或不必要的完整資產資料。";
 }
 
+/** 0901：判決句改寫 */
+export function buildJudgmentRewritePrompt(): string {
+  return "請一次只問一題，幫我把判決句改成可觀察問題。請依序問：看到這個數字，我真實的感受是什麼？目前確定知道什麼、仍不知道什麼？最後請用我的語言整理成一個有時間範圍、可以繼續觀察的問題。請不要診斷，也不要建議改藥。";
+}
+
+/** 0907：可承受微調 */
+export function buildGentleTweakPrompt(): string {
+  return "請依黃、黑、綠、藍帽順序，一次只問一題，幫我設計一個可承受的生活微調。請確認它是非治療、負擔低、可停止的；若不適合就改問「是否先詢問專業」。請不要診斷、不要建議改藥，也不替我決定。";
+}
+
+/** 0909：健康對話問題 */
+export function buildHealthQuestionsPrompt(): string {
+  return "請幫我把觀察整理成三十秒開場，再提出三至五個可帶進健康對話的問題。請標出必問／有時間再問／可帶回觀察，並包含一個資訊缺口與一個求助或重看時機問題。請不要診斷，也不要把猜測寫成結論。";
+}
+
 /** 0206：餐點觀察提問句 */
 export function buildFoodObservePrompt(): string {
   return "請整理這道餐點可能的主要食材、烹調特色，以及一項溫和的飲食觀察。請用簡單中文，這不是醫療或營養診斷。";
@@ -2352,6 +2613,18 @@ export function getChapterDeepLinkHint(from: string | null | undefined): Chapter
     "0805": {
       label: "一人董事會",
       tips: ["六帽一次一題", "不投票、不打分", "勿輸入帳號證件或不必要資產資料"],
+    },
+    "0901": {
+      label: "判決句改寫",
+      tips: ["一次只問一題", "分開感受／已知／未知", "不診斷、不建議改藥"],
+    },
+    "0907": {
+      label: "可承受微調",
+      tips: ["黃黑綠藍一次一題", "非治療、可停止", "不診斷、不替您決定"],
+    },
+    "0909": {
+      label: "健康對話問題",
+      tips: ["三十秒開場", "三至五題即可", "不把猜測寫成診斷"],
     },
   };
   const hit = known[chapterId] ?? {
