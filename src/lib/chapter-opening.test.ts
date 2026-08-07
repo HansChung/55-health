@@ -133,6 +133,52 @@ describe("chapter-opening", () => {
     expect(memo?.atAGlance).toContain("不構成投資");
   });
 
+  it("getChapterOpening 0900-0910 chapter 9", () => {
+    const hub = getChapterOpening("0900");
+    expect(hub?.layout).toBe("health-start");
+    expect(hub?.title).toContain("全人健康");
+    expect(hub?.entries).toHaveLength(4);
+    expect(hub?.capabilityNote).toContain("不診斷");
+
+    expect(getChapterOpening("0901")?.layout).toBe("judgment-rewrite");
+    expect(getChapterOpening("0901")?.samplePrompt).toContain("不要診斷");
+    expect(getChapterOpening("0902")?.layout).toBe("seven-day-clues");
+    expect(getChapterOpening("0903")?.layout).toBe("timeline-nodes");
+    expect(getChapterOpening("0904")?.layout).toBe("cross-observe");
+    expect(getChapterOpening("0905")?.layout).toBe("four-signals");
+    expect(getChapterOpening("0906")?.layout).toBe("source-review");
+    expect(getChapterOpening("0907")?.layout).toBe("gentle-tweak");
+    expect(getChapterOpening("0908")?.layout).toBe("noncausal-summary");
+    expect(getChapterOpening("0909")?.layout).toBe("health-questions");
+    const paper = getChapterOpening("0910");
+    expect(paper?.layout).toBe("health-whitepaper");
+    expect(paper?.appDeepLink?.href).toBe("/smart/radar");
+    expect(paper?.atAGlance).toContain("不構成診斷");
+  });
+
+  it("getChapterOpening 1000-1010 chapter 10", () => {
+    const hub = getChapterOpening("1000");
+    expect(hub?.layout).toBe("travel-start");
+    expect(hub?.title).toContain("旅遊研學");
+    expect(hub?.entries).toHaveLength(4);
+    expect(hub?.capabilityNote).toContain("不替您決定去哪裡");
+
+    expect(getChapterOpening("1001")?.layout).toBe("travel-meaning");
+    expect(getChapterOpening("1001")?.samplePrompt).toContain("不要替我決定去哪裡");
+    expect(getChapterOpening("1002")?.layout).toBe("ground-baseline");
+    expect(getChapterOpening("1003")?.layout).toBe("source-map");
+    expect(getChapterOpening("1004")?.layout).toBe("feeling-table");
+    expect(getChapterOpening("1005")?.layout).toBe("value-cost");
+    expect(getChapterOpening("1006")?.layout).toBe("seven-rhythm");
+    expect(getChapterOpening("1007")?.layout).toBe("travel-plan-b");
+    expect(getChapterOpening("1008")?.layout).toBe("place-reading");
+    expect(getChapterOpening("1009")?.layout).toBe("coauthor-pen");
+    const portfolio = getChapterOpening("1010");
+    expect(portfolio?.layout).toBe("travel-portfolio");
+    expect(portfolio?.appDeepLink?.href).toBe("/smart/radar");
+    expect(portfolio?.atAGlance).toContain("官方來源");
+  });
+
   it("getChapterOpening p4-open and 1100-1110 chapter 11", () => {
     const part = getChapterOpening("p4-open");
     expect(part?.layout).toBe("part4-start");
@@ -261,7 +307,7 @@ describe("chapter-opening", () => {
     expect(getChapterDeepLinkHint("chapter9999")?.tips[0]).toContain("一拍");
   });
 
-  it("getBookGuideSections covers ch1–ch8, ch11 and ch12", () => {
+  it("getBookGuideSections covers all chapters ch1–ch12", () => {
     const sections = getBookGuideSections();
     expect(sections.map((s) => s.id)).toEqual([
       "ch1",
@@ -272,6 +318,8 @@ describe("chapter-opening", () => {
       "ch6",
       "ch7",
       "ch8",
+      "ch9",
+      "ch10",
       "ch11",
       "ch12",
     ]);
@@ -291,12 +339,16 @@ describe("chapter-opening", () => {
     expect(sections[6].title).toBe("第七章｜城市漫遊");
     expect(sections[6].chapters.some((c) => c.id === "0700")).toBe(true);
     expect(sections[7].chapters.some((c) => c.id === "0800")).toBe(true);
-    expect(sections[8].title).toBe("第十一章｜故事傳承");
-    expect(sections[8].chapters.some((c) => c.id === "1100")).toBe(true);
-    expect(sections[8].chapters.some((c) => c.id === "p4-open")).toBe(true);
-    expect(sections[9].title).toBe("第十二章｜世界舞台");
-    expect(sections[9].chapters.some((c) => c.id === "1200")).toBe(true);
-    expect(sections[9].chapters).toHaveLength(11);
+    expect(sections[8].title).toBe("第九章｜全人健康");
+    expect(sections[8].chapters.some((c) => c.id === "0900")).toBe(true);
+    expect(sections[9].title).toBe("第十章｜旅遊研學");
+    expect(sections[9].chapters.some((c) => c.id === "1000")).toBe(true);
+    expect(sections[10].title).toBe("第十一章｜故事傳承");
+    expect(sections[10].chapters.some((c) => c.id === "1100")).toBe(true);
+    expect(sections[10].chapters.some((c) => c.id === "p4-open")).toBe(true);
+    expect(sections[11].title).toBe("第十二章｜世界舞台");
+    expect(sections[11].chapters.some((c) => c.id === "1200")).toBe(true);
+    expect(sections[11].chapters).toHaveLength(11);
   });
 
   it("filterBookGuideSections by QR and keyword", () => {
@@ -320,6 +372,14 @@ describe("chapter-opening", () => {
     expect(byCity.some((s) => s.id === "ch7")).toBe(true);
     expect(byCity.some((s) => s.chapters.some((c) => c.id === "0700"))).toBe(true);
 
+    const byHealth = filterBookGuideSections("全人健康");
+    expect(byHealth.some((s) => s.id === "ch9")).toBe(true);
+    expect(byHealth.some((s) => s.chapters.some((c) => c.id === "0900"))).toBe(true);
+
+    const byTravel = filterBookGuideSections("旅遊研學");
+    expect(byTravel.some((s) => s.id === "ch10")).toBe(true);
+    expect(byTravel.some((s) => s.chapters.some((c) => c.id === "1000"))).toBe(true);
+
     const byStory = filterBookGuideSections("故事傳承");
     expect(byStory.some((s) => s.id === "ch11")).toBe(true);
     expect(byStory.some((s) => s.chapters.some((c) => c.id === "1100"))).toBe(true);
@@ -329,6 +389,6 @@ describe("chapter-opening", () => {
     expect(byStage.some((s) => s.chapters.some((c) => c.id === "1200"))).toBe(true);
 
     expect(filterBookGuideSections("不存在的關鍵字zzz")).toHaveLength(0);
-    expect(filterBookGuideSections("").length).toBe(10);
+    expect(filterBookGuideSections("").length).toBe(12);
   });
 });

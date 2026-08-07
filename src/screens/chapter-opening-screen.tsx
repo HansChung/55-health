@@ -99,6 +99,56 @@ import {
   type ChapterThirdPathDraft,
   type ChapterProConfirmDraft,
   type ChapterDecisionMemoDraft,
+  type HealthStartDemo,
+  type JudgmentRewriteDemo,
+  type SevenDayCluesDemo,
+  type TimelineNodesDemo,
+  type CrossObserveDemo,
+  type FourSignalsDemo,
+  type SourceReviewDemo,
+  type GentleTweakDemo,
+  type NoncausalSummaryDemo,
+  type HealthQuestionsDemo,
+  type HealthWhitepaperDemo,
+  type ChapterHealthStartDraft,
+  type ChapterJudgmentRewriteDraft,
+  type ChapterSevenDayCluesDraft,
+  type ChapterTimelineNodesDraft,
+  type ChapterCrossObserveDraft,
+  type ChapterFourSignalsDraft,
+  type ChapterSourceReviewDraft,
+  type ChapterGentleTweakDraft,
+  type ChapterNoncausalSummaryDraft,
+  type ChapterHealthQuestionsDraft,
+  type ChapterHealthWhitepaperDraft,
+  buildJudgmentRewritePrompt,
+  buildGentleTweakPrompt,
+  buildHealthQuestionsPrompt,
+  type TravelStartDemo,
+  type TravelMeaningDemo,
+  type GroundBaselineDemo,
+  type SourceMapDemo,
+  type FeelingTableDemo,
+  type ValueCostDemo,
+  type SevenRhythmDemo,
+  type TravelPlanBDemo,
+  type PlaceReadingDemo,
+  type CoauthorPenDemo,
+  type TravelPortfolioDemo,
+  type ChapterTravelStartDraft,
+  type ChapterTravelMeaningDraft,
+  type ChapterGroundBaselineDraft,
+  type ChapterSourceMapDraft,
+  type ChapterFeelingTableDraft,
+  type ChapterValueCostDraft,
+  type ChapterSevenRhythmDraft,
+  type ChapterTravelPlanBDraft,
+  type ChapterPlaceReadingDraft,
+  type ChapterCoauthorPenDraft,
+  type ChapterTravelPortfolioDraft,
+  buildTravelMeaningPrompt,
+  buildFeelingTablePrompt,
+  buildCoauthorPenPrompt,
   type ChapterPart4StartDraft,
   type ChapterStoryStartDraft,
   type ChapterThemeBoundaryDraft,
@@ -299,6 +349,81 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const [memoStatus, setMemoStatus] = useState("");
   const [memoReason, setMemoReason] = useState("");
   const [memoPending, setMemoPending] = useState("");
+  const [hsSignal, setHsSignal] = useState("");
+  const [hsLifeArea, setHsLifeArea] = useState("");
+  const [hsWantClear, setHsWantClear] = useState("");
+  const [jrFeel, setJrFeel] = useState("");
+  const [jrKnown, setJrKnown] = useState("");
+  const [jrObserveQ, setJrObserveQ] = useState("");
+  const [sdWeek, setSdWeek] = useState("");
+  const [sdException, setSdException] = useState("");
+  const [sdUnknown, setSdUnknown] = useState("");
+  const [sdPending, setSdPending] = useState("");
+  const [tnNodes, setTnNodes] = useState("");
+  const [tnBlank, setTnBlank] = useState("");
+  const [tnOpenQ, setTnOpenQ] = useState("");
+  const [coFour, setCoFour] = useState("");
+  const [coSync, setCoSync] = useState("");
+  const [coException, setCoException] = useState("");
+  const [coGap, setCoGap] = useState("");
+  const [coCannot, setCoCannot] = useState("");
+  const [fsFact, setFsFact] = useState("");
+  const [fsFeeling, setFsFeeling] = useState("");
+  const [fsGuess, setFsGuess] = useState("");
+  const [fsPending, setFsPending] = useState("");
+  const [srSources, setSrSources] = useState("");
+  const [srCompare, setSrCompare] = useState("");
+  const [srCheck, setSrCheck] = useState("");
+  const [gtValue, setGtValue] = useState("");
+  const [gtBurden, setGtBurden] = useState("");
+  const [gtThird, setGtThird] = useState("");
+  const [gtReview, setGtReview] = useState("");
+  const [ncSync, setNcSync] = useState("");
+  const [ncException, setNcException] = useState("");
+  const [ncLimit, setNcLimit] = useState("");
+  const [ncSummary, setNcSummary] = useState("");
+  const [hqOpening, setHqOpening] = useState("");
+  const [hqMust, setHqMust] = useState("");
+  const [hqLater, setHqLater] = useState("");
+  const [hqShare, setHqShare] = useState("");
+  const [wpLifeQ, setWpLifeQ] = useState("");
+  const [wpClues, setWpClues] = useState("");
+  const [wpSafety, setWpSafety] = useState("");
+  const [wpAction, setWpAction] = useState("");
+  const [trWhy, setTrWhy] = useState("");
+  const [trMust, setTrMust] = useState("");
+  const [trBring, setTrBring] = useState("");
+  const [tmWant, setTmWant] = useState("");
+  const [tmShare, setTmShare] = useState("");
+  const [tmBring, setTmBring] = useState("");
+  const [gbFixed, setGbFixed] = useState("");
+  const [gbFlex, setGbFlex] = useState("");
+  const [gbUnknown, setGbUnknown] = useState("");
+  const [smOfficial, setSmOfficial] = useState("");
+  const [smCulture, setSmCulture] = useState("");
+  const [smExperience, setSmExperience] = useState("");
+  const [ftExpect, setFtExpect] = useState("");
+  const [ftWorry, setFtWorry] = useState("");
+  const [ftKeep, setFtKeep] = useState("");
+  const [ftBlank, setFtBlank] = useState("");
+  const [vcValue, setVcValue] = useState("");
+  const [vcCost, setVcCost] = useState("");
+  const [vcContinue, setVcContinue] = useState("");
+  const [srRhythm, setSrRhythm] = useState("");
+  const [srPeak, setSrPeak] = useState("");
+  const [srCancel, setSrCancel] = useState("");
+  const [pbTrigger, setPbTrigger] = useState("");
+  const [pbKeep, setPbKeep] = useState("");
+  const [pbRecheck, setPbRecheck] = useState("");
+  const [prQ, setPrQ] = useState("");
+  const [prStations, setPrStations] = useState("");
+  const [prLook, setPrLook] = useState("");
+  const [caExpect, setCaExpect] = useState("");
+  const [caPrivate, setCaPrivate] = useState("");
+  const [caStatus, setCaStatus] = useState("");
+  const [tpMeaning, setTpMeaning] = useState("");
+  const [tpSource, setTpSource] = useState("");
+  const [tpPlanB, setTpPlanB] = useState("");
   const [p4Want, setP4Want] = useState("");
   const [p4Meaning, setP4Meaning] = useState("");
   const [p4Who, setP4Who] = useState("");
@@ -720,6 +845,235 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           if (d.status) setMemoStatus(d.status);
           if (d.reasonBaseline) setMemoReason(d.reasonBaseline);
           if (d.pendingReview) setMemoPending(d.pendingReview);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "health-start") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterHealthStartDraft;
+          if (d.signal) setHsSignal(d.signal);
+          if (d.lifeArea) setHsLifeArea(d.lifeArea);
+          if (d.wantClear) setHsWantClear(d.wantClear);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "judgment-rewrite") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterJudgmentRewriteDraft;
+          if (d.feel) setJrFeel(d.feel);
+          if (d.knownUnknown) setJrKnown(d.knownUnknown);
+          if (d.observeQ) setJrObserveQ(d.observeQ);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "seven-day-clues") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterSevenDayCluesDraft;
+          if (d.weekNote) setSdWeek(d.weekNote);
+          if (d.exceptionNote) setSdException(d.exceptionNote);
+          if (d.unknownNote) setSdUnknown(d.unknownNote);
+          if (d.pendingQs) setSdPending(d.pendingQs);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "timeline-nodes") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterTimelineNodesDraft;
+          if (d.nodesNote) setTnNodes(d.nodesNote);
+          if (d.blankNote) setTnBlank(d.blankNote);
+          if (d.openQ) setTnOpenQ(d.openQ);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "cross-observe") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterCrossObserveDraft;
+          if (d.fourClues) setCoFour(d.fourClues);
+          if (d.syncNote) setCoSync(d.syncNote);
+          if (d.exceptionNote) setCoException(d.exceptionNote);
+          if (d.gapNote) setCoGap(d.gapNote);
+          if (d.cannotProve) setCoCannot(d.cannotProve);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "four-signals") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterFourSignalsDraft;
+          if (d.fact) setFsFact(d.fact);
+          if (d.feeling) setFsFeeling(d.feeling);
+          if (d.guess) setFsGuess(d.guess);
+          if (d.pending) setFsPending(d.pending);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "source-review") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterSourceReviewDraft;
+          if (d.sources) setSrSources(d.sources);
+          if (d.compareNote) setSrCompare(d.compareNote);
+          if (d.checkNote) setSrCheck(d.checkNote);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "gentle-tweak") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterGentleTweakDraft;
+          if (d.value) setGtValue(d.value);
+          if (d.burdenStop) setGtBurden(d.burdenStop);
+          if (d.thirdPath) setGtThird(d.thirdPath);
+          if (d.choiceReview) setGtReview(d.choiceReview);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "noncausal-summary") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterNoncausalSummaryDraft;
+          if (d.syncNote) setNcSync(d.syncNote);
+          if (d.exceptionNote) setNcException(d.exceptionNote);
+          if (d.limitNote) setNcLimit(d.limitNote);
+          if (d.summaryText) setNcSummary(d.summaryText);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "health-questions") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterHealthQuestionsDraft;
+          if (d.opening) setHqOpening(d.opening);
+          if (d.mustAsk) setHqMust(d.mustAsk);
+          if (d.laterAsk) setHqLater(d.laterAsk);
+          if (d.shareScope) setHqShare(d.shareScope);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "health-whitepaper") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterHealthWhitepaperDraft;
+          if (d.lifeQ) setWpLifeQ(d.lifeQ);
+          if (d.cluesAntiEx) setWpClues(d.cluesAntiEx);
+          if (d.safety) setWpSafety(d.safety);
+          if (d.actionReview) setWpAction(d.actionReview);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "travel-start") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterTravelStartDraft;
+          if (d.whyGo) setTrWhy(d.whyGo);
+          if (d.mustKeep) setTrMust(d.mustKeep);
+          if (d.bringBack) setTrBring(d.bringBack);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "travel-meaning") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterTravelMeaningDraft;
+          if (d.wantDone) setTmWant(d.wantDone);
+          if (d.shareLive) setTmShare(d.shareLive);
+          if (d.bringBack) setTmBring(d.bringBack);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "ground-baseline") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterGroundBaselineDraft;
+          if (d.fixed) setGbFixed(d.fixed);
+          if (d.flexible) setGbFlex(d.flexible);
+          if (d.unknown) setGbUnknown(d.unknown);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "source-map") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterSourceMapDraft;
+          if (d.official) setSmOfficial(d.official);
+          if (d.culture) setSmCulture(d.culture);
+          if (d.experience) setSmExperience(d.experience);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "feeling-table") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterFeelingTableDraft;
+          if (d.expect) setFtExpect(d.expect);
+          if (d.worry) setFtWorry(d.worry);
+          if (d.keepValue) setFtKeep(d.keepValue);
+          if (d.blankBound) setFtBlank(d.blankBound);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "value-cost") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterValueCostDraft;
+          if (d.value) setVcValue(d.value);
+          if (d.costStop) setVcCost(d.costStop);
+          if (d.continueHow) setVcContinue(d.continueHow);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "seven-rhythm") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterSevenRhythmDraft;
+          if (d.rhythmNote) setSrRhythm(d.rhythmNote);
+          if (d.peakRest) setSrPeak(d.peakRest);
+          if (d.cancelable) setSrCancel(d.cancelable);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "travel-plan-b") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterTravelPlanBDraft;
+          if (d.trigger) setPbTrigger(d.trigger);
+          if (d.keepValue) setPbKeep(d.keepValue);
+          if (d.recheck) setPbRecheck(d.recheck);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "place-reading") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterPlaceReadingDraft;
+          if (d.placeQ) setPrQ(d.placeQ);
+          if (d.stations) setPrStations(d.stations);
+          if (d.lookBack) setPrLook(d.lookBack);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "coauthor-pen") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterCoauthorPenDraft;
+          if (d.expectEdit) setCaExpect(d.expectEdit);
+          if (d.privateBound) setCaPrivate(d.privateBound);
+          if (d.statusNote) setCaStatus(d.statusNote);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "travel-portfolio") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterTravelPortfolioDraft;
+          if (d.meaningBase) setTpMeaning(d.meaningBase);
+          if (d.sourceRhythm) setTpSource(d.sourceRhythm);
+          if (d.planBShare) setTpPlanB(d.planBShare);
           if (d.reflectNote) setReflectNote(d.reflectNote);
         }
       }
@@ -1328,6 +1682,28 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         ChapterThirdPathDraft &
         ChapterProConfirmDraft &
         ChapterDecisionMemoDraft &
+        ChapterHealthStartDraft &
+        ChapterJudgmentRewriteDraft &
+        ChapterSevenDayCluesDraft &
+        ChapterTimelineNodesDraft &
+        ChapterCrossObserveDraft &
+        ChapterFourSignalsDraft &
+        ChapterSourceReviewDraft &
+        ChapterGentleTweakDraft &
+        ChapterNoncausalSummaryDraft &
+        ChapterHealthQuestionsDraft &
+        ChapterHealthWhitepaperDraft &
+        ChapterTravelStartDraft &
+        ChapterTravelMeaningDraft &
+        ChapterGroundBaselineDraft &
+        ChapterSourceMapDraft &
+        ChapterFeelingTableDraft &
+        ChapterValueCostDraft &
+        ChapterSevenRhythmDraft &
+        ChapterTravelPlanBDraft &
+        ChapterPlaceReadingDraft &
+        ChapterCoauthorPenDraft &
+        ChapterTravelPortfolioDraft &
         ChapterPart4StartDraft &
         ChapterStoryStartDraft &
         ChapterThemeBoundaryDraft &
@@ -1608,6 +1984,213 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         status: patch.status ?? memoStatus,
         reasonBaseline: patch.reasonBaseline ?? memoReason,
         pendingReview: patch.pendingReview ?? memoPending,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "health-start") {
+      const next: ChapterHealthStartDraft = {
+        signal: patch.signal ?? hsSignal,
+        lifeArea: patch.lifeArea ?? hsLifeArea,
+        wantClear: patch.wantClear ?? hsWantClear,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "judgment-rewrite") {
+      const next: ChapterJudgmentRewriteDraft = {
+        feel: patch.feel ?? jrFeel,
+        knownUnknown: patch.knownUnknown ?? jrKnown,
+        observeQ: patch.observeQ ?? jrObserveQ,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "seven-day-clues") {
+      const next: ChapterSevenDayCluesDraft = {
+        weekNote: patch.weekNote ?? sdWeek,
+        exceptionNote: patch.exceptionNote ?? sdException,
+        unknownNote: patch.unknownNote ?? sdUnknown,
+        pendingQs: patch.pendingQs ?? sdPending,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "timeline-nodes") {
+      const next: ChapterTimelineNodesDraft = {
+        nodesNote: patch.nodesNote ?? tnNodes,
+        blankNote: patch.blankNote ?? tnBlank,
+        openQ: patch.openQ ?? tnOpenQ,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "cross-observe") {
+      const next: ChapterCrossObserveDraft = {
+        fourClues: patch.fourClues ?? coFour,
+        syncNote: patch.syncNote ?? coSync,
+        exceptionNote: patch.exceptionNote ?? coException,
+        gapNote: patch.gapNote ?? coGap,
+        cannotProve: patch.cannotProve ?? coCannot,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "four-signals") {
+      const next: ChapterFourSignalsDraft = {
+        fact: patch.fact ?? fsFact,
+        feeling: patch.feeling ?? fsFeeling,
+        guess: patch.guess ?? fsGuess,
+        pending: patch.pending ?? fsPending,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "source-review") {
+      const next: ChapterSourceReviewDraft = {
+        sources: patch.sources ?? srSources,
+        compareNote: patch.compareNote ?? srCompare,
+        checkNote: patch.checkNote ?? srCheck,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "gentle-tweak") {
+      const next: ChapterGentleTweakDraft = {
+        value: patch.value ?? gtValue,
+        burdenStop: patch.burdenStop ?? gtBurden,
+        thirdPath: patch.thirdPath ?? gtThird,
+        choiceReview: patch.choiceReview ?? gtReview,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "noncausal-summary") {
+      const next: ChapterNoncausalSummaryDraft = {
+        syncNote: patch.syncNote ?? ncSync,
+        exceptionNote: patch.exceptionNote ?? ncException,
+        limitNote: patch.limitNote ?? ncLimit,
+        summaryText: patch.summaryText ?? ncSummary,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "health-questions") {
+      const next: ChapterHealthQuestionsDraft = {
+        opening: patch.opening ?? hqOpening,
+        mustAsk: patch.mustAsk ?? hqMust,
+        laterAsk: patch.laterAsk ?? hqLater,
+        shareScope: patch.shareScope ?? hqShare,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "health-whitepaper") {
+      const next: ChapterHealthWhitepaperDraft = {
+        lifeQ: patch.lifeQ ?? wpLifeQ,
+        cluesAntiEx: patch.cluesAntiEx ?? wpClues,
+        safety: patch.safety ?? wpSafety,
+        actionReview: patch.actionReview ?? wpAction,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "travel-start") {
+      const next: ChapterTravelStartDraft = {
+        whyGo: patch.whyGo ?? trWhy,
+        mustKeep: patch.mustKeep ?? trMust,
+        bringBack: patch.bringBack ?? trBring,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "travel-meaning") {
+      const next: ChapterTravelMeaningDraft = {
+        wantDone: patch.wantDone ?? tmWant,
+        shareLive: patch.shareLive ?? tmShare,
+        bringBack: patch.bringBack ?? tmBring,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "ground-baseline") {
+      const next: ChapterGroundBaselineDraft = {
+        fixed: patch.fixed ?? gbFixed,
+        flexible: patch.flexible ?? gbFlex,
+        unknown: patch.unknown ?? gbUnknown,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "source-map") {
+      const next: ChapterSourceMapDraft = {
+        official: patch.official ?? smOfficial,
+        culture: patch.culture ?? smCulture,
+        experience: patch.experience ?? smExperience,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "feeling-table") {
+      const next: ChapterFeelingTableDraft = {
+        expect: patch.expect ?? ftExpect,
+        worry: patch.worry ?? ftWorry,
+        keepValue: patch.keepValue ?? ftKeep,
+        blankBound: patch.blankBound ?? ftBlank,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "value-cost") {
+      const next: ChapterValueCostDraft = {
+        value: patch.value ?? vcValue,
+        costStop: patch.costStop ?? vcCost,
+        continueHow: patch.continueHow ?? vcContinue,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "seven-rhythm") {
+      const next: ChapterSevenRhythmDraft = {
+        rhythmNote: patch.rhythmNote ?? srRhythm,
+        peakRest: patch.peakRest ?? srPeak,
+        cancelable: patch.cancelable ?? srCancel,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "travel-plan-b") {
+      const next: ChapterTravelPlanBDraft = {
+        trigger: patch.trigger ?? pbTrigger,
+        keepValue: patch.keepValue ?? pbKeep,
+        recheck: patch.recheck ?? pbRecheck,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "place-reading") {
+      const next: ChapterPlaceReadingDraft = {
+        placeQ: patch.placeQ ?? prQ,
+        stations: patch.stations ?? prStations,
+        lookBack: patch.lookBack ?? prLook,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "coauthor-pen") {
+      const next: ChapterCoauthorPenDraft = {
+        expectEdit: patch.expectEdit ?? caExpect,
+        privateBound: patch.privateBound ?? caPrivate,
+        statusNote: patch.statusNote ?? caStatus,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "travel-portfolio") {
+      const next: ChapterTravelPortfolioDraft = {
+        meaningBase: patch.meaningBase ?? tpMeaning,
+        sourceRhythm: patch.sourceRhythm ?? tpSource,
+        planBShare: patch.planBShare ?? tpPlanB,
         reflectNote: patch.reflectNote ?? reflectNote,
       };
       localStorage.setItem(draftKey, JSON.stringify(next));
@@ -2265,6 +2848,72 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
       case "decision-memo":
         action = [memoStatus, memoReason, memoPending].filter(Boolean).join("｜");
         break;
+      case "health-start":
+        action = [hsSignal, hsLifeArea, hsWantClear].filter(Boolean).join("｜");
+        break;
+      case "judgment-rewrite":
+        action = [jrFeel, jrKnown, jrObserveQ].filter(Boolean).join("｜");
+        break;
+      case "seven-day-clues":
+        action = [sdWeek, sdException, sdUnknown, sdPending].filter(Boolean).join("｜");
+        break;
+      case "timeline-nodes":
+        action = [tnNodes, tnBlank, tnOpenQ].filter(Boolean).join("｜");
+        break;
+      case "cross-observe":
+        action = [coFour, coSync, coException, coGap, coCannot].filter(Boolean).join("｜");
+        break;
+      case "four-signals":
+        action = [fsFact, fsFeeling, fsGuess, fsPending].filter(Boolean).join("｜");
+        break;
+      case "source-review":
+        action = [srSources, srCompare, srCheck].filter(Boolean).join("｜");
+        break;
+      case "gentle-tweak":
+        action = [gtValue, gtBurden, gtThird, gtReview].filter(Boolean).join("｜");
+        break;
+      case "noncausal-summary":
+        action = [ncSync, ncException, ncLimit, ncSummary].filter(Boolean).join("｜");
+        break;
+      case "health-questions":
+        action = [hqOpening, hqMust, hqLater, hqShare].filter(Boolean).join("｜");
+        break;
+      case "health-whitepaper":
+        action = [wpLifeQ, wpClues, wpSafety, wpAction].filter(Boolean).join("｜");
+        break;
+      case "travel-start":
+        action = [trWhy, trMust, trBring].filter(Boolean).join("｜");
+        break;
+      case "travel-meaning":
+        action = [tmWant, tmShare, tmBring].filter(Boolean).join("｜");
+        break;
+      case "ground-baseline":
+        action = [gbFixed, gbFlex, gbUnknown].filter(Boolean).join("｜");
+        break;
+      case "source-map":
+        action = [smOfficial, smCulture, smExperience].filter(Boolean).join("｜");
+        break;
+      case "feeling-table":
+        action = [ftExpect, ftWorry, ftKeep, ftBlank].filter(Boolean).join("｜");
+        break;
+      case "value-cost":
+        action = [vcValue, vcCost, vcContinue].filter(Boolean).join("｜");
+        break;
+      case "seven-rhythm":
+        action = [srRhythm, srPeak, srCancel].filter(Boolean).join("｜");
+        break;
+      case "travel-plan-b":
+        action = [pbTrigger, pbKeep, pbRecheck].filter(Boolean).join("｜");
+        break;
+      case "place-reading":
+        action = [prQ, prStations, prLook].filter(Boolean).join("｜");
+        break;
+      case "coauthor-pen":
+        action = [caExpect, caPrivate, caStatus].filter(Boolean).join("｜");
+        break;
+      case "travel-portfolio":
+        action = [tpMeaning, tpSource, tpPlanB].filter(Boolean).join("｜");
+        break;
       case "part4-start":
         action = [p4Want, p4Meaning, p4Who, p4Distance].filter(Boolean).join("｜");
         break;
@@ -2766,6 +3415,39 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
     }
   };
 
+
+  const copyJudgmentRewriteAsk = async () => {
+    const text = chapter.samplePrompt?.trim() || buildJudgmentRewritePrompt();
+    try { await navigator.clipboard.writeText(text); toast.success("已複製判決句改寫提問句。"); }
+    catch { toast.info("請長按文字框手動複製。"); }
+  };
+  const copyGentleTweakAsk = async () => {
+    const text = chapter.samplePrompt?.trim() || buildGentleTweakPrompt();
+    try { await navigator.clipboard.writeText(text); toast.success("已複製微調提問句。"); }
+    catch { toast.info("請長按文字框手動複製。"); }
+  };
+  const copyHealthQuestionsAsk = async () => {
+    const text = chapter.samplePrompt?.trim() || buildHealthQuestionsPrompt();
+    try { await navigator.clipboard.writeText(text); toast.success("已複製健康對話提問句。"); }
+    catch { toast.info("請長按文字框手動複製。"); }
+  };
+  const copyTravelMeaningAsk = async () => {
+    const text = chapter.samplePrompt?.trim() || buildTravelMeaningPrompt();
+    try { await navigator.clipboard.writeText(text); toast.success("已複製意義種子提問句。"); }
+    catch { toast.info("請長按文字框手動複製。"); }
+  };
+  const copyFeelingTableAsk = async () => {
+    const text = chapter.samplePrompt?.trim() || buildFeelingTablePrompt();
+    try { await navigator.clipboard.writeText(text); toast.success("已複製感受與價值提問句。"); }
+    catch { toast.info("請長按文字框手動複製。"); }
+  };
+  const copyCoauthorPenAsk = async () => {
+    const text = chapter.samplePrompt?.trim() || buildCoauthorPenPrompt();
+    try { await navigator.clipboard.writeText(text); toast.success("已複製同行共編提問句。"); }
+    catch { toast.info("請長按文字框手動複製。"); }
+  };
+
+
   const applyDecisionStartDemo = (demo: DecisionStartDemo) => {
     setDsChoice(demo.choice); setDsLifeImpact(demo.lifeImpact); setDsWantClear(demo.wantClear); setReflectNote(demo.reflectNote);
     saveDraft({ choice: demo.choice, lifeImpact: demo.lifeImpact, wantClear: demo.wantClear, reflectNote: demo.reflectNote });
@@ -2827,6 +3509,138 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
     const textAsk = chapter.samplePrompt?.trim() || buildStoryCorePrompt();
     try { await navigator.clipboard.writeText(textAsk); toast.success("已複製故事核心提問句。"); }
     catch { toast.info("請長按文字框手動複製。"); }
+  };
+
+  const applyHealthStartDemo = (demo: HealthStartDemo) => {
+    setHsSignal(demo.signal); setHsLifeArea(demo.lifeArea); setHsWantClear(demo.wantClear); setReflectNote(demo.reflectNote);
+    saveDraft({ signal: demo.signal, lifeArea: demo.lifeArea, wantClear: demo.wantClear, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
+  const applyJudgmentRewriteDemo = (demo: JudgmentRewriteDemo) => {
+    setJrFeel(demo.feel); setJrKnown(demo.knownUnknown); setJrObserveQ(demo.observeQ); setReflectNote(demo.reflectNote);
+    saveDraft({ feel: demo.feel, knownUnknown: demo.knownUnknown, observeQ: demo.observeQ, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
+  const applySevenDayCluesDemo = (demo: SevenDayCluesDemo) => {
+    setSdWeek(demo.weekNote); setSdException(demo.exceptionNote); setSdUnknown(demo.unknownNote); setSdPending(demo.pendingQs); setReflectNote(demo.reflectNote);
+    saveDraft({ weekNote: demo.weekNote, exceptionNote: demo.exceptionNote, unknownNote: demo.unknownNote, pendingQs: demo.pendingQs, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
+  const applyTimelineNodesDemo = (demo: TimelineNodesDemo) => {
+    setTnNodes(demo.nodesNote); setTnBlank(demo.blankNote); setTnOpenQ(demo.openQ); setReflectNote(demo.reflectNote);
+    saveDraft({ nodesNote: demo.nodesNote, blankNote: demo.blankNote, openQ: demo.openQ, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
+  const applyCrossObserveDemo = (demo: CrossObserveDemo) => {
+    setCoFour(demo.fourClues); setCoSync(demo.syncNote); setCoException(demo.exceptionNote); setCoGap(demo.gapNote); setCoCannot(demo.cannotProve); setReflectNote(demo.reflectNote);
+    saveDraft({ fourClues: demo.fourClues, syncNote: demo.syncNote, exceptionNote: demo.exceptionNote, gapNote: demo.gapNote, cannotProve: demo.cannotProve, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
+  const applyFourSignalsDemo = (demo: FourSignalsDemo) => {
+    setFsFact(demo.fact); setFsFeeling(demo.feeling); setFsGuess(demo.guess); setFsPending(demo.pending); setReflectNote(demo.reflectNote);
+    saveDraft({ fact: demo.fact, feeling: demo.feeling, guess: demo.guess, pending: demo.pending, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
+  const applySourceReviewDemo = (demo: SourceReviewDemo) => {
+    setSrSources(demo.sources); setSrCompare(demo.compareNote); setSrCheck(demo.checkNote); setReflectNote(demo.reflectNote);
+    saveDraft({ sources: demo.sources, compareNote: demo.compareNote, checkNote: demo.checkNote, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
+  const applyGentleTweakDemo = (demo: GentleTweakDemo) => {
+    setGtValue(demo.value); setGtBurden(demo.burdenStop); setGtThird(demo.thirdPath); setGtReview(demo.choiceReview); setReflectNote(demo.reflectNote);
+    saveDraft({ value: demo.value, burdenStop: demo.burdenStop, thirdPath: demo.thirdPath, choiceReview: demo.choiceReview, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
+  const applyNoncausalSummaryDemo = (demo: NoncausalSummaryDemo) => {
+    setNcSync(demo.syncNote); setNcException(demo.exceptionNote); setNcLimit(demo.limitNote); setNcSummary(demo.summaryText); setReflectNote(demo.reflectNote);
+    saveDraft({ syncNote: demo.syncNote, exceptionNote: demo.exceptionNote, limitNote: demo.limitNote, summaryText: demo.summaryText, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
+  const applyHealthQuestionsDemo = (demo: HealthQuestionsDemo) => {
+    setHqOpening(demo.opening); setHqMust(demo.mustAsk); setHqLater(demo.laterAsk); setHqShare(demo.shareScope); setReflectNote(demo.reflectNote);
+    saveDraft({ opening: demo.opening, mustAsk: demo.mustAsk, laterAsk: demo.laterAsk, shareScope: demo.shareScope, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
+  const applyHealthWhitepaperDemo = (demo: HealthWhitepaperDemo) => {
+    setWpLifeQ(demo.lifeQ); setWpClues(demo.cluesAntiEx); setWpSafety(demo.safety); setWpAction(demo.actionReview); setReflectNote(demo.reflectNote);
+    saveDraft({ lifeQ: demo.lifeQ, cluesAntiEx: demo.cluesAntiEx, safety: demo.safety, actionReview: demo.actionReview, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
+  const applyTravelStartDemo = (demo: TravelStartDemo) => {
+    setTrWhy(demo.whyGo); setTrMust(demo.mustKeep); setTrBring(demo.bringBack); setReflectNote(demo.reflectNote);
+    saveDraft({ whyGo: demo.whyGo, mustKeep: demo.mustKeep, bringBack: demo.bringBack, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
+  const applyTravelMeaningDemo = (demo: TravelMeaningDemo) => {
+    setTmWant(demo.wantDone); setTmShare(demo.shareLive); setTmBring(demo.bringBack); setReflectNote(demo.reflectNote);
+    saveDraft({ wantDone: demo.wantDone, shareLive: demo.shareLive, bringBack: demo.bringBack, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
+  const applyGroundBaselineDemo = (demo: GroundBaselineDemo) => {
+    setGbFixed(demo.fixed); setGbFlex(demo.flexible); setGbUnknown(demo.unknown); setReflectNote(demo.reflectNote);
+    saveDraft({ fixed: demo.fixed, flexible: demo.flexible, unknown: demo.unknown, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
+  const applySourceMapDemo = (demo: SourceMapDemo) => {
+    setSmOfficial(demo.official); setSmCulture(demo.culture); setSmExperience(demo.experience); setReflectNote(demo.reflectNote);
+    saveDraft({ official: demo.official, culture: demo.culture, experience: demo.experience, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
+  const applyFeelingTableDemo = (demo: FeelingTableDemo) => {
+    setFtExpect(demo.expect); setFtWorry(demo.worry); setFtKeep(demo.keepValue); setFtBlank(demo.blankBound); setReflectNote(demo.reflectNote);
+    saveDraft({ expect: demo.expect, worry: demo.worry, keepValue: demo.keepValue, blankBound: demo.blankBound, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
+  const applyValueCostDemo = (demo: ValueCostDemo) => {
+    setVcValue(demo.value); setVcCost(demo.costStop); setVcContinue(demo.continueHow); setReflectNote(demo.reflectNote);
+    saveDraft({ value: demo.value, costStop: demo.costStop, continueHow: demo.continueHow, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
+  const applySevenRhythmDemo = (demo: SevenRhythmDemo) => {
+    setSrRhythm(demo.rhythmNote); setSrPeak(demo.peakRest); setSrCancel(demo.cancelable); setReflectNote(demo.reflectNote);
+    saveDraft({ rhythmNote: demo.rhythmNote, peakRest: demo.peakRest, cancelable: demo.cancelable, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
+  const applyTravelPlanBDemo = (demo: TravelPlanBDemo) => {
+    setPbTrigger(demo.trigger); setPbKeep(demo.keepValue); setPbRecheck(demo.recheck); setReflectNote(demo.reflectNote);
+    saveDraft({ trigger: demo.trigger, keepValue: demo.keepValue, recheck: demo.recheck, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
+  const applyPlaceReadingDemo = (demo: PlaceReadingDemo) => {
+    setPrQ(demo.placeQ); setPrStations(demo.stations); setPrLook(demo.lookBack); setReflectNote(demo.reflectNote);
+    saveDraft({ placeQ: demo.placeQ, stations: demo.stations, lookBack: demo.lookBack, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
+  const applyCoauthorPenDemo = (demo: CoauthorPenDemo) => {
+    setCaExpect(demo.expectEdit); setCaPrivate(demo.privateBound); setCaStatus(demo.statusNote); setReflectNote(demo.reflectNote);
+    saveDraft({ expectEdit: demo.expectEdit, privateBound: demo.privateBound, statusNote: demo.statusNote, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
+  const applyTravelPortfolioDemo = (demo: TravelPortfolioDemo) => {
+    setTpMeaning(demo.meaningBase); setTpSource(demo.sourceRhythm); setTpPlanB(demo.planBShare); setReflectNote(demo.reflectNote);
+    saveDraft({ meaningBase: demo.meaningBase, sourceRhythm: demo.sourceRhythm, planBShare: demo.planBShare, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
   };
 
   const applyPart4StartDemo = (demo: Part4StartDemo) => {
@@ -5092,6 +5906,584 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           )}
 
 
+          {layout === "health-start" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>我最近最關心的一個生活訊號</div>
+                <textarea value={hsSignal} onChange={(e) => { setHsSignal(e.target.value); saveDraft({ signal: e.target.value }); }}
+                  placeholder="例如：手錶顯示睡眠分數偏低…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>它可能牽動飲食、活動、睡眠或身心中的</div>
+                <textarea value={hsLifeArea} onChange={(e) => { setHsLifeArea(e.target.value); saveDraft({ lifeArea: e.target.value }); }}
+                  placeholder="例如：睡眠與隔天的疲倦感…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>若不急著下結論，我最想看清楚的是</div>
+                <textarea value={hsWantClear} onChange={(e) => { setHsWantClear(e.target.value); saveDraft({ wantClear: e.target.value }); }}
+                  placeholder="例如：這是偶發還是重複模式…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              {chapter.entries && chapter.entries.length > 0 && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
+                  {chapter.entries.map((entry) => (
+                    <EntryButton key={entry.id} entry={entry} selected={picked === entry.id}
+                      onSelect={() => savePick(entry.id)} onGo={() => goEntry(entry)} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {layout === "judgment-rewrite" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>紅帽｜看到這個數字，我真實的感受是</div>
+                <textarea value={jrFeel} onChange={(e) => { setJrFeel(e.target.value); saveDraft({ feel: e.target.value }); }}
+                  placeholder="例如：擔心是不是身體變差了…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>白帽｜目前確定知道／仍不知道</div>
+                <textarea value={jrKnown} onChange={(e) => { setJrKnown(e.target.value); saveDraft({ knownUnknown: e.target.value }); }}
+                  placeholder="例如：已知晚睡；未知是否重複…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>改寫｜接下來可以觀察的問題是</div>
+                <textarea value={jrObserveQ} onChange={(e) => { setJrObserveQ(e.target.value); saveDraft({ observeQ: e.target.value }); }}
+                  placeholder="例如：最近七天晚睡後隔天疲倦是否重複？" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button type="button" onClick={copyJudgmentRewriteAsk} style={secondaryBtnStyle}>複製判決句改寫提問句</button>
+                <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>在暖暖一次一題 →</button>
+              </div>
+            </div>
+          )}
+          {layout === "seven-day-clues" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>七日摘要（時間／事件／感受／行動／後續）</div>
+                <textarea value={sdWeek} onChange={(e) => { setSdWeek(e.target.value); saveDraft({ weekNote: e.target.value }); }}
+                  placeholder="例如：週一晚睡；週三疲倦；週五恢復…" rows={3}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>一個例外</div>
+                <textarea value={sdException} onChange={(e) => { setSdException(e.target.value); saveDraft({ exceptionNote: e.target.value }); }}
+                  placeholder="例如：週五雖忙卻睡得較好…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>一個未知</div>
+                <textarea value={sdUnknown} onChange={(e) => { setSdUnknown(e.target.value); saveDraft({ unknownNote: e.target.value }); }}
+                  placeholder="例如：還不知道咖啡是否同時出現…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>兩個待確認問題</div>
+                <textarea value={sdPending} onChange={(e) => { setSdPending(e.target.value); saveDraft({ pendingQs: e.target.value }); }}
+                  placeholder="例如：晚睡是否重複？疲倦是否只在忙碌日？" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+          {layout === "timeline-nodes" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>三至五個節點（約略時間）</div>
+                <textarea value={tnNodes} onChange={(e) => { setTnNodes(e.target.value); saveDraft({ nodesNote: e.target.value }); }}
+                  placeholder="例如：週一晚睡；週三午後疲倦；週五恢復…" rows={3}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>空白／約略／待確認</div>
+                <textarea value={tnBlank} onChange={(e) => { setTnBlank(e.target.value); saveDraft({ blankNote: e.target.value }); }}
+                  placeholder="例如：週二、週四細節約略…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>繼續觀察的問題</div>
+                <textarea value={tnOpenQ} onChange={(e) => { setTnOpenQ(e.target.value); saveDraft({ openQ: e.target.value }); }}
+                  placeholder="例如：疲倦是否只出現在晚睡隔天？" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+          {layout === "cross-observe" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>飲食／活動／睡眠／身心各一條線索</div>
+                <textarea value={coFour} onChange={(e) => { setCoFour(e.target.value); saveDraft({ fourClues: e.target.value }); }}
+                  placeholder="例如：晚餐偏晚；少散步；兩晚較短；忙碌日較緊…" rows={3}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>一個同步片段</div>
+                <textarea value={coSync} onChange={(e) => { setCoSync(e.target.value); saveDraft({ syncNote: e.target.value }); }}
+                  placeholder="例如：晚睡與隔天疲倦曾同時出現…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>一個相反例或不同步</div>
+                <textarea value={coException} onChange={(e) => { setCoException(e.target.value); saveDraft({ exceptionNote: e.target.value }); }}
+                  placeholder="例如：週五忙碌卻睡得較好…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>一個資料缺口</div>
+                <textarea value={coGap} onChange={(e) => { setCoGap(e.target.value); saveDraft({ gapNote: e.target.value }); }}
+                  placeholder="例如：缺少白天心情的紀錄…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>目前不能證明什麼</div>
+                <textarea value={coCannot} onChange={(e) => { setCoCannot(e.target.value); saveDraft({ cannotProve: e.target.value }); }}
+                  placeholder="例如：目前不能證明晚睡造成疲倦…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+          {layout === "four-signals" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>事實｜可回查</div>
+                <textarea value={fsFact} onChange={(e) => { setFsFact(e.target.value); saveDraft({ fact: e.target.value }); }}
+                  placeholder="例如：昨晚大約睡了四小時…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>感受｜本人經驗</div>
+                <textarea value={fsFeeling} onChange={(e) => { setFsFeeling(e.target.value); saveDraft({ feeling: e.target.value }); }}
+                  placeholder="例如：今天胸口不舒服，讓人擔心…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>猜測｜加上可能</div>
+                <textarea value={fsGuess} onChange={(e) => { setFsGuess(e.target.value); saveDraft({ guess: e.target.value }); }}
+                  placeholder="例如：可能和最近壓力有關，仍需證實…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>待確認｜改寫問題</div>
+                <textarea value={fsPending} onChange={(e) => { setFsPending(e.target.value); saveDraft({ pending: e.target.value }); }}
+                  placeholder="例如：什麼情況需要進一步處理？" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+          {layout === "source-review" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>選定來源（含日期）</div>
+                <textarea value={srSources} onChange={(e) => { setSrSources(e.target.value); saveDraft({ sources: e.target.value }); }}
+                  placeholder="例如：七日線索表、三週睡眠摘要…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>跨期比較（同步／不同步／反例／缺口）</div>
+                <textarea value={srCompare} onChange={(e) => { setSrCompare(e.target.value); saveDraft({ compareNote: e.target.value }); }}
+                  placeholder="例如：忙碌週與睡眠曾同步偏低，也有反例…" rows={3}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>逐句回查結果</div>
+                <textarea value={srCheck} onChange={(e) => { setSrCheck(e.target.value); saveDraft({ checkNote: e.target.value }); }}
+                  placeholder="例如：刪除越界句；不足處寫未見穩定趨勢…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+          {layout === "gentle-tweak" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>黃帽｜它支持什麼生活價值</div>
+                <textarea value={gtValue} onChange={(e) => { setGtValue(e.target.value); saveDraft({ value: e.target.value }); }}
+                  placeholder="例如：支持隔天較從容的生活節奏…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>黑帽｜負擔、停止與求助條件</div>
+                <textarea value={gtBurden} onChange={(e) => { setGtBurden(e.target.value); saveDraft({ burdenStop: e.target.value }); }}
+                  placeholder="例如：負擔低；若更焦慮就停止並先問專業…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>綠帽｜更小／延後／替代／先問／不做</div>
+                <textarea value={gtThird} onChange={(e) => { setGtThird(e.target.value); saveDraft({ thirdPath: e.target.value }); }}
+                  placeholder="例如：可改成只提前 15 分鐘…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>藍帽｜目前選擇與重看日期</div>
+                <textarea value={gtReview} onChange={(e) => { setGtReview(e.target.value); saveDraft({ choiceReview: e.target.value }); }}
+                  placeholder="例如：先試一週；下週日重看…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button type="button" onClick={copyGentleTweakAsk} style={secondaryBtnStyle}>複製微調提問句</button>
+                <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>在暖暖設計微調 →</button>
+              </div>
+            </div>
+          )}
+          {layout === "noncausal-summary" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>同步片段</div>
+                <textarea value={ncSync} onChange={(e) => { setNcSync(e.target.value); saveDraft({ syncNote: e.target.value }); }}
+                  placeholder="例如：有幾個忙碌日與較短睡眠同時出現…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>不同步／相反例／空白</div>
+                <textarea value={ncException} onChange={(e) => { setNcException(e.target.value); saveDraft({ exceptionNote: e.target.value }); }}
+                  placeholder="例如：也有忙碌卻睡得較好的日子…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>限制與未知</div>
+                <textarea value={ncLimit} onChange={(e) => { setNcLimit(e.target.value); saveDraft({ limitNote: e.target.value }); }}
+                  placeholder="例如：觀察期尚短；裝置與感受不完全一致…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>三至五句非因果摘要</div>
+                <textarea value={ncSummary} onChange={(e) => { setNcSummary(e.target.value); saveDraft({ summaryText: e.target.value }); }}
+                  placeholder="例如：忙碌與睡眠有時靠近、有時分開；目前未見穩定趨勢。" rows={3}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+          {layout === "health-questions" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>三十秒開場</div>
+                <textarea value={hqOpening} onChange={(e) => { setHqOpening(e.target.value); saveDraft({ opening: e.target.value }); }}
+                  placeholder="例如：最近兩週觀察到…最影響的是…" rows={3}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>必問</div>
+                <textarea value={hqMust} onChange={(e) => { setHqMust(e.target.value); saveDraft({ mustAsk: e.target.value }); }}
+                  placeholder="例如：還缺少哪些資訊？何時需提早求助？" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>有時間再問／可帶回觀察</div>
+                <textarea value={hqLater} onChange={(e) => { setHqLater(e.target.value); saveDraft({ laterAsk: e.target.value }); }}
+                  placeholder="例如：裝置分數與感受不一致時如何解讀？" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>分享範圍</div>
+                <textarea value={hqShare} onChange={(e) => { setHqShare(e.target.value); saveDraft({ shareScope: e.target.value }); }}
+                  placeholder="例如：可口述摘要；暫不分享完整醫療文件…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button type="button" onClick={copyHealthQuestionsAsk} style={secondaryBtnStyle}>複製健康對話提問句</button>
+                <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>在暖暖整理問題 →</button>
+              </div>
+            </div>
+          )}
+          {layout === "health-whitepaper" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>生活問題｜真正想理解</div>
+                <textarea value={wpLifeQ} onChange={(e) => { setWpLifeQ(e.target.value); saveDraft({ lifeQ: e.target.value }); }}
+                  placeholder="例如：最近兩週晚睡與疲倦是否形成可觀察模式？" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>全人線索｜來源與反例</div>
+                <textarea value={wpClues} onChange={(e) => { setWpClues(e.target.value); saveDraft({ cluesAntiEx: e.target.value }); }}
+                  placeholder="例如：四面向線索與一個忙碌卻睡得較好的反例…" rows={3}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>安全界線｜停止與求助</div>
+                <textarea value={wpSafety} onChange={(e) => { setWpSafety(e.target.value); saveDraft({ safety: e.target.value }); }}
+                  placeholder="例如：若症狀突然加重，立即求助；不自行改藥…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>可承受行動與重看計畫</div>
+                <textarea value={wpAction} onChange={(e) => { setWpAction(e.target.value); saveDraft({ actionReview: e.target.value }); }}
+                  placeholder="例如：先試提早關螢幕一週；下週日重看…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+          {layout === "travel-start" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>這次出發，我真正想理解、完成或共同經歷的是</div>
+                <textarea value={trWhy} onChange={(e) => { setTrWhy(e.target.value); saveDraft({ whyGo: e.target.value }); }}
+                  placeholder="例如：陪家人重新讀懂一條河…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>即使少去幾個景點，也不能犧牲的價值是</div>
+                <textarea value={trMust} onChange={(e) => { setTrMust(e.target.value); saveDraft({ mustKeep: e.target.value }); }}
+                  placeholder="例如：不要太趕；每天只留一個真正高潮…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>若把旅程變成一份可留下的成果，我希望帶回</div>
+                <textarea value={trBring} onChange={(e) => { setTrBring(e.target.value); saveDraft({ bringBack: e.target.value }); }}
+                  placeholder="例如：一頁可分享的地方閱讀短記…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              {chapter.entries && chapter.entries.length > 0 && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
+                  {chapter.entries.map((entry) => (
+                    <EntryButton key={entry.id} entry={entry} selected={picked === entry.id}
+                      onSelect={() => savePick(entry.id)} onGo={() => goEntry(entry)} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {layout === "travel-meaning" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>這次，我真正想完成的是</div>
+                <textarea value={tmWant} onChange={(e) => { setTmWant(e.target.value); saveDraft({ wantDone: e.target.value }); }}
+                  placeholder="例如：陪家人完成一趟不趕的河邊漫遊…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>我希望共同經歷或重新理解的是</div>
+                <textarea value={tmShare} onChange={(e) => { setTmShare(e.target.value); saveDraft({ shareLive: e.target.value }); }}
+                  placeholder="例如：重新理解這條河與今日生活的關係…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>我希望帶回的一項可留下成果是</div>
+                <textarea value={tmBring} onChange={(e) => { setTmBring(e.target.value); saveDraft({ bringBack: e.target.value }); }}
+                  placeholder="例如：一頁地方閱讀短記…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button type="button" onClick={copyTravelMeaningAsk} style={secondaryBtnStyle}>複製意義種子提問句</button>
+                <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>在暖暖一次一題 →</button>
+              </div>
+            </div>
+          )}
+          {layout === "ground-baseline" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>固定｜日期、必要任務與不能犧牲的價值</div>
+                <textarea value={gbFixed} onChange={(e) => { setGbFixed(e.target.value); saveDraft({ fixed: e.target.value }); }}
+                  placeholder="例如：週五晚出發；每天不超過一個高潮…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>可調｜地點、順序、停留、預算與參與方式</div>
+                <textarea value={gbFlex} onChange={(e) => { setGbFlex(e.target.value); saveDraft({ flexible: e.target.value }); }}
+                  placeholder="例如：午餐地點、午後順序…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>未知｜規則、交通、天候、文化或同行回覆</div>
+                <textarea value={gbUnknown} onChange={(e) => { setGbUnknown(e.target.value); saveDraft({ unknown: e.target.value }); }}
+                  placeholder="例如：週六午後天候、場館是否休館…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+          {layout === "source-map" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>官方卡｜規則／交通／可達性（含查證日與重查點）</div>
+                <textarea value={smOfficial} onChange={(e) => { setSmOfficial(e.target.value); saveDraft({ official: e.target.value }); }}
+                  placeholder="例如：官方頁｜查證日｜出發當日重查…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>文化卡｜地方歷史／人文／生態（附原頁）</div>
+                <textarea value={smCulture} onChange={(e) => { setSmCulture(e.target.value); saveDraft({ culture: e.target.value }); }}
+                  placeholder="例如：地方館舍簡介與適用範圍…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>經驗卡｜個人或社群（標明不能取代官方）</div>
+                <textarea value={smExperience} onChange={(e) => { setSmExperience(e.target.value); saveDraft({ experience: e.target.value }); }}
+                  placeholder="例如：朋友步行經驗｜不能取代開放時間…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+          {layout === "feeling-table" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>我最期待</div>
+                <textarea value={ftExpect} onChange={(e) => { setFtExpect(e.target.value); saveDraft({ expect: e.target.value }); }}
+                  placeholder="例如：河邊慢走與好好吃飯…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>我最擔心</div>
+                <textarea value={ftWorry} onChange={(e) => { setFtWorry(e.target.value); saveDraft({ worry: e.target.value }); }}
+                  placeholder="例如：轉乘太趕、午後沒有休息…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>此行最值得保留的體驗</div>
+                <textarea value={ftKeep} onChange={(e) => { setFtKeep(e.target.value); saveDraft({ keepValue: e.target.value }); }}
+                  placeholder="例如：每天一個真正高潮…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>希望保留的留白或私人界線</div>
+                <textarea value={ftBlank} onChange={(e) => { setFtBlank(e.target.value); saveDraft({ blankBound: e.target.value }); }}
+                  placeholder="例如：不想公開行程細節與照片…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button type="button" onClick={copyFeelingTableAsk} style={secondaryBtnStyle}>複製感受與價值提問句</button>
+                <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>在暖暖整理同行對話 →</button>
+              </div>
+            </div>
+          )}
+          {layout === "value-cost" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>它支持的核心價值</div>
+                <textarea value={vcValue} onChange={(e) => { setVcValue(e.target.value); saveDraft({ value: e.target.value }); }}
+                  placeholder="例如：支持好好吃飯與慢走…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>最大的代價、依賴與停止條件</div>
+                <textarea value={vcCost} onChange={(e) => { setVcCost(e.target.value); saveDraft({ costStop: e.target.value }); }}
+                  placeholder="例如：兩次轉乘；緩衝少於 30 分就停止…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>若取消或改期，主線如何繼續</div>
+                <textarea value={vcContinue} onChange={(e) => { setVcContinue(e.target.value); saveDraft({ continueHow: e.target.value }); }}
+                  placeholder="例如：改為同主題河岸散步…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+          {layout === "seven-rhythm" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>七段節奏（安頓→定位→閱讀→探索→補給→回看→收束）</div>
+                <textarea value={srRhythm} onChange={(e) => { setSrRhythm(e.target.value); saveDraft({ rhythmNote: e.target.value }); }}
+                  placeholder="例如：安頓→河岸定位→館舍閱讀→…" rows={3}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>真正高潮與休息灣</div>
+                <textarea value={srPeak} onChange={(e) => { setSrPeak(e.target.value); saveDraft({ peakRest: e.target.value }); }}
+                  placeholder="例如：高潮：午後河岸閱讀；休息灣：咖啡 30 分…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>緩衝與可取消段</div>
+                <textarea value={srCancel} onChange={(e) => { setSrCancel(e.target.value); saveDraft({ cancelable: e.target.value }); }}
+                  placeholder="例如：晚間加點可取消…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+          {layout === "travel-plan-b" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>啟動條件與共同確認方式</div>
+                <textarea value={pbTrigger} onChange={(e) => { setPbTrigger(e.target.value); saveDraft({ trigger: e.target.value }); }}
+                  placeholder="例如：休館或大雨；任一人提出，兩人確認…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>轉向後仍保留的核心價值</div>
+                <textarea value={pbKeep} onChange={(e) => { setPbKeep(e.target.value); saveDraft({ keepValue: e.target.value }); }}
+                  placeholder="例如：仍保留河岸理解與好好吃飯…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>需要重新查證、取消或通知的項目</div>
+                <textarea value={pbRecheck} onChange={(e) => { setPbRecheck(e.target.value); saveDraft({ recheck: e.target.value }); }}
+                  placeholder="例如：重查天候與替代場館；取消原預約…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+          {layout === "place-reading" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>真正想理解的地方問題</div>
+                <textarea value={prQ} onChange={(e) => { setPrQ(e.target.value); saveDraft({ placeQ: e.target.value }); }}
+                  placeholder="例如：這條河如何成為今天的生活地方？" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>三至五站（來源／現場觀察）</div>
+                <textarea value={prStations} onChange={(e) => { setPrStations(e.target.value); saveDraft({ stations: e.target.value }); }}
+                  placeholder="例如：記憶碑→舊碼頭→修復段…" rows={3}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>回看問題</div>
+                <textarea value={prLook} onChange={(e) => { setPrLook(e.target.value); saveDraft({ lookBack: e.target.value }); }}
+                  placeholder="例如：現場與來源是否互相補足？" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+          {layout === "coauthor-pen" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>最期待／想修改</div>
+                <textarea value={caExpect} onChange={(e) => { setCaExpect(e.target.value); saveDraft({ expectEdit: e.target.value }); }}
+                  placeholder="例如：最期待河邊慢走；想修改午後節奏…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>希望保持私人的部分</div>
+                <textarea value={caPrivate} onChange={(e) => { setCaPrivate(e.target.value); saveDraft({ privateBound: e.target.value }); }}
+                  placeholder="例如：照片與完整路線保持私人…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>五種狀態摘要（確認／待決定／不參與／私人／撤回）</div>
+                <textarea value={caStatus} onChange={(e) => { setCaStatus(e.target.value); saveDraft({ statusNote: e.target.value }); }}
+                  placeholder="例如：確認主線／午後待決定／夜間不參與…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button type="button" onClick={copyCoauthorPenAsk} style={secondaryBtnStyle}>複製共編提問句</button>
+                <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>在暖暖整理共編摘要 →</button>
+              </div>
+            </div>
+          )}
+          {layout === "travel-portfolio" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>意義與現況基線</div>
+                <textarea value={tpMeaning} onChange={(e) => { setTpMeaning(e.target.value); saveDraft({ meaningBase: e.target.value }); }}
+                  placeholder="例如：意義：讀懂一條河；基線：週末兩天…" rows={3}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>來源與七段節奏</div>
+                <textarea value={tpSource} onChange={(e) => { setTpSource(e.target.value); saveDraft({ sourceRhythm: e.target.value }); }}
+                  placeholder="例如：來源三卡已建；節奏含休息灣…" rows={3}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>備援方案與分享界線</div>
+                <textarea value={tpPlanB} onChange={(e) => { setTpPlanB(e.target.value); saveDraft({ planBShare: e.target.value }); }}
+                  placeholder="例如：雨天改河岸散步；照片需另行同意…" rows={3}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
           {layout === "part4-start" && (
             <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
               <div>
@@ -6933,6 +8325,28 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                   reflectLayout === "third-path" ||
                   reflectLayout === "pro-confirm" ||
                   reflectLayout === "decision-memo" ||
+                  reflectLayout === "health-start" ||
+                  reflectLayout === "judgment-rewrite" ||
+                  reflectLayout === "seven-day-clues" ||
+                  reflectLayout === "timeline-nodes" ||
+                  reflectLayout === "cross-observe" ||
+                  reflectLayout === "four-signals" ||
+                  reflectLayout === "source-review" ||
+                  reflectLayout === "gentle-tweak" ||
+                  reflectLayout === "noncausal-summary" ||
+                  reflectLayout === "health-questions" ||
+                  reflectLayout === "health-whitepaper" ||
+                  reflectLayout === "travel-start" ||
+                  reflectLayout === "travel-meaning" ||
+                  reflectLayout === "ground-baseline" ||
+                  reflectLayout === "source-map" ||
+                  reflectLayout === "feeling-table" ||
+                  reflectLayout === "value-cost" ||
+                  reflectLayout === "seven-rhythm" ||
+                  reflectLayout === "travel-plan-b" ||
+                  reflectLayout === "place-reading" ||
+                  reflectLayout === "coauthor-pen" ||
+                  reflectLayout === "travel-portfolio" ||
                   reflectLayout === "part4-start" ||
                   reflectLayout === "story-start" ||
                   reflectLayout === "theme-boundary" ||
@@ -7704,6 +9118,248 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                 </div>
               )}
               
+              {layout === "health-start" && chapter.healthStartDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.healthStartDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>訊號：</strong>{demo.signal}</p>
+                      <button type="button" onClick={() => applyHealthStartDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "judgment-rewrite" && chapter.judgmentRewriteDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.judgmentRewriteDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>可觀察問題：</strong>{demo.observeQ}</p>
+                      <button type="button" onClick={() => applyJudgmentRewriteDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "seven-day-clues" && chapter.sevenDayCluesDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.sevenDayCluesDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>七日：</strong>{demo.weekNote}</p>
+                      <button type="button" onClick={() => applySevenDayCluesDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "timeline-nodes" && chapter.timelineNodesDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.timelineNodesDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>節點：</strong>{demo.nodesNote}</p>
+                      <button type="button" onClick={() => applyTimelineNodesDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "cross-observe" && chapter.crossObserveDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.crossObserveDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>同步：</strong>{demo.syncNote}</p>
+                      <button type="button" onClick={() => applyCrossObserveDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "four-signals" && chapter.fourSignalsDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.fourSignalsDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>事實：</strong>{demo.fact}</p>
+                      <button type="button" onClick={() => applyFourSignalsDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "source-review" && chapter.sourceReviewDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.sourceReviewDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>來源：</strong>{demo.sources}</p>
+                      <button type="button" onClick={() => applySourceReviewDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "gentle-tweak" && chapter.gentleTweakDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.gentleTweakDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>價值：</strong>{demo.value}</p>
+                      <button type="button" onClick={() => applyGentleTweakDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "noncausal-summary" && chapter.noncausalSummaryDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.noncausalSummaryDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>摘要：</strong>{demo.summaryText}</p>
+                      <button type="button" onClick={() => applyNoncausalSummaryDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "health-questions" && chapter.healthQuestionsDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.healthQuestionsDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>開場：</strong>{demo.opening}</p>
+                      <button type="button" onClick={() => applyHealthQuestionsDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "health-whitepaper" && chapter.healthWhitepaperDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.healthWhitepaperDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>生活問題：</strong>{demo.lifeQ}</p>
+                      <button type="button" onClick={() => applyHealthWhitepaperDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "travel-start" && chapter.travelStartDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.travelStartDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>為何出發：</strong>{demo.whyGo}</p>
+                      <button type="button" onClick={() => applyTravelStartDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "travel-meaning" && chapter.travelMeaningDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.travelMeaningDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>想完成：</strong>{demo.wantDone}</p>
+                      <button type="button" onClick={() => applyTravelMeaningDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "ground-baseline" && chapter.groundBaselineDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.groundBaselineDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>固定：</strong>{demo.fixed}</p>
+                      <button type="button" onClick={() => applyGroundBaselineDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "source-map" && chapter.sourceMapDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.sourceMapDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>官方：</strong>{demo.official}</p>
+                      <button type="button" onClick={() => applySourceMapDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "feeling-table" && chapter.feelingTableDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.feelingTableDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>期待：</strong>{demo.expect}</p>
+                      <button type="button" onClick={() => applyFeelingTableDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "value-cost" && chapter.valueCostDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.valueCostDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>價值：</strong>{demo.value}</p>
+                      <button type="button" onClick={() => applyValueCostDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "seven-rhythm" && chapter.sevenRhythmDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.sevenRhythmDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>節奏：</strong>{demo.rhythmNote}</p>
+                      <button type="button" onClick={() => applySevenRhythmDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "travel-plan-b" && chapter.travelPlanBDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.travelPlanBDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>觸發：</strong>{demo.trigger}</p>
+                      <button type="button" onClick={() => applyTravelPlanBDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "place-reading" && chapter.placeReadingDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.placeReadingDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>問題：</strong>{demo.placeQ}</p>
+                      <button type="button" onClick={() => applyPlaceReadingDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "coauthor-pen" && chapter.coauthorPenDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.coauthorPenDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>期待／修改：</strong>{demo.expectEdit}</p>
+                      <button type="button" onClick={() => applyCoauthorPenDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "travel-portfolio" && chapter.travelPortfolioDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.travelPortfolioDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>意義／基線：</strong>{demo.meaningBase}</p>
+                      <button type="button" onClick={() => applyTravelPortfolioDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
               {layout === "part4-start" && chapter.part4StartDemos && (
                 <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
                   {chapter.part4StartDemos.map((demo) => (
@@ -8773,6 +10429,81 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           memoStatus={memoStatus}
           memoReason={memoReason}
           memoPending={memoPending}
+          hsSignal={hsSignal}
+          hsLifeArea={hsLifeArea}
+          hsWantClear={hsWantClear}
+          jrFeel={jrFeel}
+          jrKnown={jrKnown}
+          jrObserveQ={jrObserveQ}
+          sdWeek={sdWeek}
+          sdException={sdException}
+          sdUnknown={sdUnknown}
+          sdPending={sdPending}
+          tnNodes={tnNodes}
+          tnBlank={tnBlank}
+          tnOpenQ={tnOpenQ}
+          coFour={coFour}
+          coSync={coSync}
+          coException={coException}
+          coGap={coGap}
+          coCannot={coCannot}
+          fsFact={fsFact}
+          fsFeeling={fsFeeling}
+          fsGuess={fsGuess}
+          fsPending={fsPending}
+          srSources={srSources}
+          srCompare={srCompare}
+          srCheck={srCheck}
+          gtValue={gtValue}
+          gtBurden={gtBurden}
+          gtThird={gtThird}
+          gtReview={gtReview}
+          ncSync={ncSync}
+          ncException={ncException}
+          ncLimit={ncLimit}
+          ncSummary={ncSummary}
+          hqOpening={hqOpening}
+          hqMust={hqMust}
+          hqLater={hqLater}
+          hqShare={hqShare}
+          wpLifeQ={wpLifeQ}
+          wpClues={wpClues}
+          wpSafety={wpSafety}
+          wpAction={wpAction}
+          trWhy={trWhy}
+          trMust={trMust}
+          trBring={trBring}
+          tmWant={tmWant}
+          tmShare={tmShare}
+          tmBring={tmBring}
+          gbFixed={gbFixed}
+          gbFlex={gbFlex}
+          gbUnknown={gbUnknown}
+          smOfficial={smOfficial}
+          smCulture={smCulture}
+          smExperience={smExperience}
+          ftExpect={ftExpect}
+          ftWorry={ftWorry}
+          ftKeep={ftKeep}
+          ftBlank={ftBlank}
+          vcValue={vcValue}
+          vcCost={vcCost}
+          vcContinue={vcContinue}
+          srRhythm={srRhythm}
+          srPeak={srPeak}
+          srCancel={srCancel}
+          pbTrigger={pbTrigger}
+          pbKeep={pbKeep}
+          pbRecheck={pbRecheck}
+          prQ={prQ}
+          prStations={prStations}
+          prLook={prLook}
+          caExpect={caExpect}
+          caPrivate={caPrivate}
+          caStatus={caStatus}
+          tpMeaning={tpMeaning}
+          tpSource={tpSource}
+          tpPlanB={tpPlanB}
           p4Want={p4Want}
           p4Meaning={p4Meaning}
           p4Who={p4Who}
@@ -9143,6 +10874,81 @@ function PrintCard({
   memoStatus = "",
   memoReason = "",
   memoPending = "",
+  hsSignal = "",
+  hsLifeArea = "",
+  hsWantClear = "",
+  jrFeel = "",
+  jrKnown = "",
+  jrObserveQ = "",
+  sdWeek = "",
+  sdException = "",
+  sdUnknown = "",
+  sdPending = "",
+  tnNodes = "",
+  tnBlank = "",
+  tnOpenQ = "",
+  coFour = "",
+  coSync = "",
+  coException = "",
+  coGap = "",
+  coCannot = "",
+  fsFact = "",
+  fsFeeling = "",
+  fsGuess = "",
+  fsPending = "",
+  srSources = "",
+  srCompare = "",
+  srCheck = "",
+  gtValue = "",
+  gtBurden = "",
+  gtThird = "",
+  gtReview = "",
+  ncSync = "",
+  ncException = "",
+  ncLimit = "",
+  ncSummary = "",
+  hqOpening = "",
+  hqMust = "",
+  hqLater = "",
+  hqShare = "",
+  wpLifeQ = "",
+  wpClues = "",
+  wpSafety = "",
+  wpAction = "",
+  trWhy = "",
+  trMust = "",
+  trBring = "",
+  tmWant = "",
+  tmShare = "",
+  tmBring = "",
+  gbFixed = "",
+  gbFlex = "",
+  gbUnknown = "",
+  smOfficial = "",
+  smCulture = "",
+  smExperience = "",
+  ftExpect = "",
+  ftWorry = "",
+  ftKeep = "",
+  ftBlank = "",
+  vcValue = "",
+  vcCost = "",
+  vcContinue = "",
+  srRhythm = "",
+  srPeak = "",
+  srCancel = "",
+  pbTrigger = "",
+  pbKeep = "",
+  pbRecheck = "",
+  prQ = "",
+  prStations = "",
+  prLook = "",
+  caExpect = "",
+  caPrivate = "",
+  caStatus = "",
+  tpMeaning = "",
+  tpSource = "",
+  tpPlanB = "",
   p4Want = "",
   p4Meaning = "",
   p4Who = "",
@@ -9391,6 +11197,81 @@ function PrintCard({
   memoStatus?: string;
   memoReason?: string;
   memoPending?: string;
+  hsSignal?: string;
+  hsLifeArea?: string;
+  hsWantClear?: string;
+  jrFeel?: string;
+  jrKnown?: string;
+  jrObserveQ?: string;
+  sdWeek?: string;
+  sdException?: string;
+  sdUnknown?: string;
+  sdPending?: string;
+  tnNodes?: string;
+  tnBlank?: string;
+  tnOpenQ?: string;
+  coFour?: string;
+  coSync?: string;
+  coException?: string;
+  coGap?: string;
+  coCannot?: string;
+  fsFact?: string;
+  fsFeeling?: string;
+  fsGuess?: string;
+  fsPending?: string;
+  srSources?: string;
+  srCompare?: string;
+  srCheck?: string;
+  gtValue?: string;
+  gtBurden?: string;
+  gtThird?: string;
+  gtReview?: string;
+  ncSync?: string;
+  ncException?: string;
+  ncLimit?: string;
+  ncSummary?: string;
+  hqOpening?: string;
+  hqMust?: string;
+  hqLater?: string;
+  hqShare?: string;
+  wpLifeQ?: string;
+  wpClues?: string;
+  wpSafety?: string;
+  wpAction?: string;
+  trWhy?: string;
+  trMust?: string;
+  trBring?: string;
+  tmWant?: string;
+  tmShare?: string;
+  tmBring?: string;
+  gbFixed?: string;
+  gbFlex?: string;
+  gbUnknown?: string;
+  smOfficial?: string;
+  smCulture?: string;
+  smExperience?: string;
+  ftExpect?: string;
+  ftWorry?: string;
+  ftKeep?: string;
+  ftBlank?: string;
+  vcValue?: string;
+  vcCost?: string;
+  vcContinue?: string;
+  srRhythm?: string;
+  srPeak?: string;
+  srCancel?: string;
+  pbTrigger?: string;
+  pbKeep?: string;
+  pbRecheck?: string;
+  prQ?: string;
+  prStations?: string;
+  prLook?: string;
+  caExpect?: string;
+  caPrivate?: string;
+  caStatus?: string;
+  tpMeaning?: string;
+  tpSource?: string;
+  tpPlanB?: string;
   p4Want?: string;
   p4Meaning?: string;
   p4Who?: string;
@@ -9954,6 +11835,314 @@ function PrintCard({
     );
   }
 
+
+  if ((layout as string) === "health-start") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="生活訊號" minHeight={48}>{hsSignal || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="牽動面向" minHeight={48}>{hsLifeArea || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="最想看清楚" minHeight={48}>{hsWantClear || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "judgment-rewrite") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="感受" minHeight={48}>{jrFeel || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="已知／未知" minHeight={48}>{jrKnown || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="可觀察問題" minHeight={48}>{jrObserveQ || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "seven-day-clues") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="七日摘要" minHeight={64}>{sdWeek || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="例外／未知" minHeight={48}>{(sdException || "＿＿") + "／" + (sdUnknown || "＿＿")}</PrintGridCell></div>
+        <PrintGridCell title="待確認" minHeight={40}>{sdPending || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "timeline-nodes") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="節點" minHeight={64}>{tnNodes || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="空白／待確認" minHeight={40}>{tnBlank || "＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="繼續觀察" minHeight={40}>{tnOpenQ || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "cross-observe") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="四面向線索" minHeight={64}>{coFour || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="同步／反例" minHeight={48}>{(coSync || "＿＿") + "／" + (coException || "＿＿")}</PrintGridCell></div>
+        <PrintGridCell title="缺口／不能證明" minHeight={48}>{(coGap || "＿＿") + "／" + (coCannot || "＿＿")}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "four-signals") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="事實／感受" minHeight={48}>{(fsFact || "＿＿") + "／" + (fsFeeling || "＿＿")}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="猜測／待確認" minHeight={48}>{(fsGuess || "＿＿") + "／" + (fsPending || "＿＿")}</PrintGridCell></div>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "source-review") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="選定來源" minHeight={48}>{srSources || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="跨期比較" minHeight={64}>{srCompare || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="回查結果" minHeight={48}>{srCheck || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "gentle-tweak") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="價值" minHeight={40}>{gtValue || "＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="負擔／停止／求助" minHeight={48}>{gtBurden || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="第三條路／重看" minHeight={48}>{(gtThird || "＿＿") + "／" + (gtReview || "＿＿")}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "noncausal-summary") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="同步／反例" minHeight={48}>{(ncSync || "＿＿") + "／" + (ncException || "＿＿")}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="限制" minHeight={40}>{ncLimit || "＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="非因果摘要" minHeight={64}>{ncSummary || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "health-questions") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="開場" minHeight={64}>{hqOpening || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="必問／再問" minHeight={48}>{(hqMust || "＿＿") + "／" + (hqLater || "＿＿")}</PrintGridCell></div>
+        <PrintGridCell title="分享範圍" minHeight={40}>{hqShare || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "health-whitepaper") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="生活問題" minHeight={48}>{wpLifeQ || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="線索與反例" minHeight={64}>{wpClues || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="安全界線" minHeight={48}>{wpSafety || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="行動與重看" minHeight={48}>{wpAction || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望／署名" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "travel-start") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="為何出發" minHeight={48}>{trWhy || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="不能犧牲" minHeight={48}>{trMust || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="希望帶回" minHeight={48}>{trBring || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "travel-meaning") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="想完成" minHeight={48}>{tmWant || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="共同經歷" minHeight={48}>{tmShare || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="帶回成果" minHeight={48}>{tmBring || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "ground-baseline") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="固定" minHeight={48}>{gbFixed || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="可調" minHeight={48}>{gbFlex || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="未知" minHeight={48}>{gbUnknown || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "source-map") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="官方" minHeight={48}>{smOfficial || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="文化" minHeight={48}>{smCulture || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="經驗" minHeight={48}>{smExperience || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "feeling-table") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="期待／擔心" minHeight={48}>{(ftExpect || "＿＿") + "／" + (ftWorry || "＿＿")}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="共同價值" minHeight={48}>{ftKeep || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="留白／界線" minHeight={48}>{ftBlank || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "value-cost") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="價值" minHeight={48}>{vcValue || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="代價／停止" minHeight={48}>{vcCost || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="取消後繼續" minHeight={48}>{vcContinue || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "seven-rhythm") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="七段節奏" minHeight={64}>{srRhythm || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="高潮／休息" minHeight={48}>{srPeak || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="可取消段" minHeight={40}>{srCancel || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "travel-plan-b") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="觸發" minHeight={48}>{pbTrigger || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="保留價值" minHeight={48}>{pbKeep || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="重查／取消" minHeight={48}>{pbRecheck || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "place-reading") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="地方問題" minHeight={48}>{prQ || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="各站" minHeight={64}>{prStations || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="回看" minHeight={40}>{prLook || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "coauthor-pen") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="期待／修改" minHeight={48}>{caExpect || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="私人界線" minHeight={48}>{caPrivate || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="狀態" minHeight={48}>{caStatus || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "travel-portfolio") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="意義／基線" minHeight={64}>{tpMeaning || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="來源／節奏" minHeight={64}>{tpSource || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="備援／分享" minHeight={48}>{tpPlanB || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望／署名" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
 
   if ((layout as string) === "part4-start") {
     return (
