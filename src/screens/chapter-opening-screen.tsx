@@ -78,6 +78,20 @@ import {
   type ChapterDecisionMemoDraft,
   buildDecisionSeatPrompt,
   buildSixHatsPrompt,
+  type ElevatorWishDemo,
+  type LifeMatchDemo,
+  type FiveReflectDemo,
+  type ThreeStepsDemo,
+  type MeaningSeedDemo,
+  type ShareIntentDemo,
+  type EmbarkDemo,
+  type ChapterElevatorWishDraft,
+  type ChapterLifeMatchDraft,
+  type ChapterFiveReflectDraft,
+  type ChapterThreeStepsDraft,
+  type ChapterMeaningSeedDraft,
+  type ChapterShareIntentDraft,
+  type ChapterEmbarkDraft,
 } from "@/lib/chapter-opening";
 import {
   type ExternalAiProvider,
@@ -179,6 +193,24 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const [memoStatus, setMemoStatus] = useState("");
   const [memoReason, setMemoReason] = useState("");
   const [memoPending, setMemoPending] = useState("");
+  const [wishWant, setWishWant] = useState("");
+  const [wishStuck, setWishStuck] = useState("");
+  const [wishAiHelp, setWishAiHelp] = useState("");
+  const [lifePainPoint, setLifePainPoint] = useState("");
+  const [lifeRoleId, setLifeRoleId] = useState("");
+  const [fiveStatuses, setFiveStatuses] = useState<Record<string, string>>({});
+  const [fiveNextStep, setFiveNextStep] = useState("");
+  const [lifeTask, setLifeTask] = useState("");
+  const [lifeSteps, setLifeSteps] = useState<[string, string, string]>(["", "", ""]);
+  const [seedMaterial, setSeedMaterial] = useState("");
+  const [seedForm, setSeedForm] = useState("");
+  const [seedBecause, setSeedBecause] = useState("");
+  const [shareWhat, setShareWhat] = useState("");
+  const [shareForWhom, setShareForWhom] = useState("");
+  const [sharePrivacy, setSharePrivacy] = useState("");
+  const [embarkDirection, setEmbarkDirection] = useState("");
+  const [embarkFirstStep, setEmbarkFirstStep] = useState("");
+  const [embarkAiHelp, setEmbarkAiHelp] = useState("");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -438,6 +470,74 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           if (d.reflectNote) setReflectNote(d.reflectNote);
         }
       }
+      if (layout === "elevator-wish") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterElevatorWishDraft;
+          if (d.want) setWishWant(d.want);
+          if (d.stuck) setWishStuck(d.stuck);
+          if (d.aiHelp) setWishAiHelp(d.aiHelp);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "life-match") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterLifeMatchDraft;
+          if (d.painPoint) setLifePainPoint(d.painPoint);
+          if (d.roleId) setLifeRoleId(d.roleId);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "five-reflect") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterFiveReflectDraft;
+          if (d.focusId) setPicked(d.focusId);
+          if (d.statuses) setFiveStatuses(d.statuses);
+          if (d.nextStep) setFiveNextStep(d.nextStep);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "three-steps") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterThreeStepsDraft;
+          if (d.task) setLifeTask(d.task);
+          if (d.steps) setLifeSteps(d.steps);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "meaning-seed") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterMeaningSeedDraft;
+          if (d.material) setSeedMaterial(d.material);
+          if (d.formHint) setSeedForm(d.formHint);
+          if (d.because) setSeedBecause(d.because);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "share-intent") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterShareIntentDraft;
+          if (d.shareWhat) setShareWhat(d.shareWhat);
+          if (d.forWhom) setShareForWhom(d.forWhom);
+          if (d.privacyNote) setSharePrivacy(d.privacyNote);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layout === "embark-card") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterEmbarkDraft;
+          if (d.direction) setEmbarkDirection(d.direction);
+          if (d.firstStep) setEmbarkFirstStep(d.firstStep);
+          if (d.aiHelp) setEmbarkAiHelp(d.aiHelp);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
     } catch {
 
       /* ignore */
@@ -469,7 +569,14 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         ChapterStressTestDraft &
         ChapterThirdPathDraft &
         ChapterProConfirmDraft &
-        ChapterDecisionMemoDraft
+        ChapterDecisionMemoDraft &
+        ChapterElevatorWishDraft &
+        ChapterLifeMatchDraft &
+        ChapterFiveReflectDraft &
+        ChapterThreeStepsDraft &
+        ChapterMeaningSeedDraft &
+        ChapterShareIntentDraft &
+        ChapterEmbarkDraft
     >
   ) => {
     if (typeof window === "undefined") return;
@@ -696,6 +803,67 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
       };
       localStorage.setItem(draftKey, JSON.stringify(next));
     }
+    if (layout === "elevator-wish") {
+      const next: ChapterElevatorWishDraft = {
+        want: patch.want ?? wishWant,
+        stuck: patch.stuck ?? wishStuck,
+        aiHelp: patch.aiHelp ?? wishAiHelp,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layout === "life-match") {
+      const next: ChapterLifeMatchDraft = {
+        painPoint: patch.painPoint ?? lifePainPoint,
+        roleId: patch.roleId ?? lifeRoleId,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layout === "five-reflect") {
+      const next: ChapterFiveReflectDraft = {
+        focusId: patch.focusId ?? picked ?? "",
+        statuses: patch.statuses ?? fiveStatuses,
+        nextStep: patch.nextStep ?? fiveNextStep,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layout === "three-steps") {
+      const next: ChapterThreeStepsDraft = {
+        task: patch.task ?? lifeTask,
+        steps: patch.steps ?? lifeSteps,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layout === "meaning-seed") {
+      const next: ChapterMeaningSeedDraft = {
+        material: patch.material ?? seedMaterial,
+        formHint: patch.formHint ?? seedForm,
+        because: patch.because ?? seedBecause,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layout === "share-intent") {
+      const next: ChapterShareIntentDraft = {
+        shareWhat: patch.shareWhat ?? shareWhat,
+        forWhom: patch.forWhom ?? shareForWhom,
+        privacyNote: patch.privacyNote ?? sharePrivacy,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layout === "embark-card") {
+      const next: ChapterEmbarkDraft = {
+        direction: patch.direction ?? embarkDirection,
+        firstStep: patch.firstStep ?? embarkFirstStep,
+        aiHelp: patch.aiHelp ?? embarkAiHelp,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
   };
 
 
@@ -833,6 +1001,48 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         break;
       case "decision-memo":
         action = [memoStatus, memoReason, memoPending].filter(Boolean).join("｜");
+        break;
+      case "elevator-wish":
+        action =
+          [wishWant, wishStuck, wishAiHelp].filter(Boolean).join("｜") ||
+          wishWant.trim();
+        break;
+      case "life-match":
+        action =
+          lifePainPoint.trim() ||
+          (lifeRoleId
+            ? `需要：${chapter.lifeRoleOptions?.find((r) => r.id === lifeRoleId)?.label ?? lifeRoleId}`
+            : "");
+        break;
+      case "five-reflect": {
+        const focusLabel =
+          chapter.smartDirections?.find((d) => d.id === picked)?.label ?? picked ?? "";
+        action =
+          fiveNextStep.trim() ||
+          (focusLabel ? `先支持：${focusLabel}` : "") ||
+          Object.entries(fiveStatuses)
+            .filter(([, v]) => v)
+            .map(([k, v]) => `${k}:${v}`)
+            .join("；");
+        break;
+      }
+      case "three-steps":
+        action = lifeTask.trim() || lifeSteps.filter(Boolean).join("；");
+        break;
+      case "meaning-seed":
+        action =
+          (seedBecause.trim() ? `我想留下它，因為${seedBecause.trim()}` : "") ||
+          [seedMaterial, seedForm].filter(Boolean).join("｜");
+        break;
+      case "share-intent":
+        action =
+          shareWhat.trim() ||
+          [shareForWhom, sharePrivacy].filter(Boolean).join("｜");
+        break;
+      case "embark-card":
+        action =
+          [embarkDirection, embarkFirstStep, embarkAiHelp].filter(Boolean).join("｜") ||
+          embarkFirstStep.trim();
         break;
       case "routes":
       case "ai-entry":
@@ -1207,6 +1417,101 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
       saveDraft({ pickedScenes: next });
       return next;
     });
+  };
+
+  const applyElevatorDemo = (demo: ElevatorWishDemo) => {
+    setWishWant(demo.want);
+    setWishStuck(demo.stuck);
+    setWishAiHelp(demo.aiHelp);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      want: demo.want,
+      stuck: demo.stuck,
+      aiHelp: demo.aiHelp,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的三句話。`);
+  };
+
+  const applyLifeMatchDemo = (demo: LifeMatchDemo) => {
+    setLifePainPoint(demo.painPoint);
+    setLifeRoleId(demo.roleId);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      painPoint: demo.painPoint,
+      roleId: demo.roleId,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的卡點。`);
+  };
+
+  const applyFiveReflectDemo = (demo: FiveReflectDemo) => {
+    setPicked(demo.focusId);
+    setFiveStatuses(demo.statuses);
+    setFiveNextStep(demo.nextStep);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      focusId: demo.focusId,
+      statuses: demo.statuses,
+      nextStep: demo.nextStep,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的回看。`);
+  };
+
+  const applyThreeStepsDemo = (demo: ThreeStepsDemo) => {
+    const steps: [string, string, string] = [
+      demo.steps[0] ?? "",
+      demo.steps[1] ?? "",
+      demo.steps[2] ?? "",
+    ];
+    setLifeTask(demo.task);
+    setLifeSteps(steps);
+    setReflectNote(demo.reflectNote);
+    saveDraft({ task: demo.task, steps, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}，您可以改成自己的三步。`);
+  };
+
+  const applyMeaningSeedDemo = (demo: MeaningSeedDemo) => {
+    setSeedMaterial(demo.material);
+    setSeedForm(demo.formHint);
+    setSeedBecause(demo.because);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      material: demo.material,
+      formHint: demo.formHint,
+      because: demo.because,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的種子。`);
+  };
+
+  const applyShareIntentDemo = (demo: ShareIntentDemo) => {
+    setShareWhat(demo.shareWhat);
+    setShareForWhom(demo.forWhom);
+    setSharePrivacy(demo.privacyNote);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      shareWhat: demo.shareWhat,
+      forWhom: demo.forWhom,
+      privacyNote: demo.privacyNote,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的分享意向。`);
+  };
+
+  const applyEmbarkDemo = (demo: EmbarkDemo) => {
+    setEmbarkDirection(demo.direction);
+    setEmbarkFirstStep(demo.firstStep);
+    setEmbarkAiHelp(demo.aiHelp);
+    setReflectNote(demo.reflectNote);
+    saveDraft({
+      direction: demo.direction,
+      firstStep: demo.firstStep,
+      aiHelp: demo.aiHelp,
+      reflectNote: demo.reflectNote,
+    });
+    toast.success(`已帶入${demo.label}，您可以改成自己的啟程卡。`);
   };
 
   const copyNoteTemplate = async () => {
@@ -2798,6 +3103,388 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
             </div>
           )}
 
+          {layout === "elevator-wish" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { key: "want", label: "我想要", value: wishWant, set: setWishWant, ph: "例如：整理家族照片…" },
+                { key: "stuck", label: "我卡在", value: wishStuck, set: setWishStuck, ph: "例如：不知道從哪裡開始…" },
+                { key: "aiHelp", label: "希望 AI 先幫我", value: wishAiHelp, set: setWishAiHelp, ph: "例如：先訂一個只選 10 張的步驟…" },
+              ].map((row) => (
+                <div key={row.key}>
+                  <div style={{
+                    fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6,
+                  }}>
+                    {row.label}
+                  </div>
+                  <textarea
+                    value={row.value}
+                    onChange={(e) => {
+                      row.set(e.target.value);
+                      saveDraft({ [row.key]: e.target.value } as Partial<ChapterElevatorWishDraft>);
+                    }}
+                    placeholder={row.ph}
+                    rows={2}
+                    style={{
+                      width: "100%", padding: "12px 14px",
+                      borderRadius: 12, border: "2px solid var(--line-strong)",
+                      background: "var(--surface)", fontSize: "var(--fs-sm)",
+                      fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "life-match" && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 8,
+              }}>
+                生活卡點
+              </div>
+              <textarea
+                value={lifePainPoint}
+                onChange={(e) => {
+                  setLifePainPoint(e.target.value);
+                  saveDraft({ painPoint: e.target.value });
+                }}
+                placeholder="例如：下週回診，怕搞錯時間又怕找不到路…"
+                rows={2}
+                style={{
+                  width: "100%", padding: "12px 14px", marginBottom: 12,
+                  borderRadius: 12, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                }}
+              />
+              {chapter.lifeRoleOptions && (
+                <>
+                  <div style={{
+                    fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 8,
+                  }}>
+                    需要的角色（選一位）
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {chapter.lifeRoleOptions.map((opt) => {
+                      const on = lifeRoleId === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => {
+                            setLifeRoleId(opt.id);
+                            saveDraft({ roleId: opt.id });
+                          }}
+                          style={{
+                            textAlign: "left", padding: "12px 14px",
+                            borderRadius: 12,
+                            border: `2px solid ${on ? "var(--primary)" : "var(--line-strong)"}`,
+                            background: on ? "var(--primary-soft)" : "var(--surface)",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <strong style={{ fontSize: "var(--fs-sm)" }}>{opt.label}</strong>
+                          <span style={{
+                            display: "block", fontSize: "var(--fs-xs)", color: "var(--ink-3)", marginTop: 2,
+                          }}>
+                            {opt.hint}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {layout === "five-reflect" && chapter.smartDirections && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 8,
+              }}>
+                {chapter.fiveReflectMode === "pick"
+                  ? "選一個最接近現在需要的方向"
+                  : chapter.fiveReflectMode === "weekly"
+                    ? "用低／中／高或一句話回看五方向"
+                    : "為五方向各寫一句現況，再圈出最想先支持的一個"}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
+                {chapter.smartDirections.map((dir) => {
+                  const on = picked === dir.id;
+                  const status = fiveStatuses[dir.id] ?? "";
+                  return (
+                    <div
+                      key={dir.id}
+                      style={{
+                        padding: 12, borderRadius: 12,
+                        border: `2px solid ${on ? "var(--primary)" : "var(--line-strong)"}`,
+                        background: on ? "var(--primary-soft)" : "var(--surface)",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPicked(dir.id);
+                          saveDraft({ focusId: dir.id });
+                        }}
+                        style={{
+                          width: "100%", textAlign: "left", background: "transparent",
+                          border: "none", cursor: "pointer", padding: 0,
+                        }}
+                      >
+                        <strong style={{ fontSize: "var(--fs-sm)" }}>
+                          {dir.letter}｜{dir.label}
+                          {on ? " · 先支持這裡" : ""}
+                        </strong>
+                        <span style={{
+                          display: "block", fontSize: "var(--fs-xs)", color: "var(--ink-3)", marginTop: 2,
+                        }}>
+                          {dir.hint}
+                        </span>
+                      </button>
+                      {chapter.fiveReflectMode !== "pick" && (
+                        <div style={{ marginTop: 10 }}>
+                          {chapter.statusChoices && (
+                            <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
+                              {chapter.statusChoices.map((c) => (
+                                <button
+                                  key={c}
+                                  type="button"
+                                  onClick={() => {
+                                    const next = { ...fiveStatuses, [dir.id]: c };
+                                    setFiveStatuses(next);
+                                    saveDraft({ statuses: next });
+                                  }}
+                                  style={{
+                                    padding: "6px 12px", borderRadius: "var(--r-pill)",
+                                    border: `1px solid ${status === c ? "var(--primary)" : "var(--line)"}`,
+                                    background: status === c ? "var(--primary)" : "var(--surface)",
+                                    color: status === c ? "#fff" : "var(--ink-2)",
+                                    fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                                  }}
+                                >
+                                  {c}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          <input
+                            value={status}
+                            onChange={(e) => {
+                              const next = { ...fiveStatuses, [dir.id]: e.target.value };
+                              setFiveStatuses(next);
+                              saveDraft({ statuses: next });
+                            }}
+                            placeholder="或寫一句現況…"
+                            style={{
+                              width: "100%", padding: "10px 12px",
+                              borderRadius: 10, border: "1px solid var(--line)",
+                              background: "var(--surface)", fontSize: "var(--fs-xs)",
+                              fontFamily: "inherit", boxSizing: "border-box",
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {chapter.fiveReflectMode !== "pick" && (
+                <>
+                  <div style={{
+                    fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6,
+                  }}>
+                    最小下一步
+                  </div>
+                  <textarea
+                    value={fiveNextStep}
+                    onChange={(e) => {
+                      setFiveNextStep(e.target.value);
+                      saveDraft({ nextStep: e.target.value });
+                    }}
+                    placeholder="例如：這週傳一張近況照片給家人…"
+                    rows={2}
+                    style={{
+                      width: "100%", padding: "12px 14px",
+                      borderRadius: 12, border: "2px solid var(--line-strong)",
+                      background: "var(--surface)", fontSize: "var(--fs-sm)",
+                      fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                    }}
+                  />
+                </>
+              )}
+            </div>
+          )}
+
+          {layout === "three-steps" && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6,
+              }}>
+                本週想過順的小事
+              </div>
+              <textarea
+                value={lifeTask}
+                onChange={(e) => {
+                  setLifeTask(e.target.value);
+                  saveDraft({ task: e.target.value });
+                }}
+                placeholder="例如：這週想讓晚餐準備不那麼亂…"
+                rows={2}
+                style={{
+                  width: "100%", padding: "12px 14px", marginBottom: 12,
+                  borderRadius: 12, border: "2px solid var(--line-strong)",
+                  background: "var(--surface)", fontSize: "var(--fs-sm)",
+                  fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                }}
+              />
+              {(["第一步", "第二步", "第三步"] as const).map((label, i) => (
+                <div key={label} style={{ marginBottom: 10 }}>
+                  <div style={{
+                    fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 4,
+                  }}>
+                    {label}
+                  </div>
+                  <input
+                    value={lifeSteps[i]}
+                    onChange={(e) => {
+                      const next: [string, string, string] = [...lifeSteps];
+                      next[i] = e.target.value;
+                      setLifeSteps(next);
+                      saveDraft({ steps: next });
+                    }}
+                    placeholder={`不費力的${label}…`}
+                    style={{
+                      width: "100%", padding: "12px 14px",
+                      borderRadius: 12, border: "2px solid var(--line-strong)",
+                      background: "var(--surface)", fontSize: "var(--fs-sm)",
+                      fontFamily: "inherit", boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "meaning-seed" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { key: "material", label: "生命素材", value: seedMaterial, set: setSeedMaterial, ph: "例如：一張旅行照片／一段口述…" },
+                { key: "formHint", label: "可能的作品形式", value: seedForm, set: setSeedForm, ph: "例如：10 頁小冊、食譜卡、口述文字…" },
+                { key: "because", label: "我想留下它，因為", value: seedBecause, set: setSeedBecause, ph: "例如：想讓孫子知道我們走過哪些地方…" },
+              ].map((row) => (
+                <div key={row.key}>
+                  <div style={{
+                    fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6,
+                  }}>
+                    {row.label}
+                  </div>
+                  <textarea
+                    value={row.value}
+                    onChange={(e) => {
+                      row.set(e.target.value);
+                      const patch =
+                        row.key === "material"
+                          ? { material: e.target.value }
+                          : row.key === "formHint"
+                            ? { formHint: e.target.value }
+                            : { because: e.target.value };
+                      saveDraft(patch);
+                    }}
+                    placeholder={row.ph}
+                    rows={2}
+                    style={{
+                      width: "100%", padding: "12px 14px",
+                      borderRadius: 12, border: "2px solid var(--line-strong)",
+                      background: "var(--surface)", fontSize: "var(--fs-sm)",
+                      fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "share-intent" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { key: "shareWhat", label: "願意分享的小經驗或方法", value: shareWhat, set: setShareWhat, ph: "例如：如何用相簿搜尋找到生日照片…" },
+                { key: "forWhom", label: "希望幫助誰", value: shareForWhom, set: setShareForWhom, ph: "例如：剛開始學手機的朋友…" },
+                { key: "privacyNote", label: "我仍想保留的隱私", value: sharePrivacy, set: setSharePrivacy, ph: "例如：不公開家人照片，只分享步驟…" },
+              ].map((row) => (
+                <div key={row.key}>
+                  <div style={{
+                    fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6,
+                  }}>
+                    {row.label}
+                  </div>
+                  <textarea
+                    value={row.value}
+                    onChange={(e) => {
+                      row.set(e.target.value);
+                      const patch =
+                        row.key === "shareWhat"
+                          ? { shareWhat: e.target.value }
+                          : row.key === "forWhom"
+                            ? { forWhom: e.target.value }
+                            : { privacyNote: e.target.value };
+                      saveDraft(patch);
+                    }}
+                    placeholder={row.ph}
+                    rows={2}
+                    style={{
+                      width: "100%", padding: "12px 14px",
+                      borderRadius: 12, border: "2px solid var(--line-strong)",
+                      background: "var(--surface)", fontSize: "var(--fs-sm)",
+                      fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "embark-card" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { key: "direction", label: "我的方向", value: embarkDirection, set: setEmbarkDirection, ph: "例如：S｜分享與連結…" },
+                { key: "firstStep", label: "第一小步", value: embarkFirstStep, set: setEmbarkFirstStep, ph: "例如：這週傳一張近況照片…" },
+                { key: "aiHelp", label: "希望 AI 協助的方式", value: embarkAiHelp, set: setEmbarkAiHelp, ph: "例如：幫我想一句溫暖的傳訊開頭…" },
+              ].map((row) => (
+                <div key={row.key}>
+                  <div style={{
+                    fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6,
+                  }}>
+                    {row.label}
+                  </div>
+                  <textarea
+                    value={row.value}
+                    onChange={(e) => {
+                      row.set(e.target.value);
+                      const patch =
+                        row.key === "direction"
+                          ? { direction: e.target.value }
+                          : row.key === "firstStep"
+                            ? { firstStep: e.target.value }
+                            : { aiHelp: e.target.value };
+                      saveDraft(patch);
+                    }}
+                    placeholder={row.ph}
+                    rows={2}
+                    style={{
+                      width: "100%", padding: "12px 14px",
+                      borderRadius: 12, border: "2px solid var(--line-strong)",
+                      background: "var(--surface)", fontSize: "var(--fs-sm)",
+                      fontFamily: "inherit", resize: "vertical", boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
           {layout === "routes" && chapter.entries && chapter.entries.length > 0 && (
             <div style={{
               display: "grid", gridTemplateColumns: "1fr 1fr",
@@ -2905,7 +3592,14 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                   reflectLayout === "stress-test" ||
                   reflectLayout === "third-path" ||
                   reflectLayout === "pro-confirm" ||
-                  reflectLayout === "decision-memo"
+                  reflectLayout === "decision-memo" ||
+                  reflectLayout === "elevator-wish" ||
+                  reflectLayout === "life-match" ||
+                  reflectLayout === "five-reflect" ||
+                  reflectLayout === "three-steps" ||
+                  reflectLayout === "meaning-seed" ||
+                  reflectLayout === "share-intent" ||
+                  reflectLayout === "embark-card"
                 ) {
                   saveDraft({ reflectNote: e.target.value });
                 } else if (picked) {
@@ -3618,6 +4312,190 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                   ))}
                 </div>
               )}
+              {layout === "elevator-wish" && chapter.elevatorDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.elevatorDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)",
+                      }}>
+                        {demo.label}
+                      </div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>我想要：</strong>{demo.want}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>我卡在：</strong>{demo.stuck}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>希望 AI：</strong>{demo.aiHelp}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
+                      <button type="button" onClick={() => applyElevatorDemo(demo)} style={{
+                        padding: "8px 14px", borderRadius: "var(--r-pill)",
+                        border: "1px solid var(--primary)", background: "var(--surface)",
+                        color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                      }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "life-match" && chapter.lifeMatchDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.lifeMatchDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "#5BA0C9",
+                      }}>
+                        {demo.label}
+                      </div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>卡點：</strong>{demo.painPoint}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}>
+                        <strong>角色：</strong>
+                        {chapter.lifeRoleOptions?.find((r) => r.id === demo.roleId)?.label ?? demo.roleId}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
+                      <button type="button" onClick={() => applyLifeMatchDemo(demo)} style={{
+                        padding: "8px 14px", borderRadius: "var(--r-pill)",
+                        border: "1px solid #5BA0C9", background: "var(--surface)",
+                        color: "#5BA0C9", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                      }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "five-reflect" && chapter.fiveReflectDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.fiveReflectDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)",
+                      }}>
+                        {demo.label}
+                      </div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}>
+                        <strong>先支持：</strong>
+                        {chapter.smartDirections?.find((d) => d.id === demo.focusId)?.label ?? demo.focusId}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}>
+                        <strong>現況：</strong>
+                        {Object.entries(demo.statuses).map(([k, v]) => `${k}:${v}`).join("；")}
+                      </p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>下一步：</strong>{demo.nextStep}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
+                      <button type="button" onClick={() => applyFiveReflectDemo(demo)} style={{
+                        padding: "8px 14px", borderRadius: "var(--r-pill)",
+                        border: "1px solid var(--primary)", background: "var(--surface)",
+                        color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                      }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "three-steps" && chapter.threeStepsDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.threeStepsDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--sage)",
+                      }}>
+                        {demo.label}
+                      </div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>小事：</strong>{demo.task}</p>
+                      <ol style={{ margin: "0 0 8px", paddingLeft: 20, fontSize: "var(--fs-xs)", color: "var(--ink-2)" }}>
+                        {demo.steps.map((s, i) => (<li key={i}>{s}</li>))}
+                      </ol>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
+                      <button type="button" onClick={() => applyThreeStepsDemo(demo)} style={{
+                        padding: "8px 14px", borderRadius: "var(--r-pill)",
+                        border: "1px solid var(--sage)", background: "var(--surface)",
+                        color: "var(--sage)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                      }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "meaning-seed" && chapter.meaningSeedDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.meaningSeedDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "#E8845A",
+                      }}>
+                        {demo.label}
+                      </div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>素材：</strong>{demo.material}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>形式：</strong>{demo.formHint}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>因為：</strong>{demo.because}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
+                      <button type="button" onClick={() => applyMeaningSeedDemo(demo)} style={{
+                        padding: "8px 14px", borderRadius: "var(--r-pill)",
+                        border: "1px solid #E8845A", background: "var(--surface)",
+                        color: "#E8845A", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                      }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "share-intent" && chapter.shareIntentDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.shareIntentDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "#5BA0C9",
+                      }}>
+                        {demo.label}
+                      </div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>分享：</strong>{demo.shareWhat}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>幫助：</strong>{demo.forWhom}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>隱私：</strong>{demo.privacyNote}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
+                      <button type="button" onClick={() => applyShareIntentDemo(demo)} style={{
+                        padding: "8px 14px", borderRadius: "var(--r-pill)",
+                        border: "1px solid #5BA0C9", background: "var(--surface)",
+                        color: "#5BA0C9", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                      }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "embark-card" && chapter.embarkDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.embarkDemos.map((demo) => (
+                    <div key={demo.id} style={{
+                      padding: 14, borderRadius: 12,
+                      background: "var(--surface-warm)", border: "1px solid var(--line)",
+                    }}>
+                      <div style={{
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)",
+                      }}>
+                        {demo.label}
+                      </div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>方向：</strong>{demo.direction}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>第一小步：</strong>{demo.firstStep}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>AI：</strong>{demo.aiHelp}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
+                      <button type="button" onClick={() => applyEmbarkDemo(demo)} style={{
+                        padding: "8px 14px", borderRadius: "var(--r-pill)",
+                        border: "1px solid var(--primary)", background: "var(--surface)",
+                        color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                      }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
 {chapter.guideFooterNote && (
                 <p style={{
                   fontSize: "var(--fs-xs)", color: "var(--ink-3)",
@@ -3845,6 +4723,24 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           memoStatus={memoStatus}
           memoReason={memoReason}
           memoPending={memoPending}
+          wishWant={wishWant}
+          wishStuck={wishStuck}
+          wishAiHelp={wishAiHelp}
+          lifePainPoint={lifePainPoint}
+          lifeRoleId={lifeRoleId}
+          fiveStatuses={fiveStatuses}
+          fiveNextStep={fiveNextStep}
+          lifeTask={lifeTask}
+          lifeSteps={lifeSteps}
+          seedMaterial={seedMaterial}
+          seedForm={seedForm}
+          seedBecause={seedBecause}
+          shareWhat={shareWhat}
+          shareForWhom={shareForWhom}
+          sharePrivacy={sharePrivacy}
+          embarkDirection={embarkDirection}
+          embarkFirstStep={embarkFirstStep}
+          embarkAiHelp={embarkAiHelp}
         />
       </div>
     </>
@@ -4050,6 +4946,24 @@ function PrintCard({
   memoStatus = "",
   memoReason = "",
   memoPending = "",
+  wishWant = "",
+  wishStuck = "",
+  wishAiHelp = "",
+  lifePainPoint = "",
+  lifeRoleId = "",
+  fiveStatuses = {},
+  fiveNextStep = "",
+  lifeTask = "",
+  lifeSteps = ["", "", ""],
+  seedMaterial = "",
+  seedForm = "",
+  seedBecause = "",
+  shareWhat = "",
+  shareForWhom = "",
+  sharePrivacy = "",
+  embarkDirection = "",
+  embarkFirstStep = "",
+  embarkAiHelp = "",
 }: {
   chapter: ChapterOpening;
   picked: string | null;
@@ -4133,6 +5047,24 @@ function PrintCard({
   memoStatus?: string;
   memoReason?: string;
   memoPending?: string;
+  wishWant?: string;
+  wishStuck?: string;
+  wishAiHelp?: string;
+  lifePainPoint?: string;
+  lifeRoleId?: string;
+  fiveStatuses?: Record<string, string>;
+  fiveNextStep?: string;
+  lifeTask?: string;
+  lifeSteps?: [string, string, string];
+  seedMaterial?: string;
+  seedForm?: string;
+  seedBecause?: string;
+  shareWhat?: string;
+  shareForWhom?: string;
+  sharePrivacy?: string;
+  embarkDirection?: string;
+  embarkFirstStep?: string;
+  embarkAiHelp?: string;
 }) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const bgLabels = chapter.backgroundOptions
@@ -4704,6 +5636,168 @@ function PrintCard({
         <p style={{ fontSize: 12, color: "#666" }}>
           掃碼網址：{origin}/smart/chapter/{chapter.id}
         </p>
+      </div>
+    );
+  }
+
+  if (layout === "elevator-wish") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <PrintGridCell title="我想要" minHeight={48}>{wishWant || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="我卡在" minHeight={48}>{wishStuck || "＿＿＿＿＿＿"}</PrintGridCell>
+        </div>
+        <PrintGridCell title="希望 AI 先幫我" minHeight={48}>{wishAiHelp || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="我想前往的方向" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        </div>
+        <p style={{ fontSize: 12, color: "#666" }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if (layout === "life-match") {
+    const roleLabel = chapter.lifeRoleOptions?.find((r) => r.id === lifeRoleId)?.label ?? lifeRoleId;
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <PrintGridCell title="生活卡點" minHeight={64}>{lifePainPoint || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="需要的角色" minHeight={48}>{roleLabel || "＿＿＿＿＿＿"}</PrintGridCell>
+        </div>
+        <PrintGridCell title="希望先安頓的事" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if (layout === "five-reflect") {
+    const focusLabel = chapter.smartDirections?.find((d) => d.id === picked)?.label ?? picked ?? "";
+    const statusLines = (chapter.smartDirections ?? [])
+      .map((d) => `${d.letter} ${d.label}：${fiveStatuses[d.id] || "＿＿＿"}`)
+      .join("\n");
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <PrintGridCell title="五方向現況／選擇" minHeight={120}>
+          <pre style={{ margin: 0, fontFamily: "inherit", whiteSpace: "pre-wrap" }}>
+            {statusLines || focusLabel || "＿＿＿＿＿＿＿＿＿＿"}
+          </pre>
+        </PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="最想先支持" minHeight={48}>{focusLabel || "＿＿＿＿＿＿"}</PrintGridCell>
+        </div>
+        <PrintGridCell title="最小步驟／溫柔下一步" minHeight={64}>
+          {fiveNextStep || reflectNote || "＿＿＿＿＿＿＿＿＿＿"}
+        </PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if (layout === "three-steps") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <PrintGridCell title="想過順的小事" minHeight={48}>{lifeTask || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="三個步驟" minHeight={96}>
+            <ol style={{ margin: 0, paddingLeft: 18 }}>
+              {(lifeSteps.some(Boolean) ? lifeSteps : ["＿＿＿", "＿＿＿", "＿＿＿"]).map((s, i) => (
+                <li key={i} style={{ marginBottom: 4 }}>{s || "＿＿＿"}</li>
+              ))}
+            </ol>
+          </PrintGridCell>
+        </div>
+        <PrintGridCell title="最有餘裕的一步" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if (layout === "meaning-seed") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <PrintGridCell title="生命素材" minHeight={48}>{seedMaterial || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="作品形式" minHeight={48}>{seedForm || "＿＿＿＿＿＿"}</PrintGridCell>
+        </div>
+        <PrintGridCell title="我想留下它，因為" minHeight={64}>{seedBecause || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="想留給誰／回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        </div>
+        <p style={{ fontSize: 12, color: "#666" }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if (layout === "share-intent") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <PrintGridCell title="願意分享" minHeight={64}>{shareWhat || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="希望幫助誰" minHeight={48}>{shareForWhom || "＿＿＿＿＿＿"}</PrintGridCell>
+        </div>
+        <PrintGridCell title="仍想保留的隱私" minHeight={48}>{sharePrivacy || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="希望帶來的幫助" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        </div>
+        <p style={{ fontSize: 12, color: "#666" }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if (layout === "embark-card") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
+          {chapter.printCardTitle} · QR {chapter.qrCode}
+        </h1>
+        {chapter.quote && (
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>
+        )}
+        <PrintGridCell title="我的方向" minHeight={48}>{embarkDirection || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="第一小步" minHeight={48}>{embarkFirstStep || "＿＿＿＿＿＿"}</PrintGridCell>
+        </div>
+        <PrintGridCell title="希望 AI 協助的方式" minHeight={48}>{embarkAiHelp || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}>
+          <PrintGridCell title="出發的小事" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        </div>
+        <p style={{ fontSize: 12, color: "#666" }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
       </div>
     );
   }
