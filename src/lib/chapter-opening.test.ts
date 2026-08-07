@@ -15,9 +15,12 @@ import {
   chapterSparkHref,
   chapterSparkSource,
   chapterVoiceTryHref,
+  filterBookGuideSections,
+  getBookGuideSections,
   getChapterDeepLinkHint,
   getChapterOpening,
   isSparkSource,
+  listChapterOpenings,
   practiceWhereLabel,
 } from "./chapter-opening";
 
@@ -203,5 +206,31 @@ describe("chapter-opening", () => {
     expect(chapterSparkHref("0202")).toContain("source=chapter0202");
     expect(getChapterDeepLinkHint("chapter0202")?.label).toContain("識花");
     expect(getChapterDeepLinkHint("chapter9999")?.tips[0]).toContain("一拍");
+  });
+
+  it("getBookGuideSections covers ch1/ch2/ch8", () => {
+    const sections = getBookGuideSections();
+    expect(sections.map((s) => s.id)).toEqual(["ch1", "ch2", "ch8"]);
+    expect(listChapterOpenings().length).toBe(
+      sections.reduce((n, s) => n + s.chapters.length, 0)
+    );
+    expect(sections[0].chapters.some((c) => c.id === "0102")).toBe(true);
+    expect(sections[1].chapters.some((c) => c.id === "0203")).toBe(true);
+    expect(sections[2].chapters.some((c) => c.id === "0800")).toBe(true);
+  });
+
+  it("filterBookGuideSections by QR and keyword", () => {
+    const byQr = filterBookGuideSections("0203");
+    expect(byQr).toHaveLength(1);
+    expect(byQr[0].chapters.map((c) => c.id)).toEqual(["0203"]);
+
+    const byKeyword = filterBookGuideSections("點菜");
+    expect(byKeyword.some((s) => s.chapters.some((c) => c.id === "0203"))).toBe(true);
+
+    const byAlias = filterBookGuideSections("Gemini");
+    expect(byAlias.some((s) => s.chapters.some((c) => c.id === "0102"))).toBe(true);
+
+    expect(filterBookGuideSections("不存在的關鍵字zzz")).toHaveLength(0);
+    expect(filterBookGuideSections("").length).toBe(3);
   });
 });

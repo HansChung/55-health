@@ -189,7 +189,7 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
           onClick={onBookPractice}
           emoji="📖"
           title="書本練習"
-          subtitle="一拍、二問、三記下｜智慧啟航／感官覺醒"
+          subtitle="章節目錄可搜尋｜一拍、二問、三記下"
           background="linear-gradient(135deg, #E8F5EE 0%, #FFFFFF 100%)"
           borderColor="#C3DDBB"
           iconBg="#D5E8CE"
