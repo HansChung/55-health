@@ -1,49 +1,37 @@
 "use client";
 
+import { useDeferredValue, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SubPage } from "@/components/sub-page";
 import { BLUEPRINT_DIMENSIONS, BLUEPRINT_INSIGHT } from "@/lib/smart-blueprint";
-
-const CHAPTER_2_LINKS: { id: string; label: string; color: string }[] = [
-  { id: "0200", label: "感官覺醒｜章節開篇", color: "#5BA0C9" },
-  { id: "0201", label: "數位華爾滋：一拍、二問、三記下", color: "#9B7AD4" },
-  { id: "0202", label: "自然篇：路邊小花都有身世", color: "var(--sage)" },
-  { id: "0203", label: "旅行篇：點菜的勇氣", color: "#E8845A" },
-  { id: "0204", label: "消費篇：精明消費", color: "#7B5BB8" },
-  { id: "0205", label: "知識篇：好奇心", color: "#5BA0C9" },
-  { id: "0206", label: "美食篇：舌尖下的秘密", color: "var(--primary-deep)" },
-  { id: "0207", label: "五色高纖食譜庫", color: "var(--sage)" },
-  { id: "0208", label: "照片搜尋：回憶不必被埋沒", color: "#9B7AD4" },
-  { id: "0209", label: "魔法橡皮擦：修復遺憾", color: "#5BA0C9" },
-  { id: "0210", label: "人生策展", color: "#7B5BB8" },
-  { id: "0211", label: "感官全開：把好奇變成生活反射", color: "#E8845A" },
-];
-
-const CHAPTER_8_LINKS: { id: string; label: string; color: string }[] = [
-  { id: "0800", label: "財富智囊｜把複雜選擇放上自己的決策桌", color: "#8B6F47" },
-  { id: "0801", label: "坐回決策主位", color: "#5BA0C9" },
-  { id: "0802", label: "建立可信來源階梯", color: "#9B7AD4" },
-  { id: "0803", label: "把條款翻成生活語言", color: "#E8845A" },
-  { id: "0804", label: "守住三項生活底線", color: "#7B5BB8" },
-  { id: "0805", label: "召開一人董事會", color: "var(--sage)" },
-  { id: "0806", label: "用同一把生活尺度比較", color: "#8B6F47" },
-  { id: "0807", label: "進行最壞情境壓力測試", color: "#5BA0C9" },
-  { id: "0808", label: "打開第三條路", color: "#9B7AD4" },
-  { id: "0809", label: "決定前完成專業確認", color: "#E8845A" },
-  { id: "0810", label: "完成私人決策備忘錄", color: "#7B5BB8" },
-];
+import {
+  filterBookGuideSections,
+  getBookGuideSections,
+} from "@/lib/chapter-opening";
 
 /**
- * QR：SMART RADAR 溫暖導讀（文字版；之後可換成音檔）
- * 對應 KU05 左頁文案精華
+ * 書本首頁／溫暖導讀：章節目錄 + 搜尋
+ * QR／首頁「書本練習」→ /smart/guide
  */
 export default function SmartGuidePage() {
   const router = useRouter();
+  const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
+
+  const allSections = useMemo(() => getBookGuideSections(), []);
+  const sections = useMemo(
+    () => filterBookGuideSections(deferredQuery, allSections),
+    [deferredQuery, allSections]
+  );
+
+  const totalChapters = allSections.reduce((n, s) => n + s.chapters.length, 0);
+  const matchedCount = sections.reduce((n, s) => n + s.chapters.length, 0);
+  const searching = query.trim().length > 0;
 
   return (
     <div style={{ minHeight: "100dvh", maxWidth: 480, margin: "0 auto", background: "var(--bg, #FAF5EC)" }}>
       <SubPage
-        title="溫暖導讀"
+        title="書本首頁"
         onBack={() => router.push("/")}
         accent="linear-gradient(180deg, #FBE6D4 0%, transparent 100%)"
         footer={
@@ -57,230 +45,161 @@ export default function SmartGuidePage() {
         }
       >
         <div style={{ textAlign: "center", marginBottom: 16 }}>
-          <div style={{ fontSize: 48, marginBottom: 8 }}>🧭</div>
+          <div style={{ fontSize: 48, marginBottom: 8 }}>📖</div>
           <h1 style={{ fontSize: "var(--fs-2xl)", fontWeight: 800, margin: "0 0 6px" }}>
-            SMART RADAR 圓夢藍圖
+            書本練習目錄
           </h1>
           <p style={{ fontSize: "var(--fs-base)", color: "var(--ink-2)", margin: 0 }}>
-            不只是想，更要看見方向
+            輸入 QR 碼或關鍵字，快速找到章節
           </p>
         </div>
 
-        <div style={{
-          fontSize: "var(--fs-base)", color: "var(--ink-1)", lineHeight: 1.7,
-          marginBottom: 20,
-        }}>
-          <p>親愛的領航者：</p>
-          <p>
-            人生下半場，最怕的不是沒有夢想，而是夢想太多、方向太散。
-            SMART 55+ 選擇更直覺的方式：<strong>SMART RADAR</strong>。
-          </p>
-          <p>
-            它不是考試表，也不是壓力表，而是一張人生導航儀。
-            更重要的是，它不要求您一次填完人生——它從日常開始。
-          </p>
-          <p style={{
-            padding: 14, background: "var(--surface)", borderRadius: 12,
-            border: "1px solid var(--line)", fontWeight: 700,
+        <label style={{ display: "block", marginBottom: 20 }}>
+          <span style={{
+            display: "block",
+            fontSize: "var(--fs-xs)",
+            fontWeight: 800,
+            color: "var(--ink-3)",
+            marginBottom: 8,
           }}>
-            {BLUEPRINT_INSIGHT}
-          </p>
-        </div>
+            搜尋章節
+          </span>
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="例如：0203、點菜、Gemini、決策…"
+            enterKeyHint="search"
+            autoComplete="off"
+            style={{
+              width: "100%",
+              padding: "16px 18px",
+              borderRadius: 14,
+              border: "2px solid var(--line-strong)",
+              background: "var(--surface)",
+              fontSize: "var(--fs-base)",
+              fontFamily: "inherit",
+              boxSizing: "border-box",
+            }}
+          />
+          <span style={{
+            display: "block",
+            marginTop: 8,
+            fontSize: "var(--fs-xs)",
+            color: "var(--ink-3)",
+          }}>
+            {searching
+              ? matchedCount > 0
+                ? `找到 ${matchedCount} 個章節`
+                : "沒有符合的章節，可改試 QR 碼或更短的關鍵字"
+              : `共 ${totalChapters} 個章節可練習`}
+          </span>
+        </label>
 
-        <div style={{ fontSize: "var(--fs-sm)", fontWeight: 800, color: "var(--ink-2)", marginBottom: 10 }}>
-          五個方向
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-          {BLUEPRINT_DIMENSIONS.map((d) => (
-            <div key={d.key} style={{
-              padding: "12px 14px", borderRadius: 12,
-              background: d.color + "14", border: `1px solid ${d.color}44`,
+        {!searching && (
+          <>
+            <div style={{
+              fontSize: "var(--fs-base)", color: "var(--ink-1)", lineHeight: 1.7,
+              marginBottom: 20,
             }}>
-              <div style={{ fontWeight: 800, color: d.color }}>{d.shortLabel}</div>
-              <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-2)", marginTop: 2 }}>
-                {d.examples.join("、")}
-              </div>
+              <p style={{ marginTop: 0 }}>親愛的領航者：</p>
+              <p>
+                人生下半場，最怕的不是沒有夢想，而是夢想太多、方向太散。
+                SMART 55+ 選擇更直覺的方式：<strong>SMART RADAR</strong>。
+              </p>
+              <p>
+                它不是考試表，也不是壓力表，而是一張人生導航儀。
+                更重要的是，它不要求您一次填完人生——它從日常開始。
+              </p>
+              <p style={{
+                padding: 14, background: "var(--surface)", borderRadius: 12,
+                border: "1px solid var(--line)", fontWeight: 700,
+              }}>
+                {BLUEPRINT_INSIGHT}
+              </p>
             </div>
-          ))}
-        </div>
 
-        <p style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.6 }}>
-          當方向清楚，圓夢就不再只是口號。它會變成一條看得見、走得到、能持續調整的路。
-        </p>
+            <div style={{ fontSize: "var(--fs-sm)", fontWeight: 800, color: "var(--ink-2)", marginBottom: 10 }}>
+              五個方向
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
+              {BLUEPRINT_DIMENSIONS.map((d) => (
+                <div key={d.key} style={{
+                  padding: "12px 14px", borderRadius: 12,
+                  background: d.color + "14", border: `1px solid ${d.color}44`,
+                }}>
+                  <div style={{ fontWeight: 800, color: d.color }}>{d.shortLabel}</div>
+                  <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-2)", marginTop: 2 }}>
+                    {d.examples.join("、")}
+                  </div>
+                </div>
+              ))}
+            </div>
 
-        <button
-          type="button"
-          onClick={() => router.push("/smart/chapter/0100")}
-          style={{
-            width: "100%", marginTop: 16, padding: "16px",
-            background: "var(--surface)", border: "2px solid #5BA0C9",
-            borderRadius: "var(--r-lg)", fontWeight: 700,
-            fontSize: "var(--fs-sm)", color: "#5BA0C9", cursor: "pointer",
-          }}
-        >
-          章節 0100｜風起了，調整風帆 →
-        </button>
-        <button
-          type="button"
-          onClick={() => router.push("/smart/chapter/0102")}
-          style={{
-            width: "100%", marginTop: 10, padding: "16px",
-            background: "var(--surface)", border: "2px solid #9B7AD4",
-            borderRadius: "var(--r-lg)", fontWeight: 700,
-            fontSize: "var(--fs-sm)", color: "#7B5BB8", cursor: "pointer",
-          }}
-        >
-          章節 0102｜先找得到，再慢慢用 →
-        </button>
-        <button
-          type="button"
-          onClick={() => router.push("/smart/chapter/0103")}
-          style={{
-            width: "100%", marginTop: 10, padding: "16px",
-            background: "var(--surface)", border: "2px solid #E8845A",
-            borderRadius: "var(--r-lg)", fontWeight: 700,
-            fontSize: "var(--fs-sm)", color: "var(--primary-deep)", cursor: "pointer",
-          }}
-        >
-          章節 0103｜把關鍵字丟掉：用人話對話 →
-        </button>
-        <button
-          type="button"
-          onClick={() => router.push("/smart/chapter/0104")}
-          style={{
-            width: "100%", marginTop: 10, padding: "16px",
-            background: "var(--surface)", border: "2px solid var(--sage)",
-            borderRadius: "var(--r-lg)", fontWeight: 700,
-            fontSize: "var(--fs-sm)", color: "var(--sage)", cursor: "pointer",
-          }}
-        >
-          章節 0104｜第二個大腦：把繁雜交給 AI →
-        </button>
-        <button
-          type="button"
-          onClick={() => router.push("/smart/chapter/0105")}
-          style={{
-            width: "100%", marginTop: 10, padding: "16px",
-            background: "var(--surface)", border: "2px solid #5BA0C9",
-            borderRadius: "var(--r-lg)", fontWeight: 700,
-            fontSize: "var(--fs-sm)", color: "#5BA0C9", cursor: "pointer",
-          }}
-        >
-          章節 0105｜為手機裝上眼睛：萬物皆可問 →
-        </button>
-        <button
-          type="button"
-          onClick={() => router.push("/smart/chapter/0106")}
-          style={{
-            width: "100%", marginTop: 10, padding: "16px",
-            background: "var(--surface)", border: "2px solid #9B7AD4",
-            borderRadius: "var(--r-lg)", fontWeight: 700,
-            fontSize: "var(--fs-sm)", color: "#7B5BB8", cursor: "pointer",
-          }}
-        >
-          章節 0106｜為手機裝上相簿：照片可以搜尋 →
-        </button>
-        <button
-          type="button"
-          onClick={() => router.push("/smart/chapter/0107")}
-          style={{
-            width: "100%", marginTop: 10, padding: "16px",
-            background: "var(--surface)", border: "2px solid var(--primary)",
-            borderRadius: "var(--r-lg)", fontWeight: 700,
-            fontSize: "var(--fs-sm)", color: "var(--primary-deep)", cursor: "pointer",
-          }}
-        >
-          章節 0107｜為它準備便條紙：靈感被收藏 →
-        </button>
-        <button
-          type="button"
-          onClick={() => router.push("/smart/chapter/0108")}
-          style={{
-            width: "100%", marginTop: 10, padding: "16px",
-            background: "var(--surface)", border: "2px solid #5BA0C9",
-            borderRadius: "var(--r-lg)", fontWeight: 700,
-            fontSize: "var(--fs-sm)", color: "#5BA0C9", cursor: "pointer",
-          }}
-        >
-          章節 0108｜預備起飛：一拍、二問、三記下 →
-        </button>
+            <p style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.6, marginBottom: 8 }}>
+              當方向清楚，圓夢就不再只是口號。它會變成一條看得見、走得到、能持續調整的路。
+            </p>
+          </>
+        )}
 
-        <div style={{
-          fontSize: "var(--fs-sm)", fontWeight: 800, color: "var(--sage)",
-          marginTop: 24, marginBottom: 10,
-        }}>
-          第二章｜感官覺醒
-        </div>
-        <p style={{
-          fontSize: "var(--fs-xs)", color: "var(--ink-2)", lineHeight: 1.55,
-          margin: "0 0 12px", padding: "12px 14px",
-          background: "var(--surface)", borderRadius: 12, border: "1px solid var(--line)",
-        }}>
-          <strong>書教節奏，暖暖留下痕跡。</strong>
-          {" "}共同節奏：一拍、二問、三記下。練習完可把最有用的一句話「點成光點」。
-        </p>
-        {CHAPTER_2_LINKS.map((ch) => (
-          <button
-            key={ch.id}
-            type="button"
-            onClick={() => router.push(`/smart/chapter/${ch.id}`)}
-            style={{
-              width: "100%", marginTop: 8, padding: "14px 16px",
-              background: "var(--surface)", border: `2px solid ${ch.color}`,
-              borderRadius: "var(--r-lg)", fontWeight: 700,
-              fontSize: "var(--fs-sm)", color: ch.color, cursor: "pointer",
-              textAlign: "left",
-            }}
-          >
-            章節 {ch.id}｜{ch.label} →
-          </button>
+        {sections.map((section) => (
+          <section key={section.id} style={{ marginTop: 20 }}>
+            <div style={{
+              fontSize: "var(--fs-sm)", fontWeight: 800, color: section.accent,
+              marginBottom: 10,
+            }}>
+              {section.title}
+            </div>
+            {!searching && (
+              <p style={{
+                fontSize: "var(--fs-xs)", color: "var(--ink-2)", lineHeight: 1.55,
+                margin: "0 0 12px", padding: "12px 14px",
+                background: "var(--surface)", borderRadius: 12, border: "1px solid var(--line)",
+              }}>
+                {section.intro}
+              </p>
+            )}
+            {section.chapters.map((ch) => (
+              <button
+                key={ch.id}
+                type="button"
+                onClick={() => router.push(ch.href)}
+                style={{
+                  width: "100%", marginTop: 8, padding: "14px 16px",
+                  background: "var(--surface)", border: `2px solid ${ch.color}`,
+                  borderRadius: "var(--r-lg)", fontWeight: 700,
+                  fontSize: "var(--fs-sm)", color: ch.color, cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
+                章節 {ch.qrCode}｜{ch.label} →
+              </button>
+            ))}
+          </section>
         ))}
 
-        <div style={{
-          fontSize: "var(--fs-sm)", fontWeight: 800, color: "#8B6F47",
-          marginTop: 24, marginBottom: 10,
-        }}>
-          第三部｜躍升
-        </div>
-        <p style={{
-          fontSize: "var(--fs-xs)", color: "var(--ink-2)", lineHeight: 1.55,
-          margin: "0 0 12px", padding: "12px 14px",
-          background: "var(--surface)", borderRadius: 12, border: "1px solid var(--line)",
-        }}>
-          <strong>從會使用，到會主持自己的判斷。</strong>
-          {" "}工具可以擴大視野；生活方向，始終由您主持。第八章先帶走一頁私人決策備忘錄。
-        </p>
-
-        <div style={{
-          fontSize: "var(--fs-sm)", fontWeight: 800, color: "#8B6F47",
-          marginTop: 8, marginBottom: 10,
-        }}>
-          第八章｜財富智囊
-        </div>
-        <p style={{
-          fontSize: "var(--fs-xs)", color: "var(--ink-2)", lineHeight: 1.55,
-          margin: "0 0 12px", padding: "12px 14px",
-          background: "var(--surface)", borderRadius: 12, border: "1px solid var(--line)",
-        }}>
-          <strong>資訊可由 AI 整理；生活的答案，不能外包。</strong>
-          {" "}不推薦商品、不預測報酬；留下可重看的決策備忘錄。
-        </p>
-        {CHAPTER_8_LINKS.map((ch) => (
-          <button
-            key={ch.id}
-            type="button"
-            onClick={() => router.push(`/smart/chapter/${ch.id}`)}
-            style={{
-              width: "100%", marginTop: 8, padding: "14px 16px",
-              background: "var(--surface)", border: `2px solid ${ch.color}`,
-              borderRadius: "var(--r-lg)", fontWeight: 700,
-              fontSize: "var(--fs-sm)", color: ch.color, cursor: "pointer",
-              textAlign: "left",
-            }}
-          >
-            章節 {ch.id}｜{ch.label} →
-          </button>
-        ))}
+        {searching && matchedCount === 0 && (
+          <div style={{
+            marginTop: 16, padding: 16, borderRadius: 12,
+            background: "var(--surface)", border: "1px solid var(--line)",
+            fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.55,
+          }}>
+            找不到「{query.trim()}」。可試試四碼 QR（如 0203），或「點菜」「決策」這類關鍵字。
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              style={{
+                display: "block", marginTop: 12, padding: "12px 14px",
+                width: "100%", borderRadius: 12,
+                border: "2px solid var(--line-strong)",
+                background: "var(--surface-warm, #FFF8EE)",
+                fontWeight: 700, fontSize: "var(--fs-sm)", cursor: "pointer",
+              }}
+            >
+              清除搜尋，看全部章節
+            </button>
+          </div>
+        )}
       </SubPage>
     </div>
   );

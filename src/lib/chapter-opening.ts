@@ -488,16 +488,16 @@ export const CHAPTER_0102: ChapterOpening = {
   atAGlance:
     "這一章只做一件事：在手機裡找到可以跟 AI 說話的入口，並試問第一句。不同品牌路徑不太一樣，下面有文字版指引。",
   tryPrompt:
-    "在手機中找一個 AI 對話入口，輸入或說出下面這句話（可以複製）：",
+    "在手機中找一個 AI 對話入口，輸入或說出下面這句話（可以複製；也可一點開 Gemini／ChatGPT）：",
   samplePrompt: "請用簡單中文告訴我，你可以怎麼幫助生活。",
   reflectPrompt: "我最希望 AI 先協助生活中的哪一件小事？",
   reflectPlaceholder: "例如：幫我記得吃藥、幫我辨識食物熱量、陪我聊天解悶…",
   continueTitle: "暖暖陪您繼續",
   continueBody:
-    "掃碼進入暖暖，可用語音試同一句話；下方也有文字版入口路徑。示範影片之後再補。",
+    "掃碼進入暖暖，可用語音試同一句話；也可一點開 Gemini／ChatGPT 練習同一範例。下方有文字版入口路徑。",
   practiceWhere: "mixed",
   capabilityNote:
-    "暖暖提供語音試問；各品牌手機 AI 入口仍請在您的手機裡找。",
+    "暖暖提供語音試問；也可一點開 Gemini／ChatGPT 練習。各品牌手機助理入口仍請在您的手機裡找。",
   printCardTitle: "常見入口辨識卡",
   printCardDescription:
     "沒有手機掃碼時，可列印這張卡，對照自己的手機品牌找入口。",
@@ -512,6 +512,26 @@ export const CHAPTER_0102: ChapterOpening = {
   guideFooterNote: "示範影片即將推出；目前請先閱讀文字版路徑（約 30 秒）。",
   footerGuideLabel: "觀看／閱讀 30 秒入口示範",
   phonePaths: [
+    {
+      id: "gemini",
+      label: "Gemini（網頁／App）",
+      emoji: "✦",
+      steps: [
+        "在瀏覽器開 gemini.google.com，或安裝 Gemini App",
+        "點本頁「用 Gemini 試」會開啟並複製範例",
+        "在對話框貼上後送出即可",
+      ],
+    },
+    {
+      id: "chatgpt",
+      label: "ChatGPT（網頁／App）",
+      emoji: "◉",
+      steps: [
+        "在瀏覽器開 chatgpt.com，或安裝 ChatGPT App",
+        "點本頁「用 ChatGPT 試」通常會直接帶入範例",
+        "若沒看到文字，貼上剪貼簿內容後送出",
+      ],
+    },
     {
       id: "iphone",
       label: "iPhone（Siri）",
@@ -949,6 +969,165 @@ const CHAPTERS: Record<string, ChapterOpening> = {
 
 export function getChapterOpening(id: string): ChapterOpening | null {
   return CHAPTERS[id] ?? null;
+}
+
+/** 書本首頁／目錄用的章節分組 */
+export type BookGuideSectionId = "ch1" | "ch2" | "ch8";
+
+export interface BookGuideChapterLink {
+  id: string;
+  qrCode: string;
+  label: string;
+  color: string;
+  href: string;
+  /** 額外搜尋詞（標題同義、場景關鍵字） */
+  aliases: string[];
+}
+
+export interface BookGuideSection {
+  id: BookGuideSectionId;
+  title: string;
+  intro: string;
+  accent: string;
+  chapters: BookGuideChapterLink[];
+}
+
+const BOOK_GUIDE_COLORS = [
+  "#5BA0C9",
+  "#9B7AD4",
+  "#E8845A",
+  "var(--sage)",
+  "#7B5BB8",
+  "var(--primary-deep)",
+  "#8B6F47",
+] as const;
+
+const BOOK_GUIDE_ALIASES: Record<string, string[]> = {
+  "0100": ["智慧啟航", "開篇", "風帆"],
+  "0102": ["入口", "找 AI", "Gemini", "ChatGPT", "Siri"],
+  "0103": ["關鍵字", "自然提問", "用人話"],
+  "0104": ["第二個大腦", "整理", "繁雜"],
+  "0105": ["拍照", "辨識", "眼睛"],
+  "0106": ["相簿", "照片搜尋", "回憶"],
+  "0107": ["便條", "靈感", "記下"],
+  "0108": ["數位華爾滋", "一拍", "二問", "三記下"],
+  "0200": ["感官覺醒", "第二章"],
+  "0201": ["數位華爾滋", "一拍二問三記下"],
+  "0202": ["自然", "小花", "識花"],
+  "0203": ["旅行", "點菜", "菜單", "翻譯"],
+  "0204": ["消費", "比較", "商品"],
+  "0205": ["知識", "好奇心"],
+  "0206": ["美食", "料理", "舌尖"],
+  "0207": ["食譜", "五色", "高纖"],
+  "0208": ["照片搜尋", "相簿"],
+  "0209": ["橡皮擦", "修圖"],
+  "0210": ["策展", "人生"],
+  "0211": ["感官全開", "習慣"],
+  "0800": ["財富智囊", "決策桌", "第八章"],
+  "0801": ["決策主位", "問題改寫"],
+  "0802": ["來源", "階梯", "查證"],
+  "0803": ["條款", "白話"],
+  "0804": ["底線", "生活底線"],
+  "0805": ["六帽", "一人董事會"],
+  "0806": ["同尺", "比較"],
+  "0807": ["壓力測試", "最壞"],
+  "0808": ["第三條路", "替代"],
+  "0809": ["專業確認"],
+  "0810": ["決策備忘錄", "備忘錄"],
+};
+
+function bookGuideSectionForId(id: string): BookGuideSectionId | null {
+  if (id.startsWith("01")) return "ch1";
+  if (id.startsWith("02")) return "ch2";
+  if (id.startsWith("08")) return "ch8";
+  return null;
+}
+
+/** 所有已上線章節（依 QR 排序） */
+export function listChapterOpenings(): ChapterOpening[] {
+  return Object.values(CHAPTERS).sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/** 書本首頁分章目錄（含連結與搜尋別名） */
+export function getBookGuideSections(): BookGuideSection[] {
+  const buckets: Record<BookGuideSectionId, BookGuideChapterLink[]> = {
+    ch1: [],
+    ch2: [],
+    ch8: [],
+  };
+
+  for (const ch of listChapterOpenings()) {
+    const sectionId = bookGuideSectionForId(ch.id);
+    if (!sectionId) continue;
+    const color =
+      BOOK_GUIDE_COLORS[buckets[sectionId].length % BOOK_GUIDE_COLORS.length];
+    buckets[sectionId].push({
+      id: ch.id,
+      qrCode: ch.qrCode,
+      label: ch.title,
+      color,
+      href: `/smart/chapter/${ch.id}`,
+      aliases: BOOK_GUIDE_ALIASES[ch.id] ?? [],
+    });
+  }
+
+  const sections: BookGuideSection[] = [
+    {
+      id: "ch1",
+      title: "第一章｜智慧啟航",
+      intro: "先找得到 AI，再慢慢練提問、整理、拍照與記下。",
+      accent: "#5BA0C9",
+      chapters: buckets.ch1,
+    },
+    {
+      id: "ch2",
+      title: "第二章｜感官覺醒",
+      intro: "書教節奏，暖暖留下痕跡。共同節奏：一拍、二問、三記下。",
+      accent: "var(--sage)",
+      chapters: buckets.ch2,
+    },
+    {
+      id: "ch8",
+      title: "第八章｜財富智囊",
+      intro: "資訊可由 AI 整理；生活的答案，不能外包。不推薦商品、不預測報酬。",
+      accent: "#8B6F47",
+      chapters: buckets.ch8,
+    },
+  ];
+  return sections.filter((s) => s.chapters.length > 0);
+}
+
+/** 依 QR／標題／關鍵字過濾書本章節（空白＝全部） */
+export function filterBookGuideSections(
+  query: string,
+  sections: BookGuideSection[] = getBookGuideSections()
+): BookGuideSection[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return sections;
+
+  const compact = q.replace(/\s+/g, "");
+  return sections
+    .map((section) => ({
+      ...section,
+      chapters: section.chapters.filter((ch) => {
+        const haystack = [
+          ch.id,
+          ch.qrCode,
+          ch.label,
+          section.title,
+          ...ch.aliases,
+        ]
+          .join(" ")
+          .toLowerCase();
+        return (
+          haystack.includes(q) ||
+          haystack.replace(/\s+/g, "").includes(compact) ||
+          ch.id.includes(compact) ||
+          ch.qrCode.includes(compact)
+        );
+      }),
+    }))
+    .filter((section) => section.chapters.length > 0);
 }
 
 export function chapterPickKey(chapterId: string): string {
