@@ -6,6 +6,7 @@ import { CHAPTER_5_OPENINGS } from "./chapter-opening-ch5";
 import { CHAPTER_6_OPENINGS } from "./chapter-opening-ch6";
 import { CHAPTER_7_OPENINGS } from "./chapter-opening-ch7";
 import { CHAPTER_8_OPENINGS } from "./chapter-opening-ch8";
+import { CHAPTER_10_OPENINGS } from "./chapter-opening-ch10";
 
 export type ChapterLayout =
   | "routes"
@@ -68,7 +69,18 @@ export type ChapterLayout =
   | "activity-guide"
   | "elegant-replan"
   | "three-sight"
-  | "city-lights";
+  | "city-lights"
+  | "travel-start"
+  | "travel-meaning"
+  | "ground-baseline"
+  | "source-map"
+  | "feeling-table"
+  | "value-cost"
+  | "seven-rhythm"
+  | "travel-plan-b"
+  | "place-reading"
+  | "coauthor-pen"
+  | "travel-portfolio";
 
 export type VisionTrustLevel = "enjoy" | "verify";
 
@@ -349,6 +361,116 @@ export interface DecisionMemoDemo {
   reflectNote: string;
 }
 
+/** Chapter 10：旅遊研學起點（1000） */
+export interface TravelStartDemo {
+  id: string;
+  label: string;
+  whyGo: string;
+  mustKeep: string;
+  bringBack: string;
+  reflectNote: string;
+}
+
+/** Chapter 10：意義種子（1001） */
+export interface TravelMeaningDemo {
+  id: string;
+  label: string;
+  wantDone: string;
+  shareLive: string;
+  bringBack: string;
+  reflectNote: string;
+}
+
+/** Chapter 10：現況基線（1002） */
+export interface GroundBaselineDemo {
+  id: string;
+  label: string;
+  fixed: string;
+  flexible: string;
+  unknown: string;
+  reflectNote: string;
+}
+
+/** Chapter 10：來源地圖（1003） */
+export interface SourceMapDemo {
+  id: string;
+  label: string;
+  official: string;
+  culture: string;
+  experience: string;
+  reflectNote: string;
+}
+
+/** Chapter 10：感受策展桌（1004） */
+export interface FeelingTableDemo {
+  id: string;
+  label: string;
+  expect: string;
+  worry: string;
+  keepValue: string;
+  blankBound: string;
+  reflectNote: string;
+}
+
+/** Chapter 10：價值代價（1005） */
+export interface ValueCostDemo {
+  id: string;
+  label: string;
+  value: string;
+  costStop: string;
+  continueHow: string;
+  reflectNote: string;
+}
+
+/** Chapter 10：七段節奏（1006） */
+export interface SevenRhythmDemo {
+  id: string;
+  label: string;
+  rhythmNote: string;
+  peakRest: string;
+  cancelable: string;
+  reflectNote: string;
+}
+
+/** Chapter 10：備援方案（1007） */
+export interface TravelPlanBDemo {
+  id: string;
+  label: string;
+  trigger: string;
+  keepValue: string;
+  recheck: string;
+  reflectNote: string;
+}
+
+/** Chapter 10：地方閱讀線（1008） */
+export interface PlaceReadingDemo {
+  id: string;
+  label: string;
+  placeQ: string;
+  stations: string;
+  lookBack: string;
+  reflectNote: string;
+}
+
+/** Chapter 10：同行共編（1009） */
+export interface CoauthorPenDemo {
+  id: string;
+  label: string;
+  expectEdit: string;
+  privateBound: string;
+  statusNote: string;
+  reflectNote: string;
+}
+
+/** Chapter 10：旅遊研學策展書（1010） */
+export interface TravelPortfolioDemo {
+  id: string;
+  label: string;
+  meaningBase: string;
+  sourceRhythm: string;
+  planBShare: string;
+  reflectNote: string;
+}
 
 /** Chapter 3：SMART 五方向 */
 export interface SmartDirectionOption {
@@ -811,6 +933,18 @@ export interface ChapterOpening {
   thirdPathDemos?: ThirdPathDemo[];
   proConfirmDemos?: ProConfirmDemo[];
   decisionMemoDemos?: DecisionMemoDemo[];
+  /** Chapter 10 版型資料 */
+  travelStartDemos?: TravelStartDemo[];
+  travelMeaningDemos?: TravelMeaningDemo[];
+  groundBaselineDemos?: GroundBaselineDemo[];
+  sourceMapDemos?: SourceMapDemo[];
+  feelingTableDemos?: FeelingTableDemo[];
+  valueCostDemos?: ValueCostDemo[];
+  sevenRhythmDemos?: SevenRhythmDemo[];
+  travelPlanBDemos?: TravelPlanBDemo[];
+  placeReadingDemos?: PlaceReadingDemo[];
+  coauthorPenDemos?: CoauthorPenDemo[];
+  travelPortfolioDemos?: TravelPortfolioDemo[];
   /** Chapter 3 */
   elevatorDemos?: ElevatorWishDemo[];
   lifeRoleOptions?: LifeRoleOption[];
@@ -1420,6 +1554,7 @@ const CHAPTERS: Record<string, ChapterOpening> = {
   ...CHAPTER_6_OPENINGS,
   ...CHAPTER_7_OPENINGS,
   ...CHAPTER_8_OPENINGS,
+  ...CHAPTER_10_OPENINGS,
 };
 
 export function getChapterOpening(id: string): ChapterOpening | null {
@@ -1427,7 +1562,7 @@ export function getChapterOpening(id: string): ChapterOpening | null {
 }
 
 /** 書本首頁／目錄用的章節分組 */
-export type BookGuideSectionId = "ch1" | "ch2" | "ch3" | "ch4" | "ch5" | "ch6" | "ch7" | "ch8";
+export type BookGuideSectionId = "ch1" | "ch2" | "ch3" | "ch4" | "ch5" | "ch6" | "ch7" | "ch8" | "ch10";
 
 export interface BookGuideChapterLink {
   id: string;
@@ -1544,6 +1679,17 @@ const BOOK_GUIDE_ALIASES: Record<string, string[]> = {
   "0808": ["第三條路", "替代"],
   "0809": ["專業確認"],
   "0810": ["決策備忘錄", "備忘錄"],
+  "1000": ["旅遊研學", "第十章", "Meaningful Travel"],
+  "1001": ["意義種子", "生活策展"],
+  "1002": ["現況基線", "Ground Truth"],
+  "1003": ["來源地圖", "可回查"],
+  "1004": ["感受", "策展桌", "同行"],
+  "1005": ["價值", "代價", "取捨"],
+  "1006": ["七段節奏", "留白"],
+  "1007": ["備援", "Plan B", "轉向"],
+  "1008": ["地方閱讀線", "Notebook"],
+  "1009": ["第二支筆", "共編"],
+  "1010": ["策展書", "旅遊研學策展書"],
 };
 
 function bookGuideSectionForId(id: string): BookGuideSectionId | null {
@@ -1555,6 +1701,7 @@ function bookGuideSectionForId(id: string): BookGuideSectionId | null {
   if (id.startsWith("06")) return "ch6";
   if (id.startsWith("07")) return "ch7";
   if (id.startsWith("08")) return "ch8";
+  if (id.startsWith("10")) return "ch10";
   return null;
 }
 
@@ -1574,6 +1721,7 @@ export function getBookGuideSections(): BookGuideSection[] {
     ch6: [],
     ch7: [],
     ch8: [],
+    ch10: [],
   };
 
   for (const ch of listChapterOpenings()) {
@@ -1647,6 +1795,13 @@ export function getBookGuideSections(): BookGuideSection[] {
       intro: "資訊可由 AI 整理；生活的答案，不能外包。不推薦商品、不預測報酬。",
       accent: "#8B6F47",
       chapters: buckets.ch8,
+    },
+    {
+      id: "ch10",
+      title: "第十章｜旅遊研學",
+      intro: "先決定為何值得，再安排去哪裡；動態資訊出發前重查官方來源。",
+      accent: "#5B8FC9",
+      chapters: buckets.ch10,
     },
   ];
   return sections.filter((s) => s.chapters.length > 0);
@@ -1867,6 +2022,83 @@ export interface ChapterDecisionMemoDraft {
   reflectNote: string;
 }
 
+export interface ChapterTravelStartDraft {
+  whyGo: string;
+  mustKeep: string;
+  bringBack: string;
+  reflectNote: string;
+}
+
+export interface ChapterTravelMeaningDraft {
+  wantDone: string;
+  shareLive: string;
+  bringBack: string;
+  reflectNote: string;
+}
+
+export interface ChapterGroundBaselineDraft {
+  fixed: string;
+  flexible: string;
+  unknown: string;
+  reflectNote: string;
+}
+
+export interface ChapterSourceMapDraft {
+  official: string;
+  culture: string;
+  experience: string;
+  reflectNote: string;
+}
+
+export interface ChapterFeelingTableDraft {
+  expect: string;
+  worry: string;
+  keepValue: string;
+  blankBound: string;
+  reflectNote: string;
+}
+
+export interface ChapterValueCostDraft {
+  value: string;
+  costStop: string;
+  continueHow: string;
+  reflectNote: string;
+}
+
+export interface ChapterSevenRhythmDraft {
+  rhythmNote: string;
+  peakRest: string;
+  cancelable: string;
+  reflectNote: string;
+}
+
+export interface ChapterTravelPlanBDraft {
+  trigger: string;
+  keepValue: string;
+  recheck: string;
+  reflectNote: string;
+}
+
+export interface ChapterPlaceReadingDraft {
+  placeQ: string;
+  stations: string;
+  lookBack: string;
+  reflectNote: string;
+}
+
+export interface ChapterCoauthorPenDraft {
+  expectEdit: string;
+  privateBound: string;
+  statusNote: string;
+  reflectNote: string;
+}
+
+export interface ChapterTravelPortfolioDraft {
+  meaningBase: string;
+  sourceRhythm: string;
+  planBShare: string;
+  reflectNote: string;
+}
 
 export interface ChapterElevatorWishDraft {
   want: string;
@@ -2142,6 +2374,21 @@ export function buildSixHatsPrompt(): string {
   return "請主持一次可暫停的一人董事會。先確認我的問題與三項生活底線，再依序只問一題：白帽（事實與未知）、紅帽（期待與擔心）、黃帽（可能價值）、黑帽（風險與底線）、綠帽（替代方案）、藍帽（下一步與重看時間）。完成後只整理摘要，不投票、不打分，也不替我決定。請勿要求帳號、證件或不必要的完整資產資料。";
 }
 
+/** 1001：旅遊研學意義種子 */
+export function buildTravelMeaningPrompt(): string {
+  return "請一次只問一題，幫我寫出旅遊研學的意義種子句。請依序問：這次真正想完成什麼？希望共同經歷或重新理解什麼？希望帶回哪一項可留下成果？什麼不能犧牲？請不要替我決定去哪裡，也不要推薦必須去的景點。";
+}
+
+/** 1004：感受與價值 */
+export function buildFeelingTablePrompt(): string {
+  return "請一次只問一題，幫我整理旅遊同行的期待與擔心。請依序問：我最期待什麼？我最擔心什麼？此行最值得保留的體驗是什麼？我希望保留的留白或私人界線是什麼？請不要替任何人下結論，也不要把沉默當成同意。";
+}
+
+/** 1009：同行者共編 */
+export function buildCoauthorPenPrompt(): string {
+  return "請幫我整理一份可給同行者修改的一頁草案摘要，並提醒保留五種狀態：確認、待決定、不參與、保持私人、撤回。請不要把沉默或已讀當成同意，也不要替對方決定分享範圍。";
+}
+
 /** 0206：餐點觀察提問句 */
 export function buildFoodObservePrompt(): string {
   return "請整理這道餐點可能的主要食材、烹調特色，以及一項溫和的飲食觀察。請用簡單中文，這不是醫療或營養診斷。";
@@ -2352,6 +2599,18 @@ export function getChapterDeepLinkHint(from: string | null | undefined): Chapter
     "0805": {
       label: "一人董事會",
       tips: ["六帽一次一題", "不投票、不打分", "勿輸入帳號證件或不必要資產資料"],
+    },
+    "1001": {
+      label: "意義種子",
+      tips: ["一次只問一題", "不替您決定去哪裡", "不推薦必須去的景點"],
+    },
+    "1004": {
+      label: "感受與價值",
+      tips: ["分開回答期待與擔心", "沉默不視為同意", "保留留白與私人界線"],
+    },
+    "1009": {
+      label: "同行者共編",
+      tips: ["五種狀態都可保留", "沉默不視為同意", "分享需逐項確認"],
     },
   };
   const hit = known[chapterId] ?? {

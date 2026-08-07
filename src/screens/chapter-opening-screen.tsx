@@ -65,6 +65,17 @@ import {
   type ThirdPathDemo,
   type ProConfirmDemo,
   type DecisionMemoDemo,
+  type TravelStartDemo,
+  type TravelMeaningDemo,
+  type GroundBaselineDemo,
+  type SourceMapDemo,
+  type FeelingTableDemo,
+  type ValueCostDemo,
+  type SevenRhythmDemo,
+  type TravelPlanBDemo,
+  type PlaceReadingDemo,
+  type CoauthorPenDemo,
+  type TravelPortfolioDemo,
   type ChapterDecisionStartDraft,
   type ChapterDecisionSeatDraft,
   type ChapterSourceLadderDraft,
@@ -76,8 +87,22 @@ import {
   type ChapterThirdPathDraft,
   type ChapterProConfirmDraft,
   type ChapterDecisionMemoDraft,
+  type ChapterTravelStartDraft,
+  type ChapterTravelMeaningDraft,
+  type ChapterGroundBaselineDraft,
+  type ChapterSourceMapDraft,
+  type ChapterFeelingTableDraft,
+  type ChapterValueCostDraft,
+  type ChapterSevenRhythmDraft,
+  type ChapterTravelPlanBDraft,
+  type ChapterPlaceReadingDraft,
+  type ChapterCoauthorPenDraft,
+  type ChapterTravelPortfolioDraft,
   buildDecisionSeatPrompt,
   buildSixHatsPrompt,
+  buildTravelMeaningPrompt,
+  buildFeelingTablePrompt,
+  buildCoauthorPenPrompt,
   type ElevatorWishDemo,
   type LifeMatchDemo,
   type FiveReflectDemo,
@@ -250,6 +275,40 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const [memoStatus, setMemoStatus] = useState("");
   const [memoReason, setMemoReason] = useState("");
   const [memoPending, setMemoPending] = useState("");
+  const [trWhy, setTrWhy] = useState("");
+  const [trMust, setTrMust] = useState("");
+  const [trBring, setTrBring] = useState("");
+  const [tmWant, setTmWant] = useState("");
+  const [tmShare, setTmShare] = useState("");
+  const [tmBring, setTmBring] = useState("");
+  const [gbFixed, setGbFixed] = useState("");
+  const [gbFlex, setGbFlex] = useState("");
+  const [gbUnknown, setGbUnknown] = useState("");
+  const [smOfficial, setSmOfficial] = useState("");
+  const [smCulture, setSmCulture] = useState("");
+  const [smExperience, setSmExperience] = useState("");
+  const [ftExpect, setFtExpect] = useState("");
+  const [ftWorry, setFtWorry] = useState("");
+  const [ftKeep, setFtKeep] = useState("");
+  const [ftBlank, setFtBlank] = useState("");
+  const [vcValue, setVcValue] = useState("");
+  const [vcCost, setVcCost] = useState("");
+  const [vcContinue, setVcContinue] = useState("");
+  const [srRhythm, setSrRhythm] = useState("");
+  const [srPeak, setSrPeak] = useState("");
+  const [srCancel, setSrCancel] = useState("");
+  const [pbTrigger, setPbTrigger] = useState("");
+  const [pbKeep, setPbKeep] = useState("");
+  const [pbRecheck, setPbRecheck] = useState("");
+  const [prQ, setPrQ] = useState("");
+  const [prStations, setPrStations] = useState("");
+  const [prLook, setPrLook] = useState("");
+  const [caExpect, setCaExpect] = useState("");
+  const [caPrivate, setCaPrivate] = useState("");
+  const [caStatus, setCaStatus] = useState("");
+  const [tpMeaning, setTpMeaning] = useState("");
+  const [tpSource, setTpSource] = useState("");
+  const [tpPlanB, setTpPlanB] = useState("");
   const [wishWant, setWishWant] = useState("");
   const [wishStuck, setWishStuck] = useState("");
   const [wishAiHelp, setWishAiHelp] = useState("");
@@ -600,6 +659,117 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           if (d.status) setMemoStatus(d.status);
           if (d.reasonBaseline) setMemoReason(d.reasonBaseline);
           if (d.pendingReview) setMemoPending(d.pendingReview);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "travel-start") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterTravelStartDraft;
+          if (d.whyGo) setTrWhy(d.whyGo);
+          if (d.mustKeep) setTrMust(d.mustKeep);
+          if (d.bringBack) setTrBring(d.bringBack);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "travel-meaning") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterTravelMeaningDraft;
+          if (d.wantDone) setTmWant(d.wantDone);
+          if (d.shareLive) setTmShare(d.shareLive);
+          if (d.bringBack) setTmBring(d.bringBack);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "ground-baseline") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterGroundBaselineDraft;
+          if (d.fixed) setGbFixed(d.fixed);
+          if (d.flexible) setGbFlex(d.flexible);
+          if (d.unknown) setGbUnknown(d.unknown);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "source-map") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterSourceMapDraft;
+          if (d.official) setSmOfficial(d.official);
+          if (d.culture) setSmCulture(d.culture);
+          if (d.experience) setSmExperience(d.experience);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "feeling-table") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterFeelingTableDraft;
+          if (d.expect) setFtExpect(d.expect);
+          if (d.worry) setFtWorry(d.worry);
+          if (d.keepValue) setFtKeep(d.keepValue);
+          if (d.blankBound) setFtBlank(d.blankBound);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "value-cost") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterValueCostDraft;
+          if (d.value) setVcValue(d.value);
+          if (d.costStop) setVcCost(d.costStop);
+          if (d.continueHow) setVcContinue(d.continueHow);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "seven-rhythm") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterSevenRhythmDraft;
+          if (d.rhythmNote) setSrRhythm(d.rhythmNote);
+          if (d.peakRest) setSrPeak(d.peakRest);
+          if (d.cancelable) setSrCancel(d.cancelable);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "travel-plan-b") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterTravelPlanBDraft;
+          if (d.trigger) setPbTrigger(d.trigger);
+          if (d.keepValue) setPbKeep(d.keepValue);
+          if (d.recheck) setPbRecheck(d.recheck);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "place-reading") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterPlaceReadingDraft;
+          if (d.placeQ) setPrQ(d.placeQ);
+          if (d.stations) setPrStations(d.stations);
+          if (d.lookBack) setPrLook(d.lookBack);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "coauthor-pen") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterCoauthorPenDraft;
+          if (d.expectEdit) setCaExpect(d.expectEdit);
+          if (d.privateBound) setCaPrivate(d.privateBound);
+          if (d.statusNote) setCaStatus(d.statusNote);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "travel-portfolio") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterTravelPortfolioDraft;
+          if (d.meaningBase) setTpMeaning(d.meaningBase);
+          if (d.sourceRhythm) setTpSource(d.sourceRhythm);
+          if (d.planBShare) setTpPlanB(d.planBShare);
           if (d.reflectNote) setReflectNote(d.reflectNote);
         }
       }
@@ -976,6 +1146,17 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         ChapterThirdPathDraft &
         ChapterProConfirmDraft &
         ChapterDecisionMemoDraft &
+        ChapterTravelStartDraft &
+        ChapterTravelMeaningDraft &
+        ChapterGroundBaselineDraft &
+        ChapterSourceMapDraft &
+        ChapterFeelingTableDraft &
+        ChapterValueCostDraft &
+        ChapterSevenRhythmDraft &
+        ChapterTravelPlanBDraft &
+        ChapterPlaceReadingDraft &
+        ChapterCoauthorPenDraft &
+        ChapterTravelPortfolioDraft &
         ChapterElevatorWishDraft &
         ChapterLifeMatchDraft &
         ChapterFiveReflectDraft &
@@ -1233,6 +1414,106 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         status: patch.status ?? memoStatus,
         reasonBaseline: patch.reasonBaseline ?? memoReason,
         pendingReview: patch.pendingReview ?? memoPending,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "travel-start") {
+      const next: ChapterTravelStartDraft = {
+        whyGo: patch.whyGo ?? trWhy,
+        mustKeep: patch.mustKeep ?? trMust,
+        bringBack: patch.bringBack ?? trBring,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "travel-meaning") {
+      const next: ChapterTravelMeaningDraft = {
+        wantDone: patch.wantDone ?? tmWant,
+        shareLive: patch.shareLive ?? tmShare,
+        bringBack: patch.bringBack ?? tmBring,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "ground-baseline") {
+      const next: ChapterGroundBaselineDraft = {
+        fixed: patch.fixed ?? gbFixed,
+        flexible: patch.flexible ?? gbFlex,
+        unknown: patch.unknown ?? gbUnknown,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "source-map") {
+      const next: ChapterSourceMapDraft = {
+        official: patch.official ?? smOfficial,
+        culture: patch.culture ?? smCulture,
+        experience: patch.experience ?? smExperience,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "feeling-table") {
+      const next: ChapterFeelingTableDraft = {
+        expect: patch.expect ?? ftExpect,
+        worry: patch.worry ?? ftWorry,
+        keepValue: patch.keepValue ?? ftKeep,
+        blankBound: patch.blankBound ?? ftBlank,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "value-cost") {
+      const next: ChapterValueCostDraft = {
+        value: patch.value ?? vcValue,
+        costStop: patch.costStop ?? vcCost,
+        continueHow: patch.continueHow ?? vcContinue,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "seven-rhythm") {
+      const next: ChapterSevenRhythmDraft = {
+        rhythmNote: patch.rhythmNote ?? srRhythm,
+        peakRest: patch.peakRest ?? srPeak,
+        cancelable: patch.cancelable ?? srCancel,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "travel-plan-b") {
+      const next: ChapterTravelPlanBDraft = {
+        trigger: patch.trigger ?? pbTrigger,
+        keepValue: patch.keepValue ?? pbKeep,
+        recheck: patch.recheck ?? pbRecheck,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "place-reading") {
+      const next: ChapterPlaceReadingDraft = {
+        placeQ: patch.placeQ ?? prQ,
+        stations: patch.stations ?? prStations,
+        lookBack: patch.lookBack ?? prLook,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "coauthor-pen") {
+      const next: ChapterCoauthorPenDraft = {
+        expectEdit: patch.expectEdit ?? caExpect,
+        privateBound: patch.privateBound ?? caPrivate,
+        statusNote: patch.statusNote ?? caStatus,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "travel-portfolio") {
+      const next: ChapterTravelPortfolioDraft = {
+        meaningBase: patch.meaningBase ?? tpMeaning,
+        sourceRhythm: patch.sourceRhythm ?? tpSource,
+        planBShare: patch.planBShare ?? tpPlanB,
         reflectNote: patch.reflectNote ?? reflectNote,
       };
       localStorage.setItem(draftKey, JSON.stringify(next));
@@ -1680,6 +1961,39 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         break;
       case "decision-memo":
         action = [memoStatus, memoReason, memoPending].filter(Boolean).join("｜");
+        break;
+      case "travel-start":
+        action = [trWhy, trMust, trBring].filter(Boolean).join("｜");
+        break;
+      case "travel-meaning":
+        action = [tmWant, tmShare, tmBring].filter(Boolean).join("｜");
+        break;
+      case "ground-baseline":
+        action = [gbFixed, gbFlex, gbUnknown].filter(Boolean).join("｜");
+        break;
+      case "source-map":
+        action = [smOfficial, smCulture, smExperience].filter(Boolean).join("｜");
+        break;
+      case "feeling-table":
+        action = [ftExpect, ftWorry, ftKeep, ftBlank].filter(Boolean).join("｜");
+        break;
+      case "value-cost":
+        action = [vcValue, vcCost, vcContinue].filter(Boolean).join("｜");
+        break;
+      case "seven-rhythm":
+        action = [srRhythm, srPeak, srCancel].filter(Boolean).join("｜");
+        break;
+      case "travel-plan-b":
+        action = [pbTrigger, pbKeep, pbRecheck].filter(Boolean).join("｜");
+        break;
+      case "place-reading":
+        action = [prQ, prStations, prLook].filter(Boolean).join("｜");
+        break;
+      case "coauthor-pen":
+        action = [caExpect, caPrivate, caStatus].filter(Boolean).join("｜");
+        break;
+      case "travel-portfolio":
+        action = [tpMeaning, tpSource, tpPlanB].filter(Boolean).join("｜");
         break;
       case "elevator-wish":
         action =
@@ -2164,13 +2478,85 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
     saveDraft({ q1: demo.q1, q2: demo.q2, q3: demo.q3, reflectNote: demo.reflectNote });
     toast.success(`已帶入${demo.label}。`);
   };
-  const applyDecisionMemoDemo = (demo: DecisionMemoDemo) => {
+    const applyDecisionMemoDemo = (demo: DecisionMemoDemo) => {
     setMemoStatus(demo.status); setMemoReason(demo.reasonBaseline); setMemoPending(demo.pendingReview); setReflectNote(demo.reflectNote);
     saveDraft({ status: demo.status, reasonBaseline: demo.reasonBaseline, pendingReview: demo.pendingReview, reflectNote: demo.reflectNote });
     toast.success(`已帶入${demo.label}。`);
   };
 
-  const applyRecipeDemo = (demo: RecipeCardDemo) => {
+  const copyTravelMeaningAsk = async () => {
+    const text = chapter.samplePrompt?.trim() || buildTravelMeaningPrompt();
+    try { await navigator.clipboard.writeText(text); toast.success("已複製意義種子提問句。"); }
+    catch { toast.info("請長按文字框手動複製。"); }
+  };
+  const copyFeelingTableAsk = async () => {
+    const text = chapter.samplePrompt?.trim() || buildFeelingTablePrompt();
+    try { await navigator.clipboard.writeText(text); toast.success("已複製感受與價值提問句。"); }
+    catch { toast.info("請長按文字框手動複製。"); }
+  };
+  const copyCoauthorPenAsk = async () => {
+    const text = chapter.samplePrompt?.trim() || buildCoauthorPenPrompt();
+    try { await navigator.clipboard.writeText(text); toast.success("已複製共編提問句。"); }
+    catch { toast.info("請長按文字框手動複製。"); }
+  };
+
+  const applyTravelStartDemo = (demo: TravelStartDemo) => {
+    setTrWhy(demo.whyGo); setTrMust(demo.mustKeep); setTrBring(demo.bringBack); setReflectNote(demo.reflectNote);
+    saveDraft({ whyGo: demo.whyGo, mustKeep: demo.mustKeep, bringBack: demo.bringBack, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyTravelMeaningDemo = (demo: TravelMeaningDemo) => {
+    setTmWant(demo.wantDone); setTmShare(demo.shareLive); setTmBring(demo.bringBack); setReflectNote(demo.reflectNote);
+    saveDraft({ wantDone: demo.wantDone, shareLive: demo.shareLive, bringBack: demo.bringBack, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyGroundBaselineDemo = (demo: GroundBaselineDemo) => {
+    setGbFixed(demo.fixed); setGbFlex(demo.flexible); setGbUnknown(demo.unknown); setReflectNote(demo.reflectNote);
+    saveDraft({ fixed: demo.fixed, flexible: demo.flexible, unknown: demo.unknown, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applySourceMapDemo = (demo: SourceMapDemo) => {
+    setSmOfficial(demo.official); setSmCulture(demo.culture); setSmExperience(demo.experience); setReflectNote(demo.reflectNote);
+    saveDraft({ official: demo.official, culture: demo.culture, experience: demo.experience, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyFeelingTableDemo = (demo: FeelingTableDemo) => {
+    setFtExpect(demo.expect); setFtWorry(demo.worry); setFtKeep(demo.keepValue); setFtBlank(demo.blankBound); setReflectNote(demo.reflectNote);
+    saveDraft({ expect: demo.expect, worry: demo.worry, keepValue: demo.keepValue, blankBound: demo.blankBound, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyValueCostDemo = (demo: ValueCostDemo) => {
+    setVcValue(demo.value); setVcCost(demo.costStop); setVcContinue(demo.continueHow); setReflectNote(demo.reflectNote);
+    saveDraft({ value: demo.value, costStop: demo.costStop, continueHow: demo.continueHow, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applySevenRhythmDemo = (demo: SevenRhythmDemo) => {
+    setSrRhythm(demo.rhythmNote); setSrPeak(demo.peakRest); setSrCancel(demo.cancelable); setReflectNote(demo.reflectNote);
+    saveDraft({ rhythmNote: demo.rhythmNote, peakRest: demo.peakRest, cancelable: demo.cancelable, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyTravelPlanBDemo = (demo: TravelPlanBDemo) => {
+    setPbTrigger(demo.trigger); setPbKeep(demo.keepValue); setPbRecheck(demo.recheck); setReflectNote(demo.reflectNote);
+    saveDraft({ trigger: demo.trigger, keepValue: demo.keepValue, recheck: demo.recheck, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyPlaceReadingDemo = (demo: PlaceReadingDemo) => {
+    setPrQ(demo.placeQ); setPrStations(demo.stations); setPrLook(demo.lookBack); setReflectNote(demo.reflectNote);
+    saveDraft({ placeQ: demo.placeQ, stations: demo.stations, lookBack: demo.lookBack, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyCoauthorPenDemo = (demo: CoauthorPenDemo) => {
+    setCaExpect(demo.expectEdit); setCaPrivate(demo.privateBound); setCaStatus(demo.statusNote); setReflectNote(demo.reflectNote);
+    saveDraft({ expectEdit: demo.expectEdit, privateBound: demo.privateBound, statusNote: demo.statusNote, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyTravelPortfolioDemo = (demo: TravelPortfolioDemo) => {
+    setTpMeaning(demo.meaningBase); setTpSource(demo.sourceRhythm); setTpPlanB(demo.planBShare); setReflectNote(demo.reflectNote);
+    saveDraft({ meaningBase: demo.meaningBase, sourceRhythm: demo.sourceRhythm, planBShare: demo.planBShare, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
+const applyRecipeDemo = (demo: RecipeCardDemo) => {
     setDishName(demo.dishName);
     setColors(demo.colors);
     setFiberSource(demo.fiberSource);
@@ -4294,6 +4680,285 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
             </div>
           )}
 
+          {layout === "travel-start" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>這次出發，我真正想理解、完成或共同經歷的是</div>
+                <textarea value={trWhy} onChange={(e) => { setTrWhy(e.target.value); saveDraft({ whyGo: e.target.value }); }}
+                  placeholder="例如：陪家人重新讀懂一條河…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>即使少去幾個景點，也不能犧牲的價值是</div>
+                <textarea value={trMust} onChange={(e) => { setTrMust(e.target.value); saveDraft({ mustKeep: e.target.value }); }}
+                  placeholder="例如：不要太趕；每天只留一個真正高潮…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>若把旅程變成一份可留下的成果，我希望帶回</div>
+                <textarea value={trBring} onChange={(e) => { setTrBring(e.target.value); saveDraft({ bringBack: e.target.value }); }}
+                  placeholder="例如：一頁可分享的地方閱讀短記…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              {chapter.entries && chapter.entries.length > 0 && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
+                  {chapter.entries.map((entry) => (
+                    <EntryButton key={entry.id} entry={entry} selected={picked === entry.id}
+                      onSelect={() => savePick(entry.id)} onGo={() => goEntry(entry)} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {layout === "travel-meaning" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>這次，我真正想完成的是</div>
+                <textarea value={tmWant} onChange={(e) => { setTmWant(e.target.value); saveDraft({ wantDone: e.target.value }); }}
+                  placeholder="例如：陪家人完成一趟不趕的河邊漫遊…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>我希望共同經歷或重新理解的是</div>
+                <textarea value={tmShare} onChange={(e) => { setTmShare(e.target.value); saveDraft({ shareLive: e.target.value }); }}
+                  placeholder="例如：重新理解這條河與今日生活的關係…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>我希望帶回的一項可留下成果是</div>
+                <textarea value={tmBring} onChange={(e) => { setTmBring(e.target.value); saveDraft({ bringBack: e.target.value }); }}
+                  placeholder="例如：一頁地方閱讀短記…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button type="button" onClick={copyTravelMeaningAsk} style={secondaryBtnStyle}>複製意義種子提問句</button>
+                <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>在暖暖一次一題 →</button>
+              </div>
+            </div>
+          )}
+
+          {layout === "ground-baseline" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>固定｜日期、必要任務與不能犧牲的價值</div>
+                <textarea value={gbFixed} onChange={(e) => { setGbFixed(e.target.value); saveDraft({ fixed: e.target.value }); }}
+                  placeholder="例如：週五晚出發；每天不超過一個高潮…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>可調｜地點、順序、停留、預算與參與方式</div>
+                <textarea value={gbFlex} onChange={(e) => { setGbFlex(e.target.value); saveDraft({ flexible: e.target.value }); }}
+                  placeholder="例如：午餐地點、午後順序…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>未知｜規則、交通、天候、文化或同行回覆</div>
+                <textarea value={gbUnknown} onChange={(e) => { setGbUnknown(e.target.value); saveDraft({ unknown: e.target.value }); }}
+                  placeholder="例如：週六午後天候、場館是否休館…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
+          {layout === "source-map" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>官方卡｜規則／交通／可達性（含查證日與重查點）</div>
+                <textarea value={smOfficial} onChange={(e) => { setSmOfficial(e.target.value); saveDraft({ official: e.target.value }); }}
+                  placeholder="例如：官方頁｜查證日｜出發當日重查…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>文化卡｜地方歷史／人文／生態（附原頁）</div>
+                <textarea value={smCulture} onChange={(e) => { setSmCulture(e.target.value); saveDraft({ culture: e.target.value }); }}
+                  placeholder="例如：地方館舍簡介與適用範圍…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>經驗卡｜個人或社群（標明不能取代官方）</div>
+                <textarea value={smExperience} onChange={(e) => { setSmExperience(e.target.value); saveDraft({ experience: e.target.value }); }}
+                  placeholder="例如：朋友步行經驗｜不能取代開放時間…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
+          {layout === "feeling-table" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>我最期待</div>
+                <textarea value={ftExpect} onChange={(e) => { setFtExpect(e.target.value); saveDraft({ expect: e.target.value }); }}
+                  placeholder="例如：河邊慢走與好好吃飯…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>我最擔心</div>
+                <textarea value={ftWorry} onChange={(e) => { setFtWorry(e.target.value); saveDraft({ worry: e.target.value }); }}
+                  placeholder="例如：轉乘太趕、午後沒有休息…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>此行最值得保留的體驗</div>
+                <textarea value={ftKeep} onChange={(e) => { setFtKeep(e.target.value); saveDraft({ keepValue: e.target.value }); }}
+                  placeholder="例如：每天一個真正高潮…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>希望保留的留白或私人界線</div>
+                <textarea value={ftBlank} onChange={(e) => { setFtBlank(e.target.value); saveDraft({ blankBound: e.target.value }); }}
+                  placeholder="例如：不想公開行程細節與照片…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button type="button" onClick={copyFeelingTableAsk} style={secondaryBtnStyle}>複製感受與價值提問句</button>
+                <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>在暖暖整理同行對話 →</button>
+              </div>
+            </div>
+          )}
+
+          {layout === "value-cost" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>它支持的核心價值</div>
+                <textarea value={vcValue} onChange={(e) => { setVcValue(e.target.value); saveDraft({ value: e.target.value }); }}
+                  placeholder="例如：支持好好吃飯與慢走…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>最大的代價、依賴與停止條件</div>
+                <textarea value={vcCost} onChange={(e) => { setVcCost(e.target.value); saveDraft({ costStop: e.target.value }); }}
+                  placeholder="例如：兩次轉乘；緩衝少於 30 分就停止…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>若取消或改期，主線如何繼續</div>
+                <textarea value={vcContinue} onChange={(e) => { setVcContinue(e.target.value); saveDraft({ continueHow: e.target.value }); }}
+                  placeholder="例如：改為同主題河岸散步…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
+          {layout === "seven-rhythm" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>七段節奏（安頓→定位→閱讀→探索→補給→回看→收束）</div>
+                <textarea value={srRhythm} onChange={(e) => { setSrRhythm(e.target.value); saveDraft({ rhythmNote: e.target.value }); }}
+                  placeholder="例如：安頓→河岸定位→館舍閱讀→…" rows={3}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>真正高潮與休息灣</div>
+                <textarea value={srPeak} onChange={(e) => { setSrPeak(e.target.value); saveDraft({ peakRest: e.target.value }); }}
+                  placeholder="例如：高潮：午後河岸閱讀；休息灣：咖啡 30 分…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>緩衝與可取消段</div>
+                <textarea value={srCancel} onChange={(e) => { setSrCancel(e.target.value); saveDraft({ cancelable: e.target.value }); }}
+                  placeholder="例如：晚間加點可取消…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
+          {layout === "travel-plan-b" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>啟動條件與共同確認方式</div>
+                <textarea value={pbTrigger} onChange={(e) => { setPbTrigger(e.target.value); saveDraft({ trigger: e.target.value }); }}
+                  placeholder="例如：休館或大雨；任一人提出，兩人確認…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>轉向後仍保留的核心價值</div>
+                <textarea value={pbKeep} onChange={(e) => { setPbKeep(e.target.value); saveDraft({ keepValue: e.target.value }); }}
+                  placeholder="例如：仍保留河岸理解與好好吃飯…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>需要重新查證、取消或通知的項目</div>
+                <textarea value={pbRecheck} onChange={(e) => { setPbRecheck(e.target.value); saveDraft({ recheck: e.target.value }); }}
+                  placeholder="例如：重查天候與替代場館；取消原預約…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
+          {layout === "place-reading" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>真正想理解的地方問題</div>
+                <textarea value={prQ} onChange={(e) => { setPrQ(e.target.value); saveDraft({ placeQ: e.target.value }); }}
+                  placeholder="例如：這條河如何成為今天的生活地方？" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>三至五站（來源／現場觀察）</div>
+                <textarea value={prStations} onChange={(e) => { setPrStations(e.target.value); saveDraft({ stations: e.target.value }); }}
+                  placeholder="例如：記憶碑→舊碼頭→修復段…" rows={3}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>回看問題</div>
+                <textarea value={prLook} onChange={(e) => { setPrLook(e.target.value); saveDraft({ lookBack: e.target.value }); }}
+                  placeholder="例如：現場與來源是否互相補足？" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
+          {layout === "coauthor-pen" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>最期待／想修改</div>
+                <textarea value={caExpect} onChange={(e) => { setCaExpect(e.target.value); saveDraft({ expectEdit: e.target.value }); }}
+                  placeholder="例如：最期待河邊慢走；想修改午後節奏…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>希望保持私人的部分</div>
+                <textarea value={caPrivate} onChange={(e) => { setCaPrivate(e.target.value); saveDraft({ privateBound: e.target.value }); }}
+                  placeholder="例如：照片與完整路線保持私人…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>五種狀態摘要（確認／待決定／不參與／私人／撤回）</div>
+                <textarea value={caStatus} onChange={(e) => { setCaStatus(e.target.value); saveDraft({ statusNote: e.target.value }); }}
+                  placeholder="例如：確認主線／午後待決定／夜間不參與…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button type="button" onClick={copyCoauthorPenAsk} style={secondaryBtnStyle}>複製共編提問句</button>
+                <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>在暖暖整理共編摘要 →</button>
+              </div>
+            </div>
+          )}
+
+          {layout === "travel-portfolio" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>意義與現況基線</div>
+                <textarea value={tpMeaning} onChange={(e) => { setTpMeaning(e.target.value); saveDraft({ meaningBase: e.target.value }); }}
+                  placeholder="例如：意義：讀懂一條河；基線：週末兩天…" rows={3}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>來源與七段節奏</div>
+                <textarea value={tpSource} onChange={(e) => { setTpSource(e.target.value); saveDraft({ sourceRhythm: e.target.value }); }}
+                  placeholder="例如：來源三卡已建；節奏含休息灣…" rows={3}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>備援方案與分享界線</div>
+                <textarea value={tpPlanB} onChange={(e) => { setTpPlanB(e.target.value); saveDraft({ planBShare: e.target.value }); }}
+                  placeholder="例如：雨天改河岸散步；照片需另行同意…" rows={3}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
           {layout === "elevator-wish" && (
             <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
               {[
@@ -5535,6 +6200,17 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                   reflectLayout === "third-path" ||
                   reflectLayout === "pro-confirm" ||
                   reflectLayout === "decision-memo" ||
+                  reflectLayout === "travel-start" ||
+                  reflectLayout === "travel-meaning" ||
+                  reflectLayout === "ground-baseline" ||
+                  reflectLayout === "source-map" ||
+                  reflectLayout === "feeling-table" ||
+                  reflectLayout === "value-cost" ||
+                  reflectLayout === "seven-rhythm" ||
+                  reflectLayout === "travel-plan-b" ||
+                  reflectLayout === "place-reading" ||
+                  reflectLayout === "coauthor-pen" ||
+                  reflectLayout === "travel-portfolio" ||
                   reflectLayout === "elevator-wish" ||
                   reflectLayout === "life-match" ||
                   reflectLayout === "five-reflect" ||
@@ -6278,6 +6954,128 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                       <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
                       <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>狀態：</strong>{demo.status}</p>
                       <button type="button" onClick={() => applyDecisionMemoDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {layout === "travel-start" && chapter.travelStartDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.travelStartDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>為何出發：</strong>{demo.whyGo}</p>
+                      <button type="button" onClick={() => applyTravelStartDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "travel-meaning" && chapter.travelMeaningDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.travelMeaningDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>想完成：</strong>{demo.wantDone}</p>
+                      <button type="button" onClick={() => applyTravelMeaningDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "ground-baseline" && chapter.groundBaselineDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.groundBaselineDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>固定：</strong>{demo.fixed}</p>
+                      <button type="button" onClick={() => applyGroundBaselineDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "source-map" && chapter.sourceMapDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.sourceMapDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>官方：</strong>{demo.official}</p>
+                      <button type="button" onClick={() => applySourceMapDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "feeling-table" && chapter.feelingTableDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.feelingTableDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>期待：</strong>{demo.expect}</p>
+                      <button type="button" onClick={() => applyFeelingTableDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "value-cost" && chapter.valueCostDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.valueCostDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>價值：</strong>{demo.value}</p>
+                      <button type="button" onClick={() => applyValueCostDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "seven-rhythm" && chapter.sevenRhythmDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.sevenRhythmDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>節奏：</strong>{demo.rhythmNote}</p>
+                      <button type="button" onClick={() => applySevenRhythmDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "travel-plan-b" && chapter.travelPlanBDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.travelPlanBDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>觸發：</strong>{demo.trigger}</p>
+                      <button type="button" onClick={() => applyTravelPlanBDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "place-reading" && chapter.placeReadingDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.placeReadingDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>問題：</strong>{demo.placeQ}</p>
+                      <button type="button" onClick={() => applyPlaceReadingDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "coauthor-pen" && chapter.coauthorPenDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.coauthorPenDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>期待／修改：</strong>{demo.expectEdit}</p>
+                      <button type="button" onClick={() => applyCoauthorPenDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "travel-portfolio" && chapter.travelPortfolioDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.travelPortfolioDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>意義／基線：</strong>{demo.meaningBase}</p>
+                      <button type="button" onClick={() => applyTravelPortfolioDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
                     </div>
                   ))}
                 </div>
@@ -7095,6 +7893,40 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           memoStatus={memoStatus}
           memoReason={memoReason}
           memoPending={memoPending}
+          trWhy={trWhy}
+          trMust={trMust}
+          trBring={trBring}
+          tmWant={tmWant}
+          tmShare={tmShare}
+          tmBring={tmBring}
+          gbFixed={gbFixed}
+          gbFlex={gbFlex}
+          gbUnknown={gbUnknown}
+          smOfficial={smOfficial}
+          smCulture={smCulture}
+          smExperience={smExperience}
+          ftExpect={ftExpect}
+          ftWorry={ftWorry}
+          ftKeep={ftKeep}
+          ftBlank={ftBlank}
+          vcValue={vcValue}
+          vcCost={vcCost}
+          vcContinue={vcContinue}
+          srRhythm={srRhythm}
+          srPeak={srPeak}
+          srCancel={srCancel}
+          pbTrigger={pbTrigger}
+          pbKeep={pbKeep}
+          pbRecheck={pbRecheck}
+          prQ={prQ}
+          prStations={prStations}
+          prLook={prLook}
+          caExpect={caExpect}
+          caPrivate={caPrivate}
+          caStatus={caStatus}
+          tpMeaning={tpMeaning}
+          tpSource={tpSource}
+          tpPlanB={tpPlanB}
           wishWant={wishWant}
           wishStuck={wishStuck}
           wishAiHelp={wishAiHelp}
@@ -7394,6 +8226,40 @@ function PrintCard({
   memoStatus = "",
   memoReason = "",
   memoPending = "",
+  trWhy = "",
+  trMust = "",
+  trBring = "",
+  tmWant = "",
+  tmShare = "",
+  tmBring = "",
+  gbFixed = "",
+  gbFlex = "",
+  gbUnknown = "",
+  smOfficial = "",
+  smCulture = "",
+  smExperience = "",
+  ftExpect = "",
+  ftWorry = "",
+  ftKeep = "",
+  ftBlank = "",
+  vcValue = "",
+  vcCost = "",
+  vcContinue = "",
+  srRhythm = "",
+  srPeak = "",
+  srCancel = "",
+  pbTrigger = "",
+  pbKeep = "",
+  pbRecheck = "",
+  prQ = "",
+  prStations = "",
+  prLook = "",
+  caExpect = "",
+  caPrivate = "",
+  caStatus = "",
+  tpMeaning = "",
+  tpSource = "",
+  tpPlanB = "",
   wishWant = "",
   wishStuck = "",
   wishAiHelp = "",
@@ -7571,6 +8437,40 @@ function PrintCard({
   memoStatus?: string;
   memoReason?: string;
   memoPending?: string;
+  trWhy?: string;
+  trMust?: string;
+  trBring?: string;
+  tmWant?: string;
+  tmShare?: string;
+  tmBring?: string;
+  gbFixed?: string;
+  gbFlex?: string;
+  gbUnknown?: string;
+  smOfficial?: string;
+  smCulture?: string;
+  smExperience?: string;
+  ftExpect?: string;
+  ftWorry?: string;
+  ftKeep?: string;
+  ftBlank?: string;
+  vcValue?: string;
+  vcCost?: string;
+  vcContinue?: string;
+  srRhythm?: string;
+  srPeak?: string;
+  srCancel?: string;
+  pbTrigger?: string;
+  pbKeep?: string;
+  pbRecheck?: string;
+  prQ?: string;
+  prStations?: string;
+  prLook?: string;
+  caExpect?: string;
+  caPrivate?: string;
+  caStatus?: string;
+  tpMeaning?: string;
+  tpSource?: string;
+  tpPlanB?: string;
   wishWant?: string;
   wishStuck?: string;
   wishAiHelp?: string;
@@ -8058,6 +8958,161 @@ function PrintCard({
         <div style={{ margin: "12px 0" }}><PrintGridCell title="理由／底線" minHeight={48}>{memoReason || "＿＿＿＿＿＿"}</PrintGridCell></div>
         <PrintGridCell title="待確認／重看" minHeight={48}>{memoPending || "＿＿＿＿＿＿"}</PrintGridCell>
         <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+
+  if ((layout as string) === "travel-start") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="為何出發" minHeight={48}>{trWhy || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="不能犧牲" minHeight={48}>{trMust || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="希望帶回" minHeight={48}>{trBring || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "travel-meaning") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="想完成" minHeight={48}>{tmWant || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="共同經歷" minHeight={48}>{tmShare || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="帶回成果" minHeight={48}>{tmBring || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "ground-baseline") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="固定" minHeight={48}>{gbFixed || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="可調" minHeight={48}>{gbFlex || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="未知" minHeight={48}>{gbUnknown || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "source-map") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="官方" minHeight={48}>{smOfficial || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="文化" minHeight={48}>{smCulture || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="經驗" minHeight={48}>{smExperience || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "feeling-table") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="期待／擔心" minHeight={48}>{(ftExpect || "＿＿") + "／" + (ftWorry || "＿＿")}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="共同價值" minHeight={48}>{ftKeep || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="留白／界線" minHeight={48}>{ftBlank || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "value-cost") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="價值" minHeight={48}>{vcValue || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="代價／停止" minHeight={48}>{vcCost || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="取消後繼續" minHeight={48}>{vcContinue || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "seven-rhythm") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="七段節奏" minHeight={64}>{srRhythm || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="高潮／休息" minHeight={48}>{srPeak || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="可取消段" minHeight={40}>{srCancel || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "travel-plan-b") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="觸發" minHeight={48}>{pbTrigger || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="保留價值" minHeight={48}>{pbKeep || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="重查／取消" minHeight={48}>{pbRecheck || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "place-reading") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="地方問題" minHeight={48}>{prQ || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="各站" minHeight={64}>{prStations || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="回看" minHeight={40}>{prLook || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "coauthor-pen") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="期待／修改" minHeight={48}>{caExpect || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="私人界線" minHeight={48}>{caPrivate || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="狀態" minHeight={48}>{caStatus || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "travel-portfolio") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="意義／基線" minHeight={64}>{tpMeaning || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="來源／節奏" minHeight={64}>{tpSource || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="備援／分享" minHeight={48}>{tpPlanB || "＿＿＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望／署名" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
         <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
       </div>
     );
