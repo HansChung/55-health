@@ -7,6 +7,7 @@ import { CHAPTER_6_OPENINGS } from "./chapter-opening-ch6";
 import { CHAPTER_7_OPENINGS } from "./chapter-opening-ch7";
 import { CHAPTER_8_OPENINGS } from "./chapter-opening-ch8";
 import { CHAPTER_11_OPENINGS } from "./chapter-opening-ch11";
+import { CHAPTER_12_OPENINGS } from "./chapter-opening-ch12";
 
 export type ChapterLayout =
   | "routes"
@@ -47,6 +48,17 @@ export type ChapterLayout =
   | "shared-memory"
   | "heirloom-kit"
   | "share-passport"
+  | "stage-start"
+  | "life-assets"
+  | "story-gallery"
+  | "work-enter"
+  | "smart-before-after"
+  | "smart-curve"
+  | "growth-story"
+  | "five-distance"
+  | "invite-peer"
+  | "omo-waltz"
+  | "lighthouse"
   | "elevator-wish"
   | "life-match"
   | "five-reflect"
@@ -481,6 +493,116 @@ export interface SharePassportDemo {
   status: string;
   intent: string;
   withdraw: string;
+  reflectNote: string;
+}
+
+/** Chapter 12：世界舞台起點（1200） */
+export interface StageStartDemo {
+  id: string;
+  label: string;
+  lightWork: string;
+  whyKeep: string;
+  distance: string;
+  reflectNote: string;
+}
+
+/** Chapter 12：生命資產（1201） */
+export interface LifeAssetsDemo {
+  id: string;
+  label: string;
+  candidates: string;
+  whyWho: string;
+  enterPick: string;
+  reflectNote: string;
+}
+
+/** Chapter 12：數位故事館（1202） */
+export interface StoryGalleryDemo {
+  id: string;
+  label: string;
+  galleryName: string;
+  guideLine: string;
+  zones: string;
+  reflectNote: string;
+}
+
+/** Chapter 12：作品進館（1203） */
+export interface WorkEnterDemo {
+  id: string;
+  label: string;
+  worksZones: string;
+  guideLines: string;
+  copyTest: string;
+  reflectNote: string;
+}
+
+/** Chapter 12：SMART 前後證據（1204） */
+export interface SmartBeforeAfterDemo {
+  id: string;
+  label: string;
+  smartFace: string;
+  beforeNow: string;
+  evidence: string;
+  reflectNote: string;
+}
+
+/** Chapter 12：SMART 成長曲線（1205） */
+export interface SmartCurveDemo {
+  id: string;
+  label: string;
+  oneDim: string;
+  fiveOutline: string;
+  seeMyself: string;
+  reflectNote: string;
+}
+
+/** Chapter 12：成長故事導覽（1206） */
+export interface GrowthStoryDemo {
+  id: string;
+  label: string;
+  fourNodes: string;
+  guideDraft: string;
+  trimNote: string;
+  reflectNote: string;
+}
+
+/** Chapter 12：五種距離（1207） */
+export interface FiveDistanceDemo {
+  id: string;
+  label: string;
+  distance: string;
+  whoOpenStop: string;
+  withdraw: string;
+  reflectNote: string;
+}
+
+/** Chapter 12：邀請同行（1208） */
+export interface InvitePeerDemo {
+  id: string;
+  label: string;
+  whoWhy: string;
+  inviteNote: string;
+  sendChoice: string;
+  reflectNote: string;
+}
+
+/** Chapter 12：OMO 華爾滋（1209） */
+export interface OmoWaltzDemo {
+  id: string;
+  label: string;
+  formPrep: string;
+  arrivedNote: string;
+  nextFix: string;
+  reflectNote: string;
+}
+
+/** Chapter 12：數位燈塔（1210） */
+export interface LighthouseDemo {
+  id: string;
+  label: string;
+  manifesto: string;
+  ninetyStep: string;
+  datesPlanB: string;
   reflectNote: string;
 }
 
@@ -958,6 +1080,18 @@ export interface ChapterOpening {
   sharedMemoryDemos?: SharedMemoryDemo[];
   heirloomKitDemos?: HeirloomKitDemo[];
   sharePassportDemos?: SharePassportDemo[];
+  /** Chapter 12 版型資料 */
+  stageStartDemos?: StageStartDemo[];
+  lifeAssetsDemos?: LifeAssetsDemo[];
+  storyGalleryDemos?: StoryGalleryDemo[];
+  workEnterDemos?: WorkEnterDemo[];
+  smartBeforeAfterDemos?: SmartBeforeAfterDemo[];
+  smartCurveDemos?: SmartCurveDemo[];
+  growthStoryDemos?: GrowthStoryDemo[];
+  fiveDistanceDemos?: FiveDistanceDemo[];
+  invitePeerDemos?: InvitePeerDemo[];
+  omoWaltzDemos?: OmoWaltzDemo[];
+  lighthouseDemos?: LighthouseDemo[];
   /** Chapter 3 */
   elevatorDemos?: ElevatorWishDemo[];
   lifeRoleOptions?: LifeRoleOption[];
@@ -1568,6 +1702,7 @@ const CHAPTERS: Record<string, ChapterOpening> = {
   ...CHAPTER_7_OPENINGS,
   ...CHAPTER_8_OPENINGS,
   ...CHAPTER_11_OPENINGS,
+  ...CHAPTER_12_OPENINGS,
 };
 
 export function getChapterOpening(id: string): ChapterOpening | null {
@@ -1575,7 +1710,7 @@ export function getChapterOpening(id: string): ChapterOpening | null {
 }
 
 /** 書本首頁／目錄用的章節分組 */
-export type BookGuideSectionId = "ch1" | "ch2" | "ch3" | "ch4" | "ch5" | "ch6" | "ch7" | "ch8" | "ch11";
+export type BookGuideSectionId = "ch1" | "ch2" | "ch3" | "ch4" | "ch5" | "ch6" | "ch7" | "ch8" | "ch11" | "ch12";
 
 export interface BookGuideChapterLink {
   id: string;
@@ -1704,6 +1839,17 @@ const BOOK_GUIDE_ALIASES: Record<string, string[]> = {
   "1108": ["共同記憶", "彼此尊重"],
   "1109": ["數位傳家寶", "五件套"],
   "1110": ["分享護照", "珍藏", "分享距離"],
+  "1200": ["世界舞台", "第十二章", "意向卡"],
+  "1201": ["生命資產", "資產地圖"],
+  "1202": ["故事館", "展館首頁", "私人入口"],
+  "1203": ["作品進館", "展示副本"],
+  "1204": ["前後證據", "SMART 回望"],
+  "1205": ["成長曲線", "成長卡", "RADAR"],
+  "1206": ["成長故事", "導覽詞"],
+  "1207": ["五種距離", "分享距離", "D1", "D2", "D3", "D4", "D5"],
+  "1208": ["邀請同行", "同行邀請"],
+  "1209": ["OMO", "華爾滋", "發表"],
+  "1210": ["數位燈塔", "九十日", "續航"],
 };
 
 function bookGuideSectionForId(id: string): BookGuideSectionId | null {
@@ -1716,6 +1862,7 @@ function bookGuideSectionForId(id: string): BookGuideSectionId | null {
   if (id.startsWith("07")) return "ch7";
   if (id.startsWith("08")) return "ch8";
   if (id === "p4-open" || /^11\d{2}$/.test(id)) return "ch11";
+  if (/^12\d{2}$/.test(id)) return "ch12";
   return null;
 }
 
@@ -1736,6 +1883,7 @@ export function getBookGuideSections(): BookGuideSection[] {
     ch7: [],
     ch8: [],
     ch11: [],
+    ch12: [],
   };
 
   for (const ch of listChapterOpenings()) {
@@ -1816,6 +1964,13 @@ export function getBookGuideSections(): BookGuideSection[] {
       intro: "把生命經驗完成為可珍藏的作品；先珍藏，再由自己決定分享距離。",
       accent: "#8B6F47",
       chapters: buckets.ch11,
+    },
+    {
+      id: "ch12",
+      title: "第十二章｜世界舞台",
+      intro: "讓作品在合適的距離被看見；先點亮私人故事館，再由自己決定分享距離。",
+      accent: "#5B7A8B",
+      chapters: buckets.ch12,
     },
   ];
   return sections.filter((s) => s.chapters.length > 0);
@@ -2122,6 +2277,83 @@ export interface ChapterSharePassportDraft {
   reflectNote: string;
 }
 
+export interface ChapterStageStartDraft {
+  lightWork: string;
+  whyKeep: string;
+  distance: string;
+  reflectNote: string;
+}
+
+export interface ChapterLifeAssetsDraft {
+  candidates: string;
+  whyWho: string;
+  enterPick: string;
+  reflectNote: string;
+}
+
+export interface ChapterStoryGalleryDraft {
+  galleryName: string;
+  guideLine: string;
+  zones: string;
+  reflectNote: string;
+}
+
+export interface ChapterWorkEnterDraft {
+  worksZones: string;
+  guideLines: string;
+  copyTest: string;
+  reflectNote: string;
+}
+
+export interface ChapterSmartBeforeAfterDraft {
+  smartFace: string;
+  beforeNow: string;
+  evidence: string;
+  reflectNote: string;
+}
+
+export interface ChapterSmartCurveDraft {
+  oneDim: string;
+  fiveOutline: string;
+  seeMyself: string;
+  reflectNote: string;
+}
+
+export interface ChapterGrowthStoryDraft {
+  fourNodes: string;
+  guideDraft: string;
+  trimNote: string;
+  reflectNote: string;
+}
+
+export interface ChapterFiveDistanceDraft {
+  distance: string;
+  whoOpenStop: string;
+  withdraw: string;
+  reflectNote: string;
+}
+
+export interface ChapterInvitePeerDraft {
+  whoWhy: string;
+  inviteNote: string;
+  sendChoice: string;
+  reflectNote: string;
+}
+
+export interface ChapterOmoWaltzDraft {
+  formPrep: string;
+  arrivedNote: string;
+  nextFix: string;
+  reflectNote: string;
+}
+
+export interface ChapterLighthouseDraft {
+  manifesto: string;
+  ninetyStep: string;
+  datesPlanB: string;
+  reflectNote: string;
+}
+
 export interface ChapterElevatorWishDraft {
   want: string;
   stuck: string;
@@ -2401,6 +2633,16 @@ export function buildStoryCorePrompt(): string {
   return "請一次只問一題，幫我寫出故事核心句。請依序問：那時我面對什麼？我做了什麼選擇？今天我想留下的是什麼？請用我的語言整理成一句可朗讀的話，不要替我升華或總結人生。";
 }
 
+/** 1204：SMART 前後證據 */
+export function buildSmartBeforeAfterPrompt(): string {
+  return "請一次只問一題，幫我整理 SMART 前後證據。請依序問：我想先看哪個面向（S／M／A／R／T）？以前常怎麼做？現在多了什麼選擇？哪件作品或經驗能證明？請不要評分、排名或替我判定成長。";
+}
+
+/** 1206：展館導覽詞／成長故事 */
+export function buildGrowthStoryPrompt(): string {
+  return "請一次只問一題，幫我整理展館導覽詞。請依序問：代表作是什麼？我從哪裡開始？途中學會什麼？現在更能什麼？接下來想什麼？請用我的語言整理成九十至一百五十字，保留原聲用語，不要寫成宣傳文案，也不要發布。";
+}
+
 /** 0206：餐點觀察提問句 */
 export function buildFoodObservePrompt(): string {
   return "請整理這道餐點可能的主要食材、烹調特色，以及一項溫和的飲食觀察。請用簡單中文，這不是醫療或營養診斷。";
@@ -2628,6 +2870,18 @@ export function getChapterDeepLinkHint(from: string | null | undefined): Chapter
     "1107": {
       label: "共編不失真",
       tips: ["查紅、問黃、留綠", "最後由本人朗讀核可", "不替任何人同意"],
+    },
+    "1204": {
+      label: "SMART 前後證據",
+      tips: ["一次只問一題", "不要評分或排名", "作品與生活證據優先"],
+    },
+    "1206": {
+      label: "成長故事導覽",
+      tips: ["一次只問一題", "保留原聲用語", "不要寫成宣傳文案"],
+    },
+    "1209": {
+      label: "OMO 華爾滋",
+      tips: ["一件作品、一項成長、一個希望", "備好 Plan B", "不以人數評分"],
     },
   };
   const hit = known[chapterId] ?? {

@@ -77,6 +77,17 @@ import {
   type SharedMemoryDemo,
   type HeirloomKitDemo,
   type SharePassportDemo,
+  type StageStartDemo,
+  type LifeAssetsDemo,
+  type StoryGalleryDemo,
+  type WorkEnterDemo,
+  type SmartBeforeAfterDemo,
+  type SmartCurveDemo,
+  type GrowthStoryDemo,
+  type FiveDistanceDemo,
+  type InvitePeerDemo,
+  type OmoWaltzDemo,
+  type LighthouseDemo,
   type ChapterDecisionStartDraft,
   type ChapterDecisionSeatDraft,
   type ChapterSourceLadderDraft,
@@ -100,9 +111,22 @@ import {
   type ChapterSharedMemoryDraft,
   type ChapterHeirloomKitDraft,
   type ChapterSharePassportDraft,
+  type ChapterStageStartDraft,
+  type ChapterLifeAssetsDraft,
+  type ChapterStoryGalleryDraft,
+  type ChapterWorkEnterDraft,
+  type ChapterSmartBeforeAfterDraft,
+  type ChapterSmartCurveDraft,
+  type ChapterGrowthStoryDraft,
+  type ChapterFiveDistanceDraft,
+  type ChapterInvitePeerDraft,
+  type ChapterOmoWaltzDraft,
+  type ChapterLighthouseDraft,
   buildDecisionSeatPrompt,
   buildSixHatsPrompt,
   buildStoryCorePrompt,
+  buildSmartBeforeAfterPrompt,
+  buildGrowthStoryPrompt,
   type ElevatorWishDemo,
   type LifeMatchDemo,
   type FiveReflectDemo,
@@ -313,6 +337,39 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const [spStatus, setSpStatus] = useState("");
   const [spIntent, setSpIntent] = useState("");
   const [spWithdraw, setSpWithdraw] = useState("");
+  const [stLightWork, setStLightWork] = useState("");
+  const [stWhyKeep, setStWhyKeep] = useState("");
+  const [stDistance, setStDistance] = useState("");
+  const [laCandidates, setLaCandidates] = useState("");
+  const [laWhyWho, setLaWhyWho] = useState("");
+  const [laEnterPick, setLaEnterPick] = useState("");
+  const [sgName, setSgName] = useState("");
+  const [sgGuide, setSgGuide] = useState("");
+  const [sgZones, setSgZones] = useState("");
+  const [weWorks, setWeWorks] = useState("");
+  const [weGuides, setWeGuides] = useState("");
+  const [weCopyTest, setWeCopyTest] = useState("");
+  const [sbaFace, setSbaFace] = useState("");
+  const [sbaBeforeNow, setSbaBeforeNow] = useState("");
+  const [sbaEvidence, setSbaEvidence] = useState("");
+  const [cvOneDim, setCvOneDim] = useState("");
+  const [cvFive, setCvFive] = useState("");
+  const [cvSeeMyself, setCvSeeMyself] = useState("");
+  const [gsFour, setGsFour] = useState("");
+  const [gsDraft, setGsDraft] = useState("");
+  const [gsTrim, setGsTrim] = useState("");
+  const [fdDistance, setFdDistance] = useState("");
+  const [fdWhoOpen, setFdWhoOpen] = useState("");
+  const [fdWithdraw, setFdWithdraw] = useState("");
+  const [ipWhoWhy, setIpWhoWhy] = useState("");
+  const [ipNote, setIpNote] = useState("");
+  const [ipSend, setIpSend] = useState("");
+  const [omoForm, setOmoForm] = useState("");
+  const [omoArrived, setOmoArrived] = useState("");
+  const [omoNext, setOmoNext] = useState("");
+  const [lhManifesto, setLhManifesto] = useState("");
+  const [lhNinety, setLhNinety] = useState("");
+  const [lhDates, setLhDates] = useState("");
   const [wishWant, setWishWant] = useState("");
   const [wishStuck, setWishStuck] = useState("");
   const [wishAiHelp, setWishAiHelp] = useState("");
@@ -788,6 +845,116 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           if (d.reflectNote) setReflectNote(d.reflectNote);
         }
       }
+      if (layoutKeyLoad === "stage-start") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterStageStartDraft;
+          if (d.lightWork) setStLightWork(d.lightWork);
+          if (d.whyKeep) setStWhyKeep(d.whyKeep);
+          if (d.distance) setStDistance(d.distance);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "life-assets") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterLifeAssetsDraft;
+          if (d.candidates) setLaCandidates(d.candidates);
+          if (d.whyWho) setLaWhyWho(d.whyWho);
+          if (d.enterPick) setLaEnterPick(d.enterPick);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "story-gallery") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterStoryGalleryDraft;
+          if (d.galleryName) setSgName(d.galleryName);
+          if (d.guideLine) setSgGuide(d.guideLine);
+          if (d.zones) setSgZones(d.zones);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "work-enter") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterWorkEnterDraft;
+          if (d.worksZones) setWeWorks(d.worksZones);
+          if (d.guideLines) setWeGuides(d.guideLines);
+          if (d.copyTest) setWeCopyTest(d.copyTest);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "smart-before-after") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterSmartBeforeAfterDraft;
+          if (d.smartFace) setSbaFace(d.smartFace);
+          if (d.beforeNow) setSbaBeforeNow(d.beforeNow);
+          if (d.evidence) setSbaEvidence(d.evidence);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "smart-curve") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterSmartCurveDraft;
+          if (d.oneDim) setCvOneDim(d.oneDim);
+          if (d.fiveOutline) setCvFive(d.fiveOutline);
+          if (d.seeMyself) setCvSeeMyself(d.seeMyself);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "growth-story") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterGrowthStoryDraft;
+          if (d.fourNodes) setGsFour(d.fourNodes);
+          if (d.guideDraft) setGsDraft(d.guideDraft);
+          if (d.trimNote) setGsTrim(d.trimNote);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "five-distance") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterFiveDistanceDraft;
+          if (d.distance) setFdDistance(d.distance);
+          if (d.whoOpenStop) setFdWhoOpen(d.whoOpenStop);
+          if (d.withdraw) setFdWithdraw(d.withdraw);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "invite-peer") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterInvitePeerDraft;
+          if (d.whoWhy) setIpWhoWhy(d.whoWhy);
+          if (d.inviteNote) setIpNote(d.inviteNote);
+          if (d.sendChoice) setIpSend(d.sendChoice);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "omo-waltz") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterOmoWaltzDraft;
+          if (d.formPrep) setOmoForm(d.formPrep);
+          if (d.arrivedNote) setOmoArrived(d.arrivedNote);
+          if (d.nextFix) setOmoNext(d.nextFix);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
+      if (layoutKeyLoad === "lighthouse") {
+        const draftRaw = localStorage.getItem(draftKey);
+        if (draftRaw) {
+          const d = JSON.parse(draftRaw) as ChapterLighthouseDraft;
+          if (d.manifesto) setLhManifesto(d.manifesto);
+          if (d.ninetyStep) setLhNinety(d.ninetyStep);
+          if (d.datesPlanB) setLhDates(d.datesPlanB);
+          if (d.reflectNote) setReflectNote(d.reflectNote);
+        }
+      }
       if (layout === "elevator-wish") {
         const draftRaw = localStorage.getItem(draftKey);
         if (draftRaw) {
@@ -1173,6 +1340,17 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         ChapterSharedMemoryDraft &
         ChapterHeirloomKitDraft &
         ChapterSharePassportDraft &
+        ChapterStageStartDraft &
+        ChapterLifeAssetsDraft &
+        ChapterStoryGalleryDraft &
+        ChapterWorkEnterDraft &
+        ChapterSmartBeforeAfterDraft &
+        ChapterSmartCurveDraft &
+        ChapterGrowthStoryDraft &
+        ChapterFiveDistanceDraft &
+        ChapterInvitePeerDraft &
+        ChapterOmoWaltzDraft &
+        ChapterLighthouseDraft &
         ChapterElevatorWishDraft &
         ChapterLifeMatchDraft &
         ChapterFiveReflectDraft &
@@ -1540,6 +1718,105 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         status: patch.status ?? spStatus,
         intent: patch.intent ?? spIntent,
         withdraw: patch.withdraw ?? spWithdraw,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "stage-start") {
+      const next: ChapterStageStartDraft = {
+        lightWork: patch.lightWork ?? stLightWork,
+        whyKeep: patch.whyKeep ?? stWhyKeep,
+        distance: patch.distance ?? stDistance,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "life-assets") {
+      const next: ChapterLifeAssetsDraft = {
+        candidates: patch.candidates ?? laCandidates,
+        whyWho: patch.whyWho ?? laWhyWho,
+        enterPick: patch.enterPick ?? laEnterPick,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "story-gallery") {
+      const next: ChapterStoryGalleryDraft = {
+        galleryName: patch.galleryName ?? sgName,
+        guideLine: patch.guideLine ?? sgGuide,
+        zones: patch.zones ?? sgZones,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "work-enter") {
+      const next: ChapterWorkEnterDraft = {
+        worksZones: patch.worksZones ?? weWorks,
+        guideLines: patch.guideLines ?? weGuides,
+        copyTest: patch.copyTest ?? weCopyTest,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "smart-before-after") {
+      const next: ChapterSmartBeforeAfterDraft = {
+        smartFace: patch.smartFace ?? sbaFace,
+        beforeNow: patch.beforeNow ?? sbaBeforeNow,
+        evidence: patch.evidence ?? sbaEvidence,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "smart-curve") {
+      const next: ChapterSmartCurveDraft = {
+        oneDim: patch.oneDim ?? cvOneDim,
+        fiveOutline: patch.fiveOutline ?? cvFive,
+        seeMyself: patch.seeMyself ?? cvSeeMyself,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "growth-story") {
+      const next: ChapterGrowthStoryDraft = {
+        fourNodes: patch.fourNodes ?? gsFour,
+        guideDraft: patch.guideDraft ?? gsDraft,
+        trimNote: patch.trimNote ?? gsTrim,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "five-distance") {
+      const next: ChapterFiveDistanceDraft = {
+        distance: patch.distance ?? fdDistance,
+        whoOpenStop: patch.whoOpenStop ?? fdWhoOpen,
+        withdraw: patch.withdraw ?? fdWithdraw,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "invite-peer") {
+      const next: ChapterInvitePeerDraft = {
+        whoWhy: patch.whoWhy ?? ipWhoWhy,
+        inviteNote: patch.inviteNote ?? ipNote,
+        sendChoice: patch.sendChoice ?? ipSend,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "omo-waltz") {
+      const next: ChapterOmoWaltzDraft = {
+        formPrep: patch.formPrep ?? omoForm,
+        arrivedNote: patch.arrivedNote ?? omoArrived,
+        nextFix: patch.nextFix ?? omoNext,
+        reflectNote: patch.reflectNote ?? reflectNote,
+      };
+      localStorage.setItem(draftKey, JSON.stringify(next));
+    }
+    if (layoutKey === "lighthouse") {
+      const next: ChapterLighthouseDraft = {
+        manifesto: patch.manifesto ?? lhManifesto,
+        ninetyStep: patch.ninetyStep ?? lhNinety,
+        datesPlanB: patch.datesPlanB ?? lhDates,
         reflectNote: patch.reflectNote ?? reflectNote,
       };
       localStorage.setItem(draftKey, JSON.stringify(next));
@@ -2023,6 +2300,39 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         break;
       case "share-passport":
         action = [spStatus, spIntent, spWithdraw].filter(Boolean).join("｜");
+        break;
+      case "stage-start":
+        action = [stLightWork, stWhyKeep, stDistance].filter(Boolean).join("｜");
+        break;
+      case "life-assets":
+        action = [laCandidates, laWhyWho, laEnterPick].filter(Boolean).join("｜");
+        break;
+      case "story-gallery":
+        action = [sgName, sgGuide, sgZones].filter(Boolean).join("｜");
+        break;
+      case "work-enter":
+        action = [weWorks, weGuides, weCopyTest].filter(Boolean).join("｜");
+        break;
+      case "smart-before-after":
+        action = [sbaFace, sbaBeforeNow, sbaEvidence].filter(Boolean).join("｜");
+        break;
+      case "smart-curve":
+        action = [cvOneDim, cvFive, cvSeeMyself].filter(Boolean).join("｜");
+        break;
+      case "growth-story":
+        action = [gsFour, gsDraft, gsTrim].filter(Boolean).join("｜");
+        break;
+      case "five-distance":
+        action = [fdDistance, fdWhoOpen, fdWithdraw].filter(Boolean).join("｜");
+        break;
+      case "invite-peer":
+        action = [ipWhoWhy, ipNote, ipSend].filter(Boolean).join("｜");
+        break;
+      case "omo-waltz":
+        action = [omoForm, omoArrived, omoNext].filter(Boolean).join("｜");
+        break;
+      case "lighthouse":
+        action = [lhManifesto, lhNinety, lhDates].filter(Boolean).join("｜");
         break;
       case "elevator-wish":
         action =
@@ -2579,6 +2889,83 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
     saveDraft({ status: demo.status, intent: demo.intent, withdraw: demo.withdraw, reflectNote: demo.reflectNote });
     toast.success(`已帶入${demo.label}。`);
   };
+
+  const copySmartBeforeAfterAsk = async () => {
+    const textAsk = chapter.samplePrompt?.trim() || buildSmartBeforeAfterPrompt();
+    try {
+      await navigator.clipboard.writeText(textAsk);
+      toast.success("已複製 SMART 前後證據提問句。");
+    } catch {
+      toast.info("請長按文字框手動複製。");
+    }
+  };
+
+  const copyGrowthStoryAsk = async () => {
+    const textAsk = chapter.samplePrompt?.trim() || buildGrowthStoryPrompt();
+    try {
+      await navigator.clipboard.writeText(textAsk);
+      toast.success("已複製展館導覽詞提問句。");
+    } catch {
+      toast.info("請長按文字框手動複製。");
+    }
+  };
+
+  const applyStageStartDemo = (demo: StageStartDemo) => {
+    setStLightWork(demo.lightWork); setStWhyKeep(demo.whyKeep); setStDistance(demo.distance); setReflectNote(demo.reflectNote);
+    saveDraft({ lightWork: demo.lightWork, whyKeep: demo.whyKeep, distance: demo.distance, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyLifeAssetsDemo = (demo: LifeAssetsDemo) => {
+    setLaCandidates(demo.candidates); setLaWhyWho(demo.whyWho); setLaEnterPick(demo.enterPick); setReflectNote(demo.reflectNote);
+    saveDraft({ candidates: demo.candidates, whyWho: demo.whyWho, enterPick: demo.enterPick, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyStoryGalleryDemo = (demo: StoryGalleryDemo) => {
+    setSgName(demo.galleryName); setSgGuide(demo.guideLine); setSgZones(demo.zones); setReflectNote(demo.reflectNote);
+    saveDraft({ galleryName: demo.galleryName, guideLine: demo.guideLine, zones: demo.zones, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyWorkEnterDemo = (demo: WorkEnterDemo) => {
+    setWeWorks(demo.worksZones); setWeGuides(demo.guideLines); setWeCopyTest(demo.copyTest); setReflectNote(demo.reflectNote);
+    saveDraft({ worksZones: demo.worksZones, guideLines: demo.guideLines, copyTest: demo.copyTest, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applySmartBeforeAfterDemo = (demo: SmartBeforeAfterDemo) => {
+    setSbaFace(demo.smartFace); setSbaBeforeNow(demo.beforeNow); setSbaEvidence(demo.evidence); setReflectNote(demo.reflectNote);
+    saveDraft({ smartFace: demo.smartFace, beforeNow: demo.beforeNow, evidence: demo.evidence, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applySmartCurveDemo = (demo: SmartCurveDemo) => {
+    setCvOneDim(demo.oneDim); setCvFive(demo.fiveOutline); setCvSeeMyself(demo.seeMyself); setReflectNote(demo.reflectNote);
+    saveDraft({ oneDim: demo.oneDim, fiveOutline: demo.fiveOutline, seeMyself: demo.seeMyself, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyGrowthStoryDemo = (demo: GrowthStoryDemo) => {
+    setGsFour(demo.fourNodes); setGsDraft(demo.guideDraft); setGsTrim(demo.trimNote); setReflectNote(demo.reflectNote);
+    saveDraft({ fourNodes: demo.fourNodes, guideDraft: demo.guideDraft, trimNote: demo.trimNote, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyFiveDistanceDemo = (demo: FiveDistanceDemo) => {
+    setFdDistance(demo.distance); setFdWhoOpen(demo.whoOpenStop); setFdWithdraw(demo.withdraw); setReflectNote(demo.reflectNote);
+    saveDraft({ distance: demo.distance, whoOpenStop: demo.whoOpenStop, withdraw: demo.withdraw, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyInvitePeerDemo = (demo: InvitePeerDemo) => {
+    setIpWhoWhy(demo.whoWhy); setIpNote(demo.inviteNote); setIpSend(demo.sendChoice); setReflectNote(demo.reflectNote);
+    saveDraft({ whoWhy: demo.whoWhy, inviteNote: demo.inviteNote, sendChoice: demo.sendChoice, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyOmoWaltzDemo = (demo: OmoWaltzDemo) => {
+    setOmoForm(demo.formPrep); setOmoArrived(demo.arrivedNote); setOmoNext(demo.nextFix); setReflectNote(demo.reflectNote);
+    saveDraft({ formPrep: demo.formPrep, arrivedNote: demo.arrivedNote, nextFix: demo.nextFix, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+  const applyLighthouseDemo = (demo: LighthouseDemo) => {
+    setLhManifesto(demo.manifesto); setLhNinety(demo.ninetyStep); setLhDates(demo.datesPlanB); setReflectNote(demo.reflectNote);
+    saveDraft({ manifesto: demo.manifesto, ninetyStep: demo.ninetyStep, datesPlanB: demo.datesPlanB, reflectNote: demo.reflectNote });
+    toast.success(`已帶入${demo.label}。`);
+  };
+
 
   const applyRecipeDemo = (demo: RecipeCardDemo) => {
     setDishName(demo.dishName);
@@ -5048,6 +5435,263 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
             </div>
           )}
 
+
+          {layout === "stage-start" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>想點亮的作品</div>
+                <textarea value={stLightWork} onChange={(e) => { setStLightWork(e.target.value); saveDraft({ lightWork: e.target.value }); }}
+                  placeholder="例如：母親的三張照片故事卡…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>值得留下的理由</div>
+                <textarea value={stWhyKeep} onChange={(e) => { setStWhyKeep(e.target.value); saveDraft({ whyKeep: e.target.value }); }}
+                  placeholder="例如：把她常說的那句話留下來…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>目前希望保持的距離</div>
+                <textarea value={stDistance} onChange={(e) => { setStDistance(e.target.value); saveDraft({ distance: e.target.value }); }}
+                  placeholder="例如：只給自己／家人／同行者／社區／公共…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              {chapter.entries && chapter.entries.length > 0 && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
+                  {chapter.entries.map((entry) => (
+                    <EntryButton key={entry.id} entry={entry} selected={picked === entry.id}
+                      onSelect={() => savePick(entry.id)} onGo={() => goEntry(entry)} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {layout === "life-assets" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { label: "三至五件候選與位置", value: laCandidates, set: setLaCandidates, key: "candidates", ph: "例如：故事卡｜手機相簿；旅遊短記｜Drive…" },
+                { label: "為何重要／目前只給誰看", value: laWhyWho, set: setLaWhyWho, key: "whyWho", ph: "例如：故事卡先給手足；短記只給自己…" },
+                { label: "先進館的一至三件", value: laEnterPick, set: setLaEnterPick, key: "enterPick", ph: "例如：故事卡、拿手菜食譜…" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{f.label}</div>
+                  <textarea value={f.value} onChange={(e) => { f.set(e.target.value); saveDraft({ [f.key]: e.target.value }); }}
+                    placeholder={f.ph} rows={2}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "story-gallery" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { label: "館名", value: sgName, set: setSgName, key: "galleryName", ph: "例如：慢慢來的故事館…" },
+                { label: "一句本人導覽", value: sgGuide, set: setSgGuide, key: "guideLine", ph: "例如：這裡放我願意留下、也願意慢慢看的作品…" },
+                { label: "三個展區（可先空白）", value: sgZones, set: setSgZones, key: "zones", ph: "例如：好好生活｜走向更大的世界｜留下生命的光…" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{f.label}</div>
+                  <textarea value={f.value} onChange={(e) => { f.set(e.target.value); saveDraft({ [f.key]: e.target.value }); }}
+                    placeholder={f.ph} rows={2}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "work-enter" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { label: "作品與展區", value: weWorks, set: setWeWorks, key: "worksZones", ph: "例如：故事卡→留下生命的光；食譜卡→好好生活…" },
+                { label: "本人導覽", value: weGuides, set: setWeGuides, key: "guideLines", ph: "例如：故事卡：那句「慢慢來」仍陪著我…" },
+                { label: "展示副本／權限實測", value: weCopyTest, set: setWeCopyTest, key: "copyTest", ph: "例如：已建展示副本；另一帳號可開、外人看不見…" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{f.label}</div>
+                  <textarea value={f.value} onChange={(e) => { f.set(e.target.value); saveDraft({ [f.key]: e.target.value }); }}
+                    placeholder={f.ph} rows={2}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "smart-before-after" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>SMART 面向</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+                  {["S", "M", "A", "R", "T"].map((s) => (
+                    <button key={s} type="button" onClick={() => { setSbaFace(s); saveDraft({ smartFace: s }); }}
+                      style={{ padding: "8px 12px", borderRadius: "var(--r-pill)", border: `2px solid ${sbaFace === s || sbaFace.startsWith(s) ? "var(--primary)" : "var(--line-strong)"}`, background: sbaFace === s || sbaFace.startsWith(s) ? "var(--primary-soft)" : "var(--surface)", fontSize: "var(--fs-xs)", fontWeight: 700, cursor: "pointer" }}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+                <textarea value={sbaFace} onChange={(e) => { setSbaFace(e.target.value); saveDraft({ smartFace: e.target.value }); }}
+                  placeholder="例如：A 自主…" rows={1}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>以前／現在</div>
+                <textarea value={sbaBeforeNow} onChange={(e) => { setSbaBeforeNow(e.target.value); saveDraft({ beforeNow: e.target.value }); }}
+                  placeholder="例如：以前等別人安排；現在會先寫自己的問題與底線…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>作品或生活證據</div>
+                <textarea value={sbaEvidence} onChange={(e) => { setSbaEvidence(e.target.value); saveDraft({ evidence: e.target.value }); }}
+                  placeholder="例如：決策備忘錄與故事核心句…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button type="button" onClick={copySmartBeforeAfterAsk} style={secondaryBtnStyle}>複製前後證據提問句</button>
+                <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>在暖暖一次一題 →</button>
+              </div>
+            </div>
+          )}
+
+          {layout === "smart-curve" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "flex", gap: 6, marginBottom: 4, flexWrap: "wrap" }}>
+                {[
+                  { t: "S 連結", c: "#5BA0C9" },
+                  { t: "M 意義", c: "#9B7AD4" },
+                  { t: "A 自主", c: "#E8845A" },
+                  { t: "R 韌性", c: "#5BA86B" },
+                  { t: "T 信任科技", c: "#8B6F47" },
+                ].map((s) => (
+                  <div key={s.t} style={{ flex: "1 1 60px", textAlign: "center", padding: "8px 4px", borderRadius: 10, background: s.c + "22", border: `1px solid ${s.c}`, color: s.c, fontSize: "var(--fs-xs)", fontWeight: 800 }}>
+                    {s.t}
+                  </div>
+                ))}
+              </div>
+              {[
+                { label: "一維起點→現在（含證據）", value: cvOneDim, set: setCvOneDim, key: "oneDim", ph: "例如：A：起步→已能運用（有決策備忘錄為證）…" },
+                { label: "五維輪廓", value: cvFive, set: setCvFive, key: "fiveOutline", ph: "例如：S 正在形成｜M 已能運用｜A 已能運用｜R 正在形成｜T 起步…" },
+                { label: "我看見自己＿＿＿＿", value: cvSeeMyself, set: setCvSeeMyself, key: "seeMyself", ph: "例如：我看見自己更能自己開始，也更願意慢慢來…" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{f.label}</div>
+                  <textarea value={f.value} onChange={(e) => { f.set(e.target.value); saveDraft({ [f.key]: e.target.value }); }}
+                    placeholder={f.ph} rows={2}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "growth-story" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { label: "四個節點", value: gsFour, set: setGsFour, key: "fourNodes", ph: "例如：從故事卡開始｜途中學會界線｜現在更能自己決定距離｜接下來想邀請手足…" },
+                { label: "導覽詞草稿", value: gsDraft, set: setGsDraft, key: "guideDraft", ph: "例如：我從母親的故事卡開始。途中學會：私人也是完整…" },
+                { label: "朗讀刪修筆記", value: gsTrim, set: setGsTrim, key: "trimNote", ph: "例如：已刪去「完美人生」那句；保留「慢慢來」…" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{f.label}</div>
+                  <textarea value={f.value} onChange={(e) => { f.set(e.target.value); saveDraft({ [f.key]: e.target.value }); }}
+                    placeholder={f.ph} rows={2}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                </div>
+              ))}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button type="button" onClick={copyGrowthStoryAsk} style={secondaryBtnStyle}>複製展館導覽詞提問句</button>
+                <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>在暖暖一次一題 →</button>
+              </div>
+            </div>
+          )}
+
+          {layout === "five-distance" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>目前距離</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+                  {[
+                    "D1只給自己",
+                    "D2親近家人",
+                    "D3同行夥伴",
+                    "D4社區舞台",
+                    "D5公共世界",
+                  ].map((s) => (
+                    <button key={s} type="button" onClick={() => { setFdDistance(s); saveDraft({ distance: s }); }}
+                      style={{ padding: "8px 12px", borderRadius: "var(--r-pill)", border: `2px solid ${fdDistance === s || fdDistance.includes(s.slice(0, 2)) ? "var(--primary)" : "var(--line-strong)"}`, background: fdDistance === s || fdDistance.includes(s.slice(0, 2)) ? "var(--primary-soft)" : "var(--surface)", fontSize: "var(--fs-xs)", fontWeight: 700, cursor: "pointer" }}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+                <textarea value={fdDistance} onChange={(e) => { setFdDistance(e.target.value); saveDraft({ distance: e.target.value }); }}
+                  placeholder="例如：D2 親近家人…" rows={1}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>給誰看／如何開啟／何時停止</div>
+                <textarea value={fdWhoOpen} onChange={(e) => { setFdWhoOpen(e.target.value); saveDraft({ whoOpenStop: e.target.value }); }}
+                  placeholder="例如：給手足看｜指定連結｜一季後關閉…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>如何撤回</div>
+                <textarea value={fdWithdraw} onChange={(e) => { setFdWithdraw(e.target.value); saveDraft({ withdraw: e.target.value }); }}
+                  placeholder="例如：關閉連結；必要時改回只給自己…" rows={2}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+              </div>
+            </div>
+          )}
+
+          {layout === "invite-peer" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { label: "對象與理由", value: ipWhoWhy, set: setIpWhoWhy, key: "whoWhy", ph: "例如：妹妹｜想起我們一起聽母親說「慢慢來」…" },
+                { label: "邀請說明（距離／回覆／期限／不轉傳）", value: ipNote, set: setIpNote, key: "inviteNote", ph: "例如：D2｜可回一句話或不回都好｜連結兩週後關閉｜請先不要轉傳…" },
+                { label: "是否發送", value: ipSend, set: setIpSend, key: "sendChoice", ph: "例如：今天先存草稿，週末再親自傳送…" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{f.label}</div>
+                  <textarea value={f.value} onChange={(e) => { f.set(e.target.value); saveDraft({ [f.key]: e.target.value }); }}
+                    placeholder={f.ph} rows={2}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "omo-waltz" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { label: "形式與準備", value: omoForm, set: setOmoForm, key: "formPrep", ph: "例如：一對一｜故事卡＋三分鐘導覽＋紙本備案…" },
+                { label: "被理解處／抵達筆記", value: omoArrived, set: setOmoArrived, key: "arrivedNote", ph: "例如：她記得「慢慢來」，也說想再看食譜卡…" },
+                { label: "下一版修正", value: omoNext, set: setOmoNext, key: "nextFix", ph: "例如：下一版只加一句圖說…" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{f.label}</div>
+                  <textarea value={f.value} onChange={(e) => { f.set(e.target.value); saveDraft({ [f.key]: e.target.value }); }}
+                    placeholder={f.ph} rows={2}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {layout === "lighthouse" && (
+            <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                { label: "燈塔宣言", value: lhManifesto, set: setLhManifesto, key: "manifesto", ph: "例如：我願意留下家族故事卡；在合適時候照亮手足與未來的自己…" },
+                { label: "九十日小事", value: lhNinety, set: setLhNinety, key: "ninetyStep", ph: "例如：九十天內帶妹妹完成一張故事卡…" },
+                { label: "開始日／回看日／備案", value: lhDates, set: setLhDates, key: "datesPlanB", ph: "例如：開始：下週日｜回看：九十天後｜備案：改為線上口述…" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 6 }}>{f.label}</div>
+                  <textarea value={f.value} onChange={(e) => { f.set(e.target.value); saveDraft({ [f.key]: e.target.value }); }}
+                    placeholder={f.ph} rows={2}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" }} />
+                </div>
+              ))}
+            </div>
+          )}
+
           {layout === "elevator-wish" && (
             <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
               {[
@@ -6301,6 +6945,17 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                   reflectLayout === "shared-memory" ||
                   reflectLayout === "heirloom-kit" ||
                   reflectLayout === "share-passport" ||
+                  reflectLayout === "stage-start" ||
+                  reflectLayout === "life-assets" ||
+                  reflectLayout === "story-gallery" ||
+                  reflectLayout === "work-enter" ||
+                  reflectLayout === "smart-before-after" ||
+                  reflectLayout === "smart-curve" ||
+                  reflectLayout === "growth-story" ||
+                  reflectLayout === "five-distance" ||
+                  reflectLayout === "invite-peer" ||
+                  reflectLayout === "omo-waltz" ||
+                  reflectLayout === "lighthouse" ||
                   reflectLayout === "elevator-wish" ||
                   reflectLayout === "life-match" ||
                   reflectLayout === "five-reflect" ||
@@ -7182,6 +7837,129 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                 </div>
               )}
 
+
+              {layout === "stage-start" && chapter.stageStartDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.stageStartDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 6px" }}><strong>作品：</strong>{demo.lightWork}</p>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>距離：</strong>{demo.distance}</p>
+                      <button type="button" onClick={() => applyStageStartDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "life-assets" && chapter.lifeAssetsDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.lifeAssetsDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}>{demo.candidates}</p>
+                      <button type="button" onClick={() => applyLifeAssetsDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "story-gallery" && chapter.storyGalleryDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.storyGalleryDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>館名：</strong>{demo.galleryName}</p>
+                      <button type="button" onClick={() => applyStoryGalleryDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "work-enter" && chapter.workEnterDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.workEnterDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}>{demo.worksZones}</p>
+                      <button type="button" onClick={() => applyWorkEnterDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "smart-before-after" && chapter.smartBeforeAfterDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.smartBeforeAfterDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>{demo.smartFace}：</strong>{demo.beforeNow}</p>
+                      <button type="button" onClick={() => applySmartBeforeAfterDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "smart-curve" && chapter.smartCurveDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.smartCurveDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}>{demo.seeMyself}</p>
+                      <button type="button" onClick={() => applySmartCurveDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "growth-story" && chapter.growthStoryDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.growthStoryDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}>{demo.guideDraft}</p>
+                      <button type="button" onClick={() => applyGrowthStoryDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "five-distance" && chapter.fiveDistanceDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.fiveDistanceDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}><strong>距離：</strong>{demo.distance}</p>
+                      <button type="button" onClick={() => applyFiveDistanceDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "invite-peer" && chapter.invitePeerDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.invitePeerDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}>{demo.whoWhy}</p>
+                      <button type="button" onClick={() => applyInvitePeerDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "omo-waltz" && chapter.omoWaltzDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.omoWaltzDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}>{demo.formPrep}</p>
+                      <button type="button" onClick={() => applyOmoWaltzDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {layout === "lighthouse" && chapter.lighthouseDemos && (
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+                  {chapter.lighthouseDemos.map((demo) => (
+                    <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--primary-deep)" }}>{demo.label}</div>
+                      <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px" }}>{demo.ninetyStep}</p>
+                      <button type="button" onClick={() => applyLighthouseDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--primary)", background: "var(--surface)", color: "var(--primary-deep)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                    </div>
+                  ))}
+                </div>
+              )}
               {layout === "elevator-wish" && chapter.elevatorDemos && (
                 <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
                   {chapter.elevatorDemos.map((demo) => (
@@ -8033,6 +8811,39 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           spStatus={spStatus}
           spIntent={spIntent}
           spWithdraw={spWithdraw}
+          stLightWork={stLightWork}
+          stWhyKeep={stWhyKeep}
+          stDistance={stDistance}
+          laCandidates={laCandidates}
+          laWhyWho={laWhyWho}
+          laEnterPick={laEnterPick}
+          sgName={sgName}
+          sgGuide={sgGuide}
+          sgZones={sgZones}
+          weWorks={weWorks}
+          weGuides={weGuides}
+          weCopyTest={weCopyTest}
+          sbaFace={sbaFace}
+          sbaBeforeNow={sbaBeforeNow}
+          sbaEvidence={sbaEvidence}
+          cvOneDim={cvOneDim}
+          cvFive={cvFive}
+          cvSeeMyself={cvSeeMyself}
+          gsFour={gsFour}
+          gsDraft={gsDraft}
+          gsTrim={gsTrim}
+          fdDistance={fdDistance}
+          fdWhoOpen={fdWhoOpen}
+          fdWithdraw={fdWithdraw}
+          ipWhoWhy={ipWhoWhy}
+          ipNote={ipNote}
+          ipSend={ipSend}
+          omoForm={omoForm}
+          omoArrived={omoArrived}
+          omoNext={omoNext}
+          lhManifesto={lhManifesto}
+          lhNinety={lhNinety}
+          lhDates={lhDates}
           wishWant={wishWant}
           wishStuck={wishStuck}
           wishAiHelp={wishAiHelp}
@@ -8370,6 +9181,39 @@ function PrintCard({
   spStatus = "",
   spIntent = "",
   spWithdraw = "",
+  stLightWork = "",
+  stWhyKeep = "",
+  stDistance = "",
+  laCandidates = "",
+  laWhyWho = "",
+  laEnterPick = "",
+  sgName = "",
+  sgGuide = "",
+  sgZones = "",
+  weWorks = "",
+  weGuides = "",
+  weCopyTest = "",
+  sbaFace = "",
+  sbaBeforeNow = "",
+  sbaEvidence = "",
+  cvOneDim = "",
+  cvFive = "",
+  cvSeeMyself = "",
+  gsFour = "",
+  gsDraft = "",
+  gsTrim = "",
+  fdDistance = "",
+  fdWhoOpen = "",
+  fdWithdraw = "",
+  ipWhoWhy = "",
+  ipNote = "",
+  ipSend = "",
+  omoForm = "",
+  omoArrived = "",
+  omoNext = "",
+  lhManifesto = "",
+  lhNinety = "",
+  lhDates = "",
   wishWant = "",
   wishStuck = "",
   wishAiHelp = "",
@@ -8585,6 +9429,39 @@ function PrintCard({
   spStatus?: string;
   spIntent?: string;
   spWithdraw?: string;
+  stLightWork?: string;
+  stWhyKeep?: string;
+  stDistance?: string;
+  laCandidates?: string;
+  laWhyWho?: string;
+  laEnterPick?: string;
+  sgName?: string;
+  sgGuide?: string;
+  sgZones?: string;
+  weWorks?: string;
+  weGuides?: string;
+  weCopyTest?: string;
+  sbaFace?: string;
+  sbaBeforeNow?: string;
+  sbaEvidence?: string;
+  cvOneDim?: string;
+  cvFive?: string;
+  cvSeeMyself?: string;
+  gsFour?: string;
+  gsDraft?: string;
+  gsTrim?: string;
+  fdDistance?: string;
+  fdWhoOpen?: string;
+  fdWithdraw?: string;
+  ipWhoWhy?: string;
+  ipNote?: string;
+  ipSend?: string;
+  omoForm?: string;
+  omoArrived?: string;
+  omoNext?: string;
+  lhManifesto?: string;
+  lhNinety?: string;
+  lhDates?: string;
   wishWant?: string;
   wishStuck?: string;
   wishAiHelp?: string;
@@ -9420,6 +10297,161 @@ function PrintCard({
         <p style={{ fontSize: 12, color: "#666" }}>
           掃碼網址：{origin}/smart/chapter/{chapter.id}
         </p>
+      </div>
+    );
+  }
+
+
+  if ((layout as string) === "stage-start") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="想點亮的作品" minHeight={48}>{stLightWork || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="值得留下的理由" minHeight={48}>{stWhyKeep || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="目前距離" minHeight={40}>{stDistance || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "life-assets") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="候選與位置" minHeight={48}>{laCandidates || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="為何重要／給誰看" minHeight={48}>{laWhyWho || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="先進館" minHeight={40}>{laEnterPick || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "story-gallery") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="館名" minHeight={40}>{sgName || "＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="本人導覽" minHeight={48}>{sgGuide || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="三個展區" minHeight={40}>{sgZones || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "work-enter") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="作品與展區" minHeight={48}>{weWorks || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="本人導覽" minHeight={48}>{weGuides || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="展示副本／權限" minHeight={40}>{weCopyTest || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "smart-before-after") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="SMART 面向" minHeight={40}>{sbaFace || "＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="以前／現在" minHeight={48}>{sbaBeforeNow || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="作品證據" minHeight={40}>{sbaEvidence || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "smart-curve") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="一維起點→現在" minHeight={48}>{cvOneDim || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="五維輪廓" minHeight={48}>{cvFive || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="我看見自己" minHeight={40}>{cvSeeMyself || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "growth-story") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="四個節點" minHeight={48}>{gsFour || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="導覽詞" minHeight={72}>{gsDraft || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="刪修筆記" minHeight={40}>{gsTrim || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "five-distance") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="目前距離" minHeight={40}>{fdDistance || "＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="開啟／停止" minHeight={48}>{fdWhoOpen || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="撤回方式" minHeight={40}>{fdWithdraw || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "invite-peer") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="對象與理由" minHeight={48}>{ipWhoWhy || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="邀請說明" minHeight={48}>{ipNote || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="是否發送" minHeight={40}>{ipSend || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "omo-waltz") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="形式與準備" minHeight={48}>{omoForm || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="抵達筆記" minHeight={48}>{omoArrived || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="下一版修正" minHeight={40}>{omoNext || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
+      </div>
+    );
+  }
+
+  if ((layout as string) === "lighthouse") {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>{chapter.printCardTitle} · QR {chapter.qrCode}</h1>
+        {chapter.quote && (<p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px" }}>{chapter.quote}</p>)}
+        <PrintGridCell title="燈塔宣言" minHeight={48}>{lhManifesto || "＿＿＿＿＿＿"}</PrintGridCell>
+        <div style={{ margin: "12px 0" }}><PrintGridCell title="九十日小事" minHeight={48}>{lhNinety || "＿＿＿＿＿＿"}</PrintGridCell></div>
+        <PrintGridCell title="開始／回看／備案" minHeight={40}>{lhDates || "＿＿＿＿"}</PrintGridCell>
+        <PrintGridCell title="回望" minHeight={64}>{reflectNote || "＿＿＿＿＿＿＿＿＿＿"}</PrintGridCell>
+        <p style={{ fontSize: 12, color: "#666", marginTop: 16 }}>掃碼網址：{origin}/smart/chapter/{chapter.id}</p>
       </div>
     );
   }
