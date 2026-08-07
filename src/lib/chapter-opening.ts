@@ -1,5 +1,10 @@
 /** 章節開篇 QR 深連結（例：0100 → /smart/chapter/0100） */
 import { CHAPTER_2_OPENINGS } from "./chapter-opening-ch2";
+import { CHAPTER_3_OPENINGS } from "./chapter-opening-ch3";
+import { CHAPTER_4_OPENINGS } from "./chapter-opening-ch4";
+import { CHAPTER_5_OPENINGS } from "./chapter-opening-ch5";
+import { CHAPTER_6_OPENINGS } from "./chapter-opening-ch6";
+import { CHAPTER_7_OPENINGS } from "./chapter-opening-ch7";
 import { CHAPTER_8_OPENINGS } from "./chapter-opening-ch8";
 
 export type ChapterLayout =
@@ -28,7 +33,42 @@ export type ChapterLayout =
   | "stress-test"
   | "third-path"
   | "pro-confirm"
-  | "decision-memo";
+  | "decision-memo"
+  | "elevator-wish"
+  | "life-match"
+  | "five-reflect"
+  | "three-steps"
+  | "meaning-seed"
+  | "share-intent"
+  | "embark-card"
+  | "boundary-choose"
+  | "plan-b"
+  | "dual-track"
+  | "taste-journal"
+  | "ar-light"
+  | "verify-first"
+  | "pause-reflex"
+  | "rock-check"
+  | "muscle-record"
+  | "trust-lists"
+  | "list-entry"
+  | "family-weekly"
+  | "tr-light"
+  | "mindset-shift"
+  | "dual-signal"
+  | "ground-snap"
+  | "week-rhythm"
+  | "kinetic-guide"
+  | "atr-light"
+  | "city-radius"
+  | "day-rehearsal"
+  | "moment-place"
+  | "pass-prep"
+  | "safe-corner"
+  | "activity-guide"
+  | "elegant-replan"
+  | "three-sight"
+  | "city-lights";
 
 export type VisionTrustLevel = "enjoy" | "verify";
 
@@ -309,6 +349,368 @@ export interface DecisionMemoDemo {
   reflectNote: string;
 }
 
+
+/** Chapter 3：SMART 五方向 */
+export interface SmartDirectionOption {
+  id: string;
+  letter: string;
+  label: string;
+  hint: string;
+}
+
+/** Chapter 3：AI 電梯願望（0301） */
+export interface ElevatorWishDemo {
+  id: string;
+  label: string;
+  want: string;
+  stuck: string;
+  aiHelp: string;
+  reflectNote: string;
+}
+
+/** Chapter 3：生活角色（0302 等） */
+export interface LifeRoleOption {
+  id: string;
+  label: string;
+  hint: string;
+}
+
+export interface LifeMatchDemo {
+  id: string;
+  label: string;
+  painPoint: string;
+  roleId: string;
+  reflectNote: string;
+}
+
+/** Chapter 3：五向回望（0305–0306） */
+export interface FiveReflectDemo {
+  id: string;
+  label: string;
+  focusId: string;
+  statuses: Record<string, string>;
+  nextStep: string;
+  reflectNote: string;
+}
+
+/** Chapter 3：三步驟（0307） */
+export interface ThreeStepsDemo {
+  id: string;
+  label: string;
+  task: string;
+  steps: [string, string, string] | string[];
+  reflectNote: string;
+}
+
+/** Chapter 3：意義種子（0308） */
+export interface MeaningSeedDemo {
+  id: string;
+  label: string;
+  material: string;
+  formHint: string;
+  because: string;
+  reflectNote: string;
+}
+
+/** Chapter 3：分享意圖（0309） */
+export interface ShareIntentDemo {
+  id: string;
+  label: string;
+  shareWhat: string;
+  forWhom: string;
+  privacyNote: string;
+  reflectNote: string;
+}
+
+/** Chapter 3：從容出發（0310） */
+export interface EmbarkDemo {
+  id: string;
+  label: string;
+  direction: string;
+  firstStep: string;
+  aiHelp: string;
+  reflectNote: string;
+}
+
+/** Chapter 4：邊界選擇（0401） */
+export interface BoundaryChooseDemo {
+  id: string;
+  label: string;
+  cannotLine: string;
+  canChooseLine: string;
+  reflectNote: string;
+}
+
+/** Chapter 4：Plan B（0408） */
+export interface PlanBDemo {
+  id: string;
+  label: string;
+  scene: string;
+  boundary: string;
+  returnAction: string;
+  reflectNote: string;
+}
+
+/** Chapter 4：雙軌（0406–0407） */
+export interface DualTrackDemo {
+  id: string;
+  label: string;
+  bodyTrack: string;
+  soulTrack: string;
+  reflectNote: string;
+}
+
+/** Chapter 4：品味週記（0409） */
+export interface TasteJournalDemo {
+  id: string;
+  label: string;
+  lines: [string, string, string, string];
+  keepPractice: string;
+  reflectNote: string;
+}
+
+/** Chapter 4：自主與韌性光點（0410） */
+export interface ArLightDemo {
+  id: string;
+  label: string;
+  agencyAction: string;
+  resilienceAction: string;
+  reflectNote: string;
+}
+
+/** Chapter 5：先查證（0501） */
+export interface VerifyFirstDemo {
+  id: string;
+  label: string;
+  firstAction: string;
+  thenAction: string;
+  reflectNote: string;
+}
+
+/** Chapter 5：暫停反射（0502） */
+export interface PauseReflexOption {
+  id: string;
+  label: string;
+  hint: string;
+}
+
+export interface PauseReflexDemo {
+  id: string;
+  label: string;
+  focusId: string;
+  reflectNote: string;
+}
+
+/** Chapter 5：石頭查證（0503–0504） */
+export interface RockCheckDemo {
+  id: string;
+  label: string;
+  scenario: string;
+  flags: [string, string, string] | string[];
+  safeAction: string;
+  reflectNote: string;
+}
+
+/** Chapter 5：防詐肌肉（0505） */
+export interface MuscleRecordDemo {
+  id: string;
+  label: string;
+  scamPattern: string;
+  safeAction: string;
+  reflectNote: string;
+}
+
+/** Chapter 5：信任名單總覽（0506） */
+export interface TrustListsDemo {
+  id: string;
+  label: string;
+  blackSummary: string;
+  whiteSummary: string;
+  reflectNote: string;
+}
+
+/** Chapter 5：黑／白名單條目（0507–0508） */
+export interface ListEntryDemo {
+  id: string;
+  label: string;
+  entryType: string;
+  features: string;
+  safeAction: string;
+  reflectNote: string;
+}
+
+/** Chapter 5：家族資安週報（0509） */
+export interface FamilyWeeklyDemo {
+  id: string;
+  label: string;
+  lines: [string, string, string];
+  reflectNote: string;
+}
+
+/** Chapter 5：信賴與韌性光點（0510） */
+export interface TrLightDemo {
+  id: string;
+  label: string;
+  trustAction: string;
+  resilienceAction: string;
+  reflectNote: string;
+}
+
+/** Chapter 6：心態轉換（0601） */
+export interface MindsetShiftDemo {
+  id: string;
+  label: string;
+  pressurePhrase: string;
+  carePhrase: string;
+  reflectNote: string;
+}
+
+/** Chapter 6：雙訊號（0602） */
+export interface DualSignalDemo {
+  id: string;
+  label: string;
+  feelingSignal: string;
+  dataSignal: string;
+  reflectNote: string;
+}
+
+/** Chapter 6：一拍 Ground Truth（0603） */
+export interface GroundSnapDemo {
+  id: string;
+  label: string;
+  snapSource: string;
+  softReminder: string;
+  reflectNote: string;
+}
+
+/** Chapter 6：週節奏（0605／0608–0609） */
+export interface WeekRhythmDemo {
+  id: string;
+  label: string;
+  lines: [string, string, string];
+  reflectNote: string;
+}
+
+/** Chapter 6：動能指南（0606） */
+export interface KineticGuideDemo {
+  id: string;
+  label: string;
+  goal: string;
+  prefer: string;
+  avoid: string;
+  boundary: string;
+  reflectNote: string;
+}
+
+/** Chapter 6：動能黃金三角（0610） */
+export interface AtrLightDemo {
+  id: string;
+  label: string;
+  autonomyAction: string;
+  trustAction: string;
+  resilienceAction: string;
+  reflectNote: string;
+}
+
+/** Chapter 7：城市半徑（0701） */
+export interface CityRadiusDemo {
+  id: string;
+  label: string;
+  place: string;
+  meaning: string;
+  reflectNote: string;
+}
+
+/** Chapter 7：一日彩排（0702） */
+export interface DayRehearsalDemo {
+  id: string;
+  label: string;
+  fromPlace: string;
+  toPlace: string;
+  restPoint: string;
+  backup: string;
+  officialCheck: string;
+  reflectNote: string;
+}
+
+/** Chapter 7：時刻安放（0703） */
+export interface MomentPlaceDemo {
+  id: string;
+  label: string;
+  activity: string;
+  departAt: string;
+  arriveAt: string;
+  restAt: string;
+  returnAt: string;
+  reflectNote: string;
+}
+
+/** Chapter 7：票券／通行（0704） */
+export interface PassPrepDemo {
+  id: string;
+  label: string;
+  ticketWhere: string;
+  openHow: string;
+  officialSource: string;
+  backup: string;
+  reflectNote: string;
+}
+
+/** Chapter 7：安心角落（0705） */
+export interface SafeCornerDemo {
+  id: string;
+  label: string;
+  destination: string;
+  routeNote: string;
+  restSpot: string;
+  backup: string;
+  reflectNote: string;
+}
+
+/** Chapter 7：活動參與指南（0706） */
+export interface ActivityGuideDemo {
+  id: string;
+  label: string;
+  activityType: string;
+  duration: string;
+  restStyle: string;
+  transitPref: string;
+  companion: string;
+  reflectNote: string;
+}
+
+/** Chapter 7：優雅重排（0708） */
+export interface ElegantReplanDemo {
+  id: string;
+  label: string;
+  trigger: string;
+  planA: string;
+  planB: string;
+  softReminder: string;
+  reflectNote: string;
+}
+
+/** Chapter 7：三見聞（0709） */
+export interface ThreeSightDemo {
+  id: string;
+  label: string;
+  saw: string;
+  felt: string;
+  bringHome: string;
+  reflectNote: string;
+}
+
+/** Chapter 7：城市通行光點（0710） */
+export interface CityLightsDemo {
+  id: string;
+  label: string;
+  arrange: string;
+  verify: string;
+  replan: string;
+  keep: string;
+  reflectNote: string;
+}
+
 export interface ChapterAppDeepLink {
   href: string;
   label: string;
@@ -409,6 +811,54 @@ export interface ChapterOpening {
   thirdPathDemos?: ThirdPathDemo[];
   proConfirmDemos?: ProConfirmDemo[];
   decisionMemoDemos?: DecisionMemoDemo[];
+  /** Chapter 3 */
+  elevatorDemos?: ElevatorWishDemo[];
+  lifeRoleOptions?: LifeRoleOption[];
+  lifeMatchDemos?: LifeMatchDemo[];
+  smartDirections?: SmartDirectionOption[];
+  fiveReflectMode?: "pick" | "status" | "weekly";
+  statusChoices?: string[];
+  fiveReflectDemos?: FiveReflectDemo[];
+  threeStepsDemos?: ThreeStepsDemo[];
+  meaningSeedDemos?: MeaningSeedDemo[];
+  shareIntentDemos?: ShareIntentDemo[];
+  embarkDemos?: EmbarkDemo[];
+  /** Chapter 4 */
+  boundaryChooseDemos?: BoundaryChooseDemo[];
+  planBDemos?: PlanBDemo[];
+  dualTrackDemos?: DualTrackDemo[];
+  tasteJournalDemos?: TasteJournalDemo[];
+  arLightDemos?: ArLightDemo[];
+  /** Chapter 5 */
+  verifyFirstDemos?: VerifyFirstDemo[];
+  pauseReflexOptions?: PauseReflexOption[];
+  pauseReflexDemos?: PauseReflexDemo[];
+  rockCheckDemos?: RockCheckDemo[];
+  muscleRecordDemos?: MuscleRecordDemo[];
+  trustListsDemos?: TrustListsDemo[];
+  listEntryMode?: "blacklist" | "whitelist";
+  listEntryDemos?: ListEntryDemo[];
+  familyWeeklyDemos?: FamilyWeeklyDemo[];
+  trLightDemos?: TrLightDemo[];
+  /** Chapter 6 */
+  mindsetShiftDemos?: MindsetShiftDemo[];
+  dualSignalDemos?: DualSignalDemo[];
+  groundSnapDemos?: GroundSnapDemo[];
+  weekRhythmLabels?: [string, string, string];
+  weekRhythmPlaceholders?: [string, string, string];
+  weekRhythmDemos?: WeekRhythmDemo[];
+  kineticGuideDemos?: KineticGuideDemo[];
+  atrLightDemos?: AtrLightDemo[];
+  /** Chapter 7 */
+  cityRadiusDemos?: CityRadiusDemo[];
+  dayRehearsalDemos?: DayRehearsalDemo[];
+  momentPlaceDemos?: MomentPlaceDemo[];
+  passPrepDemos?: PassPrepDemo[];
+  safeCornerDemos?: SafeCornerDemo[];
+  activityGuideDemos?: ActivityGuideDemo[];
+  elegantReplanDemos?: ElegantReplanDemo[];
+  threeSightDemos?: ThreeSightDemo[];
+  cityLightsDemos?: CityLightsDemo[];
   appDeepLink?: ChapterAppDeepLink;
 }
 
@@ -964,6 +1414,11 @@ const CHAPTERS: Record<string, ChapterOpening> = {
   "0107": CHAPTER_0107,
   "0108": CHAPTER_0108,
   ...CHAPTER_2_OPENINGS,
+  ...CHAPTER_3_OPENINGS,
+  ...CHAPTER_4_OPENINGS,
+  ...CHAPTER_5_OPENINGS,
+  ...CHAPTER_6_OPENINGS,
+  ...CHAPTER_7_OPENINGS,
   ...CHAPTER_8_OPENINGS,
 };
 
@@ -972,7 +1427,7 @@ export function getChapterOpening(id: string): ChapterOpening | null {
 }
 
 /** 書本首頁／目錄用的章節分組 */
-export type BookGuideSectionId = "ch1" | "ch2" | "ch8";
+export type BookGuideSectionId = "ch1" | "ch2" | "ch3" | "ch4" | "ch5" | "ch6" | "ch7" | "ch8";
 
 export interface BookGuideChapterLink {
   id: string;
@@ -1023,6 +1478,61 @@ const BOOK_GUIDE_ALIASES: Record<string, string[]> = {
   "0209": ["橡皮擦", "修圖"],
   "0210": ["策展", "人生"],
   "0211": ["感官全開", "習慣"],
+  "0300": ["優雅導航", "第三章", "羅盤"],
+  "0301": ["AI 電梯", "電梯", "爬樓梯"],
+  "0302": ["SMART", "核心定義", "五方向"],
+  "0303": ["12 金童", "生活安頓", "Google"],
+  "0304": ["12 金釵", "智慧創作"],
+  "0305": ["SMART RADAR", "圓夢藍圖", "雷達"],
+  "0306": ["SHI", "每週回顧", "週記"],
+  "0307": ["日子過順", "三步驟"],
+  "0308": ["靈魂點亮", "意義", "種子"],
+  "0309": ["共好羅盤", "分享", "隱私"],
+  "0310": ["從容出發", "定標", "啟航"],
+  "0400": ["飲食文化", "第四章", "自主", "韌性"],
+  "0401": ["餐桌", "主人", "邊界"],
+  "0402": ["日常", "修煉場"],
+  "0403": ["茶", "數位風土", "風味"],
+  "0404": ["菜市場", "Ground Truth", "食材"],
+  "0405": ["放縱", "韌性管理"],
+  "0406": ["飲食指南", "55+", "雙軌"],
+  "0407": ["55+ 日常", "雙軌輸出"],
+  "0408": ["Plan B", "備案", "除錯"],
+  "0409": ["品味週記", "週記"],
+  "0410": ["自主", "韌性", "光點"],
+  "0500": ["理財防詐", "第五章", "防詐", "安心保鑣"],
+  "0501": ["優雅過濾", "查證"],
+  "0502": ["暫停", "查證", "反射"],
+  "0503": ["貪婪", "投資邀約", "查證"],
+  "0504": ["恐懼", "訊息", "查證"],
+  "0505": ["防詐肌肉", "免疫"],
+  "0506": ["信任資料庫", "黑名單", "白名單"],
+  "0507": ["防詐黑名單", "黑名單"],
+  "0508": ["信任白名單", "白名單"],
+  "0509": ["家族資安", "週報"],
+  "0510": ["信賴", "韌性", "光點"],
+  "0600": ["運動健身", "第六章", "動能"],
+  "0601": ["精準保養", "心態"],
+  "0602": ["感覺", "數據", "雙訊號"],
+  "0603": ["Ground Truth", "一拍", "捕捉"],
+  "0604": ["二問", "身體語言", "解讀"],
+  "0605": ["長期追蹤", "週節奏"],
+  "0606": ["動能指南", "指南"],
+  "0607": ["AI Coach", "喚醒"],
+  "0608": ["動能週報", "週報"],
+  "0609": ["身體會議", "週日"],
+  "0610": ["黃金三角", "動能光點"],
+  "0700": ["城市漫遊", "第七章", "城市", "一日生活圈"],
+  "0701": ["生活圈", "半徑", "城市"],
+  "0702": ["彩排", "一日", "餘裕"],
+  "0703": ["Calendar", "時刻", "安放"],
+  "0704": ["Wallet", "票券", "通行"],
+  "0705": ["Maps", "安心角落", "地圖"],
+  "0706": ["活動參與指南", "指南"],
+  "0707": ["一日生活圈", "生成"],
+  "0708": ["優雅重排", "備案", "變數"],
+  "0709": ["見聞錄", "三見聞"],
+  "0710": ["城市通行", "光點", "Part 2"],
   "0800": ["財富智囊", "決策桌", "第八章"],
   "0801": ["決策主位", "問題改寫"],
   "0802": ["來源", "階梯", "查證"],
@@ -1039,6 +1549,11 @@ const BOOK_GUIDE_ALIASES: Record<string, string[]> = {
 function bookGuideSectionForId(id: string): BookGuideSectionId | null {
   if (id.startsWith("01")) return "ch1";
   if (id.startsWith("02")) return "ch2";
+  if (id.startsWith("03")) return "ch3";
+  if (id.startsWith("04")) return "ch4";
+  if (id.startsWith("05")) return "ch5";
+  if (id.startsWith("06")) return "ch6";
+  if (id.startsWith("07")) return "ch7";
   if (id.startsWith("08")) return "ch8";
   return null;
 }
@@ -1053,6 +1568,11 @@ export function getBookGuideSections(): BookGuideSection[] {
   const buckets: Record<BookGuideSectionId, BookGuideChapterLink[]> = {
     ch1: [],
     ch2: [],
+    ch3: [],
+    ch4: [],
+    ch5: [],
+    ch6: [],
+    ch7: [],
     ch8: [],
   };
 
@@ -1085,6 +1605,41 @@ export function getBookGuideSections(): BookGuideSection[] {
       intro: "書教節奏，暖暖留下痕跡。共同節奏：一拍、二問、三記下。",
       accent: "var(--sage)",
       chapters: buckets.ch2,
+    },
+    {
+      id: "ch3",
+      title: "第三章｜優雅導航",
+      intro: "用 AI 電梯與 SMART 五方向，找到屬於自己的生活羅盤。",
+      accent: "#5B8FC9",
+      chapters: buckets.ch3,
+    },
+    {
+      id: "ch4",
+      title: "第四章｜飲食文化",
+      intro: "餐桌自主與日常韌性：邊界、雙軌，與 Plan B。",
+      accent: "#C98B5B",
+      chapters: buckets.ch4,
+    },
+    {
+      id: "ch5",
+      title: "第五章｜理財防詐",
+      intro: "先暫停、後查證；練出防詐肌肉與信任名單。",
+      accent: "#C95B5B",
+      chapters: buckets.ch5,
+    },
+    {
+      id: "ch6",
+      title: "第六章｜運動健身",
+      intro: "動能維修：用溫和數據提醒，建立可持續的身體節奏。",
+      accent: "#5BC98B",
+      chapters: buckets.ch6,
+    },
+    {
+      id: "ch7",
+      title: "第七章｜城市漫遊",
+      intro: "一日生活圈的數位優雅：彩排、通行、休息與備案。",
+      accent: "#8B5BC9",
+      chapters: buckets.ch7,
     },
     {
       id: "ch8",
@@ -1312,6 +1867,243 @@ export interface ChapterDecisionMemoDraft {
   reflectNote: string;
 }
 
+
+export interface ChapterElevatorWishDraft {
+  want: string;
+  stuck: string;
+  aiHelp: string;
+  reflectNote: string;
+}
+
+export interface ChapterLifeMatchDraft {
+  painPoint: string;
+  roleId: string;
+  reflectNote: string;
+}
+
+export interface ChapterFiveReflectDraft {
+  focusId: string;
+  statuses: Record<string, string>;
+  nextStep: string;
+  reflectNote: string;
+}
+
+export interface ChapterThreeStepsDraft {
+  task: string;
+  steps: [string, string, string];
+  reflectNote: string;
+}
+
+export interface ChapterMeaningSeedDraft {
+  material: string;
+  formHint: string;
+  because: string;
+  reflectNote: string;
+}
+
+export interface ChapterShareIntentDraft {
+  shareWhat: string;
+  forWhom: string;
+  privacyNote: string;
+  reflectNote: string;
+}
+
+export interface ChapterEmbarkDraft {
+  direction: string;
+  firstStep: string;
+  aiHelp: string;
+  reflectNote: string;
+}
+
+export interface ChapterBoundaryChooseDraft {
+  cannotLine: string;
+  canChooseLine: string;
+  reflectNote: string;
+}
+
+export interface ChapterPlanBDraft {
+  scene: string;
+  boundary: string;
+  returnAction: string;
+  reflectNote: string;
+}
+
+export interface ChapterDualTrackDraft {
+  bodyTrack: string;
+  soulTrack: string;
+  reflectNote: string;
+}
+
+export interface ChapterTasteJournalDraft {
+  lines: [string, string, string, string];
+  keepPractice: string;
+  reflectNote: string;
+}
+
+export interface ChapterArLightDraft {
+  agencyAction: string;
+  resilienceAction: string;
+  reflectNote: string;
+}
+
+export interface ChapterVerifyFirstDraft {
+  firstAction: string;
+  thenAction: string;
+  reflectNote: string;
+}
+
+export interface ChapterPauseReflexDraft {
+  focusId: string;
+  reflectNote: string;
+}
+
+export interface ChapterRockCheckDraft {
+  scenario: string;
+  flags: [string, string, string];
+  safeAction: string;
+  reflectNote: string;
+}
+
+export interface ChapterMuscleRecordDraft {
+  scamPattern: string;
+  safeAction: string;
+  reflectNote: string;
+}
+
+export interface ChapterTrustListsDraft {
+  blackSummary: string;
+  whiteSummary: string;
+  reflectNote: string;
+}
+
+export interface ChapterListEntryDraft {
+  entryType: string;
+  features: string;
+  safeAction: string;
+  reflectNote: string;
+}
+
+export interface ChapterFamilyWeeklyDraft {
+  lines: [string, string, string];
+  reflectNote: string;
+}
+
+export interface ChapterTrLightDraft {
+  trustAction: string;
+  resilienceAction: string;
+  reflectNote: string;
+}
+
+export interface ChapterMindsetShiftDraft {
+  pressurePhrase: string;
+  carePhrase: string;
+  reflectNote: string;
+}
+
+export interface ChapterDualSignalDraft {
+  feelingSignal: string;
+  dataSignal: string;
+  reflectNote: string;
+}
+
+export interface ChapterGroundSnapDraft {
+  snapSource: string;
+  softReminder: string;
+  reflectNote: string;
+}
+
+export interface ChapterWeekRhythmDraft {
+  lines: [string, string, string];
+  reflectNote: string;
+}
+
+export interface ChapterKineticGuideDraft {
+  goal: string;
+  prefer: string;
+  avoid: string;
+  boundary: string;
+  reflectNote: string;
+}
+
+export interface ChapterAtrLightDraft {
+  autonomyAction: string;
+  trustAction: string;
+  resilienceAction: string;
+  reflectNote: string;
+}
+
+export interface ChapterCityRadiusDraft {
+  place: string;
+  meaning: string;
+  reflectNote: string;
+}
+
+export interface ChapterDayRehearsalDraft {
+  fromPlace: string;
+  toPlace: string;
+  restPoint: string;
+  backup: string;
+  officialCheck: string;
+  reflectNote: string;
+}
+
+export interface ChapterMomentPlaceDraft {
+  activity: string;
+  departAt: string;
+  arriveAt: string;
+  restAt: string;
+  returnAt: string;
+  reflectNote: string;
+}
+
+export interface ChapterPassPrepDraft {
+  ticketWhere: string;
+  openHow: string;
+  officialSource: string;
+  backup: string;
+  reflectNote: string;
+}
+
+export interface ChapterSafeCornerDraft {
+  destination: string;
+  routeNote: string;
+  restSpot: string;
+  backup: string;
+  reflectNote: string;
+}
+
+export interface ChapterActivityGuideDraft {
+  activityType: string;
+  duration: string;
+  restStyle: string;
+  transitPref: string;
+  companion: string;
+  reflectNote: string;
+}
+
+export interface ChapterElegantReplanDraft {
+  trigger: string;
+  planA: string;
+  planB: string;
+  softReminder: string;
+  reflectNote: string;
+}
+
+export interface ChapterThreeSightDraft {
+  saw: string;
+  felt: string;
+  bringHome: string;
+  reflectNote: string;
+}
+
+export interface ChapterCityLightsDraft {
+  arrange: string;
+  verify: string;
+  replan: string;
+  keep: string;
+  reflectNote: string;
+}
+
 /** 0202：植物辨識提問句 */
 export function buildPlantAskPrompt(): string {
   return "這可能是什麼植物？請說明特徵。如果不確定，請說明不確定的部分。";
@@ -1353,6 +2145,28 @@ export function buildSixHatsPrompt(): string {
 /** 0206：餐點觀察提問句 */
 export function buildFoodObservePrompt(): string {
   return "請整理這道餐點可能的主要食材、烹調特色，以及一項溫和的飲食觀察。請用簡單中文，這不是醫療或營養診斷。";
+}
+
+/** 0604：聽懂身體語言 */
+export function buildBodyInterpretPrompt(): string {
+  return "請用簡單語言幫我看懂這些數字，給我一個安全、溫和、可執行的下次微調建議。請不要做醫療診斷，也不要用分數評價我。";
+}
+
+/** 0607：喚醒 AI Coach */
+export function buildKineticCoachPrompt(): string {
+  return "請依照我的 55+ 動能指南，幫我整理這週的身體提醒，並給我一個安全、低壓力、可持續的下週微調建議。如果無法讀取資料，請提醒我貼上照片、截圖或一週身體提醒。";
+}
+
+/** 0702：一日彩排 */
+export function buildDayRehearsalPrompt(fromPlace?: string, toPlace?: string): string {
+  const from = fromPlace?.trim() || "住家附近";
+  const to = toPlace?.trim() || "想去的地方";
+  return `請幫我彩排一個有餘裕的一日生活圈：從「${from}」到「${to}」。請整理出發時間建議、交通方式、停留節奏、休息點、一個備案，以及什麼情況下可以放慢或改期。請用簡單中文，不要把行程塞滿，也不要替我決定一定要去。實際資訊請提醒我向官方確認。`;
+}
+
+/** 0707：一日生活圈 */
+export function buildUrbanDayCirclePrompt(): string {
+  return "請依照我的 55+ 活動參與指南，幫我安排一個有餘裕的一日生活圈。上午不要太早出門，中午附近找個能坐下來的地方，下午安排一個展覽或書店，回程不要太晚，途中保留休息與備案。請用簡單中文，不要把行程塞滿，也不要替我決定。實際交通與開放時間請提醒我向官方確認。地點請用大範圍描述即可。";
 }
 
 /** 0108：二問用的自然提問句 */
@@ -1490,6 +2304,46 @@ export function getChapterDeepLinkHint(from: string | null | undefined): Chapter
     "0206": {
       label: "美食篇｜觀察",
       tips: ["拍一道餐點", "請整理可能食材與溫和觀察", "這不是醫療或營養診斷"],
+    },
+    "0403": {
+      label: "數位風土｜飲品",
+      tips: ["拍公開包裝或菜單", "請 AI 簡單解釋風味詞", "真正味道由自己感官確認"],
+    },
+    "0404": {
+      label: "市場 Ground Truth",
+      tips: ["先拍陌生食材", "請 AI 提出可能名稱", "現場標示／攤商再確認"],
+    },
+    "0407": {
+      label: "雙軌提問",
+      tips: ["用一句 55+ 日常開場", "請同時給身體軌與靈魂軌", "涉及醫療請停止推測"],
+    },
+    "0503": {
+      label: "投資邀約查證",
+      tips: ["只用模擬邀約練習", "請 AI 只列疑點、不給投資建議", "不加入、不下載、不匯款"],
+    },
+    "0504": {
+      label: "恐懼訊息查證",
+      tips: ["先停、不回、不輸入", "打原本電話確認", "不要回撥對方提供的號碼"],
+    },
+    "0603": {
+      label: "一拍｜Ground Truth",
+      tips: ["拍跑步機／手錶／健康 App 畫面", "先遮蔽個資", "這只是提醒，不是分數"],
+    },
+    "0604": {
+      label: "二問｜聽懂身體",
+      tips: ["可附上照片或截圖", "請給溫和微調建議", "不診斷、不評分"],
+    },
+    "0607": {
+      label: "喚醒 AI Coach",
+      tips: ["依 55+ 動能指南回應", "可貼照片或一週提醒", "安全、低壓力微調"],
+    },
+    "0702": {
+      label: "一日彩排",
+      tips: ["請彩排有餘裕的一天", "保留休息點與備案", "實際資訊向官方確認"],
+    },
+    "0707": {
+      label: "一日生活圈",
+      tips: ["依 55+ 活動參與指南", "不要把行程塞滿", "地點用大範圍即可"],
     },
     "0801": {
       label: "坐回決策主位",
