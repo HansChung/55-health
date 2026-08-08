@@ -34,7 +34,7 @@ export const CHAPTER_0600: ChapterOpening = {
     "運動不是懲罰身體，也不是拿來和別人比較的成績單。運動，是精準保養。身體透過步數、心率、睡眠、疲勞感與活動時間提醒我們節奏。",
     "少一點硬撐。多一點看見。讓身體動能，穩定續航。",
   ],
-  guideFooterNote: "語音導讀之後再補；請先選一條練習路線。",
+  guideFooterNote: "章首導讀請先閱讀以上文字，再選一條練習路線。",
   footerGuideLabel: "閱讀 2 分鐘章首導讀",
   entries: [
     {
@@ -186,7 +186,7 @@ export const CHAPTER_0603: ChapterOpening = {
     "身體的改變，不是一天決定的。如果能先把訊號留下來，日後才有機會慢慢看懂。",
     "這張照片是給自己看的。不是拿來公開，不是拿來比較，也不是拿來打分數。",
   ],
-  guideFooterNote: "示範短片之後再補；請先完成第一拍。",
+  guideFooterNote: "請先完成第一拍；也可進暖暖拍照練習。",
   footerGuideLabel: "閱讀一拍說明",
   groundSnapDemos: [
     {

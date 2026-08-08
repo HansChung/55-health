@@ -26,7 +26,7 @@ export const CHAPTER_1200: ChapterOpening = {
     CH12_DISCLAIMER,
   practiceWhere: "mixed",
   capabilityNote:
-    "意向卡與路線可在本頁完成；提問可進暖暖。正式連結完成後置入 QR；目前為預留位置，不可掃描。",
+    "意向卡與路線可在本頁完成；提問可進暖暖。掃碼進入本頁即可練習；需要提問時可進暖暖語音一次一題。",
   printCardTitle: "世界舞台意向卡",
   printCardDescription: "可列印：想點亮的作品、值得留下的理由，以及目前分享距離。",
   printButtonLabel: "列印世界舞台意向卡",
@@ -37,7 +37,7 @@ export const CHAPTER_1200: ChapterOpening = {
     "世界舞台不必等於公開網站、很多觀眾或熱鬧發表。舞台可以只給自己，也可以邀請家人、朋友或一小群同行者。私人展館不是較小的成果，而是一座由本人決定入口、距離、節奏與界線的完整作品。",
     "健康延壽讓人生擁有更長的創作時間；快樂圓夢，讓這段時間有作品、有同行，也有新的方向。作品先被自己看見，再由自己決定：珍藏、邀請同行，或走向更大的世界。",
   ],
-  guideFooterNote: "語音導讀之後再補；請先點亮一件想留下的作品，再選路線。",
+  guideFooterNote: "章首導讀請先閱讀以上文字；點亮一件想留下的作品後，再選路線。",
   footerGuideLabel: "閱讀 2 分鐘章首導讀",
   entries: [
     {

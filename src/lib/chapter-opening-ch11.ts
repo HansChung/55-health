@@ -26,7 +26,7 @@ export const CHAPTER_P4_OPEN: ChapterOpening = {
     CH11_DISCLAIMER,
   practiceWhere: "mixed",
   capabilityNote:
-    "起點卡可在本頁完成；提問可進暖暖。正式連結完成後置入 QR；目前為預留位置，不可掃描。",
+    "起點卡可在本頁完成；提問可進暖暖。掃碼進入本頁即可練習；需要提問時可進暖暖語音一次一題。",
   printCardTitle: "第四部圓夢起點卡",
   printCardDescription: "可列印：想完成的作品、生命意義、分享對象與距離。",
   printButtonLabel: "列印圓夢起點卡",
@@ -104,7 +104,7 @@ export const CHAPTER_1100: ChapterOpening = {
     CH11_DISCLAIMER,
   practiceWhere: "mixed",
   capabilityNote:
-    "意向卡與路線可在本頁完成；提問可進暖暖。正式連結完成後置入 QR；目前為預留位置，不可掃描。",
+    "意向卡與路線可在本頁完成；提問可進暖暖。掃碼進入本頁即可練習；需要提問時可進暖暖語音一次一題。",
   printCardTitle: "我的作品意向卡",
   printCardDescription: "可列印：想留下的事、希望他人感受到什麼、目前保存狀態。",
   printButtonLabel: "列印作品意向卡",
@@ -115,7 +115,7 @@ export const CHAPTER_1100: ChapterOpening = {
     "故事傳承不等於從出生寫到現在，也不必先學會剪片、排版或架網站。可以從一張照片、一件物品、一段聲音，甚至一道家常菜開始。真正要留下的，不只是事情順序，而是當時如何看、如何選、如何走過。",
     "人工智慧可以協助口述轉寫、整理時間線、比較版本，或提醒哪些地方仍需確認；故事中心始終在本人手中。作品不必宏大；願意開始，就是把生命厚度化成作品。",
   ],
-  guideFooterNote: "語音導讀之後再補；請先留下一件想留下的事，再選路線。",
+  guideFooterNote: "章首導讀請先閱讀以上文字；留下一件想留下的事後，再選路線。",
   footerGuideLabel: "閱讀 2 分鐘章首導讀",
   entries: [
     {
