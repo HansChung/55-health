@@ -33,7 +33,7 @@ export const CHAPTER_0700: ChapterOpening = {
     "城市不一定是遠方。很多時候，它只是被我們暫時收進生活半徑之外——不是不想去，而是出門多了幾層阻力。",
     "Chapter 7 要做的，不是把出門變成任務，而是讓城市重新變得可親近。一日生活圈不必塞滿行程。有呼吸、有選擇、有餘裕，就很好。",
   ],
-  guideFooterNote: "語音導讀之後再補；請先選一條練習路線。",
+  guideFooterNote: "章首導讀請先閱讀以上文字，再選一條練習路線。",
   footerGuideLabel: "閱讀 2 分鐘章首導讀",
   entries: [
     {

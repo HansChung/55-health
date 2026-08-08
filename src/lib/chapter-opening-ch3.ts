@@ -41,7 +41,7 @@ export const CHAPTER_0300: ChapterOpening = {
     "AI 電梯降低門檻；SMART 五方向形成生活羅盤；SHI 每週溫柔回看。",
     "這一章結束時，不必學會所有工具。只要羅盤在手上，下一步可以從一件生活小事開始。",
   ],
-  guideFooterNote: "語音版導讀之後再補；目前請先閱讀以上文字。",
+  guideFooterNote: "章首導讀請先閱讀以上文字；讀完即可開始練習。",
   footerGuideLabel: "閱讀 2 分鐘章首導讀",
   entries: [
     { id: "S", label: "S｜分享", hint: "連結與關心", emoji: "🤝", href: "/smart/chapter/0302" },
@@ -82,7 +82,7 @@ export const CHAPTER_0301: ChapterOpening = {
     "想整理照片、規劃旅行、看懂資訊或留下故事，都不必一次學完所有功能。",
     "先說清楚三句話，比追逐工具名稱更接近真正需要。",
   ],
-  guideFooterNote: "引導音頻之後再補；請先完成本頁三句話。",
+  guideFooterNote: "請先完成本頁三句話；也可進暖暖語音練習。",
   footerGuideLabel: "閱讀 AI 電梯引導",
   elevatorDemos: [
     {
@@ -126,7 +126,7 @@ export const CHAPTER_0302: ChapterOpening = {
     "Smart Inside, Simple Outside：內部有系統，外部保留簡單生活。",
     "這就是 SMART 55+ 所說的優雅。",
   ],
-  guideFooterNote: "語音導覽之後再補；目前請先選一個方向。",
+  guideFooterNote: "請先選一個方向，再繼續本章練習。",
   footerGuideLabel: "閱讀五方向導覽",
   fiveReflectMode: "pick",
   smartDirections: CH3_SMART_DIRECTIONS,
@@ -229,7 +229,7 @@ export const CHAPTER_0304: ChapterOpening = {
     "AI 協助起稿與整理，但涉及家人朋友要尊重隱私；生成內容也需要校對。",
     "先看見「我的人生可以成為素材」，創作就已開始。",
   ],
-  guideFooterNote: "作品範例瀏覽之後再補；請先完成本頁意向卡。",
+  guideFooterNote: "請先完成本頁意向卡。",
   footerGuideLabel: "閱讀微型作品說明",
   meaningSeedDemos: [
     {
@@ -447,7 +447,7 @@ export const CHAPTER_0309: ChapterOpening = {
   reflectPlaceholder: "例如：希望剛開始用手機的朋友少走一點冤枉路…",
   continueTitle: "暖暖陪您繼續",
   continueBody:
-    "意向卡在本頁完成。共好案例預覽與社群功能之後再擴充；是否參與與分享，永遠由您決定。",
+    "意向卡在本頁完成。目前以私人意向為主；是否參與與分享，永遠由您決定。",
   practiceWhere: "paper",
   capabilityNote:
     "目前以私人意向為主；暖暖不會默認公開您的羅盤或 SHI 分數。",
@@ -461,7 +461,7 @@ export const CHAPTER_0309: ChapterOpening = {
     "參與始終自願，權限與退出方式必須清楚。",
     "科技服務關係，而不是反過來管理人。",
   ],
-  guideFooterNote: "社群案例之後再補；請先寫下不涉及隱私的分享意向。",
+  guideFooterNote: "請先寫下不涉及隱私的分享意向。",
   footerGuideLabel: "閱讀共好說明",
   shareIntentDemos: [
     {

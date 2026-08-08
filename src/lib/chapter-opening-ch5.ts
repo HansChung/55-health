@@ -32,7 +32,7 @@ export const CHAPTER_0500: ChapterOpening = {
     "詐騙利用急迫、恐懼或期待推動立刻行動；我們練習先暫停、後查證。",
     "真正的安全，是帶著判斷力穩穩走進數位叢林。",
   ],
-  guideFooterNote: "語音導讀之後再補；請先選一條練習路線。",
+  guideFooterNote: "章首導讀請先閱讀以上文字，再選一條練習路線。",
   footerGuideLabel: "閱讀 2 分鐘章首導讀",
   entries: [
     { id: "phone", label: "電話", hint: "假客服／假官方", emoji: "📞", href: "/smart/chapter/0504" },
@@ -102,7 +102,7 @@ export const CHAPTER_0502: ChapterOpening = {
   reflectPlaceholder: "例如：我最需要練習「不點連結」…",
   continueTitle: "暖暖陪您繼續",
   continueBody:
-    "本頁完成第一反射練習。示範短片之後再補；也可進「安心保鑣」複習先暫停。真實截圖請先遮蔽個資。",
+    "本頁完成第一反射練習；也可進「安心保鑣」複習先暫停。真實截圖請先遮蔽個資。",
   practiceWhere: "mixed",
   capabilityNote:
     "練習用模擬訊息即可。暖暖不自動判斷簡訊真偽；真實截圖請先遮蔽個資、金額與網址。",
@@ -116,7 +116,7 @@ export const CHAPTER_0502: ChapterOpening = {
     "只要跟著對方節奏走，主導權就不在自己手上。",
     "防詐不是比誰反應快，而是願意慢一秒。",
   ],
-  guideFooterNote: "示範短片之後再補；請先圈出最需要練習的一項。",
+  guideFooterNote: "請先圈出最需要練習的一項；也可進「安心保鑣」複習。",
   footerGuideLabel: "閱讀先暫停說明",
   pauseReflexOptions: [
     { id: "no-click", label: "不點", hint: "不點陌生連結、不掃不明 QR" },

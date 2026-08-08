@@ -1451,7 +1451,7 @@ export const CHAPTER_0100: ChapterOpening = {
     "暖暖不是來考您會多少科技，而是陪您用「問一句、拍一下、找照片、記下一句話」這四種日常方式，慢慢熟悉 AI 時代的生活。",
     "請先選一個最想試的入口。沒有標準答案，只有最適合您現在狀態的那一條路。",
   ],
-  guideFooterNote: "語音版導讀即將推出；目前請先閱讀以上文字（約 2 分鐘）。",
+  guideFooterNote: "章首導讀請先閱讀以上文字（約 2 分鐘）；讀完即可選路線開始。",
   footerGuideLabel: "聽／讀 2 分鐘章首導讀",
   entries: [
     {
@@ -1517,7 +1517,7 @@ export const CHAPTER_0102: ChapterOpening = {
     "對照下方「常見入口」找到 AI 或語音助理，點進去後說出或貼上試用語句。",
     "若找不到，可以先在暖暖 App 底部按「對話」，用同一句話試試看。",
   ],
-  guideFooterNote: "示範影片即將推出；目前請先閱讀文字版路徑（約 30 秒）。",
+  guideFooterNote: "請先閱讀文字版入口路徑（約 30 秒），再於手機找到 AI 入口練習。",
   footerGuideLabel: "觀看／閱讀 30 秒入口示範",
   phonePaths: [
     {
@@ -1634,7 +1634,7 @@ export const CHAPTER_0103: ChapterOpening = {
     "自然提問：說清楚誰、什麼狀況、想達成什麼，回答才會貼近生活。",
     "下面三組示範可以對照著改寫您自己的問題；改完可在暖暖語音試問。",
   ],
-  guideFooterNote: "語音示範即將推出；目前請先閱讀三組文字示範。",
+  guideFooterNote: "請先閱讀三組文字示範，再改寫自己的問題；也可進暖暖語音試問。",
   footerGuideLabel: "看三組「關鍵字→自然提問」示範",
   rewriteDemos: [
     {
@@ -1699,7 +1699,7 @@ export const CHAPTER_0104: ChapterOpening = {
     "對照下方案例，看 AI 怎麼幫忙「變清楚」，而決定權如何留在您手上。",
     "改完可在暖暖語音用同樣方式試一件您自己的小事。",
   ],
-  guideFooterNote: "互動案例影片即將推出；目前請先閱讀文字案例。",
+  guideFooterNote: "請先閱讀文字案例，再完成本頁整理練習。",
   footerGuideLabel: "看生活案例：整理三點，不替我決定",
   organizeDemos: [
     {
@@ -1765,7 +1765,7 @@ export const CHAPTER_0105: ChapterOpening = {
     "可直接欣賞：認識路邊花草、看包裝上的外文說明——錯了頂多有趣，傷害不大。",
     "需要查證：跟吃、用藥、過敏、投資、詐騙有關——請再問專業人士或官方來源。",
   ],
-  guideFooterNote: "示範影片之後再補；目前請先用本頁案例與安全提醒練習。",
+  guideFooterNote: "請先用本頁案例與安全提醒練習；也可進暖暖拍照試問。",
   footerGuideLabel: "閱讀欣賞 vs 查證示範",
   visionSafetyTips: [
     {
@@ -1836,7 +1836,7 @@ export const CHAPTER_0106: ChapterOpening = {
     "具有搜尋功能的數位相簿，可以依日期、地點或影像內容提出候選，再由您找出真正想念的那一張。",
     "一個有溫度的詞，便可能讓一段回憶重新走回來。",
   ],
-  guideFooterNote: "微短劇之後再補；現在請先在手機相簿試搜尋，再回本頁寫下回憶。",
+  guideFooterNote: "請先在手機相簿試搜尋，再回本頁寫下回憶。",
   footerGuideLabel: "閱讀「一個詞找回照片」示範",
   warmKeywordSuggestions: ["海邊", "生日", "台南", "咖啡", "朋友"],
   photoSearchDemos: [
@@ -1888,7 +1888,7 @@ export const CHAPTER_0107: ChapterOpening = {
     "不必一次建立複雜分類；最小的保存單位，可以只是一個標題、一句話與一個簡單標籤。",
     "先留下，再慢慢整理，比期待自己永遠記得更可靠。",
   ],
-  guideFooterNote: "示範影片之後再補；現在請先在本頁寫好，再複製到手機備忘錄。",
+  guideFooterNote: "請先在本頁寫好，再複製到手機備忘錄。",
   footerGuideLabel: "閱讀數位便條示範",
   defaultNoteTitle: "今天的小發現",
   noteTagOptions: [
@@ -1947,7 +1947,7 @@ export const CHAPTER_0108: ChapterOpening = {
     "一拍：看到想了解的，先拍下來。二問：用自然的話問一句。三記下：從回答裡選出最有用的一句，存進便條。",
     "當您完成一次「看見、理解、保存」，就親手完成了一個可重複的生活流程。",
   ],
-  guideFooterNote: "示範影片之後再補；請先跟著本頁三步驟做一次。",
+  guideFooterNote: "請先跟著本頁三步驟做一次；完成後可進暖暖再練。",
   footerGuideLabel: "閱讀三拍示範",
   smartFlowDemos: [
     {

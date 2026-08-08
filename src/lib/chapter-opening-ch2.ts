@@ -33,7 +33,7 @@ export const CHAPTER_0200: ChapterOpening = {
     "看到不懂的花、外文菜單、商品標籤、一道料理或一張老照片，都可以先停一下、拍下來，再用自然的話問一句。",
     "本章從自然、旅行、消費與飲食，走到相簿、修圖與人生策展。每一步都可以選擇做或不做，也可以隨時重來。",
   ],
-  guideFooterNote: "語音版導讀之後再補；目前請先閱讀以上文字。",
+  guideFooterNote: "章首導讀請先閱讀以上文字；讀完即可開始練習。",
   footerGuideLabel: "閱讀 2 分鐘章首導讀",
   entries: [
     { id: "flower", label: "自然｜花", hint: "路邊小花、植物", emoji: "🌸", href: "/smart/chapter/0202" },
@@ -75,7 +75,7 @@ export const CHAPTER_0201: ChapterOpening = {
     "一拍：把眼前不懂的事物拍下來。二問：用自己的話問 AI 一句。三記下：選出真正有用的一句保存。",
     "若答案牽涉安全、健康或重要選擇，可加問：「我還需要向哪裡確認？」",
   ],
-  guideFooterNote: "示範影片之後再補；請先跟著本頁三步驟做一次。",
+  guideFooterNote: "請先跟著本頁三步驟做一次；完成後可進暖暖再練。",
   footerGuideLabel: "閱讀三拍示範",
   smartFlowDemos: [
     {
@@ -120,7 +120,7 @@ export const CHAPTER_0202: ChapterOpening = {
     "AI 依影像提出可能答案，不等於植物學鑑定；欣賞名稱可以，食用藥用要查證。",
     "留下一句：「今天認識了＿＿，我注意到＿＿。」",
   ],
-  guideFooterNote: "微示範影片之後再補；目前請先用本頁案例練習。",
+  guideFooterNote: "請先用本頁案例練習。",
   footerGuideLabel: "閱讀識花示範",
   visionSafetyTips: [
     {
@@ -177,7 +177,7 @@ export const CHAPTER_0203: ChapterOpening = {
     "AI 整理可能選項，但菜名與食材仍可能因店家而不同。",
     "若有嚴重過敏，應使用過敏翻譯卡或尋求專業協助。",
   ],
-  guideFooterNote: "情境音頻之後再補；目前請先用本頁完成翻譯與確認欄位。",
+  guideFooterNote: "請先用本頁完成翻譯與確認欄位。",
   footerGuideLabel: "閱讀點餐情境",
   menuDemos: [
     {
@@ -221,7 +221,7 @@ export const CHAPTER_0204: ChapterOpening = {
     "AI 比較可能不完整；購買前仍要查看正式標示、保固與可靠評價。",
     "回到使用頻率、預算、收納空間與真正需求。",
   ],
-  guideFooterNote: "案例影片之後再補；目前請先用本頁完成比較練習。",
+  guideFooterNote: "請先用本頁完成比較練習。",
   footerGuideLabel: "閱讀價值比較案例",
   productCompareDemos: [
     {
@@ -265,7 +265,7 @@ export const CHAPTER_0205: ChapterOpening = {
     "可以追問：「這和我的生活有什麼關係？」或「可以舉一個日常例子嗎？」",
     "學習的目的不是收集所有答案，而是知道哪些事情值得再走一步。",
   ],
-  guideFooterNote: "音頻之後再補；目前請先閱讀文字導讀並完成今日問題。",
+  guideFooterNote: "請先閱讀文字導讀並完成今日問題。",
   footerGuideLabel: "閱讀好奇心導讀",
   curiosityDemos: [
     {
@@ -308,7 +308,7 @@ export const CHAPTER_0206: ChapterOpening = {
     "不必把每一餐變成考試；可以只觀察顏色、蔬菜與蛋白質來源。",
     "身體感受與實際需要仍由您掌握。",
   ],
-  guideFooterNote: "示範影片之後再補；目前請先用本頁完成觀察練習。",
+  guideFooterNote: "請先用本頁完成觀察練習。",
   footerGuideLabel: "閱讀餐桌示範",
   visionSafetyTips: [
     {
@@ -365,7 +365,7 @@ export const CHAPTER_0207: ChapterOpening = {
     "AI 可協助整理文字，但照片辨識與營養推估都可能不準確。",
     "一週後回看三到五張卡，找出一個願意保留的小變化。",
   ],
-  guideFooterNote: "請先使用下方欄位完成一張卡；雲端回看之後再補。",
+  guideFooterNote: "請先使用下方欄位完成一張卡；完成後可列印或點成光點保存。",
   footerGuideLabel: "看食譜卡範例",
   recipeCardDemos: [
     {
@@ -410,7 +410,7 @@ export const CHAPTER_0208: ChapterOpening = {
     "搜尋讓相簿從堆疊檔案，變成會回應的記憶花園。",
     "選出一張最有感覺的照片，寫下一句回憶。",
   ],
-  guideFooterNote: "微短劇之後再補；現在請先在手機相簿試搜尋，再回本頁書寫。",
+  guideFooterNote: "請先在手機相簿試搜尋，再回本頁書寫。",
   footerGuideLabel: "閱讀相簿搜尋示範",
   warmKeywordSuggestions: ["海邊", "生日", "台南", "咖啡", "朋友"],
   photoSearchDemos: [
@@ -455,7 +455,7 @@ export const CHAPTER_0209: ChapterOpening = {
     "開始前先複製一份；結果不理想可以撤回或保留原貌。",
     "修圖是整理回憶，不是改寫事實。",
   ],
-  guideFooterNote: "示範影片之後再補；請先在手機完成修圖，再回本頁填寫檢查卡。",
+  guideFooterNote: "請先在手機完成修圖，再回本頁填寫檢查卡。",
   footerGuideLabel: "閱讀安全修圖要點",
   photoEditDemos: [
     {
@@ -498,7 +498,7 @@ export const CHAPTER_0210: ChapterOpening = {
     "例如「我走過的海邊」「家裡的味道」「和朋友的好時光」。",
     "策展不是包裝得完美，而是重新看見自己走過的路。",
   ],
-  guideFooterNote: "作品集瀏覽之後再補；目前請先用本頁完成私人策展卡。",
+  guideFooterNote: "請先用本頁完成私人策展卡。",
   footerGuideLabel: "閱讀微型作品集範例",
   photoCurateDemos: [
     {

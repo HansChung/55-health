@@ -32,7 +32,7 @@ export const CHAPTER_0400: ChapterOpening = {
     "AI 可以是茶友、二廚與整理助手；真正的養生不是苦行，而是有底線的自由。",
     "餐桌不是限制人生的地方，而是練習自主與韌性的地方。",
   ],
-  guideFooterNote: "語音版導讀之後再補；目前請先閱讀以上文字並選一條路線。",
+  guideFooterNote: "章首導讀請先閱讀以上文字，再選一條練習路線。",
   footerGuideLabel: "閱讀 2 分鐘章首導讀",
   entries: [
     { id: "daily", label: "日常", hint: "茶、咖啡、家常飯", emoji: "🍵", href: "/smart/chapter/0402" },
@@ -72,7 +72,7 @@ export const CHAPTER_0401: ChapterOpening = {
     "紅字是提醒，不是命令；身體有底線，生活也可以有滋味。",
     "餐桌的主人不是規定，也不是 AI。",
   ],
-  guideFooterNote: "請先完成本頁改寫；語音示範之後再補。",
+  guideFooterNote: "請先完成本頁改寫；也可進暖暖一次一題練習。",
   footerGuideLabel: "閱讀餐桌自主說明",
   boundaryChooseDemos: [
     {
@@ -204,7 +204,7 @@ export const CHAPTER_0404: ChapterOpening = {
     "可以把 AI 的答案變成下一個好問題，再向攤商確認。",
     "科技與在地經驗不是競爭。",
   ],
-  guideFooterNote: "示範短片之後再補；請先完成本頁查證練習。",
+  guideFooterNote: "請先完成本頁查證練習。",
   footerGuideLabel: "閱讀市場查證說明",
   visionDemos: [
     {
@@ -347,7 +347,7 @@ export const CHAPTER_0407: ChapterOpening = {
     "身體軌聚焦底線與需專業確認處；靈魂軌保留風味、文化與享受。",
     "這就是 Smart Inside, Simple Outside 的生活版本。",
   ],
-  guideFooterNote: "示範短片之後再補；請先用一句話試一次。",
+  guideFooterNote: "請先用一句話試一次；也可進暖暖語音練習。",
   footerGuideLabel: "閱讀雙軌輸出說明",
   samplePrompt:
     "請依我的 55+ 日常指南，針對這道餐點提供身體軌與靈魂軌兩種建議。身體軌請標明需專業確認處；靈魂軌請保留風味與享受。",
