@@ -86,6 +86,7 @@ export default function Page() {
   const [smartShi, setSmartShi] = useState<number | null>(null);
   const [careElderCount, setCareElderCount] = useState(0);
   const [careNeedsAttention, setCareNeedsAttention] = useState(false);
+  const [alertsElder, setAlertsElder] = useState<{ elderId: string; elderName: string } | null>(null);
   const [pendingResult, setPendingResult] = useState<FoodResult | null>(null);
   const [pendingPhoto, setPendingPhoto] = useState<string | null>(null);
   const [selectedMeal, setSelectedMeal] = useState<MealRecord | null>(null);
@@ -630,7 +631,10 @@ export default function Page() {
             medicationReminders={medicationReminders}
             onTakeMedication={handleTakeMedication}
             healthAlerts={healthAlerts}
-            onAlertsCenter={() => setSubpage("alerts-center")}
+            onAlertsCenter={() => {
+              setAlertsElder(null);
+              setSubpage("alerts-center");
+            }}
             favoriteMeals={favoriteMeals}
             onPickFavorite={(mealType) => setFavoritePickerMealType(mealType)}
             partnerCampaigns={partnerCampaigns}
@@ -694,7 +698,19 @@ export default function Page() {
       )}
       {subpage === "health-metrics" && <HealthMetricsScreen onBack={() => setSubpage(null)} />}
       {subpage === "weekly-report" && <WeeklyReportScreen tier={tier} onBack={() => setSubpage(null)} />}
-      {subpage === "alerts-center" && <AlertsCenterScreen alerts={allHealthAlerts} tier={tier} onBack={() => setSubpage(null)} />}
+      {subpage === "alerts-center" && (
+        <AlertsCenterScreen
+          alerts={alertsElder ? [] : allHealthAlerts}
+          tier={tier}
+          elderId={alertsElder?.elderId}
+          elderName={alertsElder?.elderName}
+          onBack={() => {
+            const backToCaregiver = Boolean(alertsElder);
+            setAlertsElder(null);
+            setSubpage(backToCaregiver ? "caregiver" : null);
+          }}
+        />
+      )}
       {subpage === "achievements" && <AchievementsScreen onBack={() => setSubpage(null)} />}
       {subpage === "smart" && (
         <SmartScreen
@@ -704,7 +720,15 @@ export default function Page() {
       )}
       {subpage === "blueprint" && <BlueprintScreen onBack={() => setSubpage(null)} />}
       {subpage === "iot" && <IotScreen onBack={() => setSubpage(null)} />}
-      {subpage === "caregiver" && <CaregiverScreen onBack={() => setSubpage(null)} />}
+      {subpage === "caregiver" && (
+        <CaregiverScreen
+          onBack={() => setSubpage(null)}
+          onOpenAlerts={(elder) => {
+            setAlertsElder(elder);
+            setSubpage("alerts-center");
+          }}
+        />
+      )}
       {subpage === "prescription" && <PrescriptionScanScreen onBack={() => setSubpage("chronic")} />}
       {subpage === "chronic" && (
         <ChronicDiseaseScreen

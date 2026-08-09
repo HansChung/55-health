@@ -313,7 +313,7 @@ export const CHAPTER_0306: ChapterOpening = {
   reflectPlaceholder: "例如：下週想多一點休息與安全節奏…",
   continueTitle: "暖暖陪您繼續",
   continueBody:
-    "本頁可完成一輪私人回顧。App 內「智慧幸福檢測」可做較完整的 SHI 觀察；是否保存由您決定。",
+    "本頁可完成一輪私人回顧。若想做較完整的 SHI 觀察，可選做智慧幸福檢測；是否保存由您決定。",
   practiceWhere: "mixed",
   capabilityNote:
     "本頁是低壓書本回顧；App 另有智慧幸福檢測。兩者都不排名、不公開分數競賽。",
@@ -342,6 +342,10 @@ export const CHAPTER_0306: ChapterOpening = {
       reflectNote: "下週最想溫柔支持的是「安全」。",
     },
   ],
+  appDeepLink: {
+    href: "/smart/shi",
+    label: "選做：完整智慧幸福檢測（私人，不排名）→",
+  },
 };
 
 export const CHAPTER_0307: ChapterOpening = {

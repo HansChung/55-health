@@ -12,6 +12,9 @@ interface AlertsCenterScreenProps {
   alerts: HealthAlert[];
   tier: SubscriptionTier;
   onBack: () => void;
+  /** 子女端：查看指定長輩的守護紀錄（略過本人 Pro 閘門；API 仍依家人權限授權） */
+  elderId?: string | null;
+  elderName?: string | null;
 }
 
 const SEVERITY_STYLE: Record<
@@ -31,8 +34,15 @@ const TYPE_EMOJI: Record<string, string> = {
   missed_medication: "💊",
 };
 
-export function AlertsCenterScreen({ alerts, tier, onBack }: AlertsCenterScreenProps) {
-  const allowed = hasFeature(tier, "alerts_center");
+export function AlertsCenterScreen({
+  alerts,
+  tier,
+  onBack,
+  elderId = null,
+  elderName = null,
+}: AlertsCenterScreenProps) {
+  const familyMode = Boolean(elderId);
+  const allowed = familyMode || hasFeature(tier, "alerts_center");
 
   const [guardianAlerts, setGuardianAlerts] = useState<PersistedAlert[]>([]);
   const [loadingGuardian, setLoadingGuardian] = useState(true);
@@ -43,12 +53,13 @@ export function AlertsCenterScreen({ alerts, tier, onBack }: AlertsCenterScreenP
       setLoadingGuardian(false);
       return;
     }
+    setLoadingGuardian(true);
     api
-      .listAlerts()
+      .listAlerts(elderId ? { elderId } : undefined)
       .then(({ alerts }) => setGuardianAlerts(alerts))
       .catch((e) => console.warn("[alerts] load guardian alerts failed:", e))
       .finally(() => setLoadingGuardian(false));
-  }, [allowed]);
+  }, [allowed, elderId]);
 
   const handleResolve = async (id: string) => {
     setResolvingId(id);
@@ -70,10 +81,13 @@ export function AlertsCenterScreen({ alerts, tier, onBack }: AlertsCenterScreenP
 
   const activeGuardian = guardianAlerts.filter((a) => !a.resolved);
   const resolvedGuardian = guardianAlerts.filter((a) => a.resolved);
+  const pageTitle = familyMode
+    ? `${elderName ? `${elderName}的` : ""}守護紀錄`
+    : "安全提醒中心";
 
   return (
     <SubPage
-      title="安全提醒中心"
+      title={pageTitle}
       onBack={onBack}
       accent="linear-gradient(180deg, #FBE6D4 0%, transparent 100%)"
     >
@@ -88,7 +102,11 @@ export function AlertsCenterScreen({ alerts, tier, onBack }: AlertsCenterScreenP
           {/* ── 守護紀錄（後端 cron 偵測 + 已通知家人）── */}
           <SectionTitle
             title="守護紀錄"
-            subtitle="暖暖偵測到的異常，已通知家人"
+            subtitle={
+              familyMode
+                ? "暖暖偵測到長輩的異常；處理後可在此標記"
+                : "暖暖偵測到的異常，已通知家人"
+            }
           />
 
           {loadingGuardian ? (
@@ -102,8 +120,11 @@ export function AlertsCenterScreen({ alerts, tier, onBack }: AlertsCenterScreenP
                 目前一切正常
               </div>
               <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", marginTop: 6, lineHeight: 1.5 }}>
-                暖暖每天都會自動守護，<br />
-                若有異常會通知您的家人。
+                {familyMode ? (
+                  <>目前沒有未處理的守護紀錄。<br />暖暖每天都會自動關心。</>
+                ) : (
+                  <>暖暖每天都會自動守護，<br />若有異常會通知您的家人。</>
+                )}
               </div>
             </div>
           ) : (
@@ -132,49 +153,53 @@ export function AlertsCenterScreen({ alerts, tier, onBack }: AlertsCenterScreenP
             </div>
           )}
 
-          {/* ── 今日即時提醒（前端計算）── */}
-          <SectionTitle title="今日提醒" subtitle="根據今天的記錄即時整理" />
+          {/* 今日即時提醒僅本人端有（依本機今日記錄計算） */}
+          {!familyMode && (
+            <>
+              <SectionTitle title="今日提醒" subtitle="根據今天的記錄即時整理" />
 
-          {alerts.length === 0 ? (
-            <div className="card" style={{ padding: 24, textAlign: "center" }}>
-              <div style={{ fontSize: 38, marginBottom: 8 }}>✓</div>
-              <div style={{ fontSize: "var(--fs-base)", fontWeight: 800 }}>今天沒有提醒</div>
-              <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", marginTop: 6 }}>
-                狀態看起來不錯，繼續保持。
-              </div>
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {alerts.map((alert) => (
-                <div key={alert.id} className="card" style={{
-                  padding: 18,
-                  border: alert.level === "warning" ? "1px solid var(--gold-soft)" : "1px solid var(--line)",
-                  background: alert.level === "warning" ? "#FFF3DF" : "var(--surface)",
-                }}>
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                    <div style={{
-                      width: 42, height: 42, borderRadius: 12,
-                      background: "var(--surface)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      flexShrink: 0,
-                    }}>
-                      <Icon name={alert.level === "warning" ? "bell" : "sparkle"} size={22} color="var(--primary-deep)" />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: "var(--fs-base)", fontWeight: 800 }}>{alert.title}</div>
-                      <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.5, marginTop: 4 }}>
-                        {alert.message}
-                      </div>
-                      {alert.action && (
-                        <div style={{ fontSize: "var(--fs-xs)", color: "var(--primary-deep)", fontWeight: 800, marginTop: 8 }}>
-                          建議：{alert.action}
-                        </div>
-                      )}
-                    </div>
+              {alerts.length === 0 ? (
+                <div className="card" style={{ padding: 24, textAlign: "center" }}>
+                  <div style={{ fontSize: 38, marginBottom: 8 }}>✓</div>
+                  <div style={{ fontSize: "var(--fs-base)", fontWeight: 800 }}>今天沒有提醒</div>
+                  <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", marginTop: 6 }}>
+                    狀態看起來不錯，繼續保持。
                   </div>
                 </div>
-              ))}
-            </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {alerts.map((alert) => (
+                    <div key={alert.id} className="card" style={{
+                      padding: 18,
+                      border: alert.level === "warning" ? "1px solid var(--gold-soft)" : "1px solid var(--line)",
+                      background: alert.level === "warning" ? "#FFF3DF" : "var(--surface)",
+                    }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                        <div style={{
+                          width: 42, height: 42, borderRadius: 12,
+                          background: "var(--surface)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          flexShrink: 0,
+                        }}>
+                          <Icon name={alert.level === "warning" ? "bell" : "sparkle"} size={22} color="var(--primary-deep)" />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: "var(--fs-base)", fontWeight: 800 }}>{alert.title}</div>
+                          <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.5, marginTop: 4 }}>
+                            {alert.message}
+                          </div>
+                          {alert.action && (
+                            <div style={{ fontSize: "var(--fs-xs)", color: "var(--primary-deep)", fontWeight: 800, marginTop: 8 }}>
+                              建議：{alert.action}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </>
       )}

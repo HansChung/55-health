@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation";
 import { SubPage } from "@/components/sub-page";
 import { Icon } from "@/components/icons";
 import {
+  canSpeakGuide,
+  speakGuideParagraphs,
+  stopGuideSpeech,
+} from "@/lib/speak-guide";
+import {
   type ChapterEntry,
   type ChapterOpening,
   type ChapterOrganizeDraft,
@@ -271,6 +276,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const [picked, setPicked] = useState<string | null>(null);
   const [reflectNote, setReflectNote] = useState("");
   const [guideOpen, setGuideOpen] = useState(false);
+  const [guideSpeaking, setGuideSpeaking] = useState(false);
   const [keywords, setKeywords] = useState<[string, string, string]>(["", "", ""]);
   const [naturalQuestion, setNaturalQuestion] = useState("");
   const [backgrounds, setBackgrounds] = useState<string[]>([]);
@@ -4357,6 +4363,42 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
     window.print();
   };
 
+  useEffect(() => {
+    return () => stopGuideSpeech();
+  }, []);
+
+  useEffect(() => {
+    if (!guideOpen) {
+      stopGuideSpeech();
+      setGuideSpeaking(false);
+    }
+  }, [guideOpen]);
+
+  const toggleGuideSpeak = () => {
+    if (guideSpeaking) {
+      stopGuideSpeech();
+      setGuideSpeaking(false);
+      return;
+    }
+    if (!canSpeakGuide()) {
+      toast.info("此裝置暫不支援語音朗讀，請先閱讀文字版。");
+      return;
+    }
+    const ok = speakGuideParagraphs(chapter.guideParagraphs, {
+      onEnd: () => setGuideSpeaking(false),
+      onError: () => {
+        setGuideSpeaking(false);
+        toast.info("朗讀中斷，請改閱讀文字版。");
+      },
+    });
+    if (ok) {
+      setGuideSpeaking(true);
+      trackEvent("chapter_guide_speak", { chapter: chapter.id });
+    } else {
+      toast.info("暫無可朗讀的內容。");
+    }
+  };
+
   const guideBtnLabel = chapter.footerGuideLabel
     ?? (chapter.guideDuration
       ? `聽／讀 ${chapter.guideDuration}章首導讀`
@@ -8434,7 +8476,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
             }}>
               <div style={{
                 fontSize: "var(--fs-sm)", fontWeight: 800, marginBottom: 12,
-                display: "flex", alignItems: "center", gap: 8,
+                display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
               }}>
                 <Icon name="book" size={20} color="var(--primary-deep)" />
                 {chapter.guideTitle}
@@ -8443,6 +8485,24 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                     （{chapter.guideDuration}）
                   </span>
                 )}
+                <button
+                  type="button"
+                  onClick={toggleGuideSpeak}
+                  style={{
+                    marginLeft: "auto",
+                    padding: "8px 14px",
+                    borderRadius: 999,
+                    border: "1px solid var(--line-strong)",
+                    background: guideSpeaking ? "var(--primary-deep)" : "var(--surface-warm, #F7F1E6)",
+                    color: guideSpeaking ? "#fff" : "var(--primary-deep)",
+                    fontSize: "var(--fs-xs)",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  {guideSpeaking ? "停止朗讀" : "聽導讀"}
+                </button>
               </div>
               {chapter.guideParagraphs.map((p, i) => (
                 <p key={i} style={{

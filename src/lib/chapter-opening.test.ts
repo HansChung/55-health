@@ -91,6 +91,14 @@ describe("chapter-opening", () => {
     expect(ch?.smartFlowDemos).toHaveLength(1);
   });
 
+  it("getChapterOpening 0306 可選做完整 SHI", () => {
+    const ch = getChapterOpening("0306");
+    expect(ch?.layout).toBe("five-reflect");
+    expect(ch?.fiveReflectMode).toBe("weekly");
+    expect(ch?.appDeepLink?.href).toBe("/smart/shi");
+    expect(ch?.appDeepLink?.label).toContain("智慧幸福檢測");
+  });
+
   it("getChapterOpening 0200 Chapter 2 routes", () => {
     const ch = getChapterOpening("0200");
     expect(ch?.title).toBe("感官覺醒");

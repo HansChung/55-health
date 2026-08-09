@@ -12,6 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/terms",
     "/smart/guide",
     "/smart/radar",
+    "/smart/shi",
     "/smart/spark",
     "/smart/chapter3",
     "/smart/chapter/0100",
