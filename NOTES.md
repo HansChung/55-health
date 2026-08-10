@@ -353,6 +353,7 @@ android/                                       # Capacitor Android（未實測�
 | **Resend** → Domains | 新增 **nuan55.com**，依指示設 DNS，顯示 Verified 後 `noreply@nuan55.com` 才能寄給所有人 |
 | **Vercel** → Env（cron/email 用） | `RESEND_API_KEY`（re_xxx）+ `CRON_SECRET`（自訂密碼，異常預警與週報 cron 共用）→ 沒設則 cron 會跳過寄信 |
 | **Vercel** → Env（rate limit） | `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`（Upstash Redis REST）；未設則記憶體後備 |
+| **Vercel** → Env（Web Push） | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY`（`npx web-push generate-vapid-keys`）+ 可選 `VAPID_SUBJECT`；並跑 `add-push-subscriptions.sql`、`add-alert-thresholds.sql` |
 | **Stripe**（之後） | 設 4 個 key（見下）+ 跑 `supabase/add-stripe-customer.sql`；Webhook/Checkout 網址會讀 `NEXT_PUBLIC_APP_URL` |
 
 ---
