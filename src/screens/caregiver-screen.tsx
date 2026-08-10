@@ -6,6 +6,8 @@ import { api, type ElderOverview } from "@/lib/api-client";
 
 interface CaregiverScreenProps {
   onBack: () => void;
+  /** 開啟指定長輩的守護紀錄（警報中心） */
+  onOpenAlerts?: (elder: { elderId: string; elderName: string }) => void;
 }
 
 const STATUS: Record<string, { label: string; color: string; bg: string; dot: string }> = {
@@ -14,7 +16,7 @@ const STATUS: Record<string, { label: string; color: string; bg: string; dot: st
   alert: { label: "需要關心", color: "#B23A4E", bg: "#FBE8EC", dot: "#C95B6E" },
 };
 
-export function CaregiverScreen({ onBack }: CaregiverScreenProps) {
+export function CaregiverScreen({ onBack, onOpenAlerts }: CaregiverScreenProps) {
   const [elders, setElders] = useState<ElderOverview[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -50,7 +52,15 @@ export function CaregiverScreen({ onBack }: CaregiverScreenProps) {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {elders.map((e) => (
-            <ElderCard key={e.elder_id} elder={e} />
+            <ElderCard
+              key={e.elder_id}
+              elder={e}
+              onOpenAlerts={
+                onOpenAlerts
+                  ? () => onOpenAlerts({ elderId: e.elder_id, elderName: e.name })
+                  : undefined
+              }
+            />
           ))}
         </div>
       )}
@@ -58,7 +68,13 @@ export function CaregiverScreen({ onBack }: CaregiverScreenProps) {
   );
 }
 
-function ElderCard({ elder }: { elder: ElderOverview }) {
+function ElderCard({
+  elder,
+  onOpenAlerts,
+}: {
+  elder: ElderOverview;
+  onOpenAlerts?: () => void;
+}) {
   const st = STATUS[elder.overall] ?? STATUS.normal;
   const perms = elder.permissions ?? {};
   const canHealth = !!perms.alerts;
@@ -85,14 +101,22 @@ function ElderCard({ elder }: { elder: ElderOverview }) {
         }}>{st.label}</span>
       </div>
 
-      {/* 最新警報（若有） */}
+      {/* 最新警報（若有）— 可點進守護紀錄 */}
       {elder.latest_alert && (
-        <div style={{
-          padding: "12px 18px", background: "#FFF6F7",
-          borderBottom: "1px solid var(--line)", display: "flex", alignItems: "center", gap: 8,
-        }}>
+        <button
+          type="button"
+          onClick={onOpenAlerts}
+          disabled={!onOpenAlerts}
+          style={{
+            width: "100%", padding: "12px 18px", background: "#FFF6F7",
+            border: "none", borderBottom: "1px solid var(--line)",
+            display: "flex", alignItems: "center", gap: 8,
+            cursor: onOpenAlerts ? "pointer" : "default", textAlign: "left",
+            fontFamily: "inherit",
+          }}
+        >
           <span style={{ fontSize: 18 }}>⚠️</span>
-          <span style={{ fontSize: "var(--fs-sm)", fontWeight: 700, color: "var(--berry)" }}>
+          <span style={{ fontSize: "var(--fs-sm)", fontWeight: 700, color: "var(--berry)", flex: 1 }}>
             {elder.latest_alert.title}
           </span>
           {elder.alerts_unresolved > 1 && (
@@ -100,7 +124,12 @@ function ElderCard({ elder }: { elder: ElderOverview }) {
               等 {elder.alerts_unresolved} 則未處理
             </span>
           )}
-        </div>
+          {onOpenAlerts && (
+            <span style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--berry)" }}>
+              查看 →
+            </span>
+          )}
+        </button>
       )}
 
       {/* 狀態列表 */}
@@ -139,6 +168,22 @@ function ElderCard({ elder }: { elder: ElderOverview }) {
           <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-3)", padding: "6px 0" }}>
             （長輩尚未開放健康與守護資訊的查看權限）
           </div>
+        )}
+        {canHealth && onOpenAlerts && !elder.latest_alert && (
+          <button
+            type="button"
+            onClick={onOpenAlerts}
+            style={{
+              width: "100%", marginTop: 8, padding: "12px 14px",
+              borderRadius: 12, border: "1px solid var(--line-strong)",
+              background: "var(--surface-warm, #F7F1E6)",
+              fontSize: "var(--fs-sm)", fontWeight: 800, color: "var(--primary-deep)",
+              cursor: "pointer", fontFamily: "inherit",
+            }}
+          >
+            查看守護紀錄
+            {elder.alerts_unresolved > 0 ? `（${elder.alerts_unresolved} 則未處理）` : ""}
+          </button>
         )}
       </div>
     </div>
