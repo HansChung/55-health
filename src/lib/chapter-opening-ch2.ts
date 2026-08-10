@@ -351,10 +351,10 @@ export const CHAPTER_0207: ChapterOpening = {
   reflectPlaceholder: "例如：午餐多選一份綠色蔬菜…",
   continueTitle: "暖暖陪您繼續",
   continueBody:
-    "請直接在本頁填寫並可列印。暖暖尚無「食譜庫回看」功能；想留下痕跡可點成光點。",
+    "請直接在本頁填寫。可列印、點成光點，或登入後「私人保存這張卡」以便換機回看（僅您可看）。",
   practiceWhere: "paper",
   capabilityNote:
-    "本頁即可完成食譜卡；沒有雲端食譜庫，請用列印或光點保存重點。",
+    "本頁即可完成食譜卡；登入後可私人保存到暖暖回看。也可列印或點成光點。",
   printCardTitle: "五色高纖食譜卡",
   printCardDescription: "可列印：料理名稱、顏色、纖維來源、一句感受。",
   printButtonLabel: "列印食譜卡",

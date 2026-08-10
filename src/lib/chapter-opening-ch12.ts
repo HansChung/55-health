@@ -99,10 +99,11 @@ export const CHAPTER_1201: ChapterOpening = {
   reflectPlaceholder: "例如：那張模糊合照不是最精美，卻最有重量…",
   continueTitle: "暖暖陪您繼續",
   continueBody:
-    "掃碼進入暖暖。暖暖會先用「已知／未知＋期待／擔心」依序提問，只整理成《生命資產清單》，不讀取雲端、不搬檔，也不替您排序。" +
+    "掃碼進入暖暖。可在本頁完成《生命資產清單》；登入後可「私人保存這張卡」（只存您填的文字，不讀取雲端、不搬檔、不替您排序）。" +
     CH12_DISCLAIMER,
   practiceWhere: "mixed",
-  capabilityNote: "清單可在本頁完成；共同照片與聲音先標記待確認，健康／金融／身分資料保留私人原件。",
+  capabilityNote:
+    "清單可在本頁完成並私人保存；共同照片與聲音先標記待確認，健康／金融／身分資料保留私人原件。",
   printCardTitle: "生命資產清單",
   printCardDescription: "可列印：候選作品、位置、為何重要，以及先進館圈選。",
   printButtonLabel: "列印生命資產清單",

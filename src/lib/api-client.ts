@@ -162,6 +162,25 @@ export const api = {
       json: body,
     }),
 
+  // 章節開篇私人草稿（0207／1201 等）
+  getChapterDraft: (chapterId: string) =>
+    apiFetch<{
+      draft: {
+        chapter_id: string;
+        payload: Record<string, unknown>;
+        updated_at: string;
+      } | null;
+    }>(`/api/chapter-drafts?chapter_id=${encodeURIComponent(chapterId)}`),
+
+  saveChapterDraft: (input: { chapter_id: string; payload: Record<string, unknown> }) =>
+    apiFetch<{
+      draft: {
+        chapter_id: string;
+        payload: Record<string, unknown>;
+        updated_at: string;
+      };
+    }>("/api/chapter-drafts", { method: "PUT", json: input }),
+
   // 子女／家人儀表板
   familyOverview: () =>
     apiFetch<{ elders: ElderOverview[] }>("/api/family/overview"),

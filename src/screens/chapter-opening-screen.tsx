@@ -261,6 +261,12 @@ import {
 } from "@/lib/external-ai";
 import { trackEvent } from "@/lib/telemetry";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { api, ApiError } from "@/lib/api-client";
+import {
+  isBlankDraftPayload,
+  supportsCloudDraft,
+} from "@/lib/chapter-cloud-draft";
 
 interface ChapterOpeningScreenProps {
   chapter: ChapterOpening;
@@ -269,14 +275,19 @@ interface ChapterOpeningScreenProps {
 export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const router = useRouter();
   const toast = useToast();
+  const { user, loading: authLoading } = useAuth();
   const layout = chapter.layout ?? "routes";
   const pickKey = chapterPickKey(chapter.id);
   const draftKey = chapterDraftKey(chapter.id);
+  const cloudDraftEnabled = supportsCloudDraft(layout);
 
   const [picked, setPicked] = useState<string | null>(null);
   const [reflectNote, setReflectNote] = useState("");
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideSpeaking, setGuideSpeaking] = useState(false);
+  const [cloudSaving, setCloudSaving] = useState(false);
+  const [cloudHasDraft, setCloudHasDraft] = useState(false);
+  const [cloudUpdatedAt, setCloudUpdatedAt] = useState<string | null>(null);
   const [keywords, setKeywords] = useState<[string, string, string]>(["", "", ""]);
   const [naturalQuestion, setNaturalQuestion] = useState("");
   const [backgrounds, setBackgrounds] = useState<string[]>([]);
@@ -1661,6 +1672,162 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
       /* ignore */
     }
   }, [pickKey, draftKey, layout, chapter.defaultNoteTitle]);
+
+  /** 登入後：本機空白時自動載入私人雲端草稿 */
+  useEffect(() => {
+    if (!cloudDraftEnabled || authLoading || !user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { draft } = await api.getChapterDraft(chapter.id);
+        if (cancelled) return;
+        if (!draft) {
+          setCloudHasDraft(false);
+          setCloudUpdatedAt(null);
+          return;
+        }
+        setCloudHasDraft(true);
+        setCloudUpdatedAt(draft.updated_at);
+        let localRaw: string | null = null;
+        try {
+          localRaw = localStorage.getItem(draftKey);
+        } catch {
+          localRaw = null;
+        }
+        let localObj: unknown = null;
+        if (localRaw) {
+          try {
+            localObj = JSON.parse(localRaw);
+          } catch {
+            localObj = null;
+          }
+        }
+        if (!isBlankDraftPayload(localObj) || isBlankDraftPayload(draft.payload)) {
+          return;
+        }
+        applyCloudPayload(draft.payload);
+        try {
+          localStorage.setItem(draftKey, JSON.stringify(draft.payload));
+        } catch {
+          /* ignore */
+        }
+        toast.success("已載入您在暖暖的私人草稿。");
+        trackEvent("chapter_cloud_draft_hydrate", { chapter: chapter.id });
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 401) return;
+        console.warn("[chapter] cloud draft load:", e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 僅在登入／章節切換時拉取
+  }, [cloudDraftEnabled, authLoading, user?.id, chapter.id, draftKey]);
+
+  const buildCloudPayload = (): Record<string, unknown> | null => {
+    if (layout === "recipe-card") {
+      return { dishName, colors, fiberSource, feeling, reflectNote };
+    }
+    if (layout === "life-assets") {
+      return {
+        candidates: laCandidates,
+        whyWho: laWhyWho,
+        enterPick: laEnterPick,
+        reflectNote,
+      };
+    }
+    return null;
+  };
+
+  const applyCloudPayload = (payload: Record<string, unknown>) => {
+    if (layout === "recipe-card") {
+      const d = payload as Partial<ChapterRecipeDraft>;
+      if (typeof d.dishName === "string") setDishName(d.dishName);
+      if (typeof d.colors === "string") setColors(d.colors);
+      if (typeof d.fiberSource === "string") setFiberSource(d.fiberSource);
+      if (typeof d.feeling === "string") setFeeling(d.feeling);
+      if (typeof d.reflectNote === "string") setReflectNote(d.reflectNote);
+      return;
+    }
+    if (layout === "life-assets") {
+      const d = payload as Partial<ChapterLifeAssetsDraft>;
+      if (typeof d.candidates === "string") setLaCandidates(d.candidates);
+      if (typeof d.whyWho === "string") setLaWhyWho(d.whyWho);
+      if (typeof d.enterPick === "string") setLaEnterPick(d.enterPick);
+      if (typeof d.reflectNote === "string") setReflectNote(d.reflectNote);
+    }
+  };
+
+  const saveCloudDraft = async () => {
+    if (!cloudDraftEnabled) return;
+    if (!user) {
+      toast.info("請先登入暖暖，才能私人保存到雲端。");
+      router.push("/");
+      return;
+    }
+    const payload = buildCloudPayload();
+    if (!payload || isBlankDraftPayload(payload)) {
+      toast.info("請先填寫卡片內容，再私人保存。");
+      return;
+    }
+    setCloudSaving(true);
+    try {
+      const { draft } = await api.saveChapterDraft({
+        chapter_id: chapter.id,
+        payload,
+      });
+      try {
+        localStorage.setItem(draftKey, JSON.stringify(payload));
+      } catch {
+        /* ignore */
+      }
+      setCloudHasDraft(true);
+      setCloudUpdatedAt(draft.updated_at);
+      toast.success("已私人保存到暖暖（僅您可看）。");
+      trackEvent("chapter_cloud_draft_save", { chapter: chapter.id });
+    } catch (e) {
+      const msg =
+        e instanceof ApiError
+          ? e.message
+          : "保存失敗，請稍後再試。";
+      toast.info(msg);
+    } finally {
+      setCloudSaving(false);
+    }
+  };
+
+  const loadCloudDraft = async () => {
+    if (!cloudDraftEnabled) return;
+    if (!user) {
+      toast.info("請先登入暖暖。");
+      return;
+    }
+    setCloudSaving(true);
+    try {
+      const { draft } = await api.getChapterDraft(chapter.id);
+      if (!draft || isBlankDraftPayload(draft.payload)) {
+        setCloudHasDraft(false);
+        toast.info("暖暖裡還沒有這張卡的私人草稿。");
+        return;
+      }
+      applyCloudPayload(draft.payload);
+      try {
+        localStorage.setItem(draftKey, JSON.stringify(draft.payload));
+      } catch {
+        /* ignore */
+      }
+      setCloudHasDraft(true);
+      setCloudUpdatedAt(draft.updated_at);
+      toast.success("已從暖暖載入私人草稿。");
+      trackEvent("chapter_cloud_draft_load", { chapter: chapter.id });
+    } catch (e) {
+      const msg =
+        e instanceof ApiError ? e.message : "載入失敗，請稍後再試。";
+      toast.info(msg);
+    } finally {
+      setCloudSaving(false);
+    }
+  };
 
   const saveDraft = (
     patch: Partial<
@@ -10360,6 +10527,60 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
               把這句話點成光點 →
             </button>
           </div>
+
+          {cloudDraftEnabled && (
+            <div style={{
+              padding: 16, borderRadius: "var(--r-lg)",
+              background: "var(--surface)", border: "1px solid var(--line)",
+              marginBottom: 12,
+            }}>
+              <div style={{
+                fontSize: "var(--fs-sm)", fontWeight: 800, marginBottom: 8,
+              }}>
+                私人保存到暖暖
+              </div>
+              <p style={{
+                fontSize: "var(--fs-xs)", color: "var(--ink-2)",
+                lineHeight: 1.5, margin: "0 0 12px",
+              }}>
+                僅保存您在本頁填寫的文字，不讀取雲端硬碟、不搬檔、不公開。
+                {cloudHasDraft && cloudUpdatedAt
+                  ? ` 雲端草稿更新於 ${new Date(cloudUpdatedAt).toLocaleString("zh-TW")}。`
+                  : ""}
+              </p>
+              <button
+                type="button"
+                onClick={saveCloudDraft}
+                disabled={cloudSaving}
+                style={{
+                  width: "100%", padding: "14px", marginBottom: 8,
+                  background: "var(--primary)", border: "none",
+                  borderRadius: "var(--r-pill)", fontWeight: 800,
+                  fontSize: "var(--fs-sm)", color: "#fff",
+                  cursor: cloudSaving ? "wait" : "pointer",
+                  opacity: cloudSaving ? 0.7 : 1,
+                }}
+              >
+                {cloudSaving ? "處理中…" : user ? "私人保存這張卡" : "登入後私人保存"}
+              </button>
+              {user && (
+                <button
+                  type="button"
+                  onClick={loadCloudDraft}
+                  disabled={cloudSaving}
+                  style={{
+                    width: "100%", padding: "12px",
+                    background: "var(--surface-warm)", border: "1px solid var(--line-strong)",
+                    borderRadius: "var(--r-pill)", fontWeight: 700,
+                    fontSize: "var(--fs-sm)", cursor: cloudSaving ? "wait" : "pointer",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  從暖暖載入私人草稿
+                </button>
+              )}
+            </div>
+          )}
 
           <div style={{
             padding: 16, borderRadius: "var(--r-lg)",
