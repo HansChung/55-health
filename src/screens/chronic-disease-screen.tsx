@@ -6,10 +6,14 @@ import { Mascot } from "@/components/mascot";
 import { SubPage } from "@/components/sub-page";
 import { Toggle } from "@/components/toggle";
 import { LockedFeatureCard } from "@/components/locked-feature-card";
-import { api, type ProfileMedication } from "@/lib/api-client";
+import { api, type AlertThresholdSettings, type ProfileMedication } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import { hasFeature, type SubscriptionTier } from "@/lib/feature-gates";
 import { inferMedicationReminderTimes, isTakenToday } from "@/lib/medication-utils";
+import {
+  chronicSuggestedThresholds,
+  resolveAlertThresholds,
+} from "@/lib/alerts/thresholds";
 
 interface ChronicDiseaseScreenProps {
   onBack: () => void;
@@ -32,18 +36,24 @@ export function ChronicDiseaseScreen({ onBack, onScanPrescription, tier }: Chron
   const toast = useToast();
   const [selected, setSelected] = useState<string[]>([]);
   const [meds, setMeds] = useState<ProfileMedication[]>([]);
+  const [thresholds, setThresholds] = useState<AlertThresholdSettings>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [newMedName, setNewMedName] = useState("");
   const [newMedDose, setNewMedDose] = useState("");
   const [showAddMed, setShowAddMed] = useState(false);
   const canUseMedicationReminders = hasFeature(tier, "medication_reminders");
+  const resolvedPreview = resolveAlertThresholds({
+    chronic_conditions: selected,
+    alert_thresholds: thresholds,
+  });
 
   useEffect(() => {
     api.getProfile()
       .then(({ profile }) => {
         setSelected(profile.chronic_conditions ?? []);
         setMeds((profile.medications ?? []).map(normalizeMedication));
+        setThresholds(profile.alert_thresholds ?? {});
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -92,12 +102,32 @@ export function ChronicDiseaseScreen({ onBack, onScanPrescription, tier }: Chron
     }
   };
 
+  const applySuggestedThresholds = () => {
+    const suggested = chronicSuggestedThresholds(selected);
+    setThresholds(suggested);
+    toast.success("已套用依慢性病建議的警戒值，可再微調後儲存。");
+  };
+
+  const setThresholdField = (key: keyof AlertThresholdSettings, raw: string) => {
+    const n = Number(raw);
+    setThresholds((prev) => {
+      const next = { ...prev };
+      if (!raw.trim() || !Number.isFinite(n)) {
+        delete next[key];
+      } else {
+        next[key] = n;
+      }
+      return next;
+    });
+  };
+
   const save = async () => {
     setSaving(true);
     try {
       await api.updateProfile({
         chronic_conditions: selected,
         medications: meds,
+        alert_thresholds: thresholds,
       });
       onBack();
     } catch (e) {
@@ -338,6 +368,68 @@ export function ChronicDiseaseScreen({ onBack, onScanPrescription, tier }: Chron
               </div>
             ))}
           </div>
+
+          <div style={{
+            marginTop: 28, marginBottom: 12,
+            fontSize: "var(--fs-sm)", fontWeight: 700, color: "var(--ink-2)",
+          }}>
+            家人預警警戒值（選填）
+          </div>
+          <div style={{
+            background: "var(--surface)", borderRadius: 16,
+            border: "1px solid var(--line)", padding: 14, marginBottom: 16,
+          }}>
+            <p style={{
+              margin: "0 0 12px", fontSize: "var(--fs-xs)", color: "var(--ink-2)", lineHeight: 1.55,
+            }}>
+              用於通知家人的異常預警。空白則用系統預設；可先「套用建議」再微調。
+              目前生效：血壓高 {resolvedPreview.bpSystolicHigh}/{resolvedPreview.bpDiastolicHigh}、
+              空腹血糖 {resolvedPreview.glucoseFastingHigh}、失聯 {resolvedPreview.inactivityDays} 天。
+            </p>
+            <button
+              type="button"
+              onClick={applySuggestedThresholds}
+              style={{
+                width: "100%", marginBottom: 12, padding: "10px 12px",
+                borderRadius: 10, border: "1px solid var(--line-strong)",
+                background: "var(--surface-warm)", fontWeight: 700,
+                fontSize: "var(--fs-sm)", cursor: "pointer", fontFamily: "inherit",
+              }}
+            >
+              依目前慢性病套用建議警戒值
+            </button>
+            <ThresholdField
+              label="失聯天數"
+              value={thresholds.inactivityDays}
+              placeholder={String(resolvedPreview.inactivityDays)}
+              onChange={(v) => setThresholdField("inactivityDays", v)}
+            />
+            <ThresholdField
+              label="收縮壓偏高（mmHg）"
+              value={thresholds.bpSystolicHigh}
+              placeholder={String(resolvedPreview.bpSystolicHigh)}
+              onChange={(v) => setThresholdField("bpSystolicHigh", v)}
+            />
+            <ThresholdField
+              label="舒張壓偏高（mmHg）"
+              value={thresholds.bpDiastolicHigh}
+              placeholder={String(resolvedPreview.bpDiastolicHigh)}
+              onChange={(v) => setThresholdField("bpDiastolicHigh", v)}
+            />
+            <ThresholdField
+              label="空腹血糖偏高（mg/dL）"
+              value={thresholds.glucoseFastingHigh}
+              placeholder={String(resolvedPreview.glucoseFastingHigh)}
+              onChange={(v) => setThresholdField("glucoseFastingHigh", v)}
+            />
+            <ThresholdField
+              label="非空腹血糖偏高（mg/dL）"
+              value={thresholds.glucoseHigh}
+              placeholder={String(resolvedPreview.glucoseHigh)}
+              onChange={(v) => setThresholdField("glucoseHigh", v)}
+              last
+            />
+          </div>
         </>
       )}
     </SubPage>
@@ -363,4 +455,36 @@ function normalizeMedication(med: ProfileMedication): ProfileMedication {
       : inferMedicationReminderTimes(reminderText),
     taken_today: isTakenToday(med),
   };
+}
+
+function ThresholdField({
+  label,
+  value,
+  placeholder,
+  onChange,
+  last,
+}: {
+  label: string;
+  value?: number;
+  placeholder: string;
+  onChange: (v: string) => void;
+  last?: boolean;
+}) {
+  return (
+    <label style={{
+      display: "block",
+      marginBottom: last ? 0 : 10,
+    }}>
+      <div style={{ fontSize: "var(--fs-xs)", fontWeight: 700, color: "var(--ink-3)", marginBottom: 4 }}>
+        {label}
+      </div>
+      <input
+        type="number"
+        value={value ?? ""}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        style={miniInput}
+      />
+    </label>
+  );
 }

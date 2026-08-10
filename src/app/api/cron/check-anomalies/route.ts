@@ -8,6 +8,7 @@ import { createSupabaseAdmin } from "@/lib/supabase/server";
 import { detectAnomalies } from "@/lib/alerts/detect";
 import { sendEmail } from "@/lib/email/send";
 import { buildAlertEmail, type AlertPayload } from "@/lib/email/templates";
+import { sendPushToUser } from "@/lib/push/send";
 
 // 強制 dynamic，不要被靜態快取
 export const dynamic = "force-dynamic";
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
   }
 
   const supabase = createSupabaseAdmin();
-  const fired: Array<{ elder: string; type: string; emails: number }> = [];
+  const fired: Array<{ elder: string; type: string; emails: number; pushes: number }> = [];
   let elderCount = 0;
 
   // 2. 撈出所有 accepted 的家人連結
@@ -57,10 +58,10 @@ export async function GET(req: NextRequest) {
 
   // 4. 對每位長輩跑偵測
   for (const [elderId, familyLinks] of elderMap) {
-    // 取長輩 profile（名字 + 藥物）
+    // 取長輩 profile（名字 + 藥物 + 慢性病 + 個人化閾值）
     const { data: elderProfile } = await supabase
       .from("profiles")
-      .select("display_name, medications")
+      .select("display_name, medications, chronic_conditions, alert_thresholds")
       .eq("id", elderId)
       .single();
 
@@ -86,30 +87,53 @@ export async function GET(req: NextRequest) {
         .limit(1);
       if (recent && recent.length > 0) continue;
 
-      // 寄信給每個家人，收集寄送結果
-      const notified: Array<{ family_id: string; email: string; sent_at: string }> = [];
+      // 寄信 + Web Push 給每個家人
+      const notified: Array<{
+        family_id: string;
+        email?: string;
+        push?: number;
+        sent_at: string;
+      }> = [];
+      let pushTotal = 0;
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://nuan55.com";
+
       for (const fl of familyLinks) {
         if (!fl.family_user_id) continue;
         const { data: famData } = await supabase.auth.admin.getUserById(fl.family_user_id);
         const famEmail = famData?.user?.email;
-        if (!famEmail) continue;
+        const entry: (typeof notified)[number] = {
+          family_id: fl.family_user_id,
+          sent_at: new Date().toISOString(),
+        };
 
-        const result = await sendEmail({
-          to: famEmail,
-          subject: `【暖暖】${elderName} ${alert.title}`,
-          html: buildAlertEmail({
-            familyName: fl.family_name,
-            elderName,
-            alert,
-          }),
-        });
-
-        if (result.ok) {
-          notified.push({
-            family_id: fl.family_user_id,
-            email: famEmail,
-            sent_at: new Date().toISOString(),
+        if (famEmail) {
+          const result = await sendEmail({
+            to: famEmail,
+            subject: `【暖暖】${elderName} ${alert.title}`,
+            html: buildAlertEmail({
+              familyName: fl.family_name,
+              elderName,
+              alert,
+            }),
           });
+          if (result.ok) entry.email = famEmail;
+        }
+
+        try {
+          const pushResult = await sendPushToUser(fl.family_user_id, {
+            title: `【暖暖】${elderName}`,
+            body: alert.title,
+            url: `${appUrl}/`,
+            tag: `alert-${alert.type}`,
+          });
+          entry.push = pushResult.sent;
+          pushTotal += pushResult.sent;
+        } catch (e) {
+          console.warn("[cron] push 失敗:", e);
+        }
+
+        if (entry.email || (entry.push && entry.push > 0)) {
+          notified.push(entry);
         }
       }
 
@@ -124,7 +148,12 @@ export async function GET(req: NextRequest) {
         notified_family: notified,
       });
 
-      fired.push({ elder: elderId, type: alert.type, emails: notified.length });
+      fired.push({
+        elder: elderId,
+        type: alert.type,
+        emails: notified.filter((n) => n.email).length,
+        pushes: pushTotal,
+      });
     }
   }
 
