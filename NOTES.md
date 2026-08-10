@@ -353,6 +353,7 @@ android/                                       # Capacitor Android（未實測�
 | **Resend** → Domains | 新增 **nuan55.com**，依指示設 DNS，顯示 Verified 後 `noreply@nuan55.com` 才能寄給所有人 |
 | **Vercel** → Env（cron/email 用） | `RESEND_API_KEY`（re_xxx）+ `CRON_SECRET`（自訂密碼，異常預警與週報 cron 共用）→ 沒設則 cron 會跳過寄信 |
 | **Vercel** → Env（rate limit） | `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`（Upstash Redis REST）；未設則記憶體後備 |
+| **Vercel** → Env（Web Push） | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY`（`npx web-push generate-vapid-keys`）+ 可選 `VAPID_SUBJECT`；並跑 `add-push-subscriptions.sql`、`add-alert-thresholds.sql` |
 | **Stripe**（之後） | 設 4 個 key（見下）+ 跑 `supabase/add-stripe-customer.sql`；Webhook/Checkout 網址會讀 `NEXT_PUBLIC_APP_URL` |
 
 ---
@@ -363,7 +364,7 @@ android/                                       # Capacitor Android（未實測�
 1. ~~**Google OAuth Testing 模式**~~ → 已 Publish / 設定 nuan55.com（若仍見「未驗證」可等 Google 審核或讓用戶點「進階→繼續」）
 
 ### 中優先級
-2. **通知推播（背景提醒）沒做** — 已 PWA 化（可加到主畫面），但純 web 仍無法做手機背景推播，要 Capacitor 打包或 Web Push 才行
+2. ~~**通知推播（背景提醒）沒做**~~ → **Web Push 已接**（異常預警）；用餐／喝水定時提醒仍偏原生 App。需 VAPID 環境變數 + `add-push-subscriptions.sql`
 3. ~~**全站 rate limiting 未做**~~ → **已加** `src/middleware.ts` + `src/lib/rate-limit.ts`（AI／checkout／一般 API／telemetry 分桶；cron／Stripe webhook 略過）。正式站請設 `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`；未設則記憶體後備（本機 OK，多實例不共享）
 
 ### ✅ 已修復 / 已完成

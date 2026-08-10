@@ -29,6 +29,21 @@ const PatchSchema = z.object({
     last_taken_at: z.string().optional(),
   })).optional(),
   notification_settings: z.record(z.string(), z.any()).optional(),
+  alert_thresholds: z
+    .object({
+      inactivityDays: z.number().int().min(1).max(30).optional(),
+      bpSystolicHigh: z.number().int().min(110).max(250).optional(),
+      bpDiastolicHigh: z.number().int().min(70).max(150).optional(),
+      bpSystolicLow: z.number().int().min(60).max(120).optional(),
+      bpDiastolicLow: z.number().int().min(40).max(90).optional(),
+      glucoseHigh: z.number().int().min(120).max(600).optional(),
+      glucoseFastingHigh: z.number().int().min(100).max(400).optional(),
+      glucoseLow: z.number().int().min(40).max(100).optional(),
+      weightChangeKg: z.number().min(0.5).max(20).optional(),
+      missedMedicationDays: z.number().int().min(1).max(14).optional(),
+    })
+    .partial()
+    .optional(),
   emergency_contact: z.object({
     name: z.string().min(1).max(50),
     phone: z.string().min(3).max(30),

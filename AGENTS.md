@@ -27,6 +27,9 @@ and Stripe. Capacitor/Android is only a packaging target and is not needed for w
   Production should set `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`; without them a
   process-local memory fallback is used (fine for `npm run dev`, not reliable across Vercel instances).
   Set `RATE_LIMIT_DISABLED=1` only for local tests that must bypass limits.
+- **Web Push + alert thresholds**: VAPID keys (`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`);
+  SQL `add-push-subscriptions.sql` + `add-alert-thresholds.sql`. Family enables push under 提醒通知;
+  elder thresholds under 健康狀況. Cron `check-anomalies` emails and pushes.
 
 ### Running a real backend locally (no cloud Supabase needed)
 The app requires a live Supabase API to do anything past the login screen (auth is forced). A local

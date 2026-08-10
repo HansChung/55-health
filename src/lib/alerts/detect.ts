@@ -3,6 +3,11 @@
 // 純函式邏輯，方便單獨測試
 // ────────────────────────────────────────────────
 import type { AlertPayload } from "@/lib/email/templates";
+import {
+  DEFAULT_ALERT_THRESHOLDS,
+  resolveAlertThresholds,
+  type AlertThresholdOverrides,
+} from "@/lib/alerts/thresholds";
 
 // 用 any 表示 supabase admin client（避免引入完整型別）
 type SupabaseAdmin = {
@@ -11,22 +16,13 @@ type SupabaseAdmin = {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-// ── 可調整的閾值（第一版偏保守，寧可漏報不要狂報）──
-export const THRESHOLDS = {
-  inactivityDays: 3, // 連續幾天無記錄 → 失聯
-  bpSystolicHigh: 160,
-  bpDiastolicHigh: 100,
-  bpSystolicLow: 90,
-  bpDiastolicLow: 60,
-  glucoseHigh: 250, // mg/dL（非空腹也算高，保守值）
-  glucoseFastingHigh: 180,
-  glucoseLow: 70,
-  weightChangeKg: 2.5, // 7 天內變化超過此值
-  missedMedicationDays: 2, // 連續幾天沒標記吃藥
-};
+/** @deprecated 請改用 DEFAULT_ALERT_THRESHOLDS；保留匯出以相容舊引用 */
+export const THRESHOLDS = DEFAULT_ALERT_THRESHOLDS;
 
 interface ProfileLite {
   display_name?: string | null;
+  chronic_conditions?: string[] | null;
+  alert_thresholds?: AlertThresholdOverrides | null;
   medications?: Array<{
     name?: string;
     reminder_enabled?: boolean;
@@ -45,9 +41,10 @@ export async function detectAnomalies(
 ): Promise<AlertPayload[]> {
   const alerts: AlertPayload[] = [];
   const now = Date.now();
+  const T = resolveAlertThresholds(profile);
 
   // ── 規則 1：失聯（N 天沒任何記錄）──
-  const inactiveSince = new Date(now - THRESHOLDS.inactivityDays * DAY_MS).toISOString();
+  const inactiveSince = new Date(now - T.inactivityDays * DAY_MS).toISOString();
   const [meals, metricsRecent, convs, exercises] = await Promise.all([
     supabase.from("meals").select("id").eq("user_id", elderId).gte("eaten_at", inactiveSince).limit(1),
     supabase.from("health_metrics").select("id").eq("user_id", elderId).gte("measured_at", inactiveSince).limit(1),
@@ -63,9 +60,9 @@ export async function detectAnomalies(
     alerts.push({
       type: "inactivity",
       severity: "warning",
-      title: `已 ${THRESHOLDS.inactivityDays} 天沒有使用暖暖`,
-      message: `您的家人已經連續 ${THRESHOLDS.inactivityDays} 天沒有記錄飲食、量測健康數據或使用語音。建議主動打通電話關心一下他的狀況。`,
-      metadata: { days: THRESHOLDS.inactivityDays },
+      title: `已 ${T.inactivityDays} 天沒有使用暖暖`,
+      message: `您的家人已經連續 ${T.inactivityDays} 天沒有記錄飲食、量測健康數據或使用語音。建議主動打通電話關心一下他的狀況。`,
+      metadata: { days: T.inactivityDays },
     });
   }
 
@@ -80,15 +77,15 @@ export async function detectAnomalies(
   if (bp?.[0]) {
     const { systolic, diastolic } = bp[0];
     if (systolic != null && diastolic != null) {
-      if (systolic >= THRESHOLDS.bpSystolicHigh || diastolic >= THRESHOLDS.bpDiastolicHigh) {
+      if (systolic >= T.bpSystolicHigh || diastolic >= T.bpDiastolicHigh) {
         alerts.push({
           type: "blood_pressure",
           severity: "critical",
           title: "血壓偏高",
-          message: `最近一次量測血壓為 ${systolic}/${diastolic} mmHg，已超過警戒值（${THRESHOLDS.bpSystolicHigh}/${THRESHOLDS.bpDiastolicHigh}）。若持續偏高，建議盡快回診或聯繫醫師。`,
-          metadata: { systolic, diastolic },
+          message: `最近一次量測血壓為 ${systolic}/${diastolic} mmHg，已超過警戒值（${T.bpSystolicHigh}/${T.bpDiastolicHigh}）。若持續偏高，建議盡快回診或聯繫醫師。`,
+          metadata: { systolic, diastolic, thresholds: { hi: T.bpSystolicHigh, dia: T.bpDiastolicHigh } },
         });
-      } else if (systolic <= THRESHOLDS.bpSystolicLow || diastolic <= THRESHOLDS.bpDiastolicLow) {
+      } else if (systolic <= T.bpSystolicLow || diastolic <= T.bpDiastolicLow) {
         alerts.push({
           type: "blood_pressure",
           severity: "warning",
@@ -111,16 +108,16 @@ export async function detectAnomalies(
   if (bg?.[0]?.glucose_mg_dl != null) {
     const g = bg[0].glucose_mg_dl as number;
     const isFasting = bg[0].glucose_context === "fasting";
-    const highLimit = isFasting ? THRESHOLDS.glucoseFastingHigh : THRESHOLDS.glucoseHigh;
+    const highLimit = isFasting ? T.glucoseFastingHigh : T.glucoseHigh;
     if (g >= highLimit) {
       alerts.push({
         type: "blood_glucose",
         severity: "critical",
         title: "血糖偏高",
-        message: `最近一次血糖為 ${g} mg/dL${isFasting ? "（空腹）" : ""}，已超過警戒值。建議留意飲食並諮詢醫師。`,
-        metadata: { glucose: g, fasting: isFasting },
+        message: `最近一次血糖為 ${g} mg/dL${isFasting ? "（空腹）" : ""}，已超過警戒值（${highLimit}）。建議留意飲食並諮詢醫師。`,
+        metadata: { glucose: g, fasting: isFasting, highLimit },
       });
-    } else if (g <= THRESHOLDS.glucoseLow) {
+    } else if (g <= T.glucoseLow) {
       alerts.push({
         type: "blood_glucose",
         severity: "critical",
@@ -146,7 +143,7 @@ export async function detectAnomalies(
       const latest = valid[0].weight_kg as number;
       const oldest = valid[valid.length - 1].weight_kg as number;
       const diff = latest - oldest;
-      if (Math.abs(diff) >= THRESHOLDS.weightChangeKg) {
+      if (Math.abs(diff) >= T.weightChangeKg) {
         const dir = diff > 0 ? "增加" : "減少";
         alerts.push({
           type: "weight_change",
@@ -160,14 +157,12 @@ export async function detectAnomalies(
   }
 
   // ── 規則 5：連續漏吃藥 ──
-  // 註：目前 medications 的 taken_today 是當日狀態。
-  // 簡化版：若有開啟提醒的藥、且最後服藥時間超過 N 天，視為漏藥。
   const meds = profile?.medications ?? [];
   const reminderMeds = meds.filter((m) => m?.reminder_enabled);
   if (reminderMeds.length > 0) {
-    const cutoff = now - THRESHOLDS.missedMedicationDays * DAY_MS;
+    const cutoff = now - T.missedMedicationDays * DAY_MS;
     const missed = reminderMeds.filter((m) => {
-      if (!m.last_taken_at) return true; // 從沒記錄過吃藥
+      if (!m.last_taken_at) return true;
       return new Date(m.last_taken_at).getTime() < cutoff;
     });
     if (missed.length > 0) {
@@ -176,8 +171,8 @@ export async function detectAnomalies(
         type: "missed_medication",
         severity: "warning",
         title: "可能連續漏吃藥",
-        message: `您的家人已超過 ${THRESHOLDS.missedMedicationDays} 天沒有記錄服用：${names || "部分藥物"}。建議提醒他按時服藥。`,
-        metadata: { medications: names, days: THRESHOLDS.missedMedicationDays },
+        message: `您的家人已超過 ${T.missedMedicationDays} 天沒有記錄服用：${names || "部分藥物"}。建議提醒他按時服藥。`,
+        metadata: { medications: names, days: T.missedMedicationDays },
       });
     }
   }

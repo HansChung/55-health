@@ -248,6 +248,22 @@ export const api = {
   updateProfile: (patch: Partial<ProfileData>) =>
     apiFetch<{ profile: ProfileData }>("/api/profile", { method: "PATCH", json: patch }),
 
+  getVapidPublicKey: () =>
+    apiFetch<{ configured: boolean; publicKey: string | null }>("/api/push/vapid-public-key"),
+
+  subscribePush: (input: {
+    endpoint: string;
+    keys: { p256dh: string; auth: string };
+    userAgent?: string;
+  }) =>
+    apiFetch<{ ok: true }>("/api/push/subscribe", { method: "POST", json: input }),
+
+  unsubscribePush: (endpoint: string) =>
+    apiFetch<{ ok: true }>("/api/push/subscribe", {
+      method: "DELETE",
+      json: { endpoint },
+    }),
+
   // Meals
   listMeals: (days = 7) =>
     apiFetch<{ meals: MealRecord[] }>(`/api/meals?days=${days}`),
@@ -340,6 +356,19 @@ export const api = {
 };
 
 // ─────── Types ───────
+export interface AlertThresholdSettings {
+  inactivityDays?: number;
+  bpSystolicHigh?: number;
+  bpDiastolicHigh?: number;
+  bpSystolicLow?: number;
+  bpDiastolicLow?: number;
+  glucoseHigh?: number;
+  glucoseFastingHigh?: number;
+  glucoseLow?: number;
+  weightChangeKg?: number;
+  missedMedicationDays?: number;
+}
+
 export interface ProfileData {
   id: string;
   display_name: string | null;
@@ -354,6 +383,7 @@ export interface ProfileData {
   chronic_conditions: string[];
   medications: ProfileMedication[];
   notification_settings?: NotificationSettings;
+  alert_thresholds?: AlertThresholdSettings;
   emergency_contact?: EmergencyContact | null;
   subscription_tier: "free" | "basic" | "pro";
   is_admin: boolean;
@@ -388,6 +418,8 @@ export interface NotificationSettings {
   walk?: { on: boolean; time: string };
   blood_pressure?: { on: boolean; times: string[] };
   family_alerts?: { on: boolean };
+  /** 瀏覽器 Web Push（異常預警即時通知） */
+  web_push?: { on: boolean };
 }
 
 export interface AiSuggestion {
