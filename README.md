@@ -53,7 +53,7 @@ npm run android:open  # 用 Android Studio 開啟
 
 ## 📋 環境變數
 
-請參考 [`.env.example`](.env.example)
+請參考 [`.env.example`](.env.example)。正式站 SQL／環境變數勾選見 [`docs/production-上線檢查清單.md`](docs/production-上線檢查清單.md)。
 
 | 變數 | 必填 | 用途 |
 |------|------|------|
