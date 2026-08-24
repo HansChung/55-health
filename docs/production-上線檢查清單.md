@@ -24,7 +24,8 @@
 
 ## 1. 請先跑／確認的 SQL（近期功能）
 
-依序貼上 repo 檔案全文 → Run。`create table if not exists` / `add column if not exists` 可重跑。
+一次貼上 `supabase/production-gap-fix.sql` 全文 → Run（已把下列 6 檔合成一份，可重跑）。
+或依序貼各檔全文。`create table if not exists` / `add column if not exists` 可重跑。
 
 | 順序 | 檔案 | 功能 | 沒跑會怎樣 |
 |------|------|------|------------|
