@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/icons";
 import { SubPage } from "@/components/sub-page";
+import { PhoneHealthSyncCard } from "@/components/phone-health-sync-card";
 import { api, type HealthMetric } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -51,6 +52,9 @@ export function HealthMetricsScreen({ onBack }: HealthMetricsScreenProps) {
         </button>
       }
     >
+      {/* Android App 專用：Health Connect 今日步數（網頁不顯示） */}
+      <PhoneHealthSyncCard />
+
       {/* Tabs */}
       <div style={{
         display: "flex", gap: 8, marginBottom: 20,

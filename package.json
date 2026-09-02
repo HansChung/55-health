@@ -8,13 +8,16 @@
     "start": "next start",
     "test": "vitest run",
     "test:watch": "vitest",
-    "android:build": "next build && npx cap sync android",
-    "android:open": "npm run android:build && npx cap open android"
+    "android:prepare-out": "mkdir -p out && test -f out/index.html || printf '%s\\n' '<!DOCTYPE html><html><head><meta charset=utf-8><title>暖暖</title></head><body><p>暖暖 App shell</p></body></html>' > out/index.html",
+    "android:build": "npm run android:prepare-out && npx cap sync android",
+    "android:open": "npm run android:build && npx cap open android",
+    "android:sync": "npm run android:build"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.4",
     "@capacitor/cli": "^8.3.4",
     "@capacitor/core": "^8.3.4",
+    "@capgo/capacitor-health": "^8.10.0",
     "@google/generative-ai": "^0.24.1",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.1",
