@@ -7,11 +7,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/send";
 import { buildDailyCareEmail } from "@/lib/email/templates";
+import { mapWithConcurrency, createDeadline } from "@/lib/concurrency";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+const USER_CONCURRENCY = 6;
+const TIME_BUDGET_MS = 45_000;
+
 interface Medication { reminder_enabled?: boolean }
+
+interface ProfileRow {
+  id: string;
+  display_name?: string | null;
+  medications?: unknown;
+  notification_settings?: unknown;
+}
 
 const TIPS = [
   "記得多喝水，一天 6–8 杯剛剛好。",
@@ -52,23 +63,37 @@ export async function GET(req: NextRequest) {
   const tip = TIPS[dayOfYear(now) % TIPS.length];
   const greeting = "早安";
   let sent = 0;
+  let skippedForTime = 0;
 
-  for (const userId of Array.from(activeIds).slice(0, 200)) {
-    // 個資 + 偏好
-    const { data: profile } = await supabase
+  const userIds = Array.from(activeIds).slice(0, 500);
+  const deadline = createDeadline(TIME_BUDGET_MS);
+
+  // 共用資料一次撈完（取代迴圈內每人各查一次 profile / email）
+  const [profilesRes, emailMap] = await Promise.all([
+    supabase
       .from("profiles")
-      .select("display_name, medications, notification_settings")
-      .eq("id", userId)
-      .single();
-    if (!profile) continue;
+      .select("id, display_name, medications, notification_settings")
+      .in("id", userIds),
+    loadUserEmails(supabase),
+  ]);
+  const profileById = new Map<string, ProfileRow>();
+  for (const p of (profilesRes.data ?? []) as ProfileRow[]) profileById.set(p.id, p);
+
+  await mapWithConcurrency(userIds, USER_CONCURRENCY, async (userId) => {
+    if (deadline.expired) {
+      skippedForTime++;
+      return;
+    }
+
+    const profile = profileById.get(userId);
+    if (!profile) return;
 
     // 尊重關閉設定（預設開啟）
     const ns = (profile.notification_settings ?? {}) as { daily_care?: { on?: boolean } };
-    if (ns.daily_care?.on === false) continue;
+    if (ns.daily_care?.on === false) return;
 
-    const { data: famData } = await supabase.auth.admin.getUserById(userId);
-    const email = famData?.user?.email;
-    if (!email) continue;
+    const email = emailMap.get(userId);
+    if (!email) return;
 
     const name = profile.display_name ?? "您";
 
@@ -107,7 +132,36 @@ export async function GET(req: NextRequest) {
       html: buildDailyCareEmail({ name, greeting, lines, tip }),
     });
     if (res.ok) sent++;
+  });
+
+  if (skippedForTime > 0) {
+    console.error(`[cron] 每日關懷時間不足，${skippedForTime} 位未寄出（總數 ${userIds.length}）`);
   }
 
-  return NextResponse.json({ ok: true, active: activeIds.size, sent, ran_at: now.toISOString() });
+  return NextResponse.json({
+    ok: true,
+    active: activeIds.size,
+    sent,
+    skipped_for_time: skippedForTime,
+    took_ms: deadline.elapsedMs,
+    ran_at: now.toISOString(),
+  });
+}
+
+/** 一次載入所有使用者 email（取代迴圈內逐筆 getUserById） */
+async function loadUserEmails(
+  supabase: ReturnType<typeof createSupabaseAdmin>
+): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  try {
+    for (let page = 1; page <= 10; page++) {
+      const { data } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
+      const users = data?.users ?? [];
+      for (const u of users) if (u.email) map.set(u.id, u.email);
+      if (users.length < 1000) break;
+    }
+  } catch (e) {
+    console.error("[cron] 載入使用者 email 失敗:", e);
+  }
+  return map;
 }

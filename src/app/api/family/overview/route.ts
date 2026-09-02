@@ -51,23 +51,51 @@ export async function GET() {
       const canMeals = perms.calories !== false; // 預設可看飲食
       const canHealth = !!perms.alerts; // 健康/警報/IoT 需開啟提醒權限
 
-      const { data: profile } = await admin
-        .from("profiles")
-        .select("display_name, medications")
-        .eq("id", elderId)
-        .single();
+      // 這位長輩需要的查詢彼此獨立 → 一次併發送出，避免 9 次來回累積延遲
+      const none = Promise.resolve({ data: null as never });
+      const [
+        { data: profile },
+        { data: mealRows },
+        { data: bpRows },
+        { data: bgRows },
+        { data: alertRows },
+        { data: iotRows },
+        { data: shiRows },
+      ] = await Promise.all([
+        admin.from("profiles").select("display_name, medications").eq("id", elderId).single(),
+        canMeals
+          ? admin.from("meals").select("eaten_at").eq("user_id", elderId)
+              .gte("eaten_at", todayISO).order("eaten_at", { ascending: false })
+          : none,
+        canHealth
+          ? admin.from("health_metrics").select("systolic, diastolic, measured_at")
+              .eq("user_id", elderId).eq("metric_type", "blood_pressure")
+              .order("measured_at", { ascending: false }).limit(1)
+          : none,
+        canHealth
+          ? admin.from("health_metrics").select("glucose_mg_dl, measured_at")
+              .eq("user_id", elderId).eq("metric_type", "blood_glucose")
+              .order("measured_at", { ascending: false }).limit(1)
+          : none,
+        canHealth
+          ? admin.from("alerts").select("title, severity, created_at, resolved")
+              .eq("elder_id", elderId).order("created_at", { ascending: false }).limit(20)
+          : none,
+        canHealth
+          ? admin.from("iot_events").select("event_kind, severity, data, occurred_at")
+              .eq("user_id", elderId).order("occurred_at", { ascending: false }).limit(20)
+          : none,
+        canHealth
+          ? admin.from("smart_assessments").select("shi").eq("user_id", elderId)
+              .order("created_at", { ascending: false }).limit(1)
+          : none,
+      ]);
 
       const elderName = profile?.display_name ?? "長輩";
 
       // 飲食（今天）
       let meals: { logged: number; lastAt: string | null } | null = null;
       if (canMeals) {
-        const { data: mealRows } = await admin
-          .from("meals")
-          .select("eaten_at")
-          .eq("user_id", elderId)
-          .gte("eaten_at", todayISO)
-          .order("eaten_at", { ascending: false });
         meals = { logged: mealRows?.length ?? 0, lastAt: mealRows?.[0]?.eaten_at ?? null };
       }
 
@@ -87,29 +115,14 @@ export async function GET() {
           meds = { total: reminder.length, taken: reminder.filter((m) => m.taken_today).length };
         }
 
-        const { data: bpRows } = await admin
-          .from("health_metrics")
-          .select("systolic, diastolic, measured_at")
-          .eq("user_id", elderId).eq("metric_type", "blood_pressure")
-          .order("measured_at", { ascending: false }).limit(1);
         if (bpRows?.[0]?.systolic != null) {
           bp = { systolic: bpRows[0].systolic, diastolic: bpRows[0].diastolic, at: bpRows[0].measured_at };
         }
 
-        const { data: bgRows } = await admin
-          .from("health_metrics")
-          .select("glucose_mg_dl, measured_at")
-          .eq("user_id", elderId).eq("metric_type", "blood_glucose")
-          .order("measured_at", { ascending: false }).limit(1);
         if (bgRows?.[0]?.glucose_mg_dl != null) {
           glucose = { value: bgRows[0].glucose_mg_dl, at: bgRows[0].measured_at };
         }
 
-        const { data: alertRows } = await admin
-          .from("alerts")
-          .select("title, severity, created_at, resolved")
-          .eq("elder_id", elderId)
-          .order("created_at", { ascending: false }).limit(20);
         type AlertRow = { title: string; severity: string; created_at: string; resolved: boolean };
         const unresolved = ((alertRows ?? []) as AlertRow[]).filter((a) => !a.resolved);
         alertsUnresolved = unresolved.length;
@@ -117,11 +130,6 @@ export async function GET() {
           ? { title: unresolved[0].title, severity: unresolved[0].severity, created_at: unresolved[0].created_at }
           : null;
 
-        const { data: iotRows } = await admin
-          .from("iot_events")
-          .select("event_kind, severity, data, occurred_at")
-          .eq("user_id", elderId)
-          .order("occurred_at", { ascending: false }).limit(20);
         type IotRow = { event_kind: string; severity: string; data: { temp?: number } | null; occurred_at: string };
         const iotList = (iotRows ?? []) as IotRow[];
         if (iotList.length > 0) {
@@ -133,10 +141,6 @@ export async function GET() {
           };
         }
 
-        const { data: shiRows } = await admin
-          .from("smart_assessments")
-          .select("shi").eq("user_id", elderId)
-          .order("created_at", { ascending: false }).limit(1);
         shi = shiRows?.[0]?.shi ?? null;
       }
 
