@@ -1239,6 +1239,10 @@ export interface OrganizeDecideDemo {
 export interface ChapterOpening {
   id: string;
   qrCode: string;
+  /** 後台可設定：章首圖片網址（選填） */
+  heroImageUrl?: string;
+  /** 後台可設定：YouTube 影片網址（選填，畫面內嵌播放） */
+  videoUrl?: string;
   title: string;
   subtitle: string;
   layout?: ChapterLayout;

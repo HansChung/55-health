@@ -3,6 +3,8 @@
  * 在 Capacitor 環境用 NEXT_PUBLIC_API_URL 指向後端
  */
 
+import type { ChapterOverrides } from "./chapter-content";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
 interface FetchOptions extends RequestInit {
@@ -297,6 +299,16 @@ export const api = {
   adminDeleteBrand: (id: string) =>
     apiFetch<{ ok: true }>(`/api/admin/brands/${id}`, { method: "DELETE" }),
 
+  // 書本練習內容（章節覆蓋）
+  adminListChapters: () =>
+    apiFetch<{ chapters: AdminChapterListItem[] }>("/api/admin/chapters"),
+  adminGetChapter: (id: string) =>
+    apiFetch<AdminChapterDetail>(`/api/admin/chapters/${id}`),
+  adminSaveChapter: (id: string, overrides: ChapterOverrides) =>
+    apiFetch<{ overrides: ChapterOverrides; updated_at: string }>(`/api/admin/chapters/${id}`, { method: "PUT", json: overrides }),
+  adminResetChapter: (id: string) =>
+    apiFetch<{ ok: true }>(`/api/admin/chapters/${id}`, { method: "DELETE" }),
+
   adminListUsers: () =>
     apiFetch<{ users: AdminUserRow[] }>("/api/admin/users"),
 
@@ -450,6 +462,23 @@ export interface ElderOverview {
   latest_alert: { title: string; severity: string; created_at: string } | null;
   iot: { lastActivityAt: string | null; temp: number | null; recentCritical: boolean } | null;
   shi: number | null;
+}
+
+/** 書本練習內容（管理員） */
+export interface AdminChapterListItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  emoji: string;
+  overridden: boolean;
+  updated_at: string | null;
+}
+export interface AdminChapterDetail {
+  id: string;
+  title: string;
+  defaults: ChapterOverrides;
+  overrides: ChapterOverrides;
+  updated_at: string | null;
 }
 
 /** 白標品牌（管理員） */

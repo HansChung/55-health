@@ -14,6 +14,7 @@ const navItems = [
   { href: "/admin/conversations", label: "對話記錄", icon: "💬" },
   { href: "/admin/telemetry", label: "使用與錯誤", icon: "📈" },
   { href: "/admin/brands", label: "白標品牌", icon: "🏷️" },
+  { href: "/admin/chapters", label: "書本練習內容", icon: "📖" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

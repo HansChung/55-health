@@ -1,5 +1,6 @@
 "use client";
 
+import { youtubeEmbedUrl } from "@/lib/chapter-content";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SubPage } from "@/components/sub-page";
@@ -277,6 +278,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const toast = useToast();
   const { user, loading: authLoading } = useAuth();
   const layout = chapter.layout ?? "routes";
+  const chapterVideo = youtubeEmbedUrl(chapter.videoUrl);
   const pickKey = chapterPickKey(chapter.id);
   const draftKey = chapterDraftKey(chapter.id);
   const cloudDraftEnabled = supportsCloudDraft(layout);
@@ -4621,6 +4623,15 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
             </h1>
           </div>
 
+          {chapter.heroImageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={chapter.heroImageUrl}
+              alt=""
+              style={{ width: "100%", maxHeight: 260, objectFit: "cover", display: "block", borderRadius: "var(--r-lg)", marginBottom: 20 }}
+            />
+          )}
+
           {chapter.quote && (
             <blockquote style={{
               margin: "0 0 24px", padding: "18px 20px",
@@ -4650,6 +4661,21 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                 {chapter.atAGlance}
               </p>
             </>
+          )}
+
+          {chapterVideo && (
+            <div style={{ marginBottom: 24 }}>
+              <SectionLabel>影片示範</SectionLabel>
+              <div style={{ position: "relative", paddingTop: "56.25%", borderRadius: "var(--r-lg)", overflow: "hidden", background: "#000" }}>
+                <iframe
+                  src={chapterVideo}
+                  title="章節影片"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0 }}
+                />
+              </div>
+            </div>
           )}
 
           <SectionLabel>今天的一小步</SectionLabel>
