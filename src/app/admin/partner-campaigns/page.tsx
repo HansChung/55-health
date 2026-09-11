@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api, type AdminPartnerCampaign } from "@/lib/api-client";
+import { ImageUploadField } from "@/components/admin/image-upload-field";
 
 const TAG_OPTIONS = [
   { id: "hypertension", label: "高血壓" },
@@ -15,6 +16,7 @@ const TAG_OPTIONS = [
 export default function PartnerCampaignsPage() {
   const [campaigns, setCampaigns] = useState<AdminPartnerCampaign[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<AdminPartnerCampaign | null>(null);
   const [error, setError] = useState("");
 
   const load = async () => {
@@ -36,7 +38,7 @@ export default function PartnerCampaignsPage() {
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, color: "#fff", margin: 0 }}>合作活動</h1>
-        <button onClick={() => setShowForm(!showForm)} style={primaryButton}>
+        <button onClick={() => { setEditing(null); setShowForm(!showForm); }} style={primaryButton}>
           {showForm ? "取消" : "+ 新增活動"}
         </button>
       </div>
@@ -46,7 +48,14 @@ export default function PartnerCampaignsPage() {
       </div>
 
       {error && <div style={{ color: "#fecaca", marginBottom: 12 }}>錯誤：{error}</div>}
-      {showForm && <CampaignForm onSaved={() => { setShowForm(false); load(); }} />}
+      {showForm && (
+        <CampaignForm
+          key={editing?.id ?? "new"}
+          initial={editing}
+          onCancel={() => { setShowForm(false); setEditing(null); }}
+          onSaved={() => { setShowForm(false); setEditing(null); load(); }}
+        />
+      )}
 
       <div style={{
         display: "grid",
@@ -71,7 +80,15 @@ export default function PartnerCampaignsPage() {
             borderRadius: 12, padding: 18,
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}>
-              <div>
+              {campaign.image_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={campaign.image_url} alt="" style={{ width: 120, height: 80, objectFit: "cover", borderRadius: 8, flexShrink: 0, background: "#0f172a" }} />
+              ) : (
+                <div style={{ width: 120, height: 80, borderRadius: 8, flexShrink: 0, background: "#0f172a", border: "1px dashed #334155", color: "#64748b", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  尚無圖片
+                </div>
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                   <span style={{ fontSize: 12, color: campaign.active ? "#6ee7b7" : "#fecaca" }}>
                     {campaign.active ? "啟用" : "停用"}
@@ -95,11 +112,17 @@ export default function PartnerCampaignsPage() {
                 <div style={{ fontSize: 13, color: "#94a3b8" }}>點擊 {clicks.toLocaleString()}</div>
                 <div style={{ fontSize: 18, color: "#fff", fontWeight: 800, marginTop: 6 }}>CTR {ctr}</div>
                 <button
+                  onClick={() => { setEditing(campaign); setShowForm(true); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  style={{ ...smallButton, marginTop: 10, color: "#bfdbfe", borderColor: "#1e3a8a" }}
+                >
+                  編輯{campaign.image_url ? "" : "／加圖片"}
+                </button>
+                <button
                   onClick={async () => {
                     await api.adminUpdatePartnerCampaign(campaign.id, { active: !campaign.active });
                     load();
                   }}
-                  style={{ ...smallButton, marginTop: 10 }}
+                  style={{ ...smallButton, marginTop: 8 }}
                 >
                   {campaign.active ? "停用" : "啟用"}
                 </button>
@@ -148,30 +171,45 @@ function formatCtr(clicks: number, impressions: number) {
   return `${((clicks / impressions) * 100).toFixed(1)}%`;
 }
 
-function CampaignForm({ onSaved }: { onSaved: () => void }) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [partnerName, setPartnerName] = useState("");
-  const [ctaUrl, setCtaUrl] = useState("");
-  const [tags, setTags] = useState<string[]>(["general"]);
-  const [priority, setPriority] = useState("0");
+function CampaignForm({
+  initial,
+  onSaved,
+  onCancel,
+}: {
+  initial: AdminPartnerCampaign | null;
+  onSaved: () => void;
+  onCancel: () => void;
+}) {
+  const [title, setTitle] = useState(initial?.title ?? "");
+  const [description, setDescription] = useState(initial?.description ?? "");
+  const [partnerName, setPartnerName] = useState(initial?.partner_name ?? "");
+  const [ctaUrl, setCtaUrl] = useState(initial?.cta_url ?? "");
+  const [ctaLabel, setCtaLabel] = useState(initial?.cta_label ?? "了解活動");
+  const [imageUrl, setImageUrl] = useState(initial?.image_url ?? "");
+  const [tags, setTags] = useState<string[]>(initial?.tags?.length ? initial.tags : ["general"]);
+  const [priority, setPriority] = useState(String(initial?.priority ?? 0));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   const save = async () => {
     setSaving(true);
     setError("");
+    const payload = {
+      title,
+      description,
+      partner_name: partnerName,
+      cta_url: ctaUrl.trim(),
+      cta_label: ctaLabel.trim() || "了解活動",
+      image_url: imageUrl.trim(),
+      tags,
+      priority: Number(priority) || 0,
+    };
     try {
-      await api.adminCreatePartnerCampaign({
-        title,
-        description,
-        partner_name: partnerName,
-        cta_url: ctaUrl || undefined,
-        cta_label: "了解活動",
-        tags,
-        priority: Number(priority) || 0,
-        active: true,
-      });
+      if (initial) {
+        await api.adminUpdatePartnerCampaign(initial.id, payload);
+      } else {
+        await api.adminCreatePartnerCampaign({ ...payload, cta_url: payload.cta_url || undefined, image_url: payload.image_url || undefined, active: true });
+      }
       onSaved();
     } catch (e) {
       setError((e as Error).message);
@@ -185,6 +223,9 @@ function CampaignForm({ onSaved }: { onSaved: () => void }) {
       border: "1px solid #334155", marginBottom: 16,
       display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12,
     }}>
+      <div style={{ gridColumn: "span 2", fontSize: 15, fontWeight: 700, color: "#fff" }}>
+        {initial ? `編輯活動：${initial.title}` : "新增活動"}
+      </div>
       <Field label="活動標題">
         <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="低鈉健康便當 9 折" style={inputStyle} />
       </Field>
@@ -194,8 +235,14 @@ function CampaignForm({ onSaved }: { onSaved: () => void }) {
       <Field label="說明" wide>
         <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="適合需要少鹽飲食的長輩，本週限定優惠。" style={{ ...inputStyle, minHeight: 90 }} />
       </Field>
+      <Field label="活動圖片（顯示在長輩首頁的活動卡片上方，建議橫式）" wide>
+        <ImageUploadField value={imageUrl} onChange={setImageUrl} folder="campaigns" hint="建議橫式 16:9，JPG／PNG／WebP／GIF，大圖會自動縮小" />
+      </Field>
       <Field label="活動連結">
         <input value={ctaUrl} onChange={(e) => setCtaUrl(e.target.value)} placeholder="https://..." style={inputStyle} />
+      </Field>
+      <Field label="按鈕文字">
+        <input value={ctaLabel} onChange={(e) => setCtaLabel(e.target.value)} placeholder="了解活動" style={inputStyle} />
       </Field>
       <Field label="排序權重">
         <input type="number" value={priority} onChange={(e) => setPriority(e.target.value)} style={inputStyle} />
@@ -207,6 +254,7 @@ function CampaignForm({ onSaved }: { onSaved: () => void }) {
             return (
               <button
                 key={option.id}
+                type="button"
                 onClick={() => setTags(active ? tags.filter((tag) => tag !== option.id) : [...tags, option.id])}
                 style={{
                   padding: "6px 10px", borderRadius: 999,
@@ -222,9 +270,12 @@ function CampaignForm({ onSaved }: { onSaved: () => void }) {
         </div>
       </Field>
       {error && <div style={{ gridColumn: "span 2", color: "#fecaca", fontSize: 13 }}>{error}</div>}
-      <div style={{ gridColumn: "span 2", display: "flex", justifyContent: "flex-end" }}>
+      <div style={{ gridColumn: "span 2", display: "flex", justifyContent: "flex-end", gap: 8 }}>
+        <button type="button" onClick={onCancel} style={{ ...primaryButton, background: "transparent", border: "1px solid #334155", color: "#cbd5e1" }}>
+          取消
+        </button>
         <button onClick={save} disabled={saving || !title || !description || !partnerName} style={primaryButton}>
-          {saving ? "儲存中…" : "儲存活動"}
+          {saving ? "儲存中…" : initial ? "儲存修改" : "儲存活動"}
         </button>
       </div>
     </div>
@@ -233,10 +284,10 @@ function CampaignForm({ onSaved }: { onSaved: () => void }) {
 
 function Field({ label, children, wide }: { label: string; children: React.ReactNode; wide?: boolean }) {
   return (
-    <label style={{ gridColumn: wide ? "span 2" : undefined }}>
+    <div style={{ gridColumn: wide ? "span 2" : undefined }}>
       <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 6 }}>{label}</div>
       {children}
-    </label>
+    </div>
   );
 }
 

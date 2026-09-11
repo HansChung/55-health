@@ -10,6 +10,9 @@
 // ────────────────────────────────────────────────
 import { z } from "zod";
 import type { ChapterOpening } from "./chapter-opening";
+import { isHttpUrl } from "./url-safety";
+
+export { isHttpUrl };
 
 /** 後台可覆蓋的純文字欄位白名單（互動練習不在此列，留在程式碼） */
 export const EDITABLE_TEXT_FIELDS = [
@@ -66,15 +69,6 @@ export const MULTILINE_FIELDS: ReadonlySet<EditableTextField> = new Set([
 
 const text = z.string().max(2000);
 
-/** 只接受 http(s) 網址（擋掉 javascript:、data: 等可被濫用的協定） */
-export function isHttpUrl(value: string): boolean {
-  try {
-    const u = new URL(value.trim());
-    return u.protocol === "https:" || u.protocol === "http:";
-  } catch {
-    return false;
-  }
-}
 const httpUrl = z.string().max(500).refine(isHttpUrl, "請輸入 http(s):// 開頭的網址");
 const httpUrlOrEmpty = z.union([z.literal(""), httpUrl]);
 

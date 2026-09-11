@@ -1,22 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-guard";
 import { createSupabaseAdmin } from "@/lib/supabase/server";
-import { z } from "zod";
+import { campaignPatchSchema, buildCampaignPatch, type CampaignPatch } from "@/lib/partner-campaigns";
 
-const PatchSchema = z.object({
-  title: z.string().min(1).max(100).optional(),
-  description: z.string().min(1).max(500).optional(),
-  partner_name: z.string().min(1).max(100).optional(),
-  cta_label: z.string().max(40).optional(),
-  cta_url: z.string().url().optional().nullable().or(z.literal("")),
-  image_url: z.string().url().optional().nullable().or(z.literal("")),
-  tags: z.array(z.string()).optional(),
-  priority: z.number().int().optional(),
-  starts_at: z.string().optional(),
-  ends_at: z.string().nullable().optional(),
-  active: z.boolean().optional(),
-  disclaimer: z.string().max(200).optional(),
-});
+
 
 export async function PATCH(
   req: NextRequest,
@@ -25,9 +12,9 @@ export async function PATCH(
   const admin = await requireAdmin();
   if (!admin) return NextResponse.json({ error: "權限不足" }, { status: 403 });
 
-  let body: z.infer<typeof PatchSchema>;
+  let body: CampaignPatch;
   try {
-    body = PatchSchema.parse(await req.json());
+    body = campaignPatchSchema.parse(await req.json());
   } catch (e) {
     console.error("[api] 格式錯誤:", e); return NextResponse.json({ error: "送出的資料格式有誤" }, { status: 400 });
   }
@@ -36,12 +23,7 @@ export async function PATCH(
   const supabase = createSupabaseAdmin();
   const { data, error } = await supabase
     .from("partner_campaigns")
-    .update({
-      ...body,
-      cta_url: body.cta_url || null,
-      image_url: body.image_url || null,
-      updated_at: new Date().toISOString(),
-    })
+    .update(buildCampaignPatch(body))
     .eq("id", id)
     .select()
     .single();

@@ -355,6 +355,17 @@ export const api = {
   adminDeletePartnerCampaign: (id: string) =>
     apiFetch<{ ok: true }>(`/api/admin/partner-campaigns/${id}`, { method: "DELETE" }),
 
+  /** 管理員上傳圖片 → 回傳公開網址（folder 需在白名單內） */
+  adminUploadImage: async (file: Blob, folder: "campaigns"): Promise<{ url: string }> => {
+    const form = new FormData();
+    form.append("file", file, file instanceof File ? file.name : "image");
+    form.append("folder", folder);
+    const res = await fetch(`${API_BASE}/api/admin/upload`, { method: "POST", body: form, credentials: "include" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new ApiError(data?.error || `上傳失敗（HTTP ${res.status}）`, { status: res.status, data });
+    return data as { url: string };
+  },
+
   listPartnerCampaigns: () =>
     apiFetch<{ campaigns: PartnerCampaign[] }>("/api/partner-campaigns"),
 

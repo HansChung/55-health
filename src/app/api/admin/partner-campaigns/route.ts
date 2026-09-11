@@ -1,27 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-guard";
 import { createSupabaseAdmin } from "@/lib/supabase/server";
-import { z } from "zod";
+import { campaignCreateSchema, type CampaignPatch } from "@/lib/partner-campaigns";
 
 interface PartnerCampaignRow {
   id: string;
   [key: string]: unknown;
 }
 
-const CampaignSchema = z.object({
-  title: z.string().min(1).max(100),
-  description: z.string().min(1).max(500),
-  partner_name: z.string().min(1).max(100),
-  cta_label: z.string().max(40).optional(),
-  cta_url: z.string().url().optional().or(z.literal("")),
-  image_url: z.string().url().optional().or(z.literal("")),
-  tags: z.array(z.string()).optional(),
-  priority: z.number().int().optional(),
-  starts_at: z.string().optional(),
-  ends_at: z.string().nullable().optional(),
-  active: z.boolean().optional(),
-  disclaimer: z.string().max(200).optional(),
-});
+
 
 export async function GET() {
   const admin = await requireAdmin();
@@ -63,9 +50,9 @@ export async function POST(req: NextRequest) {
   const admin = await requireAdmin();
   if (!admin) return NextResponse.json({ error: "權限不足" }, { status: 403 });
 
-  let body: z.infer<typeof CampaignSchema>;
+  let body: CampaignPatch & { title: string; description: string; partner_name: string };
   try {
-    body = CampaignSchema.parse(await req.json());
+    body = campaignCreateSchema.parse(await req.json());
   } catch (e) {
     console.error("[api] 格式錯誤:", e); return NextResponse.json({ error: "送出的資料格式有誤" }, { status: 400 });
   }

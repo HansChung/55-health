@@ -348,20 +348,35 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
                 style={{
                   width: "100%", textAlign: "left",
                   background: "linear-gradient(135deg, #F7E6BD 0%, #FFFFFF 100%)",
-                  borderRadius: "var(--r-lg)", padding: 18,
+                  borderRadius: "var(--r-lg)", padding: 0,
                   border: "1px solid var(--gold-soft)",
                   boxShadow: "var(--shadow-sm)",
+                  overflow: "hidden", display: "block",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                  <div style={{
-                    width: 48, height: 48, borderRadius: 14,
-                    background: "var(--surface)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 24, flexShrink: 0,
-                  }}>
-                    🤝
-                  </div>
+                {campaign.image_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={campaign.image_url}
+                    alt={campaign.title}
+                    loading="lazy"
+                    style={{
+                      display: "block", width: "100%",
+                      aspectRatio: "16 / 9", objectFit: "cover", background: "var(--surface)",
+                    }}
+                  />
+                )}
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: 18 }}>
+                  {!campaign.image_url && (
+                    <div style={{
+                      width: 48, height: 48, borderRadius: 14,
+                      background: "var(--surface)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 24, flexShrink: 0,
+                    }}>
+                      🤝
+                    </div>
+                  )}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: "var(--fs-xs)", color: "var(--primary-deep)", fontWeight: 800, marginBottom: 4 }}>
                       合作推薦 · {campaign.partner_name}
