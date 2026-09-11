@@ -1243,6 +1243,8 @@ export interface ChapterOpening {
   heroImageUrl?: string;
   /** 後台可設定：YouTube 影片網址（選填，畫面內嵌播放） */
   videoUrl?: string;
+  /** 後台可新增：自訂內容區塊（文字／圖片／影片／練習範例／連結） */
+  blocks?: import("./chapter-content").ChapterBlock[];
   title: string;
   subtitle: string;
   layout?: ChapterLayout;
@@ -2178,8 +2180,14 @@ export function listChapterOpenings(): ChapterOpening[] {
   return Object.values(CHAPTERS).sort((a, b) => a.id.localeCompare(b.id));
 }
 
-/** 書本首頁分章目錄（含連結與搜尋別名） */
-export function getBookGuideSections(): BookGuideSection[] {
+/** 後台補充的目錄資料：已發布的新章節＋改過的標題 */
+export interface BookGuideExtras {
+  custom?: { id: string; title: string }[];
+  titles?: Record<string, string>;
+}
+
+/** 書本首頁分章目錄（含連結與搜尋別名）；extras 來自後台（選填） */
+export function getBookGuideSections(extras: BookGuideExtras = {}): BookGuideSection[] {
   const buckets: Record<BookGuideSectionId, BookGuideChapterLink[]> = {
     ch1: [],
     ch2: [],
@@ -2195,7 +2203,15 @@ export function getBookGuideSections(): BookGuideSection[] {
     ch12: [],
   };
 
-  for (const ch of listChapterOpenings()) {
+  const builtinIds = new Set(Object.keys(CHAPTERS));
+  const all = [
+    ...listChapterOpenings().map((ch) => ({ id: ch.id, qrCode: ch.qrCode, title: ch.title })),
+    ...(extras.custom ?? [])
+      .filter((c) => !builtinIds.has(c.id))
+      .map((c) => ({ id: c.id, qrCode: c.id, title: c.title })),
+  ].sort((a, b) => a.id.localeCompare(b.id));
+
+  for (const ch of all) {
     const sectionId = bookGuideSectionForId(ch.id);
     if (!sectionId) continue;
     const color =
@@ -2203,7 +2219,7 @@ export function getBookGuideSections(): BookGuideSection[] {
     buckets[sectionId].push({
       id: ch.id,
       qrCode: ch.qrCode,
-      label: ch.title,
+      label: extras.titles?.[ch.id] || ch.title,
       color,
       href: `/smart/chapter/${ch.id}`,
       aliases: BOOK_GUIDE_ALIASES[ch.id] ?? [],

@@ -5,8 +5,15 @@ import {
   youtubeEmbedUrl,
   chapterOverridesSchema,
   extractEditableDefaults,
+  chapterBlockSchema,
+  customChapterBase,
+  isHttpUrl,
+  isSafeHref,
+  isBlockFilled,
+  CUSTOM_CHAPTER_ID_RE,
+  type ChapterBlock,
 } from "./chapter-content";
-import { getChapterOpening } from "./chapter-opening";
+import { getChapterOpening, getBookGuideSections } from "./chapter-opening";
 
 const base = getChapterOpening("0200")!;
 
@@ -115,5 +122,136 @@ describe("extractEditableDefaults", () => {
     expect(d.title).toBe(base.title);
     expect(d.guideParagraphs).toEqual(base.guideParagraphs);
     expect(d.heroImageUrl).toBe("");
+  });
+});
+
+describe("網址安全規則", () => {
+  it("圖片／外部連結只接受 http(s)", () => {
+    expect(isHttpUrl("https://example.com/a.jpg")).toBe(true);
+    expect(isHttpUrl("http://example.com")).toBe(true);
+    expect(isHttpUrl("javascript:alert(1)")).toBe(false);
+    expect(isHttpUrl("data:text/html,<script>")).toBe(false);
+    expect(isHttpUrl("不是網址")).toBe(false);
+  });
+
+  it("連結可用站內路徑，但擋掉 // 與 /\\ 開頭（會跳到別的網域）", () => {
+    expect(isSafeHref("/smart/chapter/0203")).toBe(true);
+    expect(isSafeHref("https://nuan55.com")).toBe(true);
+    expect(isSafeHref("//evil.com")).toBe(false);
+    expect(isSafeHref("/\\evil.com")).toBe(false);
+    expect(isSafeHref("javascript:alert(1)")).toBe(false);
+  });
+
+  it("章首圖片拒絕 javascript: 網址", () => {
+    expect(chapterOverridesSchema.safeParse({ heroImageUrl: "javascript:alert(1)" }).success).toBe(false);
+  });
+
+  it("章首影片只接受 YouTube", () => {
+    expect(chapterOverridesSchema.safeParse({ videoUrl: "https://youtu.be/dQw4w9WgXcQ" }).success).toBe(true);
+    expect(chapterOverridesSchema.safeParse({ videoUrl: "https://vimeo.com/123456" }).success).toBe(false);
+  });
+
+  it("路線卡連結同樣受限", () => {
+    const bad = { entries: [{ id: "a", label: "A", href: "javascript:alert(1)" }] };
+    expect(chapterOverridesSchema.safeParse(bad).success).toBe(false);
+  });
+});
+
+describe("內容區塊", () => {
+  const blocks: ChapterBlock[] = [
+    { id: "1", type: "text", title: "小叮嚀", body: "先喝口水再開始" },
+    { id: "2", type: "image", url: "https://example.com/a.jpg", caption: "示意圖" },
+    { id: "3", type: "video", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+    { id: "4", type: "example", prompt: "幫我規劃週末半日遊" },
+    { id: "5", type: "link", label: "看更多", url: "/smart/guide" },
+  ];
+
+  it("五種區塊都能通過驗證", () => {
+    expect(chapterOverridesSchema.safeParse({ blocks }).success).toBe(true);
+  });
+
+  it("圖片區塊拒絕非 http 網址、影片區塊拒絕非 YouTube", () => {
+    expect(chapterBlockSchema.safeParse({ id: "x", type: "image", url: "javascript:alert(1)" }).success).toBe(false);
+    expect(chapterBlockSchema.safeParse({ id: "x", type: "video", url: "https://evil.com/v" }).success).toBe(false);
+  });
+
+  it("未知區塊類型一律拒絕（例如 iframe、html）", () => {
+    expect(chapterBlockSchema.safeParse({ id: "x", type: "html", body: "<script>" }).success).toBe(false);
+  });
+
+  it("儲存前丟掉空白區塊，保留有內容的", () => {
+    const n = normalizeOverrides({
+      blocks: [...blocks, { id: "6", type: "text", body: "   " }, { id: "7", type: "link", label: "", url: "/x" }],
+    });
+    expect(n.blocks).toHaveLength(5);
+  });
+
+  it("全部空白 → 不存 blocks（章節回到沒有區塊）", () => {
+    expect(normalizeOverrides({ blocks: [{ id: "1", type: "text", body: "" }] }).blocks).toBeUndefined();
+  });
+
+  it("isBlockFilled 判斷各類型", () => {
+    expect(isBlockFilled({ id: "a", type: "example", prompt: " " })).toBe(false);
+    expect(isBlockFilled({ id: "a", type: "image", url: "https://x.com/a.png" })).toBe(true);
+  });
+
+  it("套用後章節帶有區塊，且順序不變", () => {
+    const merged = applyChapterOverrides(base, { blocks });
+    expect(merged.blocks?.map((b) => b.id)).toEqual(["1", "2", "3", "4", "5"]);
+    expect(base.blocks).toBeUndefined();
+  });
+});
+
+describe("後台新增的章節", () => {
+  it("QR 碼規則：四碼、前兩碼 01–12", () => {
+    expect(CUSTOM_CHAPTER_ID_RE.test("0215")).toBe(true);
+    expect(CUSTOM_CHAPTER_ID_RE.test("1299")).toBe(true);
+    expect(CUSTOM_CHAPTER_ID_RE.test("1300")).toBe(false);
+    expect(CUSTOM_CHAPTER_ID_RE.test("0015")).toBe(false);
+    expect(CUSTOM_CHAPTER_ID_RE.test("215")).toBe(false);
+  });
+
+  it("範本本身就是一個可顯示的完整章節（通用路線卡版型）", () => {
+    const ch = customChapterBase("0299");
+    expect(ch.id).toBe("0299");
+    expect(ch.layout).toBe("routes");
+    expect(ch.entries?.length).toBe(4);
+    expect(ch.tryPrompt).toBeTruthy();
+    expect(ch.reflectPrompt).toBeTruthy();
+  });
+
+  it("後台內容蓋在範本上", () => {
+    const ch = applyChapterOverrides(customChapterBase("0299"), { title: "週末小旅行", blocks: [{ id: "1", type: "example", prompt: "幫我排一日遊" }] });
+    expect(ch.title).toBe("週末小旅行");
+    expect(ch.blocks).toHaveLength(1);
+    expect(ch.layout).toBe("routes");
+  });
+});
+
+describe("書本目錄合併後台資料", () => {
+  it("已發布的新章節放進對應的章，並依 QR 排序", () => {
+    const sections = getBookGuideSections({ custom: [{ id: "0299", title: "週末小旅行" }] });
+    const ch2 = sections.find((s) => s.id === "ch2")!;
+    const last = ch2.chapters[ch2.chapters.length - 1];
+    expect(last.id).toBe("0299");
+    expect(last.label).toBe("週末小旅行");
+    expect(last.href).toBe("/smart/chapter/0299");
+  });
+
+  it("不會用新章節蓋掉同 QR 的內建章節", () => {
+    const sections = getBookGuideSections({ custom: [{ id: "0200", title: "假的" }] });
+    const ch2 = sections.find((s) => s.id === "ch2")!;
+    expect(ch2.chapters.filter((c) => c.id === "0200")).toHaveLength(1);
+    expect(ch2.chapters.find((c) => c.id === "0200")!.label).not.toBe("假的");
+  });
+
+  it("後台改過的標題會反映在目錄", () => {
+    const sections = getBookGuideSections({ titles: { "0200": "新的第二章標題" } });
+    const ch = sections.flatMap((s) => s.chapters).find((c) => c.id === "0200")!;
+    expect(ch.label).toBe("新的第二章標題");
+  });
+
+  it("沒有後台資料時與原本完全一樣", () => {
+    expect(getBookGuideSections({})).toEqual(getBookGuideSections());
   });
 });

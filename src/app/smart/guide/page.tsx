@@ -1,13 +1,15 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SubPage } from "@/components/sub-page";
 import { BLUEPRINT_DIMENSIONS, BLUEPRINT_INSIGHT } from "@/lib/smart-blueprint";
 import {
   filterBookGuideSections,
   getBookGuideSections,
+  type BookGuideExtras,
 } from "@/lib/chapter-opening";
+import { api } from "@/lib/api-client";
 
 /**
  * 書本首頁／溫暖導讀：章節目錄 + 搜尋
@@ -18,7 +20,13 @@ export default function SmartGuidePage() {
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
 
-  const allSections = useMemo(() => getBookGuideSections(), []);
+  // 後台新增的章節／改過的標題：背景載入，失敗就只顯示內建章節
+  const [extras, setExtras] = useState<BookGuideExtras>({});
+  useEffect(() => {
+    api.chapterCatalog().then(setExtras).catch(() => {});
+  }, []);
+
+  const allSections = useMemo(() => getBookGuideSections(extras), [extras]);
   const sections = useMemo(
     () => filterBookGuideSections(deferredQuery, allSections),
     [deferredQuery, allSections]

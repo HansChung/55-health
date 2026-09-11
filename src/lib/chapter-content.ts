@@ -65,16 +65,77 @@ export const MULTILINE_FIELDS: ReadonlySet<EditableTextField> = new Set([
 ]);
 
 const text = z.string().max(2000);
-const urlOrEmpty = z.union([z.literal(""), z.string().url().max(500)]);
+
+/** 只接受 http(s) 網址（擋掉 javascript:、data: 等可被濫用的協定） */
+export function isHttpUrl(value: string): boolean {
+  try {
+    const u = new URL(value.trim());
+    return u.protocol === "https:" || u.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+const httpUrl = z.string().max(500).refine(isHttpUrl, "請輸入 http(s):// 開頭的網址");
+const httpUrlOrEmpty = z.union([z.literal(""), httpUrl]);
+
+/** 站內路徑（/ 開頭、不可是 //other-host）或 http(s) 網址 */
+export function isSafeHref(value: string): boolean {
+  const v = value.trim();
+  if (v.startsWith("/") && !v.startsWith("//") && !v.startsWith("/\\")) return true;
+  return isHttpUrl(v);
+}
+const safeHref = z.string().max(300).refine(isSafeHref, "連結需為 / 開頭的站內路徑或 http(s) 網址");
 
 const entrySchema = z.object({
   id: z.string().min(1).max(40),
   label: z.string().min(1).max(60),
   hint: z.string().max(120).optional().default(""),
   emoji: z.string().max(8).optional().default(""),
-  href: z.string().max(200).optional(),
+  href: safeHref.optional(),
   open: z.enum(["voice", "camera", "photo"]).optional(),
 });
+
+// ── 自訂內容區塊（後台「新增內容」）──────────────────
+const blockId = z.string().min(1).max(40);
+const caption = z.string().max(300).optional();
+
+export const chapterBlockSchema = z.discriminatedUnion("type", [
+  z.object({ id: blockId, type: z.literal("text"), title: z.string().max(120).optional(), body: z.string().max(4000) }),
+  z.object({ id: blockId, type: z.literal("image"), url: httpUrl, caption }),
+  z.object({
+    id: blockId, type: z.literal("video"),
+    url: z.string().max(500).refine((v) => youtubeEmbedUrl(v) !== null, "目前只支援 YouTube 影片網址"),
+    caption,
+  }),
+  z.object({
+    id: blockId, type: z.literal("example"),
+    title: z.string().max(120).optional(),
+    prompt: z.string().min(1).max(2000),
+    note: z.string().max(500).optional(),
+  }),
+  z.object({ id: blockId, type: z.literal("link"), label: z.string().min(1).max(80), url: safeHref }),
+]);
+export type ChapterBlock = z.infer<typeof chapterBlockSchema>;
+export type ChapterBlockType = ChapterBlock["type"];
+
+/** 後台「新增內容」按鈕用 */
+export const BLOCK_TYPE_LABELS: Record<ChapterBlockType, { label: string; icon: string }> = {
+  text: { label: "文字段落", icon: "📝" },
+  image: { label: "圖片", icon: "🖼️" },
+  video: { label: "YouTube 影片", icon: "🎬" },
+  example: { label: "練習範例", icon: "💬" },
+  link: { label: "連結按鈕", icon: "🔗" },
+};
+
+/** 區塊是否有實質內容（空白區塊儲存時會被丟掉） */
+export function isBlockFilled(b: ChapterBlock): boolean {
+  switch (b.type) {
+    case "text": return !!b.body.trim();
+    case "image": case "video": return !!b.url.trim();
+    case "example": return !!b.prompt.trim();
+    case "link": return !!b.label.trim() && !!b.url.trim();
+  }
+}
 
 /** 後台送來的覆蓋內容；所有欄位選填，留空＝用預設 */
 export const chapterOverridesSchema = z
@@ -100,8 +161,11 @@ export const chapterOverridesSchema = z
     footerGuideLabel: text.optional(),
     guideParagraphs: z.array(z.string().max(1000)).max(20).optional(),
     entries: z.array(entrySchema).max(12).optional(),
-    heroImageUrl: urlOrEmpty.optional(),
-    videoUrl: urlOrEmpty.optional(),
+    heroImageUrl: httpUrlOrEmpty.optional(),
+    videoUrl: z
+      .union([z.literal(""), z.string().max(500).refine((v) => youtubeEmbedUrl(v) !== null, "目前只支援 YouTube 影片網址")])
+      .optional(),
+    blocks: z.array(chapterBlockSchema).max(30).optional(),
   })
   .strict();
 
@@ -124,6 +188,9 @@ export function normalizeOverrides(input: ChapterOverrides): ChapterOverrides {
       if (key === "guideParagraphs") {
         const paras = (value as string[]).map((p) => p.trim()).filter(Boolean);
         if (paras.length) out[key] = paras;
+      } else if (key === "blocks") {
+        const filled = (value as ChapterBlock[]).filter(isBlockFilled);
+        if (filled.length) out[key] = filled;
       } else if (value.length) {
         out[key] = value;
       }
@@ -152,6 +219,7 @@ export function applyChapterOverrides(
   if (clean.entries?.length) merged.entries = clean.entries;
   if (clean.heroImageUrl) merged.heroImageUrl = clean.heroImageUrl;
   if (clean.videoUrl) merged.videoUrl = clean.videoUrl;
+  if (clean.blocks?.length) merged.blocks = clean.blocks;
 
   return merged;
 }
@@ -195,5 +263,42 @@ export function extractEditableDefaults(ch: ChapterOpening): ChapterOverrides {
   out.entries = ch.entries ?? [];
   out.heroImageUrl = ch.heroImageUrl ?? "";
   out.videoUrl = ch.videoUrl ?? "";
+  out.blocks = ch.blocks ?? [];
   return out as ChapterOverrides;
+}
+
+// ── 後台新增的章節（資料全部在 DB）──────────────────
+
+/** 自訂章節 QR 碼：四碼，前兩碼 01–12 對應書本第幾章（例如 0215 → 第二章） */
+export const CUSTOM_CHAPTER_ID_RE = /^(0[1-9]|1[0-2])\d{2}$/;
+
+/**
+ * 新章節的起始範本：通用「路線卡」版型 + 四個暖暖入口。
+ * 後台存的內容會蓋在這份範本上，所以沒填的欄位也有合理的文字。
+ */
+export function customChapterBase(id: string): ChapterOpening {
+  return {
+    id,
+    qrCode: id,
+    title: "新章節",
+    subtitle: "書本練習",
+    layout: "routes",
+    headerEmoji: "📘",
+    tryPrompt: "從下方入口選一個最想先試的，花三分鐘試一次就好。",
+    reflectPrompt: "今天試完，有哪一句話想留下來？",
+    reflectPlaceholder: "例如：原來可以這樣問…",
+    continueTitle: "暖暖陪您繼續",
+    continueBody: "掃碼進入暖暖，可以用語音、拍照或記下一句話，繼續練習。",
+    practiceWhere: "nuannuan",
+    printCardTitle: "練習卡",
+    printButtonLabel: "列印練習卡",
+    guideTitle: "章首導讀",
+    guideParagraphs: [],
+    entries: [
+      { id: "ask", label: "問一句", hint: "跟暖暖語音聊一下，不用打字", emoji: "🎙", open: "voice" },
+      { id: "snap", label: "拍一下", hint: "打開相機，拍下生活瞬間", emoji: "📸", open: "camera" },
+      { id: "photo", label: "找照片", hint: "從相簿選一張已有的照片", emoji: "🖼", open: "photo" },
+      { id: "note", label: "記下一句話", hint: "寫下一件小事，點亮 SMART 光點", emoji: "✨", href: `/smart/spark?source=chapter${id}` },
+    ],
+  };
 }

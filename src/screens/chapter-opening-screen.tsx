@@ -1,6 +1,7 @@
 "use client";
 
 import { youtubeEmbedUrl } from "@/lib/chapter-content";
+import { ChapterBlocks } from "@/components/chapter-blocks";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SubPage } from "@/components/sub-page";
@@ -4676,6 +4677,22 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                 />
               </div>
             </div>
+          )}
+
+          {chapter.blocks && chapter.blocks.length > 0 && (
+            <ChapterBlocks
+              blocks={chapter.blocks}
+              onCopy={async (text) => {
+                try {
+                  await navigator.clipboard.writeText(text);
+                  toast.success("已複製，可以貼到 AI 對話裡。");
+                } catch {
+                  toast.info("請長按文字，手動複製。");
+                }
+              }}
+              onTryExternal={(provider, text) => tryExternalAi(provider, text, "找不到練習範例。")}
+              onTryVoice={tryInNuannuan}
+            />
           )}
 
           <SectionLabel>今天的一小步</SectionLabel>
@@ -11745,7 +11762,9 @@ function PrintCard({
   lightReplan?: string;
   lightKeep?: string;
 }) {
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  // 掛載後才讀網域：伺服端沒有 window，直接讀會造成 hydration 不一致
+  const [origin, setOrigin] = useState("");
+  useEffect(() => { setOrigin(window.location.origin); }, []);
   const bgLabels = chapter.backgroundOptions
     ?.filter((o) => backgrounds.includes(o.id))
     .map((o) => o.label)

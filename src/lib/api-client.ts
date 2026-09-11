@@ -299,15 +299,24 @@ export const api = {
   adminDeleteBrand: (id: string) =>
     apiFetch<{ ok: true }>(`/api/admin/brands/${id}`, { method: "DELETE" }),
 
-  // 書本練習內容（章節覆蓋）
+  // 書本練習內容（章節覆蓋＋後台新增章節）
   adminListChapters: () =>
     apiFetch<{ chapters: AdminChapterListItem[] }>("/api/admin/chapters"),
+  adminCreateChapter: (input: { id: string; title: string }) =>
+    apiFetch<{ id: string }>("/api/admin/chapters", { method: "POST", json: input }),
   adminGetChapter: (id: string) =>
     apiFetch<AdminChapterDetail>(`/api/admin/chapters/${id}`),
-  adminSaveChapter: (id: string, overrides: ChapterOverrides) =>
-    apiFetch<{ overrides: ChapterOverrides; updated_at: string }>(`/api/admin/chapters/${id}`, { method: "PUT", json: overrides }),
+  adminSaveChapter: (id: string, overrides: ChapterOverrides, published?: boolean) =>
+    apiFetch<{ overrides: ChapterOverrides; updated_at: string; published: boolean }>(`/api/admin/chapters/${id}`, {
+      method: "PUT",
+      json: { overrides, published },
+    }),
   adminResetChapter: (id: string) =>
     apiFetch<{ ok: true }>(`/api/admin/chapters/${id}`, { method: "DELETE" }),
+
+  // 書本目錄（公開）：已發布的新章節＋改過的標題
+  chapterCatalog: () =>
+    apiFetch<{ custom: { id: string; title: string }[]; titles: Record<string, string> }>("/api/chapters/catalog"),
 
   adminListUsers: () =>
     apiFetch<{ users: AdminUserRow[] }>("/api/admin/users"),
@@ -471,11 +480,16 @@ export interface AdminChapterListItem {
   subtitle: string;
   emoji: string;
   overridden: boolean;
+  /** 後台新增的章節 */
+  custom: boolean;
+  published: boolean;
   updated_at: string | null;
 }
 export interface AdminChapterDetail {
   id: string;
   title: string;
+  custom: boolean;
+  published: boolean;
   defaults: ChapterOverrides;
   overrides: ChapterOverrides;
   updated_at: string | null;
