@@ -105,10 +105,16 @@ export function travelVideoExtrasLimit(videoLimit: number): number {
 /** 口白前留一點空白再開始念，比較自然 */
 export const NARRATION_DELAY_SECONDS = 0.4;
 
-/** 實測挑選的 Gemini 配音音色（邁笙 gem-3.1-tts） */
+/**
+ * 實測挑選的 Gemini 配音（邁笙 gem-3.1-tts）。同一個音色換語氣指示就能變年輕／年長：
+ * 長輩語氣約 60～70 歲感、年輕語氣約 20～30 歲感，都是台灣口音、念的內容與原句一致。
+ * id 已存進 travel_videos.narration_voice，female／male 不要改名
+ */
 export const NARRATION_VOICES = [
-  { id: "female", label: "女聲", emoji: "👵", ttsVoice: "Sulafat", persona: "grandmother" },
-  { id: "male", label: "男聲", emoji: "👴", ttsVoice: "Achird", persona: "grandfather" },
+  { id: "female", label: "阿嬤", emoji: "👵", ttsVoice: "Sulafat", persona: "elderly Taiwanese grandmother", young: false },
+  { id: "male", label: "阿公", emoji: "👴", ttsVoice: "Achird", persona: "elderly Taiwanese grandfather", young: false },
+  { id: "young_female", label: "年輕女聲", emoji: "👩", ttsVoice: "Sulafat", persona: "young Taiwanese woman", young: true },
+  { id: "young_male", label: "年輕男聲", emoji: "👨", ttsVoice: "Achird", persona: "young Taiwanese man", young: true },
 ] as const;
 
 export type NarrationVoiceId = (typeof NARRATION_VOICES)[number]["id"];

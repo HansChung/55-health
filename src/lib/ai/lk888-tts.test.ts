@@ -28,9 +28,18 @@ describe("wavDurationSeconds", () => {
 });
 
 describe("buildTtsPrompt", () => {
-  it("女聲是阿嬤、男聲是阿公，都要台灣口音，原句放最後", () => {
-    expect(buildTtsPrompt("好漂亮", "female")).toMatch(/grandmother.*Taiwanese Mandarin accent: 好漂亮$/);
-    expect(buildTtsPrompt("好漂亮", "male")).toContain("grandfather");
+  it("阿嬤／阿公：長輩語氣、慢慢念，台灣口音，原句放最後（與實測過的指示完全相同）", () => {
+    expect(buildTtsPrompt("好漂亮", "female")).toBe(
+      "Read slowly in a warm, kind, elderly Taiwanese grandmother's voice, with a gentle Taiwanese Mandarin accent: 好漂亮"
+    );
+    expect(buildTtsPrompt("好漂亮", "male")).toContain("elderly Taiwanese grandfather");
+  });
+
+  it("年輕女聲／男聲：二十多歲語氣（與實測過的指示完全相同）", () => {
+    expect(buildTtsPrompt("好漂亮", "young_female")).toBe(
+      "Read in a warm, friendly, young Taiwanese woman's voice (in their late twenties), with a natural Taiwanese Mandarin accent, at a relaxed pace: 好漂亮"
+    );
+    expect(buildTtsPrompt("好漂亮", "young_male")).toContain("young Taiwanese man's voice");
   });
 });
 
