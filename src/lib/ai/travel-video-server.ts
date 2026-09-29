@@ -8,8 +8,10 @@ import { trackAiUsage } from "./usage-tracker";
 import { calculateCost } from "./pricing";
 import { queryVideoTask, VIDEO_RESOLUTION } from "./lk888-video";
 import { sendPushToUser } from "../push/send";
+import { composeNarratedVideo } from "./video-compose";
 import {
   TRAVEL_VIDEO_DURATION_SECONDS,
+  buildSubtitleCues,
   isTravelVideoPending,
   type TravelVideo,
   type TravelVideoStatus,
@@ -17,6 +19,11 @@ import {
 } from "../travel-video";
 
 export const TRAVEL_VIDEO_BUCKET = "travel-videos";
+
+/** 口白音檔路徑：試聽時存好，送出影片時用 id 取回（路徑含 user id，別人拿不到） */
+export function narrationStoragePath(userId: string, narrationId: string): string {
+  return `${userId}/narrations/${narrationId}.wav`;
+}
 /** 推播點下去直接打開出遊影片頁 */
 export const TRAVEL_VIDEO_DEEP_LINK = "/?open=travel-video";
 /**
@@ -51,6 +58,12 @@ export interface TravelVideoRow {
   updated_at: string;
   completed_at: string | null;
   deleted_at: string | null;
+  // 口白＋字幕（add-travel-video-narration.sql；沒選口白時為 null／沒有這些欄位）
+  narration_text?: string | null;
+  narration_voice?: string | null;
+  narration_path?: string | null;
+  narration_seconds?: number | null;
+  duration_seconds?: number | null;
 }
 
 type Admin = ReturnType<typeof createSupabaseAdmin>;
@@ -69,6 +82,7 @@ export function toClientVideo(admin: Admin, row: TravelVideoRow): TravelVideo {
       : null,
     created_at: row.created_at,
     completed_at: row.completed_at,
+    narration_text: row.narration_text ?? null,
   };
 }
 
@@ -177,13 +191,26 @@ export async function syncTravelVideo(row: TravelVideoRow): Promise<TravelVideoR
   // succeeded
   if (!task.videoUrl) return markFailed(admin, row, "succeeded without video url");
 
-  // 下載 + 轉存。失敗就先維持 running，下次輪詢再試
+  // 下載 +（有口白就合成）+ 轉存。失敗就先維持 running，下次輪詢再試
   const videoPath = `${row.user_id}/${row.id}/video.mp4`;
+  let composeNote: string | null = null;
   try {
-    const res = await fetch(task.videoUrl, { signal: AbortSignal.timeout(45_000) });
+    const res = await fetch(task.videoUrl, { signal: AbortSignal.timeout(20_000) });
     if (!res.ok) throw new Error(`download HTTP ${res.status}`);
-    const buf = Buffer.from(await res.arrayBuffer());
+    let buf: Buffer = Buffer.from(await res.arrayBuffer());
     if (buf.byteLength > MAX_VIDEO_BYTES) throw new Error(`video too large: ${buf.byteLength}`);
+
+    if (row.narration_path && row.narration_text) {
+      try {
+        buf = await composeWithNarration(admin, row, buf);
+      } catch (e) {
+        console.error("[travel-video] compose narration failed:", e);
+        // 還在時限內就下次再試；超過時限至少給長輩原始影片（沒有口白字幕）
+        if (!stale) return row;
+        composeNote = `compose failed, delivered without narration: ${e instanceof Error ? e.message : String(e)}`.slice(0, 500);
+      }
+    }
+
     const { error: upErr } = await admin.storage
       .from(TRAVEL_VIDEO_BUCKET)
       .upload(videoPath, buf, { contentType: "video/mp4", cacheControl: "31536000", upsert: true });
@@ -194,11 +221,12 @@ export async function syncTravelVideo(row: TravelVideoRow): Promise<TravelVideoR
     return stale ? markFailed(admin, row, `store video failed: ${e instanceof Error ? e.message : String(e)}`) : row;
   }
 
-  const seconds = TRAVEL_VIDEO_DURATION_SECONDS;
+  const seconds = row.duration_seconds ?? TRAVEL_VIDEO_DURATION_SECONDS;
   const updated = await finishRow(admin, row, {
     status: "succeeded",
     video_path: videoPath,
     cost_usd: calculateCost({ model: row.model, videoOutputSeconds: seconds }),
+    ...(composeNote ? { error_message: composeNote } : {}),
   });
   // 另一個輪詢請求已經處理完（也已記帳）
   if (!updated) return reloadRow(admin, row);
@@ -221,4 +249,17 @@ export async function syncTravelVideo(row: TravelVideoRow): Promise<TravelVideoR
   });
   await notifyOwner(updated);
   return updated;
+}
+
+/** 取回試聽時存好的口白音檔，疊到影片上並燒入字幕 */
+async function composeWithNarration(admin: Admin, row: TravelVideoRow, video: Buffer): Promise<Buffer> {
+  const { data, error } = await admin.storage.from(TRAVEL_VIDEO_BUCKET).download(row.narration_path!);
+  if (error || !data) throw error ?? new Error("narration audio missing");
+  const narration = Buffer.from(await data.arrayBuffer());
+  const cues = buildSubtitleCues(
+    row.narration_text!,
+    Number(row.narration_seconds ?? 0),
+    row.duration_seconds ?? TRAVEL_VIDEO_DURATION_SECONDS
+  );
+  return composeNarratedVideo({ video, narration, cues });
 }

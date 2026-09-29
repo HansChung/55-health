@@ -4,7 +4,13 @@
  */
 
 import type { ChapterOverrides } from "./chapter-content";
-import type { TravelVideo, TravelVideoQuota, TravelVideoStyleId } from "./travel-video";
+import type {
+  NarrationVoiceId,
+  TravelNarration,
+  TravelVideo,
+  TravelVideoQuota,
+  TravelVideoStyleId,
+} from "./travel-video";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -125,7 +131,24 @@ export const api = {
     ),
 
   // 逾時要比伺服器 maxDuration（60 秒）長：前端先放棄時，伺服器可能已經建好付費任務
-  createTravelVideo: (input: { image: string; style: TravelVideoStyleId; place?: string }) =>
+  // AI 看照片寫一句口白（看圖模型約 10～15 秒）
+  writeTravelNarration: (input: { image: string; style: TravelVideoStyleId; place?: string }) =>
+    apiFetch<{ text: string }>("/api/ai/travel-video/script", { method: "POST", json: input, timeoutMs: 45000 }),
+
+  // 試聽口白：AI 配音約 10～20 秒
+  createTravelNarration: (input: { text: string; voice: NarrationVoiceId }) =>
+    apiFetch<{ narration: TravelNarration }>("/api/ai/travel-video/narration", {
+      method: "POST",
+      json: input,
+      timeoutMs: 60000,
+    }),
+
+  createTravelVideo: (input: {
+    image: string;
+    style: TravelVideoStyleId;
+    place?: string;
+    narration?: { id: string; voice: NarrationVoiceId; text: string };
+  }) =>
     apiFetch<{ video: TravelVideo; quota: TravelVideoQuota }>("/api/ai/travel-video", {
       method: "POST",
       json: input,

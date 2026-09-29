@@ -61,6 +61,15 @@ stack works well for auth + meal/diary CRUD:
   `GET /api/ai/travel-video` every 10s, which queries `/v1/skills/task-status` and, on success, copies
   the mp4 into the public `travel-videos` bucket. Videos commonly take 5–60 min; >2h = failed (not counted).
 - lk888 success is `body.code === 200` (not 0); `data.task_id` is a number. Failed tasks are auto-refunded.
+- Optional 口白＋字幕: the screen previews narration via `POST /api/ai/travel-video/narration` (lk888
+  `gem-3.1-tts`, voices Sulafat=female / Achird=male, WAV stored at `travel-videos/{user}/narrations/{id}.wav`);
+  `/api/ai/travel-video/script` lets AI write the line from the photo. The video length follows the
+  narration (`videoSecondsForNarration`, 4–15 s). When H3 finishes, `syncTravelVideo` runs ffmpeg
+  (`ffmpeg-static`, traced into the functions via `outputFileTracingIncludes` in `next.config.ts`) to mix the
+  narration over H3's ambient audio and burn Traditional Chinese subtitles (Noto Sans TC subset fetched
+  from Google Fonts at runtime). Needs `supabase/add-travel-video-narration.sql`.
+- H3 is unreliable at speaking a given line or drawing subtitles itself (tested), and may cut to an
+  invented shot when the prompt gets complex — every prompt now demands a single continuous shot.
 - Done/failed → Web Push to the elder (`/?open=travel-video` deep link). Background delivery needs
   `LK888_WEBHOOK_SECRET` + public https `NEXT_PUBLIC_APP_URL`: tasks are created with
   `notify_url=/api/webhooks/lk888/<secret>`; the webhook is unsigned, so it only triggers a re-query of

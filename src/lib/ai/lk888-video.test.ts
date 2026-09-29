@@ -28,6 +28,13 @@ describe("buildImageToVideoBody", () => {
   });
 });
 
+describe("buildImageToVideoBody 長度", () => {
+  it("有口白時可指定影片秒數（字串）", () => {
+    const body = buildImageToVideoBody({ model: "minimax-h3", imageUrl: "https://a/b.jpg", prompt: "p", durationSeconds: 12 });
+    expect(body.params.duration).toBe("12");
+  });
+});
+
 describe("buildImageToVideoBody notify_url", () => {
   it("有回呼網址時放在頂層，沒有就不帶", () => {
     const base = { model: "minimax-h3", imageUrl: "https://a/b.jpg", prompt: "p" };

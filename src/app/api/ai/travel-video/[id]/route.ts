@@ -33,7 +33,7 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     return NextResponse.json({ error: "影片還在做，做好後再刪除" }, { status: 409 });
   }
 
-  const paths = [row.photo_path, row.video_path].filter((p): p is string => Boolean(p));
+  const paths = [row.photo_path, row.video_path, row.narration_path].filter((p): p is string => Boolean(p));
   if (paths.length > 0) {
     const { error: rmErr } = await admin.storage.from(TRAVEL_VIDEO_BUCKET).remove(paths);
     if (rmErr) {
@@ -46,7 +46,13 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
   const now = new Date().toISOString();
   const { error } = await admin
     .from("travel_videos")
-    .update({ deleted_at: now, updated_at: now, photo_path: null, video_path: null })
+    .update({
+      deleted_at: now,
+      updated_at: now,
+      photo_path: null,
+      video_path: null,
+      ...(row.narration_path ? { narration_path: null } : {}),
+    })
     .eq("id", id)
     .eq("user_id", user.id);
   if (error) {

@@ -1,9 +1,13 @@
 /**
  * 出遊回憶影片（MiniMax 圖轉影片）— 前後端共用的純函式與型別
  * 長輩拍一張出遊照片 → AI 讓照片動起來，做成 10 秒小影片分享給家人
+ * 可選「口白＋字幕」：AI 配音念一句遊記，字幕照原句燒進影片
  */
 
 export const TRAVEL_VIDEO_DURATION_SECONDS = 10;
+/** H3 可做 4～15 秒 */
+export const TRAVEL_VIDEO_MIN_SECONDS = 4;
+export const TRAVEL_VIDEO_MAX_SECONDS = 15;
 export const TRAVEL_VIDEO_PLACE_MAX = 30;
 
 export type TravelVideoStatus = "queued" | "running" | "succeeded" | "failed";
@@ -50,9 +54,16 @@ export const TRAVEL_VIDEO_STYLE_IDS = TRAVEL_VIDEO_STYLES.map((s) => s.id) as [
   ...TravelVideoStyleId[],
 ];
 
-/** 每支影片都要遵守的規則：不能把長輩「變成別人」 */
+/**
+ * 每支影片都要遵守的規則：不能把長輩「變成別人」，也不能換成別的畫面
+ * （實測：提示詞一複雜，H3 可能 0.5 秒就切到自己生成的鏡頭，所以明確要求單一鏡頭）
+ */
+const SINGLE_SHOT_RULE =
+  "全片只有一個連續不中斷的鏡頭，從頭到尾都是這張照片的同一個場景與構圖，不要剪接、不要換場景。";
 const BASE_RULES =
   "保持照片中人物的長相、髮型、衣著與人數完全不變，不要新增人物，畫面中不要出現任何文字、字幕或浮水印。動作自然、緩慢、穩定，畫面明亮溫暖。";
+/** 有口白時：口白和字幕由我們後製，H3 只留環境音（實測 H3 自己念口白不穩定） */
+const NARRATION_AUDIO_RULE = "不要旁白、不要人聲說話、不要背景音樂，只要自然的環境聲。";
 
 /** 地點只當背景資訊：去掉控制字元、壓成單行、限制長度 */
 export function sanitizePlace(place: string | null | undefined): string {
@@ -66,13 +77,100 @@ export function sanitizePlace(place: string | null | undefined): string {
 
 export function buildTravelVideoPrompt(
   styleId: TravelVideoStyleId,
-  place?: string | null
+  place?: string | null,
+  opts: { withNarration?: boolean } = {}
 ): string {
   const style =
     TRAVEL_VIDEO_STYLES.find((s) => s.id === styleId) ?? TRAVEL_VIDEO_STYLES[0];
   const cleanPlace = sanitizePlace(place);
   const placeLine = cleanPlace ? `拍攝地點：${cleanPlace}。` : "";
-  return `${style.prompt}${placeLine}${BASE_RULES}`;
+  const audioLine = opts.withNarration ? NARRATION_AUDIO_RULE : "";
+  return `${SINGLE_SHOT_RULE}${style.prompt}${placeLine}${BASE_RULES}${audioLine}`;
+}
+
+// ── 口白＋字幕 ─────────────────────────────────
+
+export const NARRATION_MAX_CHARS = 40;
+/** 口白前留一點空白再開始念，比較自然 */
+export const NARRATION_DELAY_SECONDS = 0.4;
+
+/** 實測挑選的 Gemini 配音音色（邁笙 gem-3.1-tts） */
+export const NARRATION_VOICES = [
+  { id: "female", label: "女聲", emoji: "👵", ttsVoice: "Sulafat", persona: "grandmother" },
+  { id: "male", label: "男聲", emoji: "👴", ttsVoice: "Achird", persona: "grandfather" },
+] as const;
+
+export type NarrationVoiceId = (typeof NARRATION_VOICES)[number]["id"];
+
+export const NARRATION_VOICE_IDS = NARRATION_VOICES.map((v) => v.id) as [
+  NarrationVoiceId,
+  ...NarrationVoiceId[],
+];
+
+export function narrationVoice(id: NarrationVoiceId) {
+  return NARRATION_VOICES.find((v) => v.id === id) ?? NARRATION_VOICES[0];
+}
+
+/** 口白文字：去掉控制字元與引號、壓成單行、限制長度 */
+export function sanitizeNarration(text: string | null | undefined): string {
+  if (!text) return "";
+  return text
+    .replace(/[\u0000-\u001f\u007f]/g, " ")
+    .replace(/["「」『』“”]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, NARRATION_MAX_CHARS);
+}
+
+/** 影片長度 = 口白長度 + 前後留白，落在 H3 支援的 4～15 秒 */
+export function videoSecondsForNarration(narrationSeconds: number): number {
+  const wanted = Math.ceil(NARRATION_DELAY_SECONDS + narrationSeconds + 0.8);
+  return Math.min(TRAVEL_VIDEO_MAX_SECONDS, Math.max(TRAVEL_VIDEO_MIN_SECONDS, wanted));
+}
+
+/** 口白太長放不進 15 秒影片 */
+export function narrationTooLong(narrationSeconds: number): boolean {
+  return NARRATION_DELAY_SECONDS + narrationSeconds > TRAVEL_VIDEO_MAX_SECONDS - 0.3;
+}
+
+export interface SubtitleCue {
+  text: string;
+  start: number;
+  end: number;
+}
+
+/**
+ * 字幕照「原句」顯示：依標點切段，時間按字數比例分配在口白期間。
+ * 每段去掉結尾標點（字幕慣例），最後一段多停留一下再消失。
+ */
+export function buildSubtitleCues(
+  script: string,
+  narrationSeconds: number,
+  videoSeconds: number
+): SubtitleCue[] {
+  const segments = sanitizeNarration(script)
+    .split(/[，,。．！!？?；;、\n]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (segments.length === 0) return [];
+
+  const totalChars = segments.reduce((n, s) => n + [...s].length, 0);
+  const start0 = NARRATION_DELAY_SECONDS;
+  const span = Math.max(0.5, narrationSeconds);
+  const cues: SubtitleCue[] = [];
+  let cursor = start0;
+  segments.forEach((text, i) => {
+    const len = (span * [...text].length) / totalChars;
+    const isLast = i === segments.length - 1;
+    const end = isLast ? Math.min(videoSeconds, start0 + span + 0.6) : cursor + len;
+    cues.push({ text, start: round2(cursor), end: round2(end) });
+    cursor += len;
+  });
+  return cues;
+}
+
+function round2(n: number) {
+  return Math.round(n * 100) / 100;
 }
 
 export function isTravelVideoPending(status: TravelVideoStatus): boolean {
@@ -115,6 +213,19 @@ export interface TravelVideo {
   download_url: string | null;
   created_at: string;
   completed_at: string | null;
+  /** 有選口白時的原句（字幕內容） */
+  narration_text: string | null;
+}
+
+/** 試聽過的口白（音檔已存在伺服器，送出影片時帶 id） */
+export interface TravelNarration {
+  id: string;
+  url: string;
+  seconds: number;
+  text: string;
+  voice: NarrationVoiceId;
+  /** 依口白長度算出的影片秒數 */
+  video_seconds: number;
 }
 
 export interface TravelVideoQuota {

@@ -1,7 +1,8 @@
 "use client";
 
 // ────────────────────────────────────────────────
-// 出遊回憶影片：拍一張出遊照片 → AI（MiniMax 海螺 H3）做成 10 秒小影片 → 分享給家人
+// 出遊回憶影片：拍一張出遊照片 → AI（MiniMax 海螺 H3）做成小影片 → 分享給家人
+// 可選口白＋字幕：AI 配音念一句遊記（女聲／男聲），字幕照原句燒進影片
 // ────────────────────────────────────────────────
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -13,11 +14,16 @@ import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/telemetry";
 import { enableWebPush, hasWebPushSubscription, isWebPushSupported } from "@/lib/push/client";
 import {
+  NARRATION_MAX_CHARS,
+  NARRATION_VOICES,
   TRAVEL_VIDEO_DURATION_SECONDS,
   TRAVEL_VIDEO_PLACE_MAX,
   TRAVEL_VIDEO_STYLES,
   checkVideoImageSize,
   isTravelVideoPending,
+  sanitizeNarration,
+  type NarrationVoiceId,
+  type TravelNarration,
   type TravelVideo,
   type TravelVideoQuota,
   type TravelVideoStatus,
@@ -57,6 +63,15 @@ const pickButton: React.CSSProperties = {
   fontSize: "var(--fs-base)", fontWeight: 700, color: "var(--ink-1)", cursor: "pointer",
 };
 
+function choiceButton(active: boolean): React.CSSProperties {
+  return {
+    padding: "14px 10px", minHeight: 60, borderRadius: "var(--r-md)",
+    background: active ? "var(--primary-soft)" : "var(--surface)",
+    border: `3px solid ${active ? "var(--primary)" : "var(--line)"}`,
+    fontSize: "var(--fs-base)", fontWeight: 700, color: "var(--ink-1)", cursor: "pointer",
+  };
+}
+
 const sectionTitle: React.CSSProperties = {
   fontSize: "var(--fs-base)", fontWeight: 800, color: "var(--ink-1)", margin: "24px 0 12px",
 };
@@ -74,6 +89,17 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
   const [style, setStyle] = useState<TravelVideoStyleId>("gentle");
   const [place, setPlace] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [submitPhase, setSubmitPhase] = useState<"narration" | "video" | null>(null);
+
+  // 口白＋字幕
+  const [withNarration, setWithNarration] = useState(false);
+  const [voice, setVoice] = useState<NarrationVoiceId>("female");
+  const [script, setScript] = useState("");
+  const [writing, setWriting] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
+  const [preview, setPreview] = useState<TravelNarration | null>(null);
+  // 改了字或換聲音，試聽就要重來
+  const previewMatches = Boolean(preview && preview.voice === voice && preview.text === sanitizeNarration(script));
   const submittingRef = useRef(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pushOffer, setPushOffer] = useState(false);
@@ -140,7 +166,12 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
         ? "上一支影片還在做，做好再做下一支"
         : !photo
           ? "先選一張照片喔"
-          : null;
+          : withNarration && !sanitizeNarration(script)
+            ? "先寫一句口白，或選「不用口白」"
+            : null;
+
+  const friendlyError = (e: unknown, fallback: string) =>
+    e instanceof ApiError && !e.isNetwork && !/^HTTP \d+$/.test(e.message) ? e.message : fallback;
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -168,23 +199,66 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
     }
   };
 
+  const handleWriteScript = async () => {
+    if (!photo || writing) return;
+    setWriting(true);
+    try {
+      const res = await api.writeTravelNarration({ image: photo, style, place: place.trim() || undefined });
+      setScript(res.text);
+      trackEvent("travel_video_script_ai");
+    } catch (e) {
+      toast.error(friendlyError(e, "AI 這次沒寫出來，請自己寫一句或再按一次"));
+    } finally {
+      setWriting(false);
+    }
+  };
+
+  /** 產生口白配音（試聽或送出前）；失敗會丟錯 */
+  const requestNarration = async (): Promise<TravelNarration> => {
+    const res = await api.createTravelNarration({ text: script, voice });
+    setPreview(res.narration);
+    return res.narration;
+  };
+
+  const handlePreview = async () => {
+    if (!sanitizeNarration(script) || previewing) return;
+    setPreviewing(true);
+    try {
+      await requestNarration();
+      trackEvent("travel_video_narration_preview", { voice });
+    } catch (e) {
+      toast.error(friendlyError(e, "配音暫時沒成功，請再試一次"));
+    } finally {
+      setPreviewing(false);
+    }
+  };
+
   const handleSubmit = async () => {
     // 用 ref 擋連點：state 要等下一次 render 才更新，快速點兩下會送出兩次
     if (!photo || submittingRef.current || blockedReason) return;
     submittingRef.current = true;
     setSubmitting(true);
     try {
+      let narration: TravelNarration | null = null;
+      if (withNarration) {
+        setSubmitPhase("narration");
+        narration = previewMatches && preview ? preview : await requestNarration();
+      }
+      setSubmitPhase("video");
       const res = await api.createTravelVideo({
         image: photo,
         style,
         place: place.trim() || undefined,
+        narration: narration ? { id: narration.id, voice: narration.voice, text: narration.text } : undefined,
       });
-      trackEvent("travel_video_create", { style });
+      trackEvent("travel_video_create", { style, narration: Boolean(narration), voice: narration?.voice });
       lastStatus.current[res.video.id] = res.video.status;
       setVideos((prev) => [res.video, ...prev]);
       setQuota(res.quota);
       setPhoto(null);
       setPlace("");
+      setScript("");
+      setPreview(null);
       toast.success("開始做影片了！通常要 5～60 分鐘，可以先去做別的事");
     } catch (e) {
       // 斷線／逾時時伺服器可能已經建好任務 → 先看清單，多了一支製作中的就當作送出成功，避免重送重複付費
@@ -196,12 +270,11 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
         toast.info("影片已經送出，正在製作中，不用再送一次");
         return;
       }
-      const serverMessage =
-        e instanceof ApiError && !e.isNetwork && !/^HTTP \d+$/.test(e.message) ? e.message : null;
-      toast.error(serverMessage ?? "網路不穩，影片沒送出去，請再試一次");
+      toast.error(friendlyError(e, "網路不穩，影片沒送出去，請再試一次"));
     } finally {
       submittingRef.current = false;
       setSubmitting(false);
+      setSubmitPhase(null);
     }
   };
 
@@ -363,6 +436,89 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
         }}
       />
 
+      {/* ④ 口白＋字幕 */}
+      <div style={sectionTitle}>
+        ④ 加上口白和字幕？<span style={{ fontWeight: 500, color: "var(--ink-3)", fontSize: "var(--fs-sm)" }}>（可以不要）</span>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        {[
+          { on: false, emoji: "🔇", label: "不用口白" },
+          { on: true, emoji: "🗣️", label: "要口白" },
+        ].map((o) => (
+          <button
+            key={o.label}
+            onClick={() => setWithNarration(o.on)}
+            aria-pressed={withNarration === o.on}
+            style={choiceButton(withNarration === o.on)}
+          >
+            <span style={{ fontSize: 26 }} aria-hidden="true">{o.emoji}</span> {o.label}
+          </button>
+        ))}
+      </div>
+
+      {withNarration && (
+        <div className="card" style={{ marginTop: 12, padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ fontSize: "var(--fs-sm)", fontWeight: 700, color: "var(--ink-2)" }}>用誰的聲音？</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {NARRATION_VOICES.map((v) => (
+              <button
+                key={v.id}
+                onClick={() => setVoice(v.id)}
+                aria-pressed={voice === v.id}
+                style={choiceButton(voice === v.id)}
+              >
+                <span style={{ fontSize: 26 }} aria-hidden="true">{v.emoji}</span> {v.label}
+              </button>
+            ))}
+          </div>
+
+          <label htmlFor="travel-narration" style={{ fontSize: "var(--fs-sm)", fontWeight: 700, color: "var(--ink-2)" }}>
+            想說什麼？<span style={{ fontWeight: 500, color: "var(--ink-3)" }}>（{[...script].length}/{NARRATION_MAX_CHARS} 字，字幕會照這句顯示）</span>
+          </label>
+          <textarea
+            id="travel-narration"
+            value={script}
+            onChange={(e) => setScript(e.target.value.slice(0, NARRATION_MAX_CHARS))}
+            rows={3}
+            placeholder="例如：今天跟老伴來日月潭，湖水好漂亮"
+            style={{
+              width: "100%", padding: "14px 16px", fontSize: "var(--fs-base)", lineHeight: 1.5,
+              borderRadius: "var(--r-md)", border: "2px solid var(--line)", background: "var(--surface)",
+              color: "var(--ink-1)", boxSizing: "border-box", resize: "none", fontFamily: "inherit",
+            }}
+          />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <button
+              onClick={handleWriteScript}
+              disabled={!photo || writing}
+              className="btn-ghost"
+              style={{ fontSize: "var(--fs-sm)", padding: "12px 8px", opacity: !photo || writing ? 0.5 : 1 }}
+            >
+              {writing ? "AI 寫作中…" : "✨ AI 幫我寫"}
+            </button>
+            <button
+              onClick={handlePreview}
+              disabled={!sanitizeNarration(script) || previewing}
+              className="btn-ghost"
+              style={{ fontSize: "var(--fs-sm)", padding: "12px 8px", opacity: !sanitizeNarration(script) || previewing ? 0.5 : 1 }}
+            >
+              {previewing ? "配音中…" : "▶️ 試聽口白"}
+            </button>
+          </div>
+          {!photo && (
+            <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-3)" }}>先選照片，AI 才能幫你寫</div>
+          )}
+          {previewMatches && preview && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <audio controls autoPlay src={preview.url} style={{ width: "100%" }} />
+              <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-2)" }}>
+                影片會做成 {preview.video_seconds} 秒，剛好念完這句
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* 送出 */}
       <button
         onClick={handleSubmit}
@@ -374,7 +530,7 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
           cursor: blockedReason || submitting ? "not-allowed" : "pointer",
         }}
       >
-        {submitting ? "送出中…" : "🎬 開始做影片"}
+        {submitPhase === "narration" ? "準備口白中…" : submitting ? "送出中…" : "🎬 開始做影片"}
       </button>
       <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-3)", marginTop: 10, lineHeight: 1.5, textAlign: "center" }}>
         {blockedReason ?? "通常要 5～60 分鐘，可以先去做別的事，回來打開這頁就看得到"}
@@ -499,6 +655,11 @@ function VideoCard({
         <span style={{ fontWeight: 700, color: "var(--ink-1)" }}>{v.place || styleMeta?.label || "出遊影片"}</span>
         <span style={{ marginLeft: "auto", fontSize: "var(--fs-xs)" }}>{formatWhen(v.created_at)}</span>
       </div>
+      {v.narration_text && (
+        <div style={{ marginTop: 6, fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
+          <span aria-hidden="true">🗣️ </span>「{v.narration_text}」
+        </div>
+      )}
 
       {v.status === "succeeded" && v.video_url && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
