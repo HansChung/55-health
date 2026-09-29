@@ -186,7 +186,7 @@ export async function POST(req: NextRequest) {
     console.error("[api] 建立影片任務失敗:", msg);
 
     // 逾時：平台可能已建立並扣費 → 保留這筆「製作中」，別讓長輩重送重複付費。
-    // 有回呼時 webhook 會用 video_id 補回 task_id；1 小時內沒補回就自動標記失敗（不扣次數）
+    // 有回呼時 webhook 會用 video_id 補回 task_id；2 小時內沒補回就自動標記失敗（不扣次數）
     if (error instanceof VideoProviderError && error.code === "timeout") {
       console.error(`[api] 影片任務建立逾時，保留待對帳：video_id=${id}`);
       return NextResponse.json({

@@ -24,16 +24,13 @@ export const TRAVEL_VIDEO_DEEP_LINK = "/?open=travel-video";
  * 平台文件：影片常見 5～60 分鐘，超過 2 小時可視為逾時
  */
 export const TRAVEL_VIDEO_STALE_MS = 2 * 60 * 60 * 1000;
-/**
- * 沒記到 task_id 的列（建立逾時、寫入失敗）：等平台回呼用 video_id 補回；
- * 1 小時內沒補回就當沒建成，別讓長輩一直不能做下一支
- */
-const MISSING_TASK_ID_MS = 60 * 60 * 1000;
 
-/** 已超過該放棄的時間（有 task_id 看 2 小時、沒有的看 1 小時） */
-export function isPastDeadline(row: Pick<TravelVideoRow, "task_id" | "created_at">): boolean {
-  const age = Date.now() - new Date(row.created_at).getTime();
-  return age > (row.task_id ? TRAVEL_VIDEO_STALE_MS : MISSING_TASK_ID_MS);
+/**
+ * 已超過該放棄的時間。沒記到 task_id 的列（建立逾時、寫入失敗）也等滿 2 小時：
+ * 平台完成回呼要等影片做好才送（常見 5～60 分鐘），太早放棄會丟掉已付費的影片
+ */
+export function isPastDeadline(row: Pick<TravelVideoRow, "created_at">): boolean {
+  return Date.now() - new Date(row.created_at).getTime() > TRAVEL_VIDEO_STALE_MS;
 }
 const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
 
