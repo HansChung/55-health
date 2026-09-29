@@ -1,14 +1,16 @@
 import { createSupabaseAdmin } from "../supabase/server";
 import { calculateCost } from "./pricing";
+import { defaultVideoQuota } from "../travel-video";
 
 interface TrackUsageParams {
   userId: string | null;
-  service: "gemini_vision" | "gemini_text" | "openai_realtime" | "openai_chat";
+  service: "gemini_vision" | "gemini_text" | "openai_realtime" | "openai_chat" | "minimax_video";
   model: string;
   inputTokens?: number;
   outputTokens?: number;
   audioInputSeconds?: number;
   audioOutputSeconds?: number;
+  videoOutputSeconds?: number;
   endpoint?: string;
   success?: boolean;
   errorMessage?: string;
@@ -22,6 +24,7 @@ export async function trackAiUsage(params: TrackUsageParams) {
     outputTokens: params.outputTokens,
     audioInputSeconds: params.audioInputSeconds,
     audioOutputSeconds: params.audioOutputSeconds,
+    videoOutputSeconds: params.videoOutputSeconds,
   });
 
   const supabase = createSupabaseAdmin();
@@ -54,7 +57,7 @@ export async function trackAiUsage(params: TrackUsageParams) {
 /** 檢查用戶本月配額是否還夠 */
 export async function checkUserQuota(
   userId: string,
-  service: "photo" | "voice"
+  service: "photo" | "voice" | "video"
 ): Promise<{
   allowed: boolean;
   used: number;
@@ -82,17 +85,39 @@ export async function checkUserQuota(
 
   const tier = profile?.subscription_tier ?? "free";
 
+  // 本月起算時間（計算本月用量用）
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+
+  if (service === "video") {
+    // 分開查：ai_video_quota 欄位是後加的（add-travel-videos.sql），沒跑 SQL 時退回程式預設值，
+    // 也不會連帶讓拍照／語音配額查詢失敗
+    const { data: videoPlan } = await supabase
+      .from("subscription_plans")
+      .select("ai_video_quota")
+      .eq("id", tier)
+      .maybeSingle();
+
+    // 失敗的不算；使用者刪掉的（deleted_at）仍算，避免刪了重做繞過配額
+    const { count } = await supabase
+      .from("travel_videos")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .neq("status", "failed")
+      .gte("created_at", startOfMonth.toISOString());
+
+    const used = count ?? 0;
+    const limit = videoPlan?.ai_video_quota ?? defaultVideoQuota(tier);
+    return { allowed: used < limit, used, limit, tier };
+  }
+
   // 2. 取得方案限額
   const { data: plan } = await supabase
     .from("subscription_plans")
     .select("ai_photo_quota, ai_voice_minutes")
     .eq("id", tier)
     .single();
-
-  // 3. 計算本月用量
-  const startOfMonth = new Date();
-  startOfMonth.setDate(1);
-  startOfMonth.setHours(0, 0, 0, 0);
 
   if (service === "photo") {
     const { count } = await supabase

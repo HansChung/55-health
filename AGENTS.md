@@ -21,7 +21,10 @@ and Stripe. Capacitor/Android is only a packaging target and is not needed for w
   **restart `npm run dev` after editing `.env.local`**.
 - Full product features need real credentials (add them as Cursor Secrets if you have them):
   `GEMINI_API_KEY` (photo food analysis), `OPENAI_API_KEY` (voice), `STRIPE_SECRET_KEY` (subscriptions),
-  and a real Supabase project. There is **no mock/offline fallback** for the AI routes — the camera
+  `LK888_API_KEY` (邁笙 lk888 aggregator: 出遊回憶影片 `minimax-h3`, and — when set — every Gemini call
+  goes through its Gemini-compatible endpoint: food/prescription photos `gem-3.8-flash`, AI 建議
+  `gem-3.5-flash-lite`; `GEMINI_PROVIDER=google` forces Google direct with `GEMINI_API_KEY`), and a real
+  Supabase project. Provider/model selection lives in `resolveGeminiConfig` (`src/lib/ai/gemini.ts`). There is **no mock/offline fallback** for the AI routes — the camera
   ("拍照辨識") and voice flows return errors without valid keys.
 - **API rate limit** (`src/middleware.ts`): covers `/api/*` by IP. Cron + Stripe webhook are skipped.
   Production should set `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`; without them a
@@ -51,6 +54,19 @@ stack works well for auth + meal/diary CRUD:
    `[auth.email.template.magic_link]` in `config.toml`) to expose the code, then read it from the local
    Mailpit inbox at http://127.0.0.1:54324. Create a pre-confirmed test user with the Auth admin API
    (`POST /auth/v1/admin/users` with `email_confirm: true`) using the service-role key.
+
+### 出遊回憶影片（travel video）
+- Home 「出遊回憶影片」→ subpage `travel-video`（basic+）. Photo → `POST /api/ai/travel-video` → lk888
+  `POST /v1/media/generate`（`minimax-h3`, `mode=shouweizhen`, 10s, 768P）. Async: the screen polls
+  `GET /api/ai/travel-video` every 10s, which queries `/v1/skills/task-status` and, on success, copies
+  the mp4 into the public `travel-videos` bucket. Videos commonly take 5–60 min; >2h = failed (not counted).
+- lk888 success is `body.code === 200` (not 0); `data.task_id` is a number. Failed tasks are auto-refunded.
+- Done/failed → Web Push to the elder (`/?open=travel-video` deep link). Background delivery needs
+  `LK888_WEBHOOK_SECRET` + public https `NEXT_PUBLIC_APP_URL`: tasks are created with
+  `notify_url=/api/webhooks/lk888/<secret>`; the webhook is unsigned, so it only triggers a re-query of
+  `/v1/skills/task-status` by task_id. Without it, completion is only detected while the screen polls.
+- Needs `supabase/add-travel-videos.sql` (table, bucket, `ai_usage` service `minimax_video`,
+  `subscription_plans.ai_video_quota`). Quota counts non-failed rows incl. soft-deleted ones.
 
 ### Book × App light coupling（書本／App）
 - Chapter openings live at `/smart/chapter/[id]` (public, printable). Shared rhythm: **一拍、二問、三記下**.

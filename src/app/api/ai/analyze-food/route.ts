@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { analyzeFoodImage } from "@/lib/ai/gemini";
+import { analyzeFoodImage, resolveGeminiConfig } from "@/lib/ai/gemini";
 import { trackAiUsage, checkUserQuota } from "@/lib/ai/usage-tracker";
 import { z } from "zod";
+
+// 看圖模型實測約 10～15 秒，預留空間
+export const maxDuration = 60;
 
 const RequestSchema = z.object({
   imageBase64: z.string().min(100),
@@ -55,6 +58,7 @@ export async function POST(req: NextRequest) {
       outputTokens: usage.outputTokens,
       endpoint: "/api/ai/analyze-food",
       success: true,
+      metadata: { provider: usage.provider },
     });
 
     return NextResponse.json({
@@ -67,13 +71,15 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
+    const vision = resolveGeminiConfig();
     await trackAiUsage({
       userId: user.id,
       service: "gemini_vision",
-      model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+      model: vision.model,
       endpoint: "/api/ai/analyze-food",
       success: false,
       errorMessage: msg,
+      metadata: { provider: vision.provider },
     });
     // 對 429 配額錯誤回友善訊息
     if (msg.includes("429") || msg.includes("quota") || msg.includes("exceeded")) {

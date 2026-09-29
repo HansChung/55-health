@@ -10,7 +10,8 @@ export type FeatureKey =
   | "family_summary"
   | "line_share"
   | "partner_offers"
-  | "alerts_center";
+  | "alerts_center"
+  | "travel_video";
 
 const TIER_RANK: Record<SubscriptionTier, number> = {
   free: 0,
@@ -29,6 +30,7 @@ export const FEATURE_MIN_TIER: Record<FeatureKey, SubscriptionTier> = {
   line_share: "pro",
   partner_offers: "pro",
   alerts_center: "pro",
+  travel_video: "basic",
 };
 
 export function hasFeature(tier: SubscriptionTier | null | undefined, feature: FeatureKey) {

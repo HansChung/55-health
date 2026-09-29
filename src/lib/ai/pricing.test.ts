@@ -17,6 +17,11 @@ describe("calculateCost", () => {
     expect(cost).toBeCloseTo(0.06, 6);
   });
 
+  it("minimax-h3 影片依秒數計費", () => {
+    // 768P $0.08/秒；10 秒 = $0.8
+    expect(calculateCost({ model: "minimax-h3", videoOutputSeconds: 10 })).toBeCloseTo(0.8, 6);
+  });
+
   it("沒有用量回傳 0", () => {
     expect(calculateCost({ model: "gpt-realtime" })).toBe(0);
   });

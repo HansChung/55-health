@@ -38,6 +38,15 @@ export const PRICING = {
     input: 0.15 / 1_000_000,
     output: 0.60 / 1_000_000,
   },
+
+  // MiniMax 海螺 H3 影片（經 lk888 平台；依輸出秒數計費，固定 768P）
+  // 以 MiniMax 官方單價估算；實際扣費見 ai_usage.metadata.platform_cost
+  "minimax-h3": {
+    video_output: 0.08,   // $0.08 per second @768P
+  },
+  "minimax-h3-max": {
+    video_output: 0.08,   // $0.08 per second @768P
+  },
 } as const;
 
 export type PricedModel = keyof typeof PRICING;
@@ -48,6 +57,7 @@ export function calculateCost(opts: {
   outputTokens?: number;
   audioInputSeconds?: number;
   audioOutputSeconds?: number;
+  videoOutputSeconds?: number;
 }): number {
   const p = (PRICING as Record<string, Record<string, number>>)[opts.model];
   if (!p) return 0;
@@ -56,5 +66,6 @@ export function calculateCost(opts: {
   if (opts.outputTokens) cost += opts.outputTokens * (p.output ?? 0);
   if (opts.audioInputSeconds) cost += opts.audioInputSeconds * (p.audio_input ?? 0);
   if (opts.audioOutputSeconds) cost += opts.audioOutputSeconds * (p.audio_output ?? 0);
+  if (opts.videoOutputSeconds) cost += opts.videoOutputSeconds * (p.video_output ?? 0);
   return cost;
 }

@@ -42,6 +42,7 @@ interface HomeScreenProps {
   onBlueprint?: () => void;
   onBookPractice?: () => void;
   onIot?: () => void;
+  onTravelVideo?: () => void;
   caregiver?: { count: number; needsAttention: boolean } | null;
   onCaregiver?: () => void;
 }
@@ -60,7 +61,7 @@ function getDateLabel(): string {
   return `${d.getMonth() + 1}月${d.getDate()}日　星期${WEEKDAYS[d.getDay()]}`;
 }
 
-export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart, onBlueprint, onBookPractice, onIot, caregiver = null, onCaregiver }: HomeScreenProps) {
+export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart, onBlueprint, onBookPractice, onIot, onTravelVideo, caregiver = null, onCaregiver }: HomeScreenProps) {
   // 從餐點計算今日營養
   const totals = meals.reduce(
     (s, m) => {
@@ -169,6 +170,18 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
             : "linear-gradient(135deg, #EAF3E7 0%, #FFFFFF 100%)"}
           borderColor={caregiver.needsAttention ? "#E4A9B5" : "#C3DDBB"}
           iconBg={caregiver.needsAttention ? "#F7D7DE" : "#D5E8CE"}
+        />
+      )}
+
+      {onTravelVideo && (
+        <NavCard
+          onClick={onTravelVideo}
+          emoji="🎬"
+          title="出遊回憶影片"
+          subtitle="一張出遊照片，變成 10 秒小影片"
+          background="linear-gradient(135deg, #FBEFE3 0%, #FFFFFF 100%)"
+          borderColor="#F0C9A8"
+          iconBg="var(--primary-soft)"
         />
       )}
 
