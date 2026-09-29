@@ -156,3 +156,34 @@ describe("createImageToVideoTask（攔截 fetch）", () => {
     }
   });
 });
+
+describe("createImageToVideoTask 逾時", () => {
+  it("逾時要標成 timeout（平台可能已扣費，呼叫端不能當作沒建成功）", async () => {
+    vi.stubEnv("LK888_API_KEY", "sk-test-lk888");
+    vi.stubGlobal("fetch", async () => {
+      throw new DOMException("The operation was aborted due to timeout", "TimeoutError");
+    });
+    try {
+      await expect(createImageToVideoTask({ imageUrl: "https://a/b.jpg", prompt: "p" })).rejects.toMatchObject({
+        name: "VideoProviderError",
+        code: "timeout",
+      });
+    } finally {
+      vi.unstubAllEnvs();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("其他連線錯誤照原樣拋出", async () => {
+    vi.stubEnv("LK888_API_KEY", "sk-test-lk888");
+    vi.stubGlobal("fetch", async () => {
+      throw new TypeError("fetch failed");
+    });
+    try {
+      await expect(createImageToVideoTask({ imageUrl: "https://a/b.jpg", prompt: "p" })).rejects.toThrow("fetch failed");
+    } finally {
+      vi.unstubAllEnvs();
+      vi.unstubAllGlobals();
+    }
+  });
+});

@@ -17,7 +17,7 @@ import {
   syncTravelVideo,
   toClientVideo,
   TRAVEL_VIDEO_BUCKET,
-  TRAVEL_VIDEO_STALE_MS,
+  isPastDeadline,
   type TravelVideoRow,
 } from "@/lib/ai/travel-video-server";
 import { isPublicHttpsUrl, travelVideoNotifyUrl } from "@/lib/ai/travel-video-webhook";
@@ -98,8 +98,7 @@ export async function POST(req: NextRequest) {
     .in("status", ["queued", "running"])
     .is("deleted_at", null);
   for (const r of (pendingRows ?? []) as TravelVideoRow[]) {
-    const stale = Date.now() - new Date(r.created_at).getTime() > TRAVEL_VIDEO_STALE_MS;
-    const current = stale ? await syncTravelVideo(r).catch(() => r) : r;
+    const current = isPastDeadline(r) ? await syncTravelVideo(r).catch(() => r) : r;
     if (isTravelVideoPending(current.status)) {
       return NextResponse.json({ error: PENDING_MESSAGE }, { status: 409 });
     }
@@ -185,6 +184,16 @@ export async function POST(req: NextRequest) {
     const msg = error instanceof Error ? error.message : String(error);
     const httpStatus = error instanceof VideoProviderError ? error.httpStatus : 0;
     console.error("[api] 建立影片任務失敗:", msg);
+
+    // 逾時：平台可能已建立並扣費 → 保留這筆「製作中」，別讓長輩重送重複付費。
+    // 有回呼時 webhook 會用 video_id 補回 task_id；1 小時內沒補回就自動標記失敗（不扣次數）
+    if (error instanceof VideoProviderError && error.code === "timeout") {
+      console.error(`[api] 影片任務建立逾時，保留待對帳：video_id=${id}`);
+      return NextResponse.json({
+        video: toClientVideo(admin, inserted as TravelVideoRow),
+        quota: { used: quota.used + 1, limit: quota.limit, tier: quota.tier },
+      });
+    }
 
     // 沒建成功 → 不留紀錄、不扣次數
     await admin.from("travel_videos").delete().eq("id", id);

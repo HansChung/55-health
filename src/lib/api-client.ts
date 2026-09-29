@@ -124,11 +124,12 @@ export const api = {
       { timeoutMs: 60000, retries: 0 }
     ),
 
+  // 逾時要比伺服器 maxDuration（60 秒）長：前端先放棄時，伺服器可能已經建好付費任務
   createTravelVideo: (input: { image: string; style: TravelVideoStyleId; place?: string }) =>
     apiFetch<{ video: TravelVideo; quota: TravelVideoQuota }>("/api/ai/travel-video", {
       method: "POST",
       json: input,
-      timeoutMs: 45000,
+      timeoutMs: 70000,
     }),
 
   deleteTravelVideo: (id: string) =>

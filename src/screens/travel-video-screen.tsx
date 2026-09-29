@@ -74,6 +74,7 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
   const [style, setStyle] = useState<TravelVideoStyleId>("gentle");
   const [place, setPlace] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pushOffer, setPushOffer] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
@@ -81,7 +82,7 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
   // 記住上次看到的狀態，影片「剛做好」時跳提示
   const lastStatus = useRef<Record<string, TravelVideoStatus>>({});
 
-  const reload = useCallback(async () => {
+  const reload = useCallback(async (): Promise<TravelVideo[] | null> => {
     try {
       const res = await api.listTravelVideos();
       for (const v of res.videos) {
@@ -95,8 +96,10 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
       setVideos(res.videos);
       setQuota(res.quota);
       setEnabled(res.enabled);
+      return res.videos;
     } catch (e) {
       console.warn("[travel-video] list failed:", e);
+      return null;
     } finally {
       setLoading(false);
       setTick((t) => t + 1);
@@ -166,7 +169,9 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
   };
 
   const handleSubmit = async () => {
-    if (!photo || submitting || blockedReason) return;
+    // 用 ref 擋連點：state 要等下一次 render 才更新，快速點兩下會送出兩次
+    if (!photo || submittingRef.current || blockedReason) return;
+    submittingRef.current = true;
     setSubmitting(true);
     try {
       const res = await api.createTravelVideo({
@@ -182,13 +187,20 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
       setPlace("");
       toast.success("開始做影片了！通常要 5～60 分鐘，可以先去做別的事");
     } catch (e) {
-      toast.error(
-        e instanceof ApiError && !e.isNetwork
-          ? e.message
-          : "網路不穩，影片可能沒送出去，請看下面清單再決定要不要重做"
-      );
-      reload();
+      // 斷線／逾時時伺服器可能已經建好任務 → 先看清單，多了一支製作中的就當作送出成功，避免重送重複付費
+      const known = new Set(videos.map((v) => v.id));
+      const latest = await reload();
+      if (latest?.some((v) => isTravelVideoPending(v.status) && !known.has(v.id))) {
+        setPhoto(null);
+        setPlace("");
+        toast.info("影片已經送出，正在製作中，不用再送一次");
+        return;
+      }
+      const serverMessage =
+        e instanceof ApiError && !e.isNetwork && !/^HTTP \d+$/.test(e.message) ? e.message : null;
+      toast.error(serverMessage ?? "網路不穩，影片沒送出去，請再試一次");
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };

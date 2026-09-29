@@ -141,15 +141,25 @@ export async function createImageToVideoTask(opts: {
   notifyUrl?: string | null;
 }): Promise<{ taskId: string; model: string }> {
   const { apiKey, baseUrl, model } = getConfig();
-  const res = await fetch(`${baseUrl}/v1/media/generate`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(buildImageToVideoBody({ model, ...opts })),
-    signal: AbortSignal.timeout(50_000),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${baseUrl}/v1/media/generate`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(buildImageToVideoBody({ model, ...opts })),
+      // 留在 route maxDuration（60 秒）內，後面還要寫 DB
+      signal: AbortSignal.timeout(35_000),
+    });
+  } catch (e) {
+    // 逾時：平台可能其實已建立並扣費（文件警告），呼叫端不能當作「沒建成功」
+    if (e instanceof DOMException && (e.name === "TimeoutError" || e.name === "AbortError")) {
+      throw new VideoProviderError("LK888 create timeout", 0, "timeout");
+    }
+    throw e;
+  }
   const json = (await res.json().catch(() => null)) as Json;
   return { taskId: parseCreateResponse(res.status, json), model };
 }
