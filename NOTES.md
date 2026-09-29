@@ -235,6 +235,9 @@ android/                                       # Capacitor Android（未實測�
 - [x] **做好／失敗推播給長輩**（點通知直接開影片頁）：影片頁有「開啟通知」卡片；背景送達需設 `LK888_WEBHOOK_SECRET`（平台完成回呼 `/api/webhooks/lk888/<密鑰>`）+ VAPID
 - ⚠️ 陷阱：lk888 成功判定是 `body.code === 200`（不是 0）；`data.task_id` 是數字；select 參數要傳字串（`duration: "10"`）
 - ⚠️ 平台回呼沒有簽章：只當「該去查了」的訊號，一律用 task_id 反查 `/v1/skills/task-status`
+- ⚠️ 照片一律用 base64 傳給平台：傳網址時上游可能抓不到（實測：「媒體鏈結無法存取…屏蔽了伺服器 IP」，自動退款）
+- ⚠️ **影片價格看 API Key 的「渠道策略」**：「綜合最優」失敗時會自動改走貴的頻道（minimax-h3 每秒 0.095～0.792，一支 10 秒 0.95～7.92 算力）。
+  要鎖價格請在邁笙後台把 key 改成「自定義」只勾便宜頻道；自定義時沒設頻道的模型會回 403，gem-* 也要一起設定
 
 ### 拍照辨識＋AI 建議改走邁笙（2026-09）
 - 有 `LK888_API_KEY` 時，所有 Gemini 呼叫都走邁笙的 Gemini 相容端點（同一個 `@google/generative-ai` SDK，只換 baseUrl）

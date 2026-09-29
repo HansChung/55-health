@@ -20,7 +20,7 @@ import {
   isPastDeadline,
   type TravelVideoRow,
 } from "@/lib/ai/travel-video-server";
-import { isPublicHttpsUrl, travelVideoNotifyUrl } from "@/lib/ai/travel-video-webhook";
+import { travelVideoNotifyUrl } from "@/lib/ai/travel-video-webhook";
 import {
   TRAVEL_VIDEO_STYLE_IDS,
   buildTravelVideoPrompt,
@@ -168,15 +168,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
   }
 
-  // 7. 建立影片任務：正式站傳 Storage 公網網址（平台建議，請求較快）；本機 Supabase 平台連不到 → 改傳 base64
-  const photoUrl = admin.storage.from(TRAVEL_VIDEO_BUCKET).getPublicUrl(photoPath).data.publicUrl;
-  const imageUrl = isPublicHttpsUrl(photoUrl) ? photoUrl : body.image;
+  // 7. 建立影片任務：照片一律用 base64 傳，由邁笙自己轉存。
+  //    傳網址時平台上游可能抓不到（實測回「媒體鏈結無法存取…屏蔽了伺服器 IP」）；
+  //    前端已壓到長邊 1280px，通常 < 1MB，遠低於平台 base64 單檔 10MB 上限
   let taskId: string;
   try {
     // 有設回呼 → 做好時平台主動通知，伺服器同步後推播給長輩（沒設就靠畫面輪詢）
     // 回呼網址帶 video_id：萬一下面 task_id 沒寫進 DB，webhook 還能用它補回來
     ({ taskId } = await createImageToVideoTask({
-      imageUrl,
+      imageUrl: body.image,
       prompt,
       notifyUrl: travelVideoNotifyUrl(process.env, id),
     }));
