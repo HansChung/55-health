@@ -275,7 +275,15 @@ export async function syncTravelVideo(row: TravelVideoRow): Promise<TravelVideoR
         if (e instanceof ComposeBudgetError && !stale) return row;
         console.error("[travel-video] compose narration failed:", e);
         // 還在時限內就下次再試；超過時限至少給長輩原始影片（沒有口白字幕）
-        if (!stale) return row;
+        if (!stale) {
+          // 把原因記在 DB（狀態仍是製作中），不用翻 Vercel log 也查得到；成功時會清掉
+          await admin
+            .from("travel_videos")
+            .update({ error_message: `compose retry: ${e instanceof Error ? e.message : String(e)}`.slice(0, 500) })
+            .eq("id", row.id)
+            .in("status", ["queued", "running"]);
+          return row;
+        }
         composeNote = `compose failed, delivered without narration: ${e instanceof Error ? e.message : String(e)}`.slice(0, 500);
       }
     }
@@ -295,7 +303,8 @@ export async function syncTravelVideo(row: TravelVideoRow): Promise<TravelVideoR
     status: "succeeded",
     video_path: videoPath,
     cost_usd: calculateCost({ model: row.model, videoOutputSeconds: seconds }),
-    ...(composeNote ? { error_message: composeNote } : {}),
+    // 成功就清掉先前重試留下的 "compose retry:"；合成失敗改交付原始影片時保留原因
+    error_message: composeNote,
   });
   // 另一個輪詢請求已經處理完（也已記帳）
   if (!updated) return reloadRow(admin, row);

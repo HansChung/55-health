@@ -6,7 +6,8 @@
  */
 
 import { spawn } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { constants as fsConstants } from "node:fs";
+import { access, chmod, copyFile, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import ffmpegPath from "ffmpeg-static";
@@ -108,10 +109,44 @@ export function buildComposeArgs(opts: {
   ];
 }
 
-function runFfmpeg(args: string[], timeoutMs = FFMPEG_TIMEOUT_MS): Promise<{ code: number | null; stderr: string }> {
-  if (!ffmpegPath) throw new Error("ffmpeg binary not available");
+/**
+ * 確保 ffmpeg 可執行。Vercel／Lambda 的程式目錄是唯讀的，打包後執行權限可能不見：
+ * 沒有執行權限就複製到可寫的 tmpTarget（/tmp）再補權限
+ */
+export async function ensureExecutable(source: string | null, tmpTarget: string): Promise<string> {
+  if (!source) throw new Error("ffmpeg binary not available (ffmpeg-static returned no path)");
+  try {
+    await access(source, fsConstants.F_OK);
+  } catch {
+    throw new Error(`ffmpeg binary missing at ${source} (check outputFileTracingIncludes in next.config)`);
+  }
+  try {
+    await access(source, fsConstants.X_OK);
+    return source;
+  } catch {
+    await copyFile(source, tmpTarget);
+    await chmod(tmpTarget, 0o755);
+    return tmpTarget;
+  }
+}
+
+/** 同一個執行個體只檢查一次；失敗就下次重試 */
+let executablePath: Promise<string> | null = null;
+function resolveFfmpegPath(): Promise<string> {
+  executablePath ??= ensureExecutable(
+    ffmpegPath as string | null,
+    path.join(tmpdir(), "ffmpeg-static-bin")
+  ).catch((e) => {
+    executablePath = null;
+    throw e;
+  });
+  return executablePath;
+}
+
+async function runFfmpeg(args: string[], timeoutMs = FFMPEG_TIMEOUT_MS): Promise<{ code: number | null; stderr: string }> {
+  const bin = await resolveFfmpegPath();
   return new Promise((resolve, reject) => {
-    const child = spawn(ffmpegPath as string, args, { stdio: ["ignore", "ignore", "pipe"] });
+    const child = spawn(bin, args, { stdio: ["ignore", "ignore", "pipe"] });
     let stderr = "";
     child.stderr.on("data", (d) => {
       stderr += d.toString();

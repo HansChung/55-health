@@ -65,3 +65,33 @@ describe("composeNarratedVideo 時間預算", () => {
     expect(Date.now() - t0).toBeLessThan(1_000);
   });
 });
+
+import { chmod, mkdtemp, stat, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { ensureExecutable } from "./video-compose";
+
+describe("ensureExecutable（Vercel 上執行檔可能沒有執行權限）", () => {
+  it("本來就能執行：直接用原路徑", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "ffx-"));
+    const bin = path.join(dir, "ffmpeg");
+    await writeFile(bin, "#!/bin/sh\n");
+    await chmod(bin, 0o755);
+    expect(await ensureExecutable(bin, path.join(dir, "copy"))).toBe(bin);
+  });
+
+  it("沒有執行權限：複製到可寫位置並補上執行權限", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "ffx-"));
+    const bin = path.join(dir, "ffmpeg");
+    const target = path.join(dir, "copy");
+    await writeFile(bin, "#!/bin/sh\n");
+    await chmod(bin, 0o644);
+    expect(await ensureExecutable(bin, target)).toBe(target);
+    expect((await stat(target)).mode & 0o111).not.toBe(0);
+  });
+
+  it("檔案不存在或沒有路徑：錯誤訊息說清楚", async () => {
+    await expect(ensureExecutable("/nope/ffmpeg", "/tmp/x")).rejects.toThrow(/missing at \/nope\/ffmpeg/);
+    await expect(ensureExecutable(null, "/tmp/x")).rejects.toThrow(/not available/);
+  });
+});
