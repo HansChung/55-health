@@ -4,7 +4,7 @@ import { defaultVideoQuota } from "../travel-video";
 
 interface TrackUsageParams {
   userId: string | null;
-  service: "gemini_vision" | "gemini_text" | "openai_realtime" | "openai_chat" | "minimax_video";
+  service: "gemini_vision" | "gemini_text" | "openai_realtime" | "openai_chat" | "minimax_video" | "gemini_tts";
   model: string;
   inputTokens?: number;
   outputTokens?: number;
@@ -155,4 +155,19 @@ export async function checkUserQuota(
       remainingSeconds: Math.max(0, limitSeconds - totalSeconds),
     };
   }
+}
+
+/** 本月某個 endpoint 的呼叫次數（成功、失敗都算）：用來限制試聽口白、AI 寫稿等附屬功能 */
+export async function countMonthlyEndpointUsage(userId: string, endpoint: string): Promise<number> {
+  const supabase = createSupabaseAdmin();
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+  const { count } = await supabase
+    .from("ai_usage")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("endpoint", endpoint)
+    .gte("created_at", startOfMonth.toISOString());
+  return count ?? 0;
 }

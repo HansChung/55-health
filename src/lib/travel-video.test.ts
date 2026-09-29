@@ -75,3 +75,66 @@ describe("isTravelVideoPending / defaultVideoQuota", () => {
     expect(defaultVideoQuota("pro")).toBeGreaterThan(defaultVideoQuota("basic"));
   });
 });
+
+import {
+  buildSubtitleCues,
+  narrationTooLong,
+  sanitizeNarration,
+  videoSecondsForNarration,
+  NARRATION_DELAY_SECONDS,
+} from "./travel-video";
+
+describe("口白＋字幕", () => {
+  it("每支影片都要求單一鏡頭；有口白時要 H3 不要念旁白、不要配樂", () => {
+    const plain = buildTravelVideoPrompt("gentle");
+    expect(plain).toContain("只有一個連續不中斷的鏡頭");
+    expect(plain).not.toContain("不要旁白");
+    expect(buildTravelVideoPrompt("gentle", "日月潭", { withNarration: true })).toContain("不要旁白");
+  });
+
+  it("sanitizeNarration 去引號、壓單行、限 30 字（約 14 秒，放得進 15 秒影片）", () => {
+    expect(sanitizeNarration("「今天來到\n日月潭」")).toBe("今天來到 日月潭");
+    expect([...sanitizeNarration("好".repeat(80))].length).toBe(30);
+    expect(sanitizeNarration(undefined)).toBe("");
+  });
+
+  it("影片長度 = 口白 + 留白，限制在 4～15 秒", () => {
+    expect(videoSecondsForNarration(9.5)).toBe(11); // 0.4 + 9.5 + 0.8 = 10.7 → 11
+    expect(videoSecondsForNarration(1)).toBe(4);
+    expect(videoSecondsForNarration(20)).toBe(15);
+    expect(narrationTooLong(12)).toBe(false);
+    expect(narrationTooLong(14.5)).toBe(true);
+  });
+
+  it("字幕照原句依標點分段，時間按字數比例、首段從口白開始", () => {
+    const cues = buildSubtitleCues("今天來到日月潭，湖水好平靜，陽光灑在山上，真的好舒服。", 9.5, 11);
+    expect(cues.map((c) => c.text)).toEqual(["今天來到日月潭", "湖水好平靜", "陽光灑在山上", "真的好舒服"]);
+    expect(cues[0].start).toBe(NARRATION_DELAY_SECONDS);
+    // 各段首尾相接、依序往後
+    for (let i = 1; i < cues.length; i++) {
+      expect(cues[i].start).toBeCloseTo(cues[i - 1].end, 1);
+      expect(cues[i].start).toBeGreaterThan(cues[i - 1].start);
+    }
+    // 7 個字的第一段比 5 個字的第二段久
+    expect(cues[0].end - cues[0].start).toBeGreaterThan(cues[1].end - cues[1].start);
+    // 最後一段多停一下，但不超過影片長度
+    expect(cues[3].end).toBeLessThanOrEqual(11);
+    expect(cues[3].end).toBeGreaterThan(NARRATION_DELAY_SECONDS + 9.5);
+  });
+
+  it("沒有標點的一句話就是一段；空字串沒有字幕", () => {
+    expect(buildSubtitleCues("好漂亮的雲海", 3, 5)).toHaveLength(1);
+    expect(buildSubtitleCues("", 3, 5)).toEqual([]);
+  });
+});
+
+import { travelVideoExtrasLimit } from "./travel-video";
+
+describe("travelVideoExtrasLimit", () => {
+  it("每支影片約 8 次試聽／AI 寫稿，最少 5 次，管理員不限", () => {
+    expect(travelVideoExtrasLimit(2)).toBe(16);
+    expect(travelVideoExtrasLimit(6)).toBe(48);
+    expect(travelVideoExtrasLimit(0)).toBe(5);
+    expect(travelVideoExtrasLimit(99999)).toBe(Number.POSITIVE_INFINITY);
+  });
+});

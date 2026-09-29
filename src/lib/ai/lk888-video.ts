@@ -47,6 +47,8 @@ export function buildImageToVideoBody(opts: {
   imageUrl: string;
   prompt: string;
   notifyUrl?: string | null;
+  /** 4～15 秒；有口白時依口白長度決定 */
+  durationSeconds?: number;
 }) {
   return {
     model: opts.model,
@@ -56,7 +58,7 @@ export function buildImageToVideoBody(opts: {
     params: {
       mode: "shouweizhen", // 首尾幀：傳 1 張 = 以這張當首幀的圖生影片
       images: [opts.imageUrl],
-      duration: String(TRAVEL_VIDEO_DURATION_SECONDS),
+      duration: String(opts.durationSeconds ?? TRAVEL_VIDEO_DURATION_SECONDS),
       resolution: VIDEO_RESOLUTION,
       aspect_ratio: "adaptive", // 跟著照片比例
     },
@@ -139,6 +141,7 @@ export async function createImageToVideoTask(opts: {
   imageUrl: string;
   prompt: string;
   notifyUrl?: string | null;
+  durationSeconds?: number;
 }): Promise<{ taskId: string; model: string }> {
   const { apiKey, baseUrl, model } = getConfig();
   let res: Response;
@@ -164,13 +167,14 @@ export async function createImageToVideoTask(opts: {
   return { taskId: parseCreateResponse(res.status, json), model };
 }
 
-export async function queryVideoTask(taskId: string): Promise<VideoTaskResult> {
+/** 查任務狀態（影片、配音共用同一個端點） */
+export async function queryVideoTask(taskId: string, timeoutMs = 15_000): Promise<VideoTaskResult> {
   const { apiKey, baseUrl } = getConfig();
   const res = await fetch(
     `${baseUrl}/v1/skills/task-status?task_id=${encodeURIComponent(taskId)}`,
     {
       headers: { Authorization: `Bearer ${apiKey}` },
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(timeoutMs),
       cache: "no-store",
     }
   );

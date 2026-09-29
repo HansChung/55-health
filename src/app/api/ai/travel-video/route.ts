@@ -16,16 +16,22 @@ import {
 import {
   syncTravelVideo,
   toClientVideo,
+  narrationStoragePath,
   TRAVEL_VIDEO_BUCKET,
   isPastDeadline,
   type TravelVideoRow,
 } from "@/lib/ai/travel-video-server";
+import { wavDurationSeconds } from "@/lib/ai/lk888-tts";
 import { travelVideoNotifyUrl } from "@/lib/ai/travel-video-webhook";
 import {
+  NARRATION_VOICE_IDS,
   TRAVEL_VIDEO_STYLE_IDS,
   buildTravelVideoPrompt,
   isTravelVideoPending,
+  narrationTooLong,
+  sanitizeNarration,
   sanitizePlace,
+  videoSecondsForNarration,
 } from "@/lib/travel-video";
 
 // 成功時要下載影片再轉存 Storage
@@ -40,6 +46,14 @@ const PostSchema = z.object({
   image: z.string().max(MAX_IMAGE_CHARS).regex(IMAGE_DATA_URL),
   style: z.enum(TRAVEL_VIDEO_STYLE_IDS),
   place: z.string().max(100).optional(),
+  // 選了口白：先試聽過（/narration 存好音檔），這裡用 id 取回
+  narration: z
+    .object({
+      id: z.string().uuid(),
+      voice: z.enum(NARRATION_VOICE_IDS),
+      text: z.string().max(200),
+    })
+    .optional(),
 });
 
 export async function GET() {
@@ -125,6 +139,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "照片格式不對，請換一張再試" }, { status: 400 });
   }
 
+  // 4b. 口白：確認音檔是這個人試聽時存的，並以實際長度決定影片秒數（不信任前端）
+  let narration: { text: string; voice: string; path: string; seconds: number; videoSeconds: number } | null = null;
+  if (body.narration) {
+    const text = sanitizeNarration(body.narration.text);
+    const narrationPath = narrationStoragePath(user.id, body.narration.id);
+    const { data: audio } = await admin.storage.from(TRAVEL_VIDEO_BUCKET).download(narrationPath);
+    let seconds = 0;
+    try {
+      seconds = audio ? wavDurationSeconds(Buffer.from(await audio.arrayBuffer())) : 0;
+    } catch {
+      seconds = 0;
+    }
+    if (!text || !seconds) {
+      return NextResponse.json({ error: "口白找不到了，請再按一次「試聽口白」" }, { status: 400 });
+    }
+    if (narrationTooLong(seconds)) {
+      return NextResponse.json({ error: "這句話念起來太長了，請縮短一點（影片最長 15 秒）" }, { status: 400 });
+    }
+    narration = { text, voice: body.narration.voice, path: narrationPath, seconds, videoSeconds: videoSecondsForNarration(seconds) };
+  }
+
   // 5. 照片存 Storage（影片清單顯示封面用）
   const id = crypto.randomUUID();
   const [, mime, b64] = body.image.match(IMAGE_DATA_URL)!;
@@ -142,7 +177,7 @@ export async function POST(req: NextRequest) {
 
   // 6. 先寫 DB 再呼叫平台：就算之後中斷也追得到這筆；同時占住「製作中」名額
   const place = sanitizePlace(body.place) || null;
-  const prompt = buildTravelVideoPrompt(body.style, place);
+  const prompt = buildTravelVideoPrompt(body.style, place, { withNarration: Boolean(narration) });
   const model = videoModel();
   const { data: inserted, error: insErr } = await admin
     .from("travel_videos")
@@ -155,6 +190,16 @@ export async function POST(req: NextRequest) {
       prompt,
       model,
       photo_path: photoPath,
+      // 只有選口白時才寫這些欄位：沒跑 add-travel-video-narration.sql 的環境，一般影片照常可用
+      ...(narration
+        ? {
+            narration_text: narration.text,
+            narration_voice: narration.voice,
+            narration_path: narration.path,
+            narration_seconds: Number(narration.seconds.toFixed(2)),
+            duration_seconds: narration.videoSeconds,
+          }
+        : {}),
     })
     .select("*")
     .single();
@@ -179,6 +224,7 @@ export async function POST(req: NextRequest) {
       imageUrl: body.image,
       prompt,
       notifyUrl: travelVideoNotifyUrl(process.env, id),
+      durationSeconds: narration?.videoSeconds,
     }));
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
