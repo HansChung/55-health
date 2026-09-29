@@ -465,9 +465,13 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
                 key={v.id}
                 onClick={() => setVoice(v.id)}
                 aria-pressed={voice === v.id}
-                style={choiceButton(voice === v.id)}
+                style={{
+                  ...choiceButton(voice === v.id),
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+                }}
               >
-                <span style={{ fontSize: 26 }} aria-hidden="true">{v.emoji}</span> {v.label}
+                <span style={{ fontSize: 30 }} aria-hidden="true">{v.emoji}</span>
+                <span style={{ whiteSpace: "nowrap" }}>{v.label}</span>
               </button>
             ))}
           </div>

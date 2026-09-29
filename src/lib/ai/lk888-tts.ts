@@ -24,8 +24,10 @@ export function ttsModel(): string {
 
 /** 實測：用英文描述語氣＋台灣口音，模型不會把指示念出來，念的內容與原句一致 */
 export function buildTtsPrompt(text: string, voice: NarrationVoiceId): string {
-  const { persona } = narrationVoice(voice);
-  return `Read slowly in a warm, kind, elderly Taiwanese ${persona}'s voice, with a gentle Taiwanese Mandarin accent: ${text}`;
+  const { persona, young } = narrationVoice(voice);
+  return young
+    ? `Read in a warm, friendly, ${persona}'s voice (in their late twenties), with a natural Taiwanese Mandarin accent, at a relaxed pace: ${text}`
+    : `Read slowly in a warm, kind, ${persona}'s voice, with a gentle Taiwanese Mandarin accent: ${text}`;
 }
 
 /** 讀 WAV（RIFF）標頭算秒數；找 fmt / data 區塊，不假設固定 44 bytes */
