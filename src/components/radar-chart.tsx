@@ -65,7 +65,15 @@ export function RadarChart({
       .join(" ");
 
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="SMART 雷達圖">
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      role="img"
+      aria-label="SMART 雷達圖"
+      // 左右兩側的面向名稱（如「科技信任」）會超出圖框，允許畫在框外才不會被切掉
+      style={{ overflow: "visible" }}
+    >
       {gridRings.map((pts, i) => (
         <polygon
           key={i}

@@ -215,7 +215,7 @@ export function ResultScreen({ result, photoDataUrl, onClose, onSave }: ResultSc
         display: "flex", gap: 12,
       }}>
         <button className="btn-ghost" style={{ flex: 1 }} onClick={onClose}>取消</button>
-        <button className="btn-primary" style={{ flex: 2 }} onClick={() => onSave({ ...adjusted, items })}>
+        <button className="btn-primary" style={{ flex: 2, whiteSpace: "nowrap", paddingInline: 16 }} onClick={() => onSave({ ...adjusted, items })}>
           <Icon name="check" size={26} color="#fff" stroke={3} />
           確認儲存
         </button>
