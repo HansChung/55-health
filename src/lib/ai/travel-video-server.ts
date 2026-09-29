@@ -8,7 +8,7 @@ import { trackAiUsage } from "./usage-tracker";
 import { calculateCost } from "./pricing";
 import { queryVideoTask, VIDEO_RESOLUTION } from "./lk888-video";
 import { sendPushToUser } from "../push/send";
-import { composeNarratedVideo } from "./video-compose";
+import { ComposeBudgetError, composeNarratedVideo } from "./video-compose";
 import {
   TRAVEL_VIDEO_DURATION_SECONDS,
   buildSubtitleCues,
@@ -83,8 +83,13 @@ export function isPastDeadline(row: Pick<TravelVideoRow, "created_at">): boolean
 const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
 /** 平台 CDN 可能要 20～45 秒才回完影片 */
 const VIDEO_DOWNLOAD_TIMEOUT_MS = 45_000;
-/** 有口白時：下載超過這個時間就先存原始影片，合成留給下次輪詢（route 上限 60 秒，合成最多要 30 秒） */
+/** 有口白時：下載超過這個時間就先存原始影片，合成留給下次輪詢 */
 const COMPOSE_START_BUDGET_MS = 20_000;
+/**
+ * 同步一支影片的工作時間上限（route maxDuration 60 秒，留約 12 秒給最後上傳、寫 DB、推播）。
+ * 抓字型、ffmpeg 都在這個期限內；不夠就下次輪詢再合成（原始影片已存在 Storage，下次很快）
+ */
+const SYNC_WORK_BUDGET_MS = 48_000;
 /** 試聽過但沒用上的口白音檔，超過這個時間就清掉 */
 export const NARRATION_PREVIEW_TTL_MS = 60 * 60 * 1000;
 
@@ -264,8 +269,10 @@ export async function syncTravelVideo(row: TravelVideoRow): Promise<TravelVideoR
 
     if (narrated) {
       try {
-        buf = await composeWithNarration(admin, row, buf);
+        buf = await composeWithNarration(admin, row, buf, startedAt + SYNC_WORK_BUDGET_MS);
       } catch (e) {
+        // 時間不夠不算失敗：原始影片已在 Storage，下次輪詢直接合成（超過時限就走下面交付原始影片）
+        if (e instanceof ComposeBudgetError && !stale) return row;
         console.error("[travel-video] compose narration failed:", e);
         // 還在時限內就下次再試；超過時限至少給長輩原始影片（沒有口白字幕）
         if (!stale) return row;
@@ -315,7 +322,12 @@ export async function syncTravelVideo(row: TravelVideoRow): Promise<TravelVideoR
 }
 
 /** 取回試聽時存好的口白音檔，疊到影片上並燒入字幕 */
-async function composeWithNarration(admin: Admin, row: TravelVideoRow, video: Buffer): Promise<Buffer> {
+async function composeWithNarration(
+  admin: Admin,
+  row: TravelVideoRow,
+  video: Buffer,
+  deadline: number
+): Promise<Buffer> {
   const { data, error } = await admin.storage.from(TRAVEL_VIDEO_BUCKET).download(row.narration_path!);
   if (error || !data) throw error ?? new Error("narration audio missing");
   const narration = Buffer.from(await data.arrayBuffer());
@@ -324,5 +336,5 @@ async function composeWithNarration(admin: Admin, row: TravelVideoRow, video: Bu
     Number(row.narration_seconds ?? 0),
     row.duration_seconds ?? TRAVEL_VIDEO_DURATION_SECONDS
   );
-  return composeNarratedVideo({ video, narration, cues });
+  return composeNarratedVideo({ video, narration, cues, deadline });
 }

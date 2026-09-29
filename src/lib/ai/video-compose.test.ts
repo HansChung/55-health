@@ -53,3 +53,15 @@ describe("字幕排版", () => {
     expect(wrapSubtitle("一二三四五六七八九十", 6)).toBe("一二三四五\n六七八九十");
   });
 });
+
+import { ComposeBudgetError, composeNarratedVideo } from "./video-compose";
+
+describe("composeNarratedVideo 時間預算", () => {
+  it("剩餘時間不夠就不開始合成（丟 ComposeBudgetError，讓下次輪詢再做）", async () => {
+    const t0 = Date.now();
+    await expect(
+      composeNarratedVideo({ video: Buffer.alloc(10), narration: Buffer.alloc(10), cues: [], deadline: Date.now() + 3_000 })
+    ).rejects.toBeInstanceOf(ComposeBudgetError);
+    expect(Date.now() - t0).toBeLessThan(1_000);
+  });
+});

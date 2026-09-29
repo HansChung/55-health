@@ -12,8 +12,19 @@ import path from "node:path";
 import ffmpegPath from "ffmpeg-static";
 import { NARRATION_DELAY_SECONDS, type SubtitleCue } from "../travel-video";
 
-/** 要留在 route maxDuration（60 秒）內：前面還有下載、後面還要上傳 */
+/** ffmpeg 單次上限；實際還會再被呼叫端給的 deadline 壓縮 */
 const FFMPEG_TIMEOUT_MS = 30_000;
+/** 剩餘時間少於這個就不開始跑 ffmpeg（10 秒影片本機 < 1 秒，保守留給較慢的雲端 CPU） */
+const MIN_FFMPEG_MS = 10_000;
+const FONT_TIMEOUT_MS = 8_000;
+
+/** 時間不夠、這次先不合成（呼叫端應該下次再試，不是真的失敗） */
+export class ComposeBudgetError extends Error {
+  constructor() {
+    super("not enough time left to compose");
+    this.name = "ComposeBudgetError";
+  }
+}
 /** H3 自帶的環境音：口白期間壓低，不要蓋過人聲 */
 const AMBIENT_VOLUME = 0.25; // 實測：H3 沒被要求念口白時不會出人聲，但常自帶配樂
 
@@ -97,7 +108,7 @@ export function buildComposeArgs(opts: {
   ];
 }
 
-function runFfmpeg(args: string[]): Promise<{ code: number | null; stderr: string }> {
+function runFfmpeg(args: string[], timeoutMs = FFMPEG_TIMEOUT_MS): Promise<{ code: number | null; stderr: string }> {
   if (!ffmpegPath) throw new Error("ffmpeg binary not available");
   return new Promise((resolve, reject) => {
     const child = spawn(ffmpegPath as string, args, { stdio: ["ignore", "ignore", "pipe"] });
@@ -106,34 +117,44 @@ function runFfmpeg(args: string[]): Promise<{ code: number | null; stderr: strin
       stderr += d.toString();
       if (stderr.length > 200_000) stderr = stderr.slice(-100_000);
     });
-    const timer = setTimeout(() => child.kill("SIGKILL"), FFMPEG_TIMEOUT_MS);
+    const timer = setTimeout(() => child.kill("SIGKILL"), timeoutMs);
     child.on("error", (e) => { clearTimeout(timer); reject(e); });
     child.on("close", (code) => { clearTimeout(timer); resolve({ code, stderr }); });
   });
 }
 
 /** Google Fonts 對非瀏覽器 UA 回 TTF；text= 只打包用到的字 */
-export async function fetchSubtitleFont(text: string): Promise<Buffer> {
+export async function fetchSubtitleFont(text: string, timeoutMs = FONT_TIMEOUT_MS): Promise<Buffer> {
+  const deadline = Date.now() + timeoutMs;
+  const left = () => Math.max(500, deadline - Date.now());
   const glyphs = [...new Set([...text])].join("");
   const css = await (
     await fetch(
       `https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@700&text=${encodeURIComponent(glyphs)}`,
-      { headers: { "User-Agent": "curl/8.0" }, signal: AbortSignal.timeout(10_000) }
+      { headers: { "User-Agent": "curl/8.0" }, signal: AbortSignal.timeout(left()) }
     )
   ).text();
   const url = css.match(/url\((https:[^)]+)\)/)?.[1];
   if (!url) throw new Error("subtitle font url not found");
-  const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+  const res = await fetch(url, { signal: AbortSignal.timeout(left()) });
   if (!res.ok) throw new Error(`subtitle font HTTP ${res.status}`);
   return Buffer.from(await res.arrayBuffer());
 }
 
-/** 合成：回傳新的 mp4。任何一步失敗都丟錯，由呼叫端決定是否改用原始影片 */
+/**
+ * 合成：回傳新的 mp4。任何一步失敗都丟錯，由呼叫端決定是否改用原始影片。
+ * deadline（epoch ms）：抓字型與 ffmpeg 都不會超過它；剩的時間不夠就丟 ComposeBudgetError
+ */
 export async function composeNarratedVideo(opts: {
   video: Buffer;
   narration: Buffer;
   cues: SubtitleCue[];
+  deadline?: number;
 }): Promise<Buffer> {
+  const deadline = opts.deadline ?? Date.now() + FFMPEG_TIMEOUT_MS + FONT_TIMEOUT_MS + 5_000;
+  const left = () => deadline - Date.now();
+  if (left() < MIN_FFMPEG_MS) throw new ComposeBudgetError();
+
   const dir = await mkdtemp(path.join(tmpdir(), "travel-video-"));
   try {
     const videoPath = path.join(dir, "in.mp4");
@@ -157,11 +178,16 @@ export async function composeNarratedVideo(opts: {
       })
     );
     if (cues.length > 0) {
-      await writeFile(fontPath, await fetchSubtitleFont(opts.cues.map((c) => c.text).join("")));
+      const fontBudget = Math.min(FONT_TIMEOUT_MS, left() - MIN_FFMPEG_MS);
+      if (fontBudget < 1_000) throw new ComposeBudgetError();
+      await writeFile(fontPath, await fetchSubtitleFont(opts.cues.map((c) => c.text).join(""), fontBudget));
     }
 
+    const ffmpegBudget = Math.min(FFMPEG_TIMEOUT_MS, left());
+    if (ffmpegBudget < MIN_FFMPEG_MS) throw new ComposeBudgetError();
     const result = await runFfmpeg(
-      buildComposeArgs({ videoPath, narrationPath, fontPath, cues, info, outPath })
+      buildComposeArgs({ videoPath, narrationPath, fontPath, cues, info, outPath }),
+      ffmpegBudget
     );
     if (result.code !== 0) {
       throw new Error(`ffmpeg exited ${result.code}: ${result.stderr.slice(-600)}`);
