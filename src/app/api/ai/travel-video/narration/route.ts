@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
-import { checkUserQuota, trackAiUsage } from "@/lib/ai/usage-tracker";
+import { checkUserQuota, countMonthlyEndpointUsage, trackAiUsage } from "@/lib/ai/usage-tracker";
 import { isVideoProviderConfigured } from "@/lib/ai/lk888-video";
 import { synthesizeNarration, ttsModel } from "@/lib/ai/lk888-tts";
 import { cleanupStaleNarrations, narrationStoragePath, TRAVEL_VIDEO_BUCKET } from "@/lib/ai/travel-video-server";
@@ -14,8 +14,11 @@ import {
   NARRATION_VOICE_IDS,
   narrationTooLong,
   sanitizeNarration,
+  travelVideoExtrasLimit,
   videoSecondsForNarration,
 } from "@/lib/travel-video";
+
+const ENDPOINT = "/api/ai/travel-video/narration";
 
 export const maxDuration = 60;
 
@@ -41,6 +44,10 @@ export async function POST(req: NextRequest) {
       { status: 429 }
     );
   }
+  // 試聽不扣影片次數，但每月有上限（避免一直按、燒掉共用的配音額度）
+  if ((await countMonthlyEndpointUsage(user.id, ENDPOINT)) >= travelVideoExtrasLimit(quota.limit)) {
+    return NextResponse.json({ error: "本月試聽口白的次數用完了，下個月再來喔" }, { status: 429 });
+  }
 
   let body;
   try {
@@ -61,7 +68,7 @@ export async function POST(req: NextRequest) {
       userId: user.id,
       service: "gemini_tts",
       model: ttsModel(),
-      endpoint: "/api/ai/travel-video/narration",
+      endpoint: ENDPOINT,
       success: false,
       errorMessage: msg,
     });

@@ -92,9 +92,9 @@ describe("口白＋字幕", () => {
     expect(buildTravelVideoPrompt("gentle", "日月潭", { withNarration: true })).toContain("不要旁白");
   });
 
-  it("sanitizeNarration 去引號、壓單行、限 40 字", () => {
+  it("sanitizeNarration 去引號、壓單行、限 30 字（約 14 秒，放得進 15 秒影片）", () => {
     expect(sanitizeNarration("「今天來到\n日月潭」")).toBe("今天來到 日月潭");
-    expect([...sanitizeNarration("好".repeat(80))].length).toBe(40);
+    expect([...sanitizeNarration("好".repeat(80))].length).toBe(30);
     expect(sanitizeNarration(undefined)).toBe("");
   });
 
@@ -125,5 +125,16 @@ describe("口白＋字幕", () => {
   it("沒有標點的一句話就是一段；空字串沒有字幕", () => {
     expect(buildSubtitleCues("好漂亮的雲海", 3, 5)).toHaveLength(1);
     expect(buildSubtitleCues("", 3, 5)).toEqual([]);
+  });
+});
+
+import { travelVideoExtrasLimit } from "./travel-video";
+
+describe("travelVideoExtrasLimit", () => {
+  it("每支影片約 8 次試聽／AI 寫稿，最少 5 次，管理員不限", () => {
+    expect(travelVideoExtrasLimit(2)).toBe(16);
+    expect(travelVideoExtrasLimit(6)).toBe(48);
+    expect(travelVideoExtrasLimit(0)).toBe(5);
+    expect(travelVideoExtrasLimit(99999)).toBe(Number.POSITIVE_INFINITY);
   });
 });

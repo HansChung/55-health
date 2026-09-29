@@ -90,7 +90,18 @@ export function buildTravelVideoPrompt(
 
 // ── 口白＋字幕 ─────────────────────────────────
 
-export const NARRATION_MAX_CHARS = 40;
+/** 實測台灣口音配音約每秒 2.2 字：30 字 ≈ 14 秒，放得進最長 15 秒的影片（避免先付配音費才發現太長） */
+export const NARRATION_MAX_CHARS = 30;
+
+/**
+ * 試聽口白／AI 寫稿不扣影片次數，但會花平台共用算力 → 每月各自上限：
+ * 每支影片約可試 8 次，最少 5 次；管理員（limit ≥ 9999）不限
+ */
+export const EXTRAS_PER_VIDEO = 8;
+export function travelVideoExtrasLimit(videoLimit: number): number {
+  if (videoLimit >= 9999) return Number.POSITIVE_INFINITY;
+  return Math.max(5, videoLimit * EXTRAS_PER_VIDEO);
+}
 /** 口白前留一點空白再開始念，比較自然 */
 export const NARRATION_DELAY_SECONDS = 0.4;
 

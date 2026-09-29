@@ -5,7 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { checkUserQuota, trackAiUsage } from "@/lib/ai/usage-tracker";
+import { checkUserQuota, countMonthlyEndpointUsage, trackAiUsage } from "@/lib/ai/usage-tracker";
 import { getGeminiModel, isGeminiConfigured, parseModelJson, resolveGeminiConfig } from "@/lib/ai/gemini";
 import {
   NARRATION_MAX_CHARS,
@@ -13,7 +13,10 @@ import {
   TRAVEL_VIDEO_STYLE_IDS,
   sanitizeNarration,
   sanitizePlace,
+  travelVideoExtrasLimit,
 } from "@/lib/travel-video";
+
+const ENDPOINT = "/api/ai/travel-video/script";
 
 export const maxDuration = 60;
 
@@ -48,6 +51,10 @@ export async function POST(req: NextRequest) {
   if (!quota.allowed) {
     return NextResponse.json({ error: "本月的影片次數用完了，下個月再來做吧" }, { status: 429 });
   }
+  // AI 寫稿不扣影片或拍照次數，但每月有上限（避免一直按、燒掉共用的 AI 額度）
+  if ((await countMonthlyEndpointUsage(user.id, ENDPOINT)) >= travelVideoExtrasLimit(quota.limit)) {
+    return NextResponse.json({ error: "本月 AI 寫稿的次數用完了，請自己寫一句" }, { status: 429 });
+  }
 
   let body;
   try {
@@ -59,6 +66,7 @@ export async function POST(req: NextRequest) {
   const styleLabel = TRAVEL_VIDEO_STYLES.find((s) => s.id === body.style)?.label ?? "";
 
   const config = resolveGeminiConfig();
+  let tracked = false;
   try {
     const { model } = getGeminiModel({ responseMimeType: "application/json", temperature: 0.8 });
     const result = await model.generateContent([
@@ -73,14 +81,28 @@ export async function POST(req: NextRequest) {
       model: config.model,
       inputTokens: usage?.promptTokenCount ?? 0,
       outputTokens: usage?.candidatesTokenCount ?? 0,
-      endpoint: "/api/ai/travel-video/script",
+      endpoint: ENDPOINT,
       success: Boolean(text),
       metadata: { provider: config.provider },
     });
+    tracked = true;
     if (!text) throw new Error("empty script");
     return NextResponse.json({ text });
   } catch (e) {
-    console.error("[api] 口白稿生成失敗:", e instanceof Error ? e.message : e);
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[api] 口白稿生成失敗:", msg);
+    // 失敗的呼叫也記一筆：一樣算進每月上限
+    if (!tracked) {
+      await trackAiUsage({
+        userId: user.id,
+        service: "gemini_text",
+        model: config.model,
+        endpoint: ENDPOINT,
+        success: false,
+        errorMessage: msg,
+        metadata: { provider: config.provider },
+      });
+    }
     return NextResponse.json({ error: "AI 這次沒寫出來，請自己寫一句或再按一次" }, { status: 502 });
   }
 }
