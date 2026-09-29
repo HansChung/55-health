@@ -4,6 +4,7 @@
 // 同步完成後會推播給長輩「影片做好了」
 // ────────────────────────────────────────────────
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { createSupabaseAdmin } from "@/lib/supabase/server";
 import { syncTravelVideo, type TravelVideoRow } from "@/lib/ai/travel-video-server";
 import { webhookSecretMatches } from "@/lib/ai/travel-video-webhook";
@@ -35,7 +36,28 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ secret: st
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 
-  const row = data as TravelVideoRow | null;
+  let row = data as TravelVideoRow | null;
+
+  // 建立任務後 task_id 沒寫進 DB（只記在 log）→ 用回呼網址上的 video_id 補回來。
+  // 只補「還沒有 task_id、仍在製作中」的列；真正狀態接著由 syncTravelVideo 向平台反查
+  const videoId = req.nextUrl.searchParams.get("video_id");
+  if (!row && videoId && z.string().uuid().safeParse(videoId).success) {
+    const { data: orphan, error: fixErr } = await admin
+      .from("travel_videos")
+      .update({ task_id: String(taskId), updated_at: new Date().toISOString() })
+      .eq("id", videoId)
+      .is("task_id", null)
+      .in("status", ["queued", "running"])
+      .select("*")
+      .maybeSingle();
+    if (fixErr) {
+      console.error("[webhook] lk888 reconcile task_id:", fixErr);
+      return NextResponse.json({ ok: false }, { status: 500 });
+    }
+    if (orphan) console.warn(`[webhook] 補回 task_id：video_id=${videoId} task_id=${taskId}`);
+    row = orphan as TravelVideoRow | null;
+  }
+
   // 不是影片任務，或已經處理過（平台同一任務最多重送 4 次）
   if (!row || !isTravelVideoPending(row.status)) return NextResponse.json({ ok: true });
 

@@ -67,6 +67,8 @@ stack works well for auth + meal/diary CRUD:
   `/v1/skills/task-status` by task_id. Without it, completion is only detected while the screen polls.
 - Needs `supabase/add-travel-videos.sql` (table, bucket, `ai_usage` service `minimax_video`,
   `subscription_plans.ai_video_quota`). Quota counts non-failed rows incl. soft-deleted ones.
+  "One pending video per user" is enforced by the partial unique index
+  `travel_videos_one_pending_per_user` (insert → 23505 → 409), so concurrent POSTs can't double-charge.
 
 ### Book × App light coupling（書本／App）
 - Chapter openings live at `/smart/chapter/[id]` (public, printable). Shared rhythm: **一拍、二問、三記下**.

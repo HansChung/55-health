@@ -17,16 +17,21 @@ export function isPublicHttpsUrl(url: string): boolean {
   }
 }
 
-/** 需同時有 LK888_WEBHOOK_SECRET 與公網 https 的 NEXT_PUBLIC_APP_URL，否則不送回呼（改靠輪詢） */
+/**
+ * 需同時有 LK888_WEBHOOK_SECRET 與公網 https 的 NEXT_PUBLIC_APP_URL，否則不送回呼（改靠輪詢）。
+ * videoId 帶在網址上：建立任務後若 task_id 沒寫進 DB，webhook 可用它對回是哪支影片
+ */
 export function travelVideoNotifyUrl(
-  env: Record<string, string | undefined> = process.env
+  env: Record<string, string | undefined> = process.env,
+  videoId?: string
 ): string | null {
   const secret = env.LK888_WEBHOOK_SECRET;
   const appUrl = env.NEXT_PUBLIC_APP_URL;
   if (!secret || secret.length < MIN_SECRET_LENGTH || !appUrl || !isPublicHttpsUrl(appUrl)) {
     return null;
   }
-  return `${new URL(appUrl).origin}/api/webhooks/lk888/${encodeURIComponent(secret)}`;
+  const base = `${new URL(appUrl).origin}/api/webhooks/lk888/${encodeURIComponent(secret)}`;
+  return videoId ? `${base}?video_id=${encodeURIComponent(videoId)}` : base;
 }
 
 export function webhookSecretMatches(given: string, expected: string | undefined): boolean {

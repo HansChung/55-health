@@ -43,6 +43,11 @@ create index if not exists travel_videos_user_idx
 create index if not exists travel_videos_task_idx
   on travel_videos (task_id);
 
+-- 每人同時只能有一支影片在做：同時送出兩次時由 DB 擋下，避免重複付費、繞過配額
+create unique index if not exists travel_videos_one_pending_per_user
+  on travel_videos (user_id)
+  where status in ('queued', 'running') and deleted_at is null;
+
 alter table travel_videos enable row level security;
 
 -- 使用者只能讀自己的；新增／更新／刪除一律走伺服器（service role）

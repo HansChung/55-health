@@ -36,7 +36,11 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
   const paths = [row.photo_path, row.video_path].filter((p): p is string => Boolean(p));
   if (paths.length > 0) {
     const { error: rmErr } = await admin.storage.from(TRAVEL_VIDEO_BUCKET).remove(paths);
-    if (rmErr) console.error("[api] travel video storage remove:", rmErr);
+    if (rmErr) {
+      // 檔案還在公開 bucket（網址仍看得到）→ 不標記刪除、保留路徑，讓使用者可以再刪一次
+      console.error("[api] travel video storage remove:", rmErr);
+      return NextResponse.json({ error: "刪除沒成功，請再試一次" }, { status: 500 });
+    }
   }
 
   const now = new Date().toISOString();

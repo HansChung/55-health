@@ -182,7 +182,8 @@ export async function syncTravelVideo(row: TravelVideoRow): Promise<TravelVideoR
     if (upErr) throw upErr;
   } catch (e) {
     console.error("[travel-video] store video failed:", e);
-    return row;
+    // 超過時限還存不下來就放棄（標記失敗、退回次數），不要永遠卡在「製作中」
+    return stale ? markFailed(admin, row, `store video failed: ${e instanceof Error ? e.message : String(e)}`) : row;
   }
 
   const seconds = TRAVEL_VIDEO_DURATION_SECONDS;

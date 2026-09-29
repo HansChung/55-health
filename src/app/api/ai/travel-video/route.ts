@@ -34,6 +34,7 @@ export const maxDuration = 60;
 const IMAGE_DATA_URL = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/]+={0,2})$/;
 // Vercel request body 上限 4.5MB；前端已壓到長邊 1280px，通常 < 1MB
 const MAX_IMAGE_CHARS = 4_000_000;
+const PENDING_MESSAGE = "上一支影片還在做，做好再做下一支喔";
 
 const PostSchema = z.object({
   image: z.string().max(MAX_IMAGE_CHARS).regex(IMAGE_DATA_URL),
@@ -86,7 +87,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "影片功能還在準備中，請稍後再試" }, { status: 503 });
   }
 
-  // 2. 配額檢查（失敗的影片不算次數）
+  const admin = createSupabaseAdmin();
+
+  // 2. 一次只做一支，避免連點重複扣費。逾時的舊任務先向平台結清（標記失敗會退回次數），
+  //    還在做的就擋下。並發請求由 DB 的部分唯一索引（travel_videos_one_pending_per_user）把關
+  const { data: pendingRows } = await admin
+    .from("travel_videos")
+    .select("*")
+    .eq("user_id", user.id)
+    .in("status", ["queued", "running"])
+    .is("deleted_at", null);
+  for (const r of (pendingRows ?? []) as TravelVideoRow[]) {
+    const stale = Date.now() - new Date(r.created_at).getTime() > TRAVEL_VIDEO_STALE_MS;
+    const current = stale ? await syncTravelVideo(r).catch(() => r) : r;
+    if (isTravelVideoPending(current.status)) {
+      return NextResponse.json({ error: PENDING_MESSAGE }, { status: 409 });
+    }
+  }
+
+  // 3. 配額檢查（失敗的影片不算次數）
   const quota = await checkUserQuota(user.id, "video");
   if (!quota.allowed) {
     return NextResponse.json(
@@ -99,27 +118,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 3. 解析請求
+  // 4. 解析請求
   let body;
   try {
     body = PostSchema.parse(await req.json());
   } catch {
     return NextResponse.json({ error: "照片格式不對，請換一張再試" }, { status: 400 });
-  }
-
-  const admin = createSupabaseAdmin();
-
-  // 4. 一次只做一支，避免連點重複扣費
-  const { data: pending } = await admin
-    .from("travel_videos")
-    .select("id")
-    .eq("user_id", user.id)
-    .in("status", ["queued", "running"])
-    .is("deleted_at", null)
-    .gte("created_at", new Date(Date.now() - TRAVEL_VIDEO_STALE_MS).toISOString())
-    .limit(1);
-  if (pending && pending.length > 0) {
-    return NextResponse.json({ error: "上一支影片還在做，做好再做下一支喔" }, { status: 409 });
   }
 
   // 5. 照片存 Storage（影片清單顯示封面用）
@@ -137,7 +141,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "照片上傳失敗，請再試一次" }, { status: 500 });
   }
 
-  // 6. 先寫 DB 再呼叫平台：就算之後中斷也追得到這筆
+  // 6. 先寫 DB 再呼叫平台：就算之後中斷也追得到這筆；同時占住「製作中」名額
   const place = sanitizePlace(body.place) || null;
   const prompt = buildTravelVideoPrompt(body.style, place);
   const model = videoModel();
@@ -156,28 +160,27 @@ export async function POST(req: NextRequest) {
     .select("*")
     .single();
   if (insErr || !inserted) {
-    console.error("[api] travel_videos insert:", insErr);
     await admin.storage.from(TRAVEL_VIDEO_BUCKET).remove([photoPath]);
+    // 23505 = 撞到「每人同時一支」唯一索引：另一個請求剛搶先建立
+    if (insErr?.code === "23505") {
+      return NextResponse.json({ error: PENDING_MESSAGE }, { status: 409 });
+    }
+    console.error("[api] travel_videos insert:", insErr);
     return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
   }
 
   // 7. 建立影片任務：正式站傳 Storage 公網網址（平台建議，請求較快）；本機 Supabase 平台連不到 → 改傳 base64
   const photoUrl = admin.storage.from(TRAVEL_VIDEO_BUCKET).getPublicUrl(photoPath).data.publicUrl;
   const imageUrl = isPublicHttpsUrl(photoUrl) ? photoUrl : body.image;
+  let taskId: string;
   try {
     // 有設回呼 → 做好時平台主動通知，伺服器同步後推播給長輩（沒設就靠畫面輪詢）
-    const { taskId } = await createImageToVideoTask({ imageUrl, prompt, notifyUrl: travelVideoNotifyUrl() });
-    const { data: updated } = await admin
-      .from("travel_videos")
-      .update({ task_id: taskId, updated_at: new Date().toISOString() })
-      .eq("id", id)
-      .select("*")
-      .single();
-    const row = (updated ?? { ...inserted, task_id: taskId }) as TravelVideoRow;
-    return NextResponse.json({
-      video: toClientVideo(admin, row),
-      quota: { used: quota.used + 1, limit: quota.limit, tier: quota.tier },
-    });
+    // 回呼網址帶 video_id：萬一下面 task_id 沒寫進 DB，webhook 還能用它補回來
+    ({ taskId } = await createImageToVideoTask({
+      imageUrl,
+      prompt,
+      notifyUrl: travelVideoNotifyUrl(process.env, id),
+    }));
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
     const httpStatus = error instanceof VideoProviderError ? error.httpStatus : 0;
@@ -203,4 +206,39 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json({ error: "影片服務暫時忙線，請稍後再試" }, { status: 502 });
   }
+
+  // 8. 平台已收單（已扣費）→ task_id 一定要記下來，否則之後找不到影片
+  const row = await saveTaskId(admin, id, taskId);
+  if (!row) {
+    // 留下對帳資訊；有設回呼時 webhook 會用 video_id 補上 task_id
+    console.error(`[api] 影片任務已建立但 task_id 未寫入 DB：video_id=${id} task_id=${taskId}`);
+    return NextResponse.json(
+      { error: "影片已經送出，但記錄時出了點問題。請過幾分鐘回來看看，先不要重複送出" },
+      { status: 500 }
+    );
+  }
+  return NextResponse.json({
+    video: toClientVideo(admin, row),
+    quota: { used: quota.used + 1, limit: quota.limit, tier: quota.tier },
+  });
+}
+
+/** 寫入 task_id，失敗重試（最多 3 次） */
+async function saveTaskId(
+  admin: ReturnType<typeof createSupabaseAdmin>,
+  id: string,
+  taskId: string
+): Promise<TravelVideoRow | null> {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const { data, error } = await admin
+      .from("travel_videos")
+      .update({ task_id: taskId, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (!error && data) return data as TravelVideoRow;
+    console.warn(`[api] save task_id attempt ${attempt} failed:`, error);
+    if (attempt < 3) await new Promise((r) => setTimeout(r, 500 * attempt));
+  }
+  return null;
 }

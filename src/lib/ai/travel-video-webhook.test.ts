@@ -24,6 +24,15 @@ describe("travelVideoNotifyUrl", () => {
     ).toBe(`https://nuan55.com/api/webhooks/lk888/${SECRET}`);
   });
 
+  it("帶 video_id 讓 webhook 能對回影片", () => {
+    expect(
+      travelVideoNotifyUrl(
+        { LK888_WEBHOOK_SECRET: SECRET, NEXT_PUBLIC_APP_URL: "https://nuan55.com" },
+        "3f1c9a2e-8b4d-4c6e-9f0a-1b2c3d4e5f60"
+      )
+    ).toBe(`https://nuan55.com/api/webhooks/lk888/${SECRET}?video_id=3f1c9a2e-8b4d-4c6e-9f0a-1b2c3d4e5f60`);
+  });
+
   it("沒密鑰、密鑰太短、本機開發 → 不送回呼", () => {
     expect(travelVideoNotifyUrl({ NEXT_PUBLIC_APP_URL: "https://nuan55.com" })).toBeNull();
     expect(travelVideoNotifyUrl({ LK888_WEBHOOK_SECRET: "short", NEXT_PUBLIC_APP_URL: "https://nuan55.com" })).toBeNull();
