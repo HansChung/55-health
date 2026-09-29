@@ -8,7 +8,7 @@ import {
 } from "./lk888-video";
 
 describe("buildImageToVideoBody", () => {
-  it("首尾幀模式、照片當首幀、10 秒 768P、比例跟著照片", () => {
+  it("首尾幀模式、照片同時當首幀與尾幀（防止換場景）、10 秒 768P、比例跟著照片", () => {
     const body = buildImageToVideoBody({
       model: "minimax-h3",
       imageUrl: "https://x.supabase.co/storage/v1/object/public/travel-videos/u/v/photo.jpg",
@@ -19,7 +19,10 @@ describe("buildImageToVideoBody", () => {
       prompt: "讓照片動起來",
       params: {
         mode: "shouweizhen",
-        images: ["https://x.supabase.co/storage/v1/object/public/travel-videos/u/v/photo.jpg"],
+        images: [
+          "https://x.supabase.co/storage/v1/object/public/travel-videos/u/v/photo.jpg",
+          "https://x.supabase.co/storage/v1/object/public/travel-videos/u/v/photo.jpg",
+        ],
         duration: "10",
         resolution: "768P",
         aspect_ratio: "adaptive",
@@ -156,7 +159,7 @@ describe("createImageToVideoTask（攔截 fetch）", () => {
       expect(new Headers(calls[0].init.headers).get("authorization")).toBe("Bearer sk-test-lk888");
       const body = JSON.parse(String(calls[0].init.body));
       expect(body.notify_url).toBe("https://nuan55.com/api/webhooks/lk888/secret");
-      expect(body.params.images).toEqual(["https://a/b.jpg"]);
+      expect(body.params.images).toEqual(["https://a/b.jpg", "https://a/b.jpg"]);
     } finally {
       vi.unstubAllEnvs();
       vi.unstubAllGlobals();
