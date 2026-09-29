@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-guard";
 import { createSupabaseAdmin } from "@/lib/supabase/server";
 import { UUID_RE, stopCreateSchema } from "@/lib/study-tours";
-import { generateStampToken, nextStopPosition } from "@/lib/study-tours-server";
+import { generateStampToken, nextStopPosition, syncTourCompletion } from "@/lib/study-tours-server";
 
 /** 新增站點（自動產生 QR 蓋章代碼） */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -37,5 +37,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .select()
     .single();
   if (error) { console.error("[api] DB error:", error); return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 }); }
+  // 多了一站：原本集滿的人要補蓋新站才算結業
+  await syncTourCompletion(supabase, id);
   return NextResponse.json({ stop: data });
 }

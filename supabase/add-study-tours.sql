@@ -340,14 +340,56 @@ begin
 end;
 $$;
 
+-- ── 後台新增／刪除站點後：重新判斷誰「集滿」 ──
+-- 加了新站 → 原本結業的人要補蓋新站才算；刪了站 → 剩下的都蓋過的人自動結業
+create or replace function study_tour_sync_completion(p_tour_id uuid)
+returns int
+language plpgsql
+set search_path = public
+as $$
+declare
+  v_total int;
+  v_changed int := 0;
+  v_n int;
+begin
+  perform 1 from study_tours where id = p_tour_id for update;
+  select count(*) into v_total from study_tour_stops where tour_id = p_tour_id;
+
+  update study_tour_registrations r
+     set completed_at = null, updated_at = now()
+   where r.tour_id = p_tour_id
+     and r.completed_at is not null
+     and (
+       v_total = 0
+       or (select count(*) from study_tour_stamps s where s.tour_id = p_tour_id and s.user_id = r.user_id) < v_total
+     );
+  get diagnostics v_n = row_count;
+  v_changed := v_changed + v_n;
+
+  update study_tour_registrations r
+     set completed_at = now(), updated_at = now()
+   where r.tour_id = p_tour_id
+     and r.completed_at is null
+     and r.status <> 'cancelled'
+     and v_total > 0
+     and (select count(*) from study_tour_stamps s where s.tour_id = p_tour_id and s.user_id = r.user_id) >= v_total;
+  get diagnostics v_n = row_count;
+  v_changed := v_changed + v_n;
+
+  return v_changed;
+end;
+$$;
+
 -- 只給伺服器（service role）呼叫
 revoke all on function study_tour_promote_waitlist(uuid) from public, anon, authenticated;
 revoke all on function study_tour_register(uuid, uuid, uuid, text, text, int, text) from public, anon, authenticated;
 revoke all on function study_tour_cancel(uuid) from public, anon, authenticated;
 revoke all on function study_tour_refill(uuid) from public, anon, authenticated;
 revoke all on function study_tour_stamp(text, uuid, text, boolean) from public, anon, authenticated;
+revoke all on function study_tour_sync_completion(uuid) from public, anon, authenticated;
 grant execute on function study_tour_promote_waitlist(uuid) to service_role;
 grant execute on function study_tour_register(uuid, uuid, uuid, text, text, int, text) to service_role;
 grant execute on function study_tour_cancel(uuid) to service_role;
 grant execute on function study_tour_refill(uuid) to service_role;
 grant execute on function study_tour_stamp(text, uuid, text, boolean) to service_role;
+grant execute on function study_tour_sync_completion(uuid) to service_role;

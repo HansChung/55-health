@@ -98,6 +98,10 @@ stack works well for auth + meal/diary CRUD:
   Stamping works from 3h before start to 12h after end (admins bypass the window for testing); a person
   who never registered gets an `onsite` registration, a waitlisted one is confirmed (they showed up).
   All stops stamped → `completed_at` → 結業證書 (printable via `body.printing-certificate` print CSS).
+  Adding/deleting a stop calls `study_tour_sync_completion` (un-completes / completes as needed); the UI
+  also derives 集滿 from the current stops, never from `completed_at` alone.
+- Share links and QR codes use `NEXT_PUBLIC_APP_URL` (`publicAppOrigin`): inside the Capacitor app
+  `window.location.origin` is `http://localhost`.
 - Family members can register a linked elder (`family_links` accepted): the row's `user_id` is the elder,
   `registered_by` is the family member. Share/push deep link: `/?open=study-tours&tour=<id>`.
 - Local e2e: SQL scenario + 20-way concurrency tests were run against the Supabase CLI stack; remember

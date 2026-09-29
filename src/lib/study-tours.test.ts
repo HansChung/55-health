@@ -5,7 +5,10 @@ import {
   csvCell,
   formatCertificateDate,
   formatTourDateRange,
+  isPassportComplete,
   isRegistrationOpen,
+  publicAppOrigin,
+  tourShareUrl,
   isStampToken,
   isoToTaipeiInput,
   ownRegistration,
@@ -172,6 +175,20 @@ describe("QR 集章", () => {
     expect(isStampToken("short")).toBe(false);
     expect(isStampToken("../../etc/passwd-xxxxxxxx")).toBe(false);
     expect(isStampToken(123)).toBe(false);
+  });
+
+  it("分享／QR 用正式網址；App 裡的 localhost 不能拿來分享", () => {
+    expect(publicAppOrigin("https://nuan55.com/", "http://localhost")).toBe("https://nuan55.com");
+    expect(publicAppOrigin(undefined, "https://preview.vercel.app/")).toBe("https://preview.vercel.app");
+    expect(publicAppOrigin("nuan55.com", "http://localhost:3000")).toBe("http://localhost:3000");
+    expect(tourShareUrl("https://nuan55.com", "t 1")).toBe("https://nuan55.com/?open=study-tours&tour=t%201");
+  });
+
+  it("集滿以目前站點為準（後台加站後要補蓋）", () => {
+    const stop = (stamped: boolean) => ({ stamped_at: stamped ? "2026-10-12T01:00:00Z" : null });
+    expect(isPassportComplete({ stops: [] } as never)).toBe(false);
+    expect(isPassportComplete({ stops: [stop(true), stop(true)] } as never)).toBe(true);
+    expect(isPassportComplete({ stops: [stop(true), stop(true), stop(false)] } as never)).toBe(false);
   });
 
   it("QR 網址", () => {

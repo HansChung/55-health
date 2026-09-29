@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-guard";
 import { createSupabaseAdmin } from "@/lib/supabase/server";
 import { UUID_RE, stopPatchSchema } from "@/lib/study-tours";
-import { generateStampToken } from "@/lib/study-tours-server";
+import { generateStampToken, syncTourCompletion } from "@/lib/study-tours-server";
 
 type Ctx = { params: Promise<{ id: string; stopId: string }> };
 
@@ -49,5 +49,7 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
   const supabase = createSupabaseAdmin();
   const { error } = await supabase.from("study_tour_stops").delete().eq("id", stopId).eq("tour_id", id);
   if (error) { console.error("[api] DB error:", error); return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 }); }
+  // 少了一站：剩下的站都蓋過的人自動結業
+  await syncTourCompletion(supabase, id);
   return NextResponse.json({ ok: true });
 }

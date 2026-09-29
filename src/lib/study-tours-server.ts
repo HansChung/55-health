@@ -287,6 +287,12 @@ export async function loadAdminTourDetail(
   return { stops, registrations };
 }
 
+/** 站點增減後重新判斷誰集滿（失敗只記 log，不影響站點本身的修改） */
+export async function syncTourCompletion(admin: Admin, tourId: string): Promise<void> {
+  const { error } = await admin.rpc("study_tour_sync_completion", { p_tour_id: tourId });
+  if (error) console.error("[study-tours] sync completion failed:", error);
+}
+
 /** 新站點排在最後 */
 export async function nextStopPosition(admin: Admin, tourId: string): Promise<number> {
   const { data } = await admin

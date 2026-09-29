@@ -18,10 +18,13 @@ import {
   formatCertificateDate,
   formatTourDateRange,
   formatTourDay,
+  isPassportComplete,
   ownRegistration,
+  publicAppOrigin,
   registrationStatusLabel,
   seatsLabel,
   stampProgress,
+  tourShareUrl,
   walkingLevelMeta,
   type StudyTourElder,
   type StudyTourRegistrationView,
@@ -304,7 +307,7 @@ function TourDetail({
   const canRegister = tour.registration_open && candidates.length > 0;
 
   const share = async () => {
-    const url = `${window.location.origin}/?open=study-tours&tour=${tour.id}`;
+    const url = tourShareUrl(publicAppOrigin(process.env.NEXT_PUBLIC_APP_URL, window.location.origin), tour.id);
     const text = `一起去「${tour.title}」吧！${formatTourDateRange(tour.starts_at, tour.ends_at)}`;
     try {
       if (navigator.share) {
@@ -428,7 +431,7 @@ function TourDetail({
                     有人取消會依序遞補，轉正取時會通知你
                   </div>
                 )}
-                {r.for_self && r.completed_at && (
+                {r.for_self && isPassportComplete(tour) && (
                   <button onClick={onOpenCertificate} className="btn-primary" style={{ width: "100%", marginTop: 12, fontSize: "var(--fs-base)" }}>
                     🎓 看結業證書
                   </button>
@@ -667,7 +670,7 @@ function Passport({
       {tours.map((tour) => {
         const own = ownRegistration(tour)!;
         const { stamped, total } = stampProgress(tour);
-        const done = Boolean(own.completed_at);
+        const done = isPassportComplete(tour);
         return (
           <div key={tour.id} className="card" style={{ padding: 16, border: done ? "2px solid var(--gold)" : undefined }}>
             <button onClick={() => onOpenTour(tour.id)} style={{ textAlign: "left", width: "100%" }}>
@@ -759,7 +762,7 @@ function Certificate({ tour, onClose }: { tour: StudyTourView; onClose: () => vo
     document.body.classList.add("printing-certificate");
     return () => document.body.classList.remove("printing-certificate");
   }, []);
-  if (!own || typeof document === "undefined") return null;
+  if (!own || !isPassportComplete(tour) || typeof document === "undefined") return null;
 
   const completedDay = formatCertificateDate(own.completed_at ?? tour.ends_at);
   return createPortal(

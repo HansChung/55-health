@@ -281,6 +281,20 @@ export function isStampToken(value: unknown): value is string {
   return typeof value === "string" && /^[A-Za-z0-9_-]{16,64}$/.test(value);
 }
 
+/**
+ * 對外分享／印 QR 用的網址：優先用 NEXT_PUBLIC_APP_URL（正式站），
+ * 沒設才用目前網址——App（Capacitor）裡的 origin 是 http://localhost，別人點了打不開
+ */
+export function publicAppOrigin(envUrl: string | undefined, fallbackOrigin: string): string {
+  if (envUrl && /^https?:\/\//.test(envUrl)) return envUrl.replace(/\/+$/, "");
+  return fallbackOrigin.replace(/\/+$/, "");
+}
+
+/** 分享給朋友的活動連結 */
+export function tourShareUrl(baseUrl: string, tourId: string): string {
+  return `${baseUrl.replace(/\/+$/, "")}/?open=study-tours&tour=${encodeURIComponent(tourId)}`;
+}
+
 /** 印在 QR Code 上的網址：手機相機掃了就打開暖暖蓋章 */
 export function stampUrl(baseUrl: string, token: string): string {
   return `${baseUrl.replace(/\/+$/, "")}/?stamp=${encodeURIComponent(token)}`;
@@ -540,6 +554,12 @@ export function ownRegistration(tour: Pick<StudyTourView, "registrations">): Stu
 
 export function stampProgress(tour: Pick<StudyTourView, "stops">): { stamped: number; total: number } {
   return { stamped: tour.stops.filter((s) => s.stamped_at).length, total: tour.stops.length };
+}
+
+/** 集滿所有站（以目前的站點為準；後台加了新站就要補蓋） */
+export function isPassportComplete(tour: Pick<StudyTourView, "stops">): boolean {
+  const { stamped, total } = stampProgress(tour);
+  return total > 0 && stamped >= total;
 }
 
 /** CSV 欄位：有逗號／引號／換行就加引號；開頭是 = + - @ 的前面加 ' 避免 Excel 當公式執行 */

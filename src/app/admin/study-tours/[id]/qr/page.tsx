@@ -4,13 +4,11 @@
 import { use, useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { api } from "@/lib/api-client";
-import { formatTourDateRange, stampUrl, type AdminStudyTourStop, type StudyTourRow } from "@/lib/study-tours";
+import { formatTourDateRange, publicAppOrigin, stampUrl, type AdminStudyTourStop, type StudyTourRow } from "@/lib/study-tours";
 
 /** QR 要指向正式網址：優先用 NEXT_PUBLIC_APP_URL，沒設才用目前網址 */
 function appBaseUrl(): string {
-  const env = process.env.NEXT_PUBLIC_APP_URL;
-  if (env && /^https?:\/\//.test(env)) return env.replace(/\/+$/, "");
-  return typeof window !== "undefined" ? window.location.origin : "";
+  return publicAppOrigin(process.env.NEXT_PUBLIC_APP_URL, typeof window !== "undefined" ? window.location.origin : "");
 }
 
 export default function StudyTourQrPage({ params }: { params: Promise<{ id: string }> }) {
