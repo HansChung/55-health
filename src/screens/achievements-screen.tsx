@@ -17,9 +17,10 @@ const CATEGORY_LABELS: Record<string, string> = {
   medication: "用藥",
   voice: "暖暖對話",
   family: "家人",
+  tour: "研學團",
 };
 
-const CATEGORY_ORDER = ["streak", "meal", "exercise", "metric", "medication", "voice", "family"];
+const CATEGORY_ORDER = ["streak", "meal", "exercise", "metric", "medication", "voice", "family", "tour"];
 
 export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
   const [data, setData] = useState<AchievementsResponse | null>(null);

@@ -83,6 +83,26 @@ stack works well for auth + meal/diary CRUD:
   "One pending video per user" is enforced by the partial unique index
   `travel_videos_one_pending_per_user` (insert → 23505 → 409), so concurrent POSTs can't double-charge.
 
+### 研學團（study tours）
+- Home 「研學團」/ 我的 → 「研學護照」→ subpages `study-tours` / `study-passport` (free for all tiers).
+  Registration only — no payment (`fee_text` is display-only). Admin at `/admin/study-tours`
+  (tours, stops, registrations list + CSV) and `/admin/study-tours/[id]/qr` (one printable A4 QR per stop).
+- All rules live in SQL functions in `supabase/add-study-tours.sql` (`study_tour_register`,
+  `study_tour_cancel`, `study_tour_refill`, `study_tour_stamp`), each of which locks the tour row
+  (`select … for update`), so capacity can't be oversold. Registering inserts `waitlisted` and then runs
+  first-fit promotion; cancelling/raising capacity promotes the waitlist (API pushes a notification).
+  Functions are `service_role`-only; `study_tours` / `study_tour_stops` have RLS with **no** client
+  policies because `stamp_token` (printed in the QR) must stay secret.
+- QR = `${NEXT_PUBLIC_APP_URL}/?stamp=<token>`. `page.tsx` moves the token to sessionStorage (so it
+  survives the login screen), strips it from the URL, then calls `POST /api/study-tours/stamp`.
+  Stamping works from 3h before start to 12h after end (admins bypass the window for testing); a person
+  who never registered gets an `onsite` registration, a waitlisted one is confirmed (they showed up).
+  All stops stamped → `completed_at` → 結業證書 (printable via `body.printing-certificate` print CSS).
+- Family members can register a linked elder (`family_links` accepted): the row's `user_id` is the elder,
+  `registered_by` is the family member. Share/push deep link: `/?open=study-tours&tour=<id>`.
+- Local e2e: SQL scenario + 20-way concurrency tests were run against the Supabase CLI stack; remember
+  the local rate limit for OTP emails (`[auth.rate_limit] email_sent`, default 2/h).
+
 ### Book × App light coupling（書本／App）
 - Chapter openings live at `/smart/chapter/[id]` (public, printable). Shared rhythm: **一拍、二問、三記下**.
 - Optional save: 「把這句話點成光點」→ `/smart/spark?source=chapterXXXX` (sessionStorage seed).

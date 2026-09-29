@@ -216,3 +216,15 @@ button {
   outline-offset: 2px;
   border-radius: 6px;
 }
+
+/* 研學團結業證書：列印時只印證書 */
+@media print {
+  body.printing-certificate > *:not(.certificate-print-root) { display: none !important; }
+  body.printing-certificate .certificate-print-root {
+    position: static !important;
+    background: #fff !important;
+    padding: 0 !important;
+  }
+  body.printing-certificate .certificate-paper { box-shadow: none !important; max-width: 560px !important; margin: 40px auto 0; }
+  body.printing-certificate .certificate-no-print { display: none !important; }
+}

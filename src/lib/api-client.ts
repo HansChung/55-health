@@ -11,6 +11,15 @@ import type {
   TravelVideoQuota,
   TravelVideoStyleId,
 } from "./travel-video";
+import type {
+  AdminStudyTour,
+  AdminStudyTourRegistration,
+  AdminStudyTourStop,
+  StudyTourElder,
+  StudyTourRow,
+  StudyTourStampResult,
+  StudyTourView,
+} from "./study-tours";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -157,6 +166,27 @@ export const api = {
 
   deleteTravelVideo: (id: string) =>
     apiFetch<{ ok: true }>(`/api/ai/travel-video/${id}`, { method: "DELETE" }),
+
+  // 研學團（報名不收費；集章＝掃站點 QR Code）
+  listStudyTours: () =>
+    apiFetch<{ tours: StudyTourView[]; elders: StudyTourElder[] }>("/api/study-tours"),
+
+  registerStudyTour: (
+    tourId: string,
+    input: { participant_name: string; participant_phone: string; party_size: number; note?: string; for_user_id?: string }
+  ) =>
+    apiFetch<{ registration: { id: string; status: "confirmed" | "waitlisted" }; tours: StudyTourView[] | null }>(
+      `/api/study-tours/${tourId}/register`,
+      { method: "POST", json: input }
+    ),
+
+  cancelStudyTourRegistration: (registrationId: string) =>
+    apiFetch<{ ok: true; tours: StudyTourView[] | null }>(`/api/study-tours/registrations/${registrationId}/cancel`, {
+      method: "POST",
+    }),
+
+  stampStudyTour: (token: string) =>
+    apiFetch<{ result: StudyTourStampResult }>("/api/study-tours/stamp", { method: "POST", json: { token }, timeoutMs: 20000 }),
 
   // Family
   listFamily: () =>
@@ -399,8 +429,44 @@ export const api = {
   adminDeletePartnerCampaign: (id: string) =>
     apiFetch<{ ok: true }>(`/api/admin/partner-campaigns/${id}`, { method: "DELETE" }),
 
+  adminListStudyTours: () =>
+    apiFetch<{ tours: AdminStudyTour[] }>("/api/admin/study-tours"),
+
+  adminCreateStudyTour: (input: Record<string, unknown>) =>
+    apiFetch<{ tour: StudyTourRow }>("/api/admin/study-tours", { method: "POST", json: input }),
+
+  adminGetStudyTour: (id: string) =>
+    apiFetch<{ tour: StudyTourRow; stops: AdminStudyTourStop[]; registrations: AdminStudyTourRegistration[] }>(
+      `/api/admin/study-tours/${id}`
+    ),
+
+  adminUpdateStudyTour: (id: string, patch: Record<string, unknown>) =>
+    apiFetch<{ tour: StudyTourRow }>(`/api/admin/study-tours/${id}`, { method: "PATCH", json: patch }),
+
+  adminDeleteStudyTour: (id: string) =>
+    apiFetch<{ ok: true }>(`/api/admin/study-tours/${id}`, { method: "DELETE" }),
+
+  adminCreateStudyTourStop: (tourId: string, input: { name: string; description?: string; fun_fact?: string; stamp_emoji?: string }) =>
+    apiFetch<{ stop: AdminStudyTourStop }>(`/api/admin/study-tours/${tourId}/stops`, { method: "POST", json: input }),
+
+  adminUpdateStudyTourStop: (
+    tourId: string,
+    stopId: string,
+    patch: { name?: string; description?: string; fun_fact?: string; stamp_emoji?: string; position?: number; regenerate_token?: boolean }
+  ) =>
+    apiFetch<{ stop: AdminStudyTourStop }>(`/api/admin/study-tours/${tourId}/stops/${stopId}`, { method: "PATCH", json: patch }),
+
+  adminDeleteStudyTourStop: (tourId: string, stopId: string) =>
+    apiFetch<{ ok: true }>(`/api/admin/study-tours/${tourId}/stops/${stopId}`, { method: "DELETE" }),
+
+  adminCancelStudyTourRegistration: (tourId: string, registrationId: string) =>
+    apiFetch<{ ok: true; promoted: number }>(`/api/admin/study-tours/${tourId}/registrations/${registrationId}`, {
+      method: "PATCH",
+      json: { status: "cancelled" },
+    }),
+
   /** 管理員上傳圖片 → 回傳公開網址（folder 需在白名單內） */
-  adminUploadImage: async (file: Blob, folder: "campaigns"): Promise<{ url: string }> => {
+  adminUploadImage: async (file: Blob, folder: import("@/lib/admin-media").UploadFolder): Promise<{ url: string }> => {
     const form = new FormData();
     form.append("file", file, file instanceof File ? file.name : "image");
     form.append("folder", folder);

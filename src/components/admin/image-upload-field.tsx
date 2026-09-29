@@ -5,11 +5,12 @@
 import { useRef, useState } from "react";
 import { api } from "@/lib/api-client";
 import { prepareImageForUpload } from "@/lib/image-resize";
+import type { UploadFolder } from "@/lib/admin-media";
 
 interface Props {
   value: string;
   onChange: (url: string) => void;
-  folder: "campaigns";
+  folder: UploadFolder;
   hint?: string;
 }
 

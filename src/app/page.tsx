@@ -32,6 +32,8 @@ import { BlueprintScreen } from "@/screens/blueprint-screen";
 import { IotScreen } from "@/screens/iot-screen";
 import { CaregiverScreen } from "@/screens/caregiver-screen";
 import { TravelVideoScreen } from "@/screens/travel-video-screen";
+import { StudyToursScreen } from "@/screens/study-tours-screen";
+import { StampResultSheet, type StampSheetState } from "@/components/stamp-result-sheet";
 import { MealDetailSheet } from "@/screens/meal-detail-sheet";
 import { PhotoSourceSheet } from "@/components/photo-source-sheet";
 import type { MealRecord, AiSuggestion, ProfileMedication, HealthMetric, FavoriteMeal, PartnerCampaign, AchievementsResponse } from "@/lib/api-client";
@@ -53,6 +55,8 @@ import {
   getChapterDeepLinkHint,
   type ChapterIntentHint,
 } from "@/lib/chapter-opening";
+
+const PENDING_STAMP_KEY = "nuannuan_pending_stamp";
 
 export default function Page() {
   const { user, profile, loading, refreshProfile, setProfileDirectly } = useAuth();
@@ -97,14 +101,27 @@ export default function Page() {
   const [analyzing, setAnalyzing] = useState(false);
   const pendingOpenRef = useRef<string | null>(null);
   const [chapterIntent, setChapterIntent] = useState<ChapterIntentHint | null>(null);
+  const [studyTourId, setStudyTourId] = useState<string | null>(null);
+  const [studyToursKey, setStudyToursKey] = useState(0);
+  const [stampSheet, setStampSheet] = useState<StampSheetState | null>(null);
 
   // 章節開篇 QR 深連結：/?open=voice|camera|photo&from=chapter0100
   useEffect(() => {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     const open = url.searchParams.get("open");
-    if (open && ["voice", "camera", "photo", "travel-video"].includes(open)) {
+    if (open && ["voice", "camera", "photo", "travel-video", "study-tours"].includes(open)) {
       pendingOpenRef.current = open;
+    }
+    // 研學團站點 QR：/?stamp=代碼 → 先記下來（還沒登入的話登入後再蓋），網址上的代碼馬上拿掉
+    const stamp = url.searchParams.get("stamp");
+    if (stamp) {
+      try {
+        sessionStorage.setItem(PENDING_STAMP_KEY, stamp);
+      } catch { /* ignore */ }
+      url.searchParams.delete("stamp");
+      const qs = url.searchParams.toString();
+      window.history.replaceState({}, "", url.pathname + (qs ? `?${qs}` : ""));
     }
     const from = url.searchParams.get("from");
     const hint = getChapterDeepLinkHint(from);
@@ -139,11 +156,38 @@ export default function Page() {
     else if (open === "photo") setShowPhotoSource(true);
     // 出遊影片做好的推播點進來（不在這裡擋方案：profile 可能還沒載完；配額由伺服器把關）
     else if (open === "travel-video") setSubpage("travel-video");
+    // 研學團：分享連結／候補轉正推播（&tour=活動 id 直接打開那一團）
+    else if (open === "study-tours") {
+      setStudyTourId(url.searchParams.get("tour"));
+      setStudyToursKey((k) => k + 1);
+      setSubpage("study-tours");
+    }
 
     url.searchParams.delete("open");
     url.searchParams.delete("from");
+    url.searchParams.delete("tour");
     const qs = url.searchParams.toString();
     window.history.replaceState({}, "", url.pathname + (qs ? `?${qs}` : ""));
+  }, [loading, user]);
+
+  // 掃了研學團站點 QR（可能是登入前掃的）→ 登入後蓋章
+  useEffect(() => {
+    if (loading || !user) return;
+    let token: string | null = null;
+    try {
+      token = sessionStorage.getItem(PENDING_STAMP_KEY);
+      sessionStorage.removeItem(PENDING_STAMP_KEY);
+    } catch { /* ignore */ }
+    if (!token) return;
+    setStampSheet({ status: "loading" });
+    api
+      .stampStudyTour(token)
+      .then(({ result }) => {
+        setStampSheet({ status: "done", result });
+        trackEvent("study_tour_stamp", { newly: result.newly_stamped, completed: result.just_completed });
+        if (result.newly_stamped) reloadAchievements().catch(console.error);
+      })
+      .catch((e) => setStampSheet({ status: "error", message: e instanceof Error && e.message ? e.message : "蓋章沒成功，請再掃一次" }));
   }, [loading, user]);
 
   const totalCal = useMemo(() => meals.reduce((s, m) => s + (m.cal || 0), 0), [meals]);
@@ -658,6 +702,11 @@ export default function Page() {
             onBookPractice={() => { window.location.href = "/smart/guide"; }}
             onIot={() => setSubpage("iot")}
             onTravelVideo={() => requireFeature("travel_video", () => setSubpage("travel-video"))}
+            onStudyTours={() => {
+              setStudyTourId(null);
+              setStudyToursKey((k) => k + 1);
+              setSubpage("study-tours");
+            }}
             caregiver={careElderCount > 0 ? { count: careElderCount, needsAttention: careNeedsAttention } : null}
             onCaregiver={() => setSubpage("caregiver")}
           />
@@ -675,6 +724,19 @@ export default function Page() {
       </div>
 
       {tab === "home" && !modal && !subpage && <SosButton />}
+
+      {stampSheet && (
+        <StampResultSheet
+          state={stampSheet}
+          onClose={() => setStampSheet(null)}
+          onOpenPassport={() => {
+            setStampSheet(null);
+            setModal(null);
+            setStudyToursKey((k) => k + 1);
+            setSubpage("study-passport");
+          }}
+        />
+      )}
 
       {celebration.length > 0 && (
         <AchievementToast unlocked={celebration} onClose={() => setCelebration([])} />
@@ -725,6 +787,15 @@ export default function Page() {
       {subpage === "blueprint" && <BlueprintScreen onBack={() => setSubpage(null)} />}
       {subpage === "iot" && <IotScreen onBack={() => setSubpage(null)} />}
       {subpage === "travel-video" && <TravelVideoScreen onBack={() => setSubpage(null)} />}
+      {(subpage === "study-tours" || subpage === "study-passport") && (
+        <StudyToursScreen
+          key={`${subpage}-${studyToursKey}`}
+          onBack={() => setSubpage(null)}
+          initialTourId={subpage === "study-tours" ? studyTourId : null}
+          initialView={subpage === "study-passport" ? "passport" : "list"}
+          displayName={profile?.display_name}
+        />
+      )}
       {subpage === "caregiver" && (
         <CaregiverScreen
           onBack={() => setSubpage(null)}
