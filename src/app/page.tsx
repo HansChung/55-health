@@ -31,6 +31,7 @@ import { SmartScreen } from "@/screens/smart-screen";
 import { BlueprintScreen } from "@/screens/blueprint-screen";
 import { IotScreen } from "@/screens/iot-screen";
 import { CaregiverScreen } from "@/screens/caregiver-screen";
+import { TravelVideoScreen } from "@/screens/travel-video-screen";
 import { MealDetailSheet } from "@/screens/meal-detail-sheet";
 import { PhotoSourceSheet } from "@/components/photo-source-sheet";
 import type { MealRecord, AiSuggestion, ProfileMedication, HealthMetric, FavoriteMeal, PartnerCampaign, AchievementsResponse } from "@/lib/api-client";
@@ -102,7 +103,7 @@ export default function Page() {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     const open = url.searchParams.get("open");
-    if (open && ["voice", "camera", "photo"].includes(open)) {
+    if (open && ["voice", "camera", "photo", "travel-video"].includes(open)) {
       pendingOpenRef.current = open;
     }
     const from = url.searchParams.get("from");
@@ -136,6 +137,8 @@ export default function Page() {
     if (open === "voice") setModal("voice");
     else if (open === "camera") setModal("camera");
     else if (open === "photo") setShowPhotoSource(true);
+    // 出遊影片做好的推播點進來（不在這裡擋方案：profile 可能還沒載完；配額由伺服器把關）
+    else if (open === "travel-video") setSubpage("travel-video");
 
     url.searchParams.delete("open");
     url.searchParams.delete("from");
@@ -654,6 +657,7 @@ export default function Page() {
             onBlueprint={() => setSubpage("blueprint")}
             onBookPractice={() => { window.location.href = "/smart/guide"; }}
             onIot={() => setSubpage("iot")}
+            onTravelVideo={() => requireFeature("travel_video", () => setSubpage("travel-video"))}
             caregiver={careElderCount > 0 ? { count: careElderCount, needsAttention: careNeedsAttention } : null}
             onCaregiver={() => setSubpage("caregiver")}
           />
@@ -720,6 +724,7 @@ export default function Page() {
       )}
       {subpage === "blueprint" && <BlueprintScreen onBack={() => setSubpage(null)} />}
       {subpage === "iot" && <IotScreen onBack={() => setSubpage(null)} />}
+      {subpage === "travel-video" && <TravelVideoScreen onBack={() => setSubpage(null)} />}
       {subpage === "caregiver" && (
         <CaregiverScreen
           onBack={() => setSubpage(null)}

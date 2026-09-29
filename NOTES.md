@@ -224,6 +224,30 @@ android/                                       # Capacitor Android（未實測�
 - [x] AI 建議快取 1 小時到 localStorage
 - [x] **語音 max_seconds 倒數控費**（避免單次通話無限燒錢）
 
+### 出遊回憶影片（⭐ 全新，2026-09）
+- [x] 首頁「出遊回憶影片」→ 拍照／相簿選一張 → 選風格（自然動起來／跟家人打招呼／電影感運鏡／溫馨回憶）+ 地點（選填）→ 10 秒影片
+- [x] 走 **邁笙 AI 影音創作平台**（`api.lk888.ai`，模型 `minimax-h3` 首尾幀模式）；Vercel 設 `LK888_API_KEY`
+- [x] 非同步：畫面每 10 秒輪詢；做好後把 mp4 轉存到 `travel-videos` bucket（公開讀取、路徑含 UUID）
+- [x] 影片常見要 5～60 分鐘；超過 2 小時視為失敗；**失敗不扣次數**（平台也會自動退款）
+- [x] 配額：`subscription_plans.ai_video_quota`（預設 free 0／basic 2／pro 6）；刪除是軟刪除，仍算次數
+- [x] 分享（Web Share／複製連結給 LINE）、存到手機、刪除
+- [x] **需先跑 `supabase/add-travel-videos.sql`**
+- [x] **做好／失敗推播給長輩**（點通知直接開影片頁）：影片頁有「開啟通知」卡片；背景送達需設 `LK888_WEBHOOK_SECRET`（平台完成回呼 `/api/webhooks/lk888/<密鑰>`）+ VAPID
+- ⚠️ 陷阱：lk888 成功判定是 `body.code === 200`（不是 0）；`data.task_id` 是數字；select 參數要傳字串（`duration: "10"`）
+- ⚠️ 平台回呼沒有簽章：只當「該去查了」的訊號，一律用 task_id 反查 `/v1/skills/task-status`
+
+### 拍照辨識＋AI 建議改走邁笙（2026-09）
+- 有 `LK888_API_KEY` 時，所有 Gemini 呼叫都走邁笙的 Gemini 相容端點（同一個 `@google/generative-ai` SDK，只換 baseUrl）
+  - 食物＋藥袋拍照辨識：`gem-3.8-flash`（`LK888_VISION_MODEL` 可改）
+  - AI 建議：`gem-3.5-flash-lite`（`LK888_TEXT_MODEL` 可改）
+- `GEMINI_PROVIDER=google` 可強制全部改回 Google 直連（`GEMINI_API_KEY`）；選擇邏輯在 `resolveGeminiConfig`
+- 實測（2026-09-29）：拍照辨識 gem-3.8-flash 約 14 秒、≈0.004 算力／張；AI 建議 gem-3.5-flash-lite 約 4 秒、≈0.002 算力／次
+  - 看圖模型會先「思考」→ 前端 `analyzeFood`／`analyzePrescription` 逾時已放寬到 45 秒，route `maxDuration = 60`
+  - 在邁笙上 lite 的 token 單價反而比 3.8-flash 貴約 4 倍（3.8 有思考 token，總花費相近）
+- 出遊影片 minimax-h3 768P：0.095 算力／秒（一支 10 秒 ≈ 0.95 算力），晚上 10～12 點 5 折、0～9 點 3 折；平均約 6 分鐘出片
+- ⚠️ `gem-*` 不在 `pricing.ts` 計價表 → admin 成本顯示 0（用量次數與配額照常）
+- ⚠️ `/v1/media/generate` 缺必填參數**不會被拒絕，照樣建立任務並扣費**，也沒有取消 API → 別拿它做「應該會失敗」的測試
+
 ### 拍照 / 上傳
 - [x] 真實相機 getUserMedia（前後鏡頭、翻轉）
 - [x] 上傳照片 + HEIC 自動轉 JPEG（`heic2any`）

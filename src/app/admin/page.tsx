@@ -139,6 +139,7 @@ function labelService(s: string) {
     gemini_text: "💬 Gemini 文字",
     openai_realtime: "🎙 OpenAI 語音",
     openai_chat: "💭 OpenAI 文字",
+    minimax_video: "🎬 MiniMax 影片",
   } as Record<string, string>)[s] ?? s;
 }
 

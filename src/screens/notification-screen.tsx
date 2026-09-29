@@ -6,7 +6,7 @@ import { SubPage } from "@/components/sub-page";
 import { Toggle } from "@/components/toggle";
 import { api, type NotificationSettings } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
-import { subscribeWebPush, unsubscribeWebPush } from "@/lib/push/client";
+import { enableWebPush, unsubscribeWebPush } from "@/lib/push/client";
 
 interface NotificationScreenProps {
   onBack: () => void;
@@ -86,19 +86,7 @@ export function NotificationScreen({ onBack }: NotificationScreenProps) {
 
     setPushBusy(true);
     try {
-      const { publicKey } = await api.getVapidPublicKey();
-      if (!publicKey) throw new Error("缺少推播金鑰");
-      const sub = await subscribeWebPush(publicKey);
-      if (!sub) throw new Error("訂閱失敗");
-      const json = sub.toJSON();
-      if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) {
-        throw new Error("訂閱資料不完整");
-      }
-      await api.subscribePush({
-        endpoint: json.endpoint,
-        keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
-        userAgent: navigator.userAgent.slice(0, 400),
-      });
+      await enableWebPush();
       await updateSetting("web_push", { on: true });
       toast.success("已開啟瀏覽器推播。異常時會即時通知您。");
     } catch (e) {

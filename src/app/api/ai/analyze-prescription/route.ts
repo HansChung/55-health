@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getGeminiModel, isGeminiConfigured, parseModelJson, resolveGeminiConfig } from "@/lib/ai/gemini";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { trackAiUsage, checkUserQuota } from "@/lib/ai/usage-tracker";
 import { z } from "zod";
+
+// 看圖模型實測約 10～15 秒，預留空間
+export const maxDuration = 60;
 
 const PROMPT = `你是台灣的專業藥師「暖暖」。請仔細看這張**藥袋或處方箋照片**，提取以下藥物資訊。
 
@@ -67,20 +70,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "缺少圖片" }, { status: 400 });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return NextResponse.json({ error: "GEMINI_API_KEY 未設定" }, { status: 500 });
+  if (!isGeminiConfigured()) {
+    console.error("[api] 藥袋辨識：LK888_API_KEY / GEMINI_API_KEY 未設定");
+    return NextResponse.json({ error: "辨識服務暫停中，請稍後再試" }, { status: 503 });
+  }
 
-  const model = "gemini-2.5-flash"; // 藥袋辨識用 flash 夠用
+  // 走 Google 直連時用 flash 就夠；走邁笙時用 LK888_VISION_MODEL
+  const vision = resolveGeminiConfig(process.env, { googleModel: "gemini-2.5-flash" });
+  const model = vision.model;
 
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const generativeModel = genAI.getGenerativeModel({
-      model,
-      generationConfig: {
+    const { model: generativeModel } = getGeminiModel(
+      {
         responseMimeType: "application/json",
         temperature: 0.3, // 用藥資訊要更精準
       },
-    });
+      { googleModel: "gemini-2.5-flash" }
+    );
 
     const result = await generativeModel.generateContent([
       { text: PROMPT },
@@ -90,7 +96,7 @@ export async function POST(req: NextRequest) {
     const text = result.response.text();
     let parsed: PrescriptionAnalysisResult & { error?: string };
     try {
-      parsed = JSON.parse(text);
+      parsed = parseModelJson<PrescriptionAnalysisResult & { error?: string }>(text);
     } catch {
       throw new Error("Gemini 回傳格式錯誤");
     }
@@ -108,6 +114,7 @@ export async function POST(req: NextRequest) {
       outputTokens: usage?.candidatesTokenCount ?? 0,
       endpoint: "/api/ai/analyze-prescription",
       success: true,
+      metadata: { provider: vision.provider },
     });
 
     return NextResponse.json({ result: parsed });
@@ -120,10 +127,13 @@ export async function POST(req: NextRequest) {
       endpoint: "/api/ai/analyze-prescription",
       success: false,
       errorMessage: msg,
+      metadata: { provider: vision.provider },
     });
     if (msg.includes("429") || msg.includes("quota")) {
       return NextResponse.json({ error: "今日 AI 額度已滿，請明天再試" }, { status: 429 });
     }
-    return NextResponse.json({ error: "辨識失敗：" + msg.substring(0, 150) }, { status: 500 });
+    // 不回傳上游錯誤原文（可能含平台內部訊息）
+    console.error("[api] 藥袋辨識失敗:", msg);
+    return NextResponse.json({ error: "辨識失敗，換一張清楚一點的藥袋照片再試試" }, { status: 500 });
   }
 }

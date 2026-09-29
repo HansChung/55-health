@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getGeminiModel, isGeminiConfigured, parseModelJson } from "@/lib/ai/gemini";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { trackAiUsage } from "@/lib/ai/usage-tracker";
 
@@ -65,19 +65,17 @@ ${meals?.length
 總卡路里：${meals?.reduce((s, m) => s + (m.total_cal || 0), 0) ?? 0} / ${profile?.calorie_goal ?? 1800}
 `;
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return NextResponse.json({ error: "GEMINI_API_KEY 未設定" }, { status: 500 });
+  if (!isGeminiConfigured()) {
+    console.error("[api] AI 建議：LK888_API_KEY / GEMINI_API_KEY 未設定");
+    return NextResponse.json({ error: "建議服務暫停中，請稍後再試" }, { status: 503 });
+  }
 
   try {
-    const model = "gemini-2.5-flash-lite"; // 文字建議用 lite 即可，額度更大（15k/day）
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const m = genAI.getGenerativeModel({
-      model,
-      generationConfig: {
-        responseMimeType: "application/json",
-        temperature: 0.7,
-      },
-    });
+    // 有 LK888_API_KEY 走邁笙（gem-3.5-flash-lite）；Google 直連用 lite 即可，額度更大（15k/day）
+    const { model: m, config } = getGeminiModel(
+      { responseMimeType: "application/json", temperature: 0.7 },
+      { task: "text", googleModel: "gemini-2.5-flash-lite" }
+    );
 
     const result = await m.generateContent([
       { text: SUGGEST_PROMPT },
@@ -85,17 +83,18 @@ ${meals?.length
     ]);
 
     const text = result.response.text();
-    const suggestion = JSON.parse(text);
+    const suggestion = parseModelJson(text);
     const usage = result.response.usageMetadata;
 
     await trackAiUsage({
       userId: user.id,
       service: "gemini_text",
-      model,
+      model: config.model,
       inputTokens: usage?.promptTokenCount ?? 0,
       outputTokens: usage?.candidatesTokenCount ?? 0,
       endpoint: "/api/ai/suggest",
       success: true,
+      metadata: { provider: config.provider },
     });
 
     return NextResponse.json({ suggestion });

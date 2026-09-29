@@ -4,6 +4,7 @@
  */
 
 import type { ChapterOverrides } from "./chapter-content";
+import type { TravelVideo, TravelVideoQuota, TravelVideoStyleId } from "./travel-video";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -93,11 +94,12 @@ async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T>
 
 export const api = {
   // AI
+  // 看圖模型會先「思考」，實測約 10～15 秒 → 逾時放寬，避免還在辨識就被判逾時
   analyzeFood: (imageBase64: string, mimeType?: string) =>
     apiFetch<{
       result: import("./ai/gemini").FoodAnalysisResult;
       quota: { used: number; limit: number; tier: string };
-    }>("/api/ai/analyze-food", { method: "POST", json: { imageBase64, mimeType } }),
+    }>("/api/ai/analyze-food", { method: "POST", json: { imageBase64, mimeType }, timeoutMs: 45000 }),
 
   createRealtimeSession: () =>
     apiFetch<{
@@ -114,6 +116,24 @@ export const api = {
 
   getSuggestion: () =>
     apiFetch<{ suggestion: AiSuggestion }>("/api/ai/suggest"),
+
+  // 出遊回憶影片（MiniMax）；列表會順便同步進行中的影片，做好時要轉存影片 → 給長一點的逾時
+  listTravelVideos: () =>
+    apiFetch<{ videos: TravelVideo[]; quota: TravelVideoQuota; enabled: boolean }>(
+      "/api/ai/travel-video",
+      { timeoutMs: 60000, retries: 0 }
+    ),
+
+  // 逾時要比伺服器 maxDuration（60 秒）長：前端先放棄時，伺服器可能已經建好付費任務
+  createTravelVideo: (input: { image: string; style: TravelVideoStyleId; place?: string }) =>
+    apiFetch<{ video: TravelVideo; quota: TravelVideoQuota }>("/api/ai/travel-video", {
+      method: "POST",
+      json: input,
+      timeoutMs: 70000,
+    }),
+
+  deleteTravelVideo: (id: string) =>
+    apiFetch<{ ok: true }>(`/api/ai/travel-video/${id}`, { method: "DELETE" }),
 
   // Family
   listFamily: () =>
@@ -241,6 +261,7 @@ export const api = {
     apiFetch<{ result: PrescriptionResult }>("/api/ai/analyze-prescription", {
       method: "POST",
       json: { imageBase64, mimeType },
+      timeoutMs: 45000,
     }),
 
   // Profile
