@@ -167,6 +167,13 @@ export const api = {
   deleteTravelVideo: (id: string) =>
     apiFetch<{ ok: true }>(`/api/ai/travel-video/${id}`, { method: "DELETE" }),
 
+  // 拍照問暖暖：看圖模型約 10～15 秒；和拍照記餐共用每月拍照次數
+  askPhoto: (input: { imageBase64: string; mimeType?: string; question?: string; place?: string }) =>
+    apiFetch<{ result: import("./photo-ask").PhotoAskResult; quota: { used: number; limit: number; tier: string } }>(
+      "/api/ai/photo-ask",
+      { method: "POST", json: input, timeoutMs: 45000 }
+    ),
+
   // 研學團（報名不收費；集章＝掃站點 QR Code）
   listStudyTours: () =>
     apiFetch<{ tours: StudyTourView[]; elders: StudyTourElder[] }>("/api/study-tours"),

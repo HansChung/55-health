@@ -44,6 +44,7 @@ interface HomeScreenProps {
   onIot?: () => void;
   onTravelVideo?: () => void;
   onStudyTours?: () => void;
+  onPhotoAsk?: () => void;
   caregiver?: { count: number; needsAttention: boolean } | null;
   onCaregiver?: () => void;
 }
@@ -62,7 +63,7 @@ function getDateLabel(): string {
   return `${d.getMonth() + 1}月${d.getDate()}日　星期${WEEKDAYS[d.getDay()]}`;
 }
 
-export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart, onBlueprint, onBookPractice, onIot, onTravelVideo, onStudyTours, caregiver = null, onCaregiver }: HomeScreenProps) {
+export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart, onBlueprint, onBookPractice, onIot, onTravelVideo, onStudyTours, onPhotoAsk, caregiver = null, onCaregiver }: HomeScreenProps) {
   // 從餐點計算今日營養
   const totals = meals.reduce(
     (s, m) => {
@@ -195,6 +196,18 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
           background="linear-gradient(135deg, #EAF3E7 0%, #FFFFFF 100%)"
           borderColor="#C3DDBB"
           iconBg="#D5E8CE"
+        />
+      )}
+
+      {onPhotoAsk && (
+        <NavCard
+          onClick={onPhotoAsk}
+          emoji="📷"
+          title="拍照問暖暖"
+          subtitle="看到不認識的花草、古蹟，拍給暖暖看"
+          background="linear-gradient(135deg, #EEF6FB 0%, #FFFFFF 100%)"
+          borderColor="#CDE4F0"
+          iconBg="#DCEDF7"
         />
       )}
 

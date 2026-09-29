@@ -107,6 +107,16 @@ stack works well for auth + meal/diary CRUD:
 - Local e2e: SQL scenario + 20-way concurrency tests were run against the Supabase CLI stack; remember
   the local rate limit for OTP emails (`[auth.rate_limit] email_sent`, default 2/h).
 
+### 拍照問暖暖（photo ask）
+- Home 「拍照問暖暖」, and a button on 研學團 pages (prefills the tour title as the place) → subpage
+  `photo-ask` (gated by `ai_photo`, i.e. basic+). Deep link `/?open=photo-ask`.
+- `POST /api/ai/photo-ask` → `askAboutPhoto` (`src/lib/ai/photo-ask.ts`, vision model via
+  `getGeminiModel`) → JSON normalised by `normalizePhotoAskResult`. Tracked as `gemini_vision`, so it
+  shares the monthly photo quota with meal photos. Photos are not stored.
+- The prompt forbids guessing specific place names/dates when unsure (tested: the model otherwise names
+  the wrong pier and invents history) and always tells elders not to pick/eat wild plants.
+- Read-aloud uses the browser's speechSynthesis (`speakGuideParagraphs`, zh-TW) — free, no server TTS.
+
 ### Book × App light coupling（書本／App）
 - Chapter openings live at `/smart/chapter/[id]` (public, printable). Shared rhythm: **一拍、二問、三記下**.
 - Optional save: 「把這句話點成光點」→ `/smart/spark?source=chapterXXXX` (sessionStorage seed).

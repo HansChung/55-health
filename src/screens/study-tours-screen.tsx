@@ -39,6 +39,8 @@ interface StudyToursScreenProps {
   initialTourId?: string | null;
   initialView?: View;
   displayName?: string | null;
+  /** 拍照問暖暖（帶目前這團的名稱當地點） */
+  onPhotoAsk?: (place?: string) => void;
 }
 
 const sectionTitle: React.CSSProperties = {
@@ -78,7 +80,7 @@ function hasStarted(tour: StudyTourView, now = Date.now()) {
   return new Date(tour.starts_at).getTime() <= now;
 }
 
-export function StudyToursScreen({ onBack, initialTourId = null, initialView = "list", displayName }: StudyToursScreenProps) {
+export function StudyToursScreen({ onBack, initialTourId = null, initialView = "list", displayName, onPhotoAsk }: StudyToursScreenProps) {
   const [tours, setTours] = useState<StudyTourView[] | null>(null);
   const [elders, setElders] = useState<StudyTourElder[]>([]);
   const [loadError, setLoadError] = useState("");
@@ -111,6 +113,7 @@ export function StudyToursScreen({ onBack, initialTourId = null, initialView = "
   }, [tours]);
 
   const selected = selectedId ? (tours ?? []).find((t) => t.id === selectedId) ?? null : null;
+  const ongoing = passportTours.find((t) => hasStarted(t) && !isOver(t)) ?? null;
   const certificateTour = certificateTourId ? (tours ?? []).find((t) => t.id === certificateTourId) ?? null : null;
 
   const back = () => {
@@ -150,6 +153,7 @@ export function StudyToursScreen({ onBack, initialTourId = null, initialView = "
           displayName={displayName}
           onToursChanged={(next) => (next ? setTours(next) : load())}
           onOpenCertificate={() => setCertificateTourId(selected.id)}
+          onPhotoAsk={onPhotoAsk ? () => onPhotoAsk(selected.title) : undefined}
         />
       )}
 
@@ -163,6 +167,20 @@ export function StudyToursScreen({ onBack, initialTourId = null, initialView = "
               📘 我的護照
             </button>
           </div>
+
+          {onPhotoAsk && (
+            <button
+              onClick={() => onPhotoAsk(ongoing?.title)}
+              className="card"
+              style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: 14, marginBottom: 16, textAlign: "left" }}
+            >
+              <span style={{ fontSize: 32 }} aria-hidden="true">📷</span>
+              <span style={{ flex: 1 }}>
+                <span style={{ display: "block", fontSize: "var(--fs-base)", fontWeight: 800 }}>拍照問暖暖</span>
+                <span style={{ display: "block", fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>路上看到不懂的，拍給暖暖看</span>
+              </span>
+            </button>
+          )}
 
           {view === "list" ? (
             <>
@@ -282,12 +300,14 @@ function TourDetail({
   displayName,
   onToursChanged,
   onOpenCertificate,
+  onPhotoAsk,
 }: {
   tour: StudyTourView;
   elders: StudyTourElder[];
   displayName?: string | null;
   onToursChanged: (tours: StudyTourView[] | null) => void;
   onOpenCertificate: () => void;
+  onPhotoAsk?: () => void;
 }) {
   const toast = useToast();
   const walking = walkingLevelMeta(tour.walking_level);
@@ -484,6 +504,11 @@ function TourDetail({
       <button onClick={share} className="btn-ghost" style={{ width: "100%", marginTop: 14 }}>
         📤 分享給朋友
       </button>
+      {onPhotoAsk && (hasStarted(tour) && !isOver(tour)) && (
+        <button onClick={onPhotoAsk} className="btn-ghost" style={{ width: "100%", marginTop: 10 }}>
+          📷 拍照問暖暖
+        </button>
+      )}
     </div>
   );
 }
