@@ -12,7 +12,11 @@ import { narrationVoice, type NarrationVoiceId } from "../travel-video";
 
 const DEFAULT_TTS_MODEL = "gem-3.1-tts";
 const POLL_INTERVAL_MS = 2_000;
-const MAX_WAIT_MS = 40_000;
+/**
+ * 建立＋輪詢＋下載共用一個總期限：route 與前端都是 60 秒，留時間上傳 Storage
+ * （每一步的逾時都不超過剩餘時間，避免付費的配音做好了卻因請求被砍而拿不到）
+ */
+const TOTAL_BUDGET_MS = 45_000;
 
 export function ttsModel(): string {
   return process.env.LK888_TTS_MODEL || DEFAULT_TTS_MODEL;
@@ -57,6 +61,8 @@ export async function synthesizeNarration(text: string, voice: NarrationVoiceId)
   const apiKey = lk888ApiKey();
   if (!apiKey) throw new VideoProviderError("LK888_API_KEY not configured", 0, "not_configured");
   const model = ttsModel();
+  const deadline = Date.now() + TOTAL_BUDGET_MS;
+  const budget = (maxMs: number) => Math.max(1_000, Math.min(maxMs, deadline - Date.now()));
 
   const res = await fetch(`${lk888BaseUrl()}/v1/media/generate`, {
     method: "POST",
@@ -66,19 +72,18 @@ export async function synthesizeNarration(text: string, voice: NarrationVoiceId)
       prompt: buildTtsPrompt(text, voice),
       params: { voice_id: narrationVoice(voice).ttsVoice },
     }),
-    signal: AbortSignal.timeout(15_000),
+    signal: AbortSignal.timeout(budget(15_000)),
   });
   const taskId = parseCreateResponse(res.status, await res.json().catch(() => null));
 
-  const deadline = Date.now() + MAX_WAIT_MS;
-  while (Date.now() < deadline) {
+  while (deadline - Date.now() > POLL_INTERVAL_MS) {
     await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
-    const task = await queryVideoTask(taskId);
+    const task = await queryVideoTask(taskId, budget(10_000));
     if (task.status === "failed") {
       throw new VideoProviderError(`TTS failed: ${task.errorMessage ?? "unknown"}`, 0, "tts_failed");
     }
     if (task.status === "succeeded" && task.videoUrl) {
-      const dl = await fetch(task.videoUrl, { signal: AbortSignal.timeout(15_000) });
+      const dl = await fetch(task.videoUrl, { signal: AbortSignal.timeout(budget(15_000)) });
       if (!dl.ok) throw new Error(`TTS download HTTP ${dl.status}`);
       const audio = Buffer.from(await dl.arrayBuffer());
       return { audio, seconds: wavDurationSeconds(audio), model, taskId, platformCost: task.platformCost };

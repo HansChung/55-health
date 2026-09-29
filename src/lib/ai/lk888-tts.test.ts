@@ -67,3 +67,29 @@ describe("synthesizeNarration（攔截 fetch）", () => {
     }
   });
 });
+
+describe("synthesizeNarration 總期限", () => {
+  it("平台一直沒做好：在 45 秒內放棄並回報 timeout，不會拖過 route 的 60 秒", async () => {
+    vi.stubEnv("LK888_API_KEY", "sk-test");
+    vi.useFakeTimers();
+    let polls = 0;
+    vi.stubGlobal("fetch", async (url: string) => {
+      if (String(url).endsWith("/v1/media/generate")) return new Response(JSON.stringify({ code: 200, data: { task_id: 5 } }));
+      polls++;
+      return new Response(JSON.stringify({ state: "running", is_final: false, error: null, result_urls: [] }));
+    });
+    try {
+      const started = Date.now();
+      const p = synthesizeNarration("好漂亮", "female");
+      const assertion = expect(p).rejects.toMatchObject({ code: "timeout" });
+      await vi.advanceTimersByTimeAsync(46_000);
+      await assertion;
+      expect(Date.now() - started).toBeLessThanOrEqual(46_000);
+      expect(polls).toBeGreaterThan(10);
+    } finally {
+      vi.useRealTimers();
+      vi.unstubAllEnvs();
+      vi.unstubAllGlobals();
+    }
+  });
+});

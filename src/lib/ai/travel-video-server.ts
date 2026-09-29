@@ -24,6 +24,47 @@ export const TRAVEL_VIDEO_BUCKET = "travel-videos";
 export function narrationStoragePath(userId: string, narrationId: string): string {
   return `${userId}/narrations/${narrationId}.wav`;
 }
+
+/** 有口白的影片：合成前的原始影片暫存處（合成完成後刪掉） */
+export function rawVideoStoragePath(row: Pick<TravelVideoRow, "user_id" | "id">): string {
+  return `${row.user_id}/${row.id}/raw.mp4`;
+}
+
+/** 挑出超過 TTL、而且沒有被任何影片用到的試聽音檔 */
+export function selectStaleNarrationPaths(
+  files: Array<{ name: string; created_at?: string | null }>,
+  folder: string,
+  attached: Set<string>,
+  now = Date.now()
+): string[] {
+  return files
+    .filter((f) => f.created_at && now - new Date(f.created_at).getTime() > NARRATION_PREVIEW_TTL_MS)
+    .map((f) => `${folder}/${f.name}`)
+    .filter((p) => !attached.has(p));
+}
+
+/** 清掉這個人試聽過但沒用上的舊口白（重新試聽、中途離開、送出失敗都會留下） */
+export async function cleanupStaleNarrations(userId: string): Promise<number> {
+  const admin = createSupabaseAdmin();
+  const folder = `${userId}/narrations`;
+  const { data: files, error } = await admin.storage
+    .from(TRAVEL_VIDEO_BUCKET)
+    .list(folder, { limit: 100, sortBy: { column: "created_at", order: "asc" } });
+  if (error || !files?.length) return 0;
+  const candidates = selectStaleNarrationPaths(files, folder, new Set<string>());
+  if (candidates.length === 0) return 0;
+  const { data: used } = await admin.from("travel_videos").select("narration_path").in("narration_path", candidates);
+  const attached = new Set<string>((used ?? []).map((r: { narration_path: string }) => r.narration_path));
+  const stale = selectStaleNarrationPaths(files, folder, attached);
+  if (stale.length) await admin.storage.from(TRAVEL_VIDEO_BUCKET).remove(stale);
+  return stale.length;
+}
+
+async function downloadStored(admin: Admin, storagePath: string): Promise<Buffer | null> {
+  const { data, error } = await admin.storage.from(TRAVEL_VIDEO_BUCKET).download(storagePath);
+  if (error || !data) return null;
+  return Buffer.from(await data.arrayBuffer());
+}
 /** 推播點下去直接打開出遊影片頁 */
 export const TRAVEL_VIDEO_DEEP_LINK = "/?open=travel-video";
 /**
@@ -40,6 +81,12 @@ export function isPastDeadline(row: Pick<TravelVideoRow, "created_at">): boolean
   return Date.now() - new Date(row.created_at).getTime() > TRAVEL_VIDEO_STALE_MS;
 }
 const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+/** 平台 CDN 可能要 20～45 秒才回完影片 */
+const VIDEO_DOWNLOAD_TIMEOUT_MS = 45_000;
+/** 有口白時：下載超過這個時間就先存原始影片，合成留給下次輪詢（route 上限 60 秒，合成最多要 30 秒） */
+const COMPOSE_START_BUDGET_MS = 20_000;
+/** 試聽過但沒用上的口白音檔，超過這個時間就清掉 */
+export const NARRATION_PREVIEW_TTL_MS = 60 * 60 * 1000;
 
 export interface TravelVideoRow {
   id: string;
@@ -193,14 +240,29 @@ export async function syncTravelVideo(row: TravelVideoRow): Promise<TravelVideoR
 
   // 下載 +（有口白就合成）+ 轉存。失敗就先維持 running，下次輪詢再試
   const videoPath = `${row.user_id}/${row.id}/video.mp4`;
+  const rawPath = rawVideoStoragePath(row);
+  const narrated = Boolean(row.narration_path && row.narration_text);
+  const startedAt = Date.now();
   let composeNote: string | null = null;
   try {
-    const res = await fetch(task.videoUrl, { signal: AbortSignal.timeout(20_000) });
-    if (!res.ok) throw new Error(`download HTTP ${res.status}`);
-    let buf: Buffer = Buffer.from(await res.arrayBuffer());
-    if (buf.byteLength > MAX_VIDEO_BYTES) throw new Error(`video too large: ${buf.byteLength}`);
+    // 有口白：上次可能已把原始影片存在自己的 Storage，就不用再等平台 CDN
+    let buf: Buffer | null = narrated ? await downloadStored(admin, rawPath) : null;
+    if (!buf) {
+      const res = await fetch(task.videoUrl, { signal: AbortSignal.timeout(VIDEO_DOWNLOAD_TIMEOUT_MS) });
+      if (!res.ok) throw new Error(`download HTTP ${res.status}`);
+      buf = Buffer.from(await res.arrayBuffer());
+      if (buf.byteLength > MAX_VIDEO_BYTES) throw new Error(`video too large: ${buf.byteLength}`);
+      if (narrated) {
+        const { error: rawErr } = await admin.storage
+          .from(TRAVEL_VIDEO_BUCKET)
+          .upload(rawPath, buf, { contentType: "video/mp4", upsert: true });
+        if (rawErr) throw rawErr;
+        // 下載花太久：原始影片已存好，合成留給下次輪詢，免得超過 route 時限
+        if (Date.now() - startedAt > COMPOSE_START_BUDGET_MS) return row;
+      }
+    }
 
-    if (row.narration_path && row.narration_text) {
+    if (narrated) {
       try {
         buf = await composeWithNarration(admin, row, buf);
       } catch (e) {
@@ -230,6 +292,7 @@ export async function syncTravelVideo(row: TravelVideoRow): Promise<TravelVideoR
   });
   // 另一個輪詢請求已經處理完（也已記帳）
   if (!updated) return reloadRow(admin, row);
+  if (narrated) await admin.storage.from(TRAVEL_VIDEO_BUCKET).remove([rawPath]);
 
   await trackAiUsage({
     userId: row.user_id,

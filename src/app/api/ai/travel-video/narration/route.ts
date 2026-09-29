@@ -3,13 +3,13 @@
 // POST { text, voice } → { narration: { id, url, seconds, text, voice, video_seconds } }
 // 配音約 10～20 秒完成；每次約 0.02～0.04 算力，不扣影片次數
 // ────────────────────────────────────────────────
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
 import { checkUserQuota, trackAiUsage } from "@/lib/ai/usage-tracker";
 import { isVideoProviderConfigured } from "@/lib/ai/lk888-video";
 import { synthesizeNarration, ttsModel } from "@/lib/ai/lk888-tts";
-import { narrationStoragePath, TRAVEL_VIDEO_BUCKET } from "@/lib/ai/travel-video-server";
+import { cleanupStaleNarrations, narrationStoragePath, TRAVEL_VIDEO_BUCKET } from "@/lib/ai/travel-video-server";
 import {
   NARRATION_VOICE_IDS,
   narrationTooLong,
@@ -98,6 +98,11 @@ export async function POST(req: NextRequest) {
     console.error("[api] narration upload:", upErr);
     return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
   }
+
+  // 回應送出後，順手清掉這個人超過 1 小時、沒被影片用到的舊試聽音檔
+  after(() =>
+    cleanupStaleNarrations(user.id).catch((e) => console.warn("[api] narration cleanup failed:", e))
+  );
 
   return NextResponse.json({
     narration: {

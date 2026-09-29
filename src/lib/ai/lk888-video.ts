@@ -167,13 +167,14 @@ export async function createImageToVideoTask(opts: {
   return { taskId: parseCreateResponse(res.status, json), model };
 }
 
-export async function queryVideoTask(taskId: string): Promise<VideoTaskResult> {
+/** 查任務狀態（影片、配音共用同一個端點） */
+export async function queryVideoTask(taskId: string, timeoutMs = 15_000): Promise<VideoTaskResult> {
   const { apiKey, baseUrl } = getConfig();
   const res = await fetch(
     `${baseUrl}/v1/skills/task-status?task_id=${encodeURIComponent(taskId)}`,
     {
       headers: { Authorization: `Bearer ${apiKey}` },
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(timeoutMs),
       cache: "no-store",
     }
   );

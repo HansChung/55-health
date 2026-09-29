@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
-import { TRAVEL_VIDEO_BUCKET, type TravelVideoRow } from "@/lib/ai/travel-video-server";
+import { TRAVEL_VIDEO_BUCKET, rawVideoStoragePath, type TravelVideoRow } from "@/lib/ai/travel-video-server";
 import { isTravelVideoPending } from "@/lib/travel-video";
 
 /**
@@ -33,7 +33,12 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     return NextResponse.json({ error: "影片還在做，做好後再刪除" }, { status: 409 });
   }
 
-  const paths = [row.photo_path, row.video_path, row.narration_path].filter((p): p is string => Boolean(p));
+  const paths = [
+    row.photo_path,
+    row.video_path,
+    row.narration_path,
+    row.narration_path ? rawVideoStoragePath(row) : null, // 合成中途留下的原始影片（通常已刪）
+  ].filter((p): p is string => Boolean(p));
   if (paths.length > 0) {
     const { error: rmErr } = await admin.storage.from(TRAVEL_VIDEO_BUCKET).remove(paths);
     if (rmErr) {
