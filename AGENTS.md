@@ -68,6 +68,10 @@ stack works well for auth + meal/diary CRUD:
   (`ffmpeg-static`, traced into the functions via `outputFileTracingIncludes` in `next.config.ts`) to mix the
   narration over H3's ambient audio and burn Traditional Chinese subtitles (Noto Sans TC subset fetched
   from Google Fonts at runtime). Needs `supabase/add-travel-video-narration.sql`.
+- **The Linux ffmpeg-static build used on Vercel (johnvansickle 7.0.2) has no `drawtext`** — subtitles are
+  rendered from an ASS file with the `ass` filter (libass), with a private `fonts.conf` via
+  `FONTCONFIG_FILE` (Amazon Linux 2023 has no `/etc/fonts`). Don't reintroduce drawtext; verify Linux
+  behaviour by running that binary in `docker --platform linux/amd64 amazonlinux:2023` (`FFMPEG_BIN`).
 - H3 is unreliable at speaking a given line or drawing subtitles itself (tested), and may cut to an
   invented shot when the prompt gets complex — every prompt now demands a single continuous shot.
 - Done/failed → Web Push to the elder (`/?open=travel-video` deep link). Background delivery needs

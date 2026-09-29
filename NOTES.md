@@ -250,6 +250,10 @@ android/                                       # Capacitor Android（未實測�
 - **需先跑 `supabase/add-travel-video-narration.sql`**（欄位、`gemini_tts` 用量、bucket 允許 audio/wav）
 - ⚠️ 實測 H3 自己念口白／畫字幕不穩定：兩次測試一次換掉場景、一次沒字幕，所以改成後製
 - 本機驗證合成：`FFMPEG_IT_VIDEO=… FFMPEG_IT_AUDIO=… FFMPEG_IT_OUT=… npx vitest run video-compose.it`
+- ⚠️ **Vercel 上的 ffmpeg 跟 macOS 不一樣**：`ffmpeg-static` 在 Linux 裝的是 johnvansickle 7.0.2 static，**沒有 `drawtext`**（macOS 6.0 有）→ 字幕一律用 ASS 檔 + `ass` 濾鏡（libass，兩邊都有）
+  - Amazon Linux 2023 沒有 `/etc/fonts`：合成時自己寫 `fonts.conf`（`FONTCONFIG_FILE`）只指向下載的 Noto Sans TC 子集
+  - 要驗證 Linux 行為：下載 `ffmpeg-static` 對應 release tag 的 `ffmpeg-linux-x64`，用 docker `--platform linux/amd64 amazonlinux:2023` 執行，並設 `FFMPEG_BIN` 指向轉接腳本跑上面的整合測試
+- 合成失敗會寫進 `travel_videos.error_message`（`compose retry: …`，狀態仍製作中），不用看 Vercel log
 
 ### 拍照辨識＋AI 建議改走邁笙（2026-09）
 - 有 `LK888_API_KEY` 時，所有 Gemini 呼叫都走邁笙的 Gemini 相容端點（同一個 `@google/generative-ai` SDK，只換 baseUrl）

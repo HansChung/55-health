@@ -2,11 +2,15 @@
  * 出遊影片後製：把口白疊到 H3 影片上（環境音調小），字幕照原句燒進畫面
  * 用 ffmpeg-static 內建的 ffmpeg；字型在執行時向 Google Fonts 只取「字幕用到的字」（通常 < 20KB）
  *
+ * 字幕用 ASS 字幕檔＋ass 濾鏡（libass），不要用 drawtext：
+ * Vercel 上的 Linux 版（johnvansickle 7.0.2 static）沒有 drawtext，macOS 版才有（實測踩過）
+ *
  * 只能在伺服器端使用。Vercel 需在 next.config 的 outputFileTracingIncludes 帶上 ffmpeg 執行檔
  */
 
 import { spawn } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { constants as fsConstants } from "node:fs";
+import { access, chmod, copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import ffmpegPath from "ffmpeg-static";
@@ -68,27 +72,118 @@ function escapeFilterPath(p: string): string {
   return p.replace(/\\/g, "\\\\").replace(/:/g, "\\:").replace(/'/g, "\\'");
 }
 
+/** ASS 時間格式 h:mm:ss.cc */
+export function assTime(seconds: number): string {
+  const cs = Math.max(0, Math.round(seconds * 100));
+  const h = Math.floor(cs / 360000);
+  const m = Math.floor((cs % 360000) / 6000);
+  const sec = Math.floor((cs % 6000) / 100);
+  const c = cs % 100;
+  return `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}.${String(c).padStart(2, "0")}`;
+}
+
+/** ASS 裡 { } \ 有特殊意義：換成全形，換行用 \N */
+function assText(text: string): string {
+  return text.replace(/\\/g, "＼").replace(/\{/g, "｛").replace(/\}/g, "｝").replace(/\n/g, "\\N");
+}
+
+/**
+ * 產生 ASS 字幕：座標以影片像素為準（PlayRes = 影片大小），
+ * 白字、半透明黑底框（BorderStyle 3）、置中靠下，一段一行 Dialogue
+ */
+export function buildAssSubtitles(opts: {
+  cues: SubtitleCue[];
+  width: number;
+  height: number;
+  fontName: string;
+}): string {
+  const fontSize = subtitleFontSize(opts.width, opts.height);
+  const maxChars = Math.max(6, Math.floor((opts.width * 0.86) / fontSize));
+  const box = Math.round(fontSize * 0.3);
+  const marginV = Math.round(opts.height * 0.07);
+  // &HAABBGGRR：AA=00 不透明、FF 全透明；8C ≈ 45% 不透明的黑
+  const boxColour = "&H8C000000";
+  return [
+    "[Script Info]",
+    "ScriptType: v4.00+",
+    `PlayResX: ${opts.width}`,
+    `PlayResY: ${opts.height}`,
+    "WrapStyle: 2",
+    "ScaledBorderAndShadow: yes",
+    "",
+    "[V4+ Styles]",
+    "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding",
+    `Style: Default,${opts.fontName},${fontSize},&H00FFFFFF,&H00FFFFFF,${boxColour},${boxColour},-1,0,0,0,100,100,0,0,3,${box},0,2,20,20,${marginV},1`,
+    "",
+    "[Events]",
+    "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
+    ...opts.cues.map(
+      (c) => `Dialogue: 0,${assTime(c.start)},${assTime(c.end)},Default,,0,0,0,,${assText(wrapSubtitle(c.text, maxChars))}`
+    ),
+    "",
+  ].join("\n");
+}
+
+/** 只認得我們下載的字型：不依賴伺服器裝了什麼字型（Vercel 上沒有中文字型） */
+export function buildFontconfig(fontsDir: string, cacheDir: string): string {
+  return [
+    '<?xml version="1.0"?>',
+    '<!DOCTYPE fontconfig SYSTEM "fonts.dtd">',
+    "<fontconfig>",
+    `  <dir>${fontsDir}</dir>`,
+    `  <cachedir>${cacheDir}</cachedir>`,
+    "</fontconfig>",
+    "",
+  ].join("\n");
+}
+
+/** 從 TTF 的 name 表讀字型家族名稱（ASS 樣式要用同一個名字）；讀不到就回 null */
+export function fontFamilyName(buf: Buffer): string | null {
+  try {
+    const numTables = buf.readUInt16BE(4);
+    for (let i = 0; i < numTables; i++) {
+      const rec = 12 + i * 16;
+      if (buf.toString("ascii", rec, rec + 4) !== "name") continue;
+      const table = buf.readUInt32BE(rec + 8);
+      const count = buf.readUInt16BE(table + 2);
+      const strings = table + buf.readUInt16BE(table + 4);
+      let fallback: string | null = null;
+      for (let j = 0; j < count; j++) {
+        const r = table + 6 + j * 12;
+        const platform = buf.readUInt16BE(r);
+        const nameId = buf.readUInt16BE(r + 6);
+        if (platform !== 3 || (nameId !== 1 && nameId !== 16)) continue;
+        const len = buf.readUInt16BE(r + 8);
+        const off = strings + buf.readUInt16BE(r + 10);
+        const raw = buf.subarray(off, off + len);
+        const utf16le = Buffer.alloc(raw.length);
+        for (let k = 0; k + 1 < raw.length; k += 2) { utf16le[k] = raw[k + 1]; utf16le[k + 1] = raw[k]; }
+        const name = utf16le.toString("utf16le");
+        if (nameId === 16) return name; // 字型家族（優先）
+        fallback ??= name;
+      }
+      return fallback;
+    }
+  } catch {
+    /* 格式不對就用預設名稱 */
+  }
+  return null;
+}
+
 export function buildComposeArgs(opts: {
   videoPath: string;
   narrationPath: string;
-  fontPath: string;
-  cues: Array<SubtitleCue & { textFile: string }>;
+  assPath: string | null;
+  fontsDir: string;
   info: MediaInfo;
   outPath: string;
 }): string[] {
   const { info } = opts;
-  const fontSize = subtitleFontSize(info.width, info.height);
-  const margin = Math.round(info.height * 0.07);
   const delayMs = Math.round(NARRATION_DELAY_SECONDS * 1000);
 
-  const drawtexts = opts.cues.map(
-    (c) =>
-      `drawtext=fontfile='${escapeFilterPath(opts.fontPath)}':textfile='${escapeFilterPath(c.textFile)}'` +
-      `:fontsize=${fontSize}:fontcolor=white:line_spacing=${Math.round(fontSize * 0.25)}` +
-      `:box=1:boxcolor=black@0.45:boxborderw=${Math.round(fontSize * 0.35)}` +
-      `:x=(w-text_w)/2:y=h-text_h-${margin}:enable='between(t,${c.start},${c.end})'`
-  );
-  const video = `[0:v]${drawtexts.length ? drawtexts.join(",") : "null"}[vout]`;
+  const video = opts.assPath
+    ? `[0:v]ass=filename='${escapeFilterPath(opts.assPath)}':fontsdir='${escapeFilterPath(opts.fontsDir)}'[vout]`
+    : "[0:v]null[vout]";
   const narration = `[1:a]adelay=${delayMs}:all=1[nar]`;
   const audio = info.hasAudio
     ? `[0:a]volume=${AMBIENT_VOLUME}[amb];${narration};[amb][nar]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[aout]`
@@ -108,10 +203,48 @@ export function buildComposeArgs(opts: {
   ];
 }
 
-function runFfmpeg(args: string[], timeoutMs = FFMPEG_TIMEOUT_MS): Promise<{ code: number | null; stderr: string }> {
-  if (!ffmpegPath) throw new Error("ffmpeg binary not available");
+/**
+ * 確保 ffmpeg 可執行。Vercel／Lambda 的程式目錄是唯讀的，打包後執行權限可能不見：
+ * 沒有執行權限就複製到可寫的 tmpTarget（/tmp）再補權限
+ */
+export async function ensureExecutable(source: string | null, tmpTarget: string): Promise<string> {
+  if (!source) throw new Error("ffmpeg binary not available (ffmpeg-static returned no path)");
+  try {
+    await access(source, fsConstants.F_OK);
+  } catch {
+    throw new Error(`ffmpeg binary missing at ${source} (check outputFileTracingIncludes in next.config)`);
+  }
+  try {
+    await access(source, fsConstants.X_OK);
+    return source;
+  } catch {
+    await copyFile(source, tmpTarget);
+    await chmod(tmpTarget, 0o755);
+    return tmpTarget;
+  }
+}
+
+/** 同一個執行個體只檢查一次；失敗就下次重試 */
+let executablePath: Promise<string> | null = null;
+function resolveFfmpegPath(): Promise<string> {
+  executablePath ??= ensureExecutable(
+    ffmpegPath as string | null,
+    path.join(tmpdir(), "ffmpeg-static-bin")
+  ).catch((e) => {
+    executablePath = null;
+    throw e;
+  });
+  return executablePath;
+}
+
+async function runFfmpeg(
+  args: string[],
+  timeoutMs = FFMPEG_TIMEOUT_MS,
+  env: NodeJS.ProcessEnv = process.env
+): Promise<{ code: number | null; stderr: string }> {
+  const bin = await resolveFfmpegPath();
   return new Promise((resolve, reject) => {
-    const child = spawn(ffmpegPath as string, args, { stdio: ["ignore", "ignore", "pipe"] });
+    const child = spawn(bin, args, { stdio: ["ignore", "ignore", "pipe"], env });
     let stderr = "";
     child.stderr.on("data", (d) => {
       stderr += d.toString();
@@ -159,7 +292,7 @@ export async function composeNarratedVideo(opts: {
   try {
     const videoPath = path.join(dir, "in.mp4");
     const narrationPath = path.join(dir, "narration.wav");
-    const fontPath = path.join(dir, "font.ttf");
+    const fontsDir = path.join(dir, "fonts");
     const outPath = path.join(dir, "out.mp4");
     await writeFile(videoPath, opts.video);
     await writeFile(narrationPath, opts.narration);
@@ -168,26 +301,34 @@ export async function composeNarratedVideo(opts: {
     const info = parseMediaInfo(probe.stderr);
     if (!info.width || !info.height) throw new Error("cannot read video size");
 
-    const fontSize = subtitleFontSize(info.width, info.height);
-    const maxChars = Math.max(6, Math.floor((info.width * 0.86) / fontSize));
-    const cues = await Promise.all(
-      opts.cues.map(async (c, i) => {
-        const textFile = path.join(dir, `cue${i}.txt`);
-        await writeFile(textFile, wrapSubtitle(c.text, maxChars), "utf8");
-        return { ...c, textFile };
-      })
-    );
-    if (cues.length > 0) {
+    let assPath: string | null = null;
+    if (opts.cues.length > 0) {
       const fontBudget = Math.min(FONT_TIMEOUT_MS, left() - MIN_FFMPEG_MS);
       if (fontBudget < 1_000) throw new ComposeBudgetError();
-      await writeFile(fontPath, await fetchSubtitleFont(opts.cues.map((c) => c.text).join(""), fontBudget));
+      const font = await fetchSubtitleFont(opts.cues.map((c) => c.text).join(""), fontBudget);
+      await mkdir(fontsDir, { recursive: true });
+      await writeFile(path.join(fontsDir, "subtitle.ttf"), font);
+      assPath = path.join(dir, "subtitles.ass");
+      await writeFile(
+        assPath,
+        buildAssSubtitles({
+          cues: opts.cues,
+          width: info.width,
+          height: info.height,
+          fontName: fontFamilyName(font) ?? "Noto Sans TC",
+        }),
+        "utf8"
+      );
     }
 
     const ffmpegBudget = Math.min(FFMPEG_TIMEOUT_MS, left());
     if (ffmpegBudget < MIN_FFMPEG_MS) throw new ComposeBudgetError();
+    const fontconfigFile = path.join(dir, "fonts.conf");
+    await writeFile(fontconfigFile, buildFontconfig(fontsDir, path.join(dir, "fc-cache")), "utf8");
     const result = await runFfmpeg(
-      buildComposeArgs({ videoPath, narrationPath, fontPath, cues, info, outPath }),
-      ffmpegBudget
+      buildComposeArgs({ videoPath, narrationPath, assPath, fontsDir, info, outPath }),
+      ffmpegBudget,
+      { ...process.env, FONTCONFIG_FILE: fontconfigFile }
     );
     if (result.code !== 0) {
       throw new Error(`ffmpeg exited ${result.code}: ${result.stderr.slice(-600)}`);
