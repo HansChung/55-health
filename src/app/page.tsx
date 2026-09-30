@@ -33,6 +33,7 @@ import { IotScreen } from "@/screens/iot-screen";
 import { CaregiverScreen } from "@/screens/caregiver-screen";
 import { TravelVideoScreen } from "@/screens/travel-video-screen";
 import { StudyToursScreen } from "@/screens/study-tours-screen";
+import { PhotoAskScreen } from "@/screens/photo-ask-screen";
 import { StampResultSheet, type StampSheetState } from "@/components/stamp-result-sheet";
 import { MealDetailSheet } from "@/screens/meal-detail-sheet";
 import { PhotoSourceSheet } from "@/components/photo-source-sheet";
@@ -104,13 +105,19 @@ export default function Page() {
   const [studyTourId, setStudyTourId] = useState<string | null>(null);
   const [studyToursKey, setStudyToursKey] = useState(0);
   const [stampSheet, setStampSheet] = useState<StampSheetState | null>(null);
+  // 拍照問暖暖：從研學團打開時帶活動名稱，返回時回研學團
+  const [photoAsk, setPhotoAsk] = useState<{ place: string | null; returnTo: Subpage; tourId: string | null }>({
+    place: null,
+    returnTo: null,
+    tourId: null,
+  });
 
   // 章節開篇 QR 深連結：/?open=voice|camera|photo&from=chapter0100
   useEffect(() => {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     const open = url.searchParams.get("open");
-    if (open && ["voice", "camera", "photo", "travel-video", "study-tours"].includes(open)) {
+    if (open && ["voice", "camera", "photo", "travel-video", "study-tours", "photo-ask"].includes(open)) {
       pendingOpenRef.current = open;
     }
     // 研學團站點 QR：/?stamp=代碼 → 先記下來（還沒登入的話登入後再蓋），網址上的代碼馬上拿掉
@@ -161,6 +168,15 @@ export default function Page() {
       setStudyTourId(url.searchParams.get("tour"));
       setStudyToursKey((k) => k + 1);
       setSubpage("study-tours");
+    }
+    else if (open === "photo-ask") {
+      // 方案資料已載入就先擋；還沒載入就先打開，由 API 擋（回「升級」提示）
+      const openPhotoAsk = () => {
+        setPhotoAsk({ place: null, returnTo: null, tourId: null });
+        setSubpage("photo-ask");
+      };
+      if (profile) requireFeature("ai_photo", openPhotoAsk);
+      else openPhotoAsk();
     }
 
     url.searchParams.delete("open");
@@ -707,6 +723,10 @@ export default function Page() {
               setStudyToursKey((k) => k + 1);
               setSubpage("study-tours");
             }}
+            onPhotoAsk={() => requireFeature("ai_photo", () => {
+              setPhotoAsk({ place: null, returnTo: null, tourId: null });
+              setSubpage("photo-ask");
+            })}
             caregiver={careElderCount > 0 ? { count: careElderCount, needsAttention: careNeedsAttention } : null}
             onCaregiver={() => setSubpage("caregiver")}
           />
@@ -794,6 +814,23 @@ export default function Page() {
           initialTourId={subpage === "study-tours" ? studyTourId : null}
           initialView={subpage === "study-passport" ? "passport" : "list"}
           displayName={profile?.display_name}
+          onPhotoAsk={(place, tourId) => requireFeature("ai_photo", () => {
+            setPhotoAsk({ place: place ?? null, returnTo: subpage, tourId: tourId ?? null });
+            setSubpage("photo-ask");
+          })}
+        />
+      )}
+      {subpage === "photo-ask" && (
+        <PhotoAskScreen
+          initialPlace={photoAsk.place}
+          onBack={() => {
+            if (photoAsk.returnTo) {
+              // 從某一團的介紹頁打開 → 回到那一團（不是回到列表）
+              setStudyTourId(photoAsk.tourId);
+              setStudyToursKey((k) => k + 1);
+            }
+            setSubpage(photoAsk.returnTo === "study-passport" && photoAsk.tourId ? "study-tours" : photoAsk.returnTo);
+          }}
         />
       )}
       {subpage === "caregiver" && (

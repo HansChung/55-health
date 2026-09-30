@@ -48,7 +48,7 @@ export default function PrivacyPage() {
           <p>本服務使用以下第三方供應商處理資料：</p>
           <ul>
             <li><strong>Supabase</strong>：資料庫與認證服務（資料儲存於亞洲區域）。</li>
-            <li><strong>邁笙 AI 影音創作平台（lk888）／Google Gemini</strong>：食物與藥袋照片 AI 辨識、每日飲食建議（照片，以及稱呼、年齡、慢性病與當日飲食摘要，會經由該平台傳送給 Gemini 模型處理）。</li>
+            <li><strong>邁笙 AI 影音創作平台（lk888）／Google Gemini</strong>：食物與藥袋照片 AI 辨識、「拍照問暖暖」的景物解說、每日飲食建議（照片、您輸入的問題與地點，以及稱呼、年齡、慢性病與當日飲食摘要，會經由該平台傳送給 Gemini 模型處理；「拍照問暖暖」的照片不會存到本服務）。</li>
             <li><strong>OpenAI</strong>：語音對話功能（依 OpenAI API Data Policy，輸入不用於模型訓練）。</li>
             <li><strong>邁笙 AI 影音創作平台（lk888）／MiniMax</strong>：出遊回憶影片（您選擇的照片會經由該平台傳送給 MiniMax 海螺模型生成影片；若選擇口白，口白文字會傳送給 Gemini 配音模型，照片也可能用於 AI 撰寫口白；完成的影片與口白音檔存放在本服務的儲存空間）。</li>
             <li><strong>Vercel</strong>：網站託管。</li>
