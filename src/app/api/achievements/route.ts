@@ -69,6 +69,17 @@ export async function GET() {
     .eq("owner_id", user.id);
   const familyCount = family?.length ?? 0;
 
+  // 7. 研學團：集章數、結業團數（資料表還沒建時查詢會失敗 → 當 0）
+  const [{ count: tourStamps }, { count: toursCompleted }] = await Promise.all([
+    supabase.from("study_tour_stamps").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+    supabase
+      .from("study_tour_registrations")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .neq("status", "cancelled")
+      .not("completed_at", "is", null),
+  ]);
+
   const stats: UserStats = {
     total_meals: totalMeals,
     meal_streak: mealStreak,
@@ -80,6 +91,8 @@ export async function GET() {
     prescription_scans: prescriptionScans,
     voice_sessions: voiceSessions,
     family_count: familyCount,
+    tour_stamps: tourStamps ?? 0,
+    tours_completed: toursCompleted ?? 0,
   };
 
   const achievements = computeAchievementProgress(stats);

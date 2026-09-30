@@ -4,7 +4,7 @@ export const metadata = {
 };
 
 export default function PrivacyPage() {
-  const updated = "2026 年 5 月 26 日";
+  const updated = "2026 年 9 月 30 日";
 
   return (
     <div style={{
@@ -28,6 +28,7 @@ export default function PrivacyPage() {
             <li><strong>飲食記錄</strong>：您拍攝的食物照片、辨識結果、用餐時間。</li>
             <li><strong>運動記錄</strong>：您手動記錄的運動類型與時間。</li>
             <li><strong>AI 對話內容</strong>：您與「暖暖」AI 助理的語音/文字對話。</li>
+            <li><strong>研學團報名與集章</strong>：報名時填寫的參加者姓名、聯絡電話、人數與備註（家人代為報名時亦同），以及各站掃碼蓋章的時間。這些資料會提供給該活動的主辦單位，用於聯絡與行程安排。</li>
             <li><strong>使用記錄</strong>：登入時間、功能使用頻率等匿名統計資料。</li>
           </ul>
         </Section>
@@ -37,6 +38,7 @@ export default function PrivacyPage() {
           <ul>
             <li>提供飲食辨識、營養計算、健康建議等核心功能。</li>
             <li>讓您經授權的家人查看您的健康狀況（需您主動邀請並設定權限）。</li>
+            <li>研學團報名資料僅提供給該活動的主辦單位聯絡與安排行程；本服務不代收活動費用。</li>
             <li>改善服務品質與 AI 模型表現（採用匿名化資料）。</li>
           </ul>
           <p><strong>我們不會將您的個人資料販售給第三方，亦不會用於廣告投放。</strong></p>

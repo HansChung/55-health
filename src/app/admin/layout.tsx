@@ -10,6 +10,7 @@ const navItems = [
   { href: "/admin/usage", label: "Token 用量", icon: "💰" },
   { href: "/admin/users", label: "會員管理", icon: "👥" },
   { href: "/admin/partner-campaigns", label: "合作活動", icon: "🤝" },
+  { href: "/admin/study-tours", label: "研學團", icon: "🧭" },
   { href: "/admin/api-configs", label: "API 設定", icon: "🔑" },
   { href: "/admin/conversations", label: "對話記錄", icon: "💬" },
   { href: "/admin/telemetry", label: "使用與錯誤", icon: "📈" },
@@ -45,8 +46,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", background: "#0f172a", color: "#e2e8f0", fontFamily: "system-ui, -apple-system, sans-serif" }}>
-      <aside style={{
+    <div className="admin-root" style={{ minHeight: "100vh", display: "flex", background: "#0f172a", color: "#e2e8f0", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+      <aside className="admin-nav" style={{
         width: 240,
         background: "#1e293b",
         borderRight: "1px solid #334155",
@@ -91,7 +92,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      <main style={{ flex: 1, padding: 32, overflow: "auto" }}>
+      <main className="admin-main" style={{ flex: 1, padding: 32, overflow: "auto" }}>
         {children}
       </main>
     </div>

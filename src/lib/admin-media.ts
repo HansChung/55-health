@@ -14,7 +14,7 @@ export const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const;
 export type AllowedImageType = (typeof ALLOWED_IMAGE_TYPES)[number];
 /** 允許的存放資料夾（白名單，避免亂寫路徑） */
-export const UPLOAD_FOLDERS = ["campaigns"] as const;
+export const UPLOAD_FOLDERS = ["campaigns", "tours"] as const;
 export type UploadFolder = (typeof UPLOAD_FOLDERS)[number];
 
 export function isUploadFolder(v: unknown): v is UploadFolder {

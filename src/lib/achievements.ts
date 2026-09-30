@@ -7,7 +7,7 @@ export interface AchievementDef {
   emoji: string;
   title: string;
   description: string;
-  category: "meal" | "exercise" | "metric" | "medication" | "voice" | "family" | "streak";
+  category: "meal" | "exercise" | "metric" | "medication" | "voice" | "family" | "streak" | "tour";
 }
 
 export const ACHIEVEMENTS: AchievementDef[] = [
@@ -40,6 +40,11 @@ export const ACHIEVEMENTS: AchievementDef[] = [
 
   // 家人
   { id: "first_family", emoji: "👨‍👩‍👧", title: "家人陪伴", description: "邀請第一位家人", category: "family" },
+
+  // 研學團
+  { id: "first_tour_stamp", emoji: "🏮", title: "研學初體驗", description: "在研學團蓋下第一個章", category: "tour" },
+  { id: "tour_graduate", emoji: "🎓", title: "研學結業", description: "集滿一趟研學團的所有章", category: "tour" },
+  { id: "tour_graduate_3", emoji: "🧭", title: "樂學旅人", description: "完成 3 趟研學團", category: "tour" },
 ];
 
 export interface AchievementProgress {
@@ -62,6 +67,10 @@ export interface UserStats {
   prescription_scans: number;  // 透過 medications 含 added_at 估算
   voice_sessions: number;       // 透過 conversations 不重複 session 數
   family_count: number;
+  /** 研學團蓋過的章數（舊資料沒有這欄時當 0） */
+  tour_stamps?: number;
+  /** 集滿章、結業的研學團數 */
+  tours_completed?: number;
 }
 
 /** 從用戶 stats 算出每個成就的進度 */
@@ -115,6 +124,13 @@ function evalAchievement(
 
     case "first_family":
       return done(s.family_count >= 1, s.family_count, 1, "位");
+
+    case "first_tour_stamp":
+      return done((s.tour_stamps ?? 0) >= 1, s.tour_stamps ?? 0, 1, "章");
+    case "tour_graduate":
+      return done((s.tours_completed ?? 0) >= 1, s.tours_completed ?? 0, 1, "團");
+    case "tour_graduate_3":
+      return done((s.tours_completed ?? 0) >= 3, s.tours_completed ?? 0, 3, "團");
 
     default:
       return { progress: 0, unlocked: false };
