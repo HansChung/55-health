@@ -1,17 +1,27 @@
 // ────────────────────────────────────────────────
 // 出遊影片口白試聽：把一句遊記用 AI 配音念出來，存起來給送出影片時用
-// POST { text, voice } → { narration: { id, url, seconds, text, voice, video_seconds } }
+// POST { text, voice, accent? } → { narration: { id, url, seconds, text, voice, accent, video_seconds } }
 // 配音約 10～20 秒完成；每次約 0.02～0.04 算力，不扣影片次數
+// voice="mine"（專業版）：用自己錄音複製的聲音念；第一次使用時平台另收一次啟用費
 // ────────────────────────────────────────────────
 import { NextRequest, NextResponse, after } from "next/server";
 import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
 import { checkUserQuota, countMonthlyEndpointUsage, trackAiUsage } from "@/lib/ai/usage-tracker";
 import { isVideoProviderConfigured } from "@/lib/ai/lk888-video";
-import { synthesizeNarration, ttsModel } from "@/lib/ai/lk888-tts";
+import { synthesizeNarration } from "@/lib/ai/lk888-tts";
+import {
+  FIRST_USE_BUSY_MESSAGE,
+  claimFirstUse,
+  markVoiceActivated,
+  releaseFirstUse,
+  resolveSpeaker,
+} from "@/lib/ai/voice-clone-server";
 import { cleanupStaleNarrations, narrationStoragePath, TRAVEL_VIDEO_BUCKET } from "@/lib/ai/travel-video-server";
 import {
-  NARRATION_VOICE_IDS,
+  DEFAULT_NARRATION_ACCENT,
+  NARRATION_ACCENT_IDS,
+  NARRATION_VOICE_CHOICES,
   narrationTooLong,
   sanitizeNarration,
   travelVideoExtrasLimit,
@@ -24,7 +34,8 @@ export const maxDuration = 60;
 
 const PostSchema = z.object({
   text: z.string().max(200),
-  voice: z.enum(NARRATION_VOICE_IDS),
+  voice: z.enum(NARRATION_VOICE_CHOICES),
+  accent: z.enum(NARRATION_ACCENT_IDS).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -58,32 +69,51 @@ export async function POST(req: NextRequest) {
   const text = sanitizeNarration(body.text);
   if (!text) return NextResponse.json({ error: "先寫一句想說的話喔" }, { status: 400 });
 
+  const admin = createSupabaseAdmin();
+  const resolved = await resolveSpeaker(admin, { userId: user.id, tier: quota.tier, voice: body.voice, accent: body.accent });
+  if (!resolved.ok) return NextResponse.json({ error: resolved.error }, { status: resolved.status });
+  const { speaker } = resolved;
+  const accent = speaker.kind === "preset" ? speaker.accent ?? DEFAULT_NARRATION_ACCENT : null;
+  const service = speaker.kind === "clone" ? "minimax_tts" : "gemini_tts";
+
+  // 還沒啟用的聲音：第一次配音同時只讓一個請求做（平台會收一次啟用費）
+  const firstUse = Boolean(resolved.cloneId && !resolved.activated);
+  if (firstUse && !(await claimFirstUse(admin, resolved.cloneId!))) {
+    return NextResponse.json({ error: FIRST_USE_BUSY_MESSAGE }, { status: 409 });
+  }
+
   let result;
   try {
-    result = await synthesizeNarration(text, body.voice);
+    result = await synthesizeNarration(text, speaker);
   } catch (e) {
+    if (firstUse) await releaseFirstUse(admin, resolved.cloneId!);
     const msg = e instanceof Error ? e.message : String(e);
     console.error("[api] 口白配音失敗:", msg);
     await trackAiUsage({
       userId: user.id,
-      service: "gemini_tts",
-      model: ttsModel(),
+      service,
+      model: speaker.kind === "clone" ? "speech-2.8" : "gem-3.1-tts",
       endpoint: ENDPOINT,
       success: false,
       errorMessage: msg,
+      metadata: { voice: body.voice, accent },
     });
     return NextResponse.json({ error: "配音暫時沒成功，請再試一次" }, { status: 502 });
   }
+  // 第一次用自己的聲音配音成功 → 平台已轉為永久（收了啟用費）
+  if (firstUse) await markVoiceActivated(admin, resolved.cloneId!);
 
   await trackAiUsage({
     userId: user.id,
-    service: "gemini_tts",
+    service,
     model: result.model,
     endpoint: "/api/ai/travel-video/narration",
     success: true,
     metadata: {
       provider: "lk888",
       voice: body.voice,
+      accent,
+      ...(resolved.cloneId ? { voice_clone_id: resolved.cloneId, first_use: firstUse } : {}),
       chars: [...text].length,
       seconds: Number(result.seconds.toFixed(2)),
       task_id: result.taskId,
@@ -96,7 +126,6 @@ export async function POST(req: NextRequest) {
   }
 
   const id = crypto.randomUUID();
-  const admin = createSupabaseAdmin();
   const storagePath = narrationStoragePath(user.id, id);
   const { error: upErr } = await admin.storage
     .from(TRAVEL_VIDEO_BUCKET)
@@ -118,6 +147,7 @@ export async function POST(req: NextRequest) {
       seconds: Number(result.seconds.toFixed(2)),
       text,
       voice: body.voice,
+      accent: accent ?? DEFAULT_NARRATION_ACCENT,
       video_seconds: videoSecondsForNarration(result.seconds),
     },
   });

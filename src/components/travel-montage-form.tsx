@@ -10,15 +10,18 @@ import { api, ApiError } from "@/lib/api-client";
 import { compressImage } from "@/lib/image-utils";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/telemetry";
+import { NarrationVoicePicker } from "@/components/narration-voice-picker";
 import {
   MONTAGE_CLIENT_TARGET_CHARS,
   MONTAGE_LINE_MAX,
   MONTAGE_MAX_PHOTOS,
   MONTAGE_MIN_PHOTOS,
-  NARRATION_VOICES,
+  MY_VOICE,
   TRAVEL_VIDEO_PLACE_MAX,
   sanitizeMontageLine,
-  type NarrationVoiceId,
+  type MyVoiceStatus,
+  type NarrationAccentId,
+  type NarrationVoiceChoice,
   type TravelVideo,
   type TravelVideoQuota,
 } from "@/lib/travel-video";
@@ -51,15 +54,6 @@ const smallButton: React.CSSProperties = {
   background: "var(--surface)", fontSize: "var(--fs-sm)", fontWeight: 700, color: "var(--ink-1)",
 };
 
-function choiceButton(active: boolean): React.CSSProperties {
-  return {
-    padding: "14px 10px", minHeight: 60, borderRadius: "var(--r-md)",
-    background: active ? "var(--primary-soft)" : "var(--surface)",
-    border: `3px solid ${active ? "var(--primary)" : "var(--line)"}`,
-    fontSize: "var(--fs-base)", fontWeight: 700, color: "var(--ink-1)", cursor: "pointer",
-  };
-}
-
 /** 整包照片太大（送不過 Vercel 4.5MB 上限）→ 每張再壓小一點 */
 async function fitPhotosToBudget(photos: MontagePhotoDraft[]): Promise<MontagePhotoDraft[]> {
   const total = photos.reduce((n, p) => n + p.dataUrl.length, 0);
@@ -87,6 +81,12 @@ export function TravelMontageForm({
   onCreated,
   reloadVideos,
   knownIds,
+  voice,
+  accent,
+  onVoice,
+  onAccent,
+  myVoice,
+  onSetupMyVoice,
 }: {
   /** 配額用完／還有一支在做 → 不能送出的原因 */
   blockedReason: string | null;
@@ -94,11 +94,17 @@ export function TravelMontageForm({
   /** 送出時斷線：重新整理清單，看伺服器是不是其實已經收到 */
   reloadVideos: () => Promise<TravelVideo[] | null>;
   knownIds: string[];
+  /** 聲音／口音由上層管（錄好「我的聲音」時上層直接幫忙選好） */
+  voice: NarrationVoiceChoice;
+  accent: NarrationAccentId;
+  onVoice: (v: NarrationVoiceChoice) => void;
+  onAccent: (a: NarrationAccentId) => void;
+  myVoice: MyVoiceStatus | null;
+  onSetupMyVoice: () => void;
 }) {
   const toast = useToast();
   const [photos, setPhotos] = useState<MontagePhotoDraft[]>([]);
   const [lines, setLines] = useState<string[]>([]);
-  const [voice, setVoice] = useState<NarrationVoiceId>("female");
   const [place, setPlace] = useState("");
   const [preparing, setPreparing] = useState(false);
   const [writing, setWriting] = useState(false);
@@ -202,9 +208,10 @@ export function TravelMontageForm({
         sizes: sent.map(({ width, height }) => ({ width, height })),
         lines: cleanLines,
         voice,
+        accent: voice === MY_VOICE ? undefined : accent,
         place: place.trim() || undefined,
       });
-      trackEvent("travel_montage_create", { photos: photos.length, voice });
+      trackEvent("travel_montage_create", { photos: photos.length, voice, accent: voice === MY_VOICE ? null : accent });
       onCreated(res.video, res.quota);
       setPhotos([]);
       setLines([]);
@@ -322,18 +329,15 @@ export function TravelMontageForm({
 
       {/* ③ 聲音 */}
       <div style={sectionTitle}>③ 用誰的聲音念？</div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        {NARRATION_VOICES.map((v) => (
-          <button
-            key={v.id}
-            onClick={() => setVoice(v.id)}
-            aria-pressed={voice === v.id}
-            style={{ ...choiceButton(voice === v.id), display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}
-          >
-            <span style={{ fontSize: 30 }} aria-hidden="true">{v.emoji}</span>
-            <span style={{ whiteSpace: "nowrap" }}>{v.label}</span>
-          </button>
-        ))}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <NarrationVoicePicker
+          voice={voice}
+          accent={accent}
+          onVoice={onVoice}
+          onAccent={onAccent}
+          myVoice={myVoice}
+          onSetupMyVoice={onSetupMyVoice}
+        />
       </div>
 
       {/* ④ 地點 */}

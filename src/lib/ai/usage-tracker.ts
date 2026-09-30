@@ -4,7 +4,7 @@ import { defaultVideoQuota, montageQuota } from "../travel-video";
 
 interface TrackUsageParams {
   userId: string | null;
-  service: "gemini_vision" | "gemini_text" | "openai_realtime" | "openai_chat" | "minimax_video" | "gemini_tts";
+  service: "gemini_vision" | "gemini_text" | "openai_realtime" | "openai_chat" | "minimax_video" | "gemini_tts" | "minimax_tts";
   model: string;
   inputTokens?: number;
   outputTokens?: number;

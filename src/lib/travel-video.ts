@@ -128,6 +128,71 @@ export function narrationVoice(id: NarrationVoiceId) {
   return NARRATION_VOICES.find((v) => v.id === id) ?? NARRATION_VOICES[0];
 }
 
+/**
+ * 口音（只套用在上面四種 AI 聲音；「我的聲音」本來就是自己的口音）。
+ * 都是「國語帶口音」，不是整句改說方言。id 會存進 travel_videos.narration_accent，不要改名
+ */
+export const NARRATION_ACCENTS = [
+  { id: "taiwan", label: "台灣口音", phrase: "" },
+  { id: "taigi", label: "台灣國語", phrase: "a strong Taiwanese Hokkien accent (台灣國語), like older people in southern Taiwan" },
+  { id: "hakka", label: "客家腔", phrase: "a strong Hakka (客家) accent, like an old Hakka person from Meinong or Miaoli" },
+  { id: "cantonese", label: "廣東腔", phrase: "a strong Cantonese accent (廣東口音, 港式國語)" },
+  { id: "sichuan", label: "四川腔", phrase: "a very strong Sichuan accent (四川口音, 川普), with Sichuanese tones" },
+  { id: "shandong", label: "山東腔", phrase: "a very strong Shandong accent (山東口音), like an old veteran from Shandong" },
+] as const;
+
+export type NarrationAccentId = (typeof NARRATION_ACCENTS)[number]["id"];
+
+export const DEFAULT_NARRATION_ACCENT: NarrationAccentId = "taiwan";
+
+export const NARRATION_ACCENT_IDS = NARRATION_ACCENTS.map((a) => a.id) as [
+  NarrationAccentId,
+  ...NarrationAccentId[],
+];
+
+export function narrationAccent(id: string | null | undefined) {
+  return NARRATION_ACCENTS.find((a) => a.id === id) ?? NARRATION_ACCENTS[0];
+}
+
+/** 「我的聲音」：長輩自己錄音複製的聲音（專業版） */
+export const MY_VOICE = "mine" as const;
+export type NarrationVoiceChoice = NarrationVoiceId | typeof MY_VOICE;
+export const NARRATION_VOICE_CHOICES = [...NARRATION_VOICE_IDS, MY_VOICE] as [
+  NarrationVoiceChoice,
+  ...NarrationVoiceChoice[],
+];
+
+/** 錄音複製聲音：平台要求至少 10 秒，太長也沒幫助（建議 10～60 秒） */
+export const VOICE_SAMPLE_MIN_SECONDS = 12;
+export const VOICE_SAMPLE_MAX_SECONDS = 60;
+/** 每 30 天最多重錄幾次（每個新聲音第一次使用都要付一次啟用費） */
+export const VOICE_CLONES_PER_30_DAYS = 2;
+/** 錄音時請長輩念這段（開頭是同意聲明，後面讓錄音夠長、有各種聲調） */
+export const VOICE_SAMPLE_SCRIPT =
+  "我同意暖暖用我自己的聲音，念我自己的出遊影片。今天天氣很好，我們一家人去山上走走，看到好多花，風景好漂亮。中午吃了一碗熱熱的麵，下午在湖邊喝茶聊天，下次還要再來。";
+/** 勾選同意的文字（存進資料庫，日後可查） */
+export const VOICE_CONSENT_TEXT =
+  "這是我本人的聲音。我同意暖暖用這段錄音複製我的聲音，只用來念我自己的影片口白，我可以隨時刪除。";
+
+export interface MyVoice {
+  id: string;
+  created_at: string;
+  /** 平台給的試聽（有的話） */
+  demo_url: string | null;
+  /** 用過一次後就永久有效；沒用過的錄音 7 天後失效 */
+  activated: boolean;
+  expires_at: string | null;
+  expired: boolean;
+}
+
+export interface MyVoiceStatus {
+  /** 方案可不可以用（專業版） */
+  allowed: boolean;
+  voice: MyVoice | null;
+  /** 這 30 天還能錄幾次 */
+  remaining: number;
+}
+
 /** 口白文字：去掉控制字元與引號、壓成單行、限制長度 */
 export function sanitizeNarration(text: string | null | undefined): string {
   if (!text) return "";
@@ -326,7 +391,8 @@ export interface TravelNarration {
   url: string;
   seconds: number;
   text: string;
-  voice: NarrationVoiceId;
+  voice: NarrationVoiceChoice;
+  accent: NarrationAccentId;
   /** 依口白長度算出的影片秒數 */
   video_seconds: number;
 }

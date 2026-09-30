@@ -91,6 +91,20 @@ stack works well for auth + meal/diary CRUD:
   while the screen polls. Needs
   `supabase/add-travel-video-montage.sql`. Separate monthly quota (`DEFAULT_MONTAGE_QUOTA`), costs only TTS
   (~0.01 算力 per line). The Linux ffmpeg has every filter used (verified in Docker amazonlinux).
+- **口音與「我的聲音」** (needs `supabase/add-narration-voices.sql`): the four AI voices take an accent
+  (`NARRATION_ACCENTS`: 台灣口音 default / 台灣國語 / 客家腔 / 廣東腔 / 四川腔 / 山東腔) — still Mandarin, just
+  accented, via the gem-3.1-tts prompt (`buildTtsPrompt`); the default prompt is the original tested one, the
+  others demand "exact words only" (the model otherwise adds 齁／捏／啊 and the burned subtitle stops matching).
+  Tested 2026-09-30: an AI judge couldn't reliably tell these accents apart — they need human ears.
+  `voice="mine"` (Pro, `voice_clone` feature) uses the elder's own cloned voice: `/api/ai/voice-clone` takes an
+  in-app recording (MediaRecorder webm/mp4 → ffmpeg → WAV, ≥12 s, not silent, consent checkbox), calls lk888
+  `POST /v1/skills/voices/clone` (0.1 算力; returns a demo mp3 on a ~2-day signed URL, which we copy into
+  Storage as WAV) and stores `voice_clones` (one active per user, 2 recordings / 30 days; the raw recording
+  is not kept; there is no provider delete API, so "delete" = soft delete). Synthesis uses `speech-2.8`
+  (`quality: "hd"`; turbo is unavailable) and may return mp3 → `toWav`. **The first synthesis with a new
+  voice costs a one-time 18.8 算力 activation** and an unused voice expires after 7 days — `claimFirstUse`
+  (`activating_until`) makes sure only one request does that first synthesis, and montages TTS only the first
+  line on first use.
 - Needs `supabase/add-travel-videos.sql` (table, bucket, `ai_usage` service `minimax_video`,
   `subscription_plans.ai_video_quota`). Quota counts non-failed rows incl. soft-deleted ones.
   "One pending video per user" is enforced by the partial unique index

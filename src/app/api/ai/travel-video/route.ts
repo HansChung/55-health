@@ -25,7 +25,10 @@ import { syncMontage } from "@/lib/ai/travel-montage-server";
 import { wavDurationSeconds } from "@/lib/ai/lk888-tts";
 import { travelVideoNotifyUrl } from "@/lib/ai/travel-video-webhook";
 import {
-  NARRATION_VOICE_IDS,
+  DEFAULT_NARRATION_ACCENT,
+  MY_VOICE,
+  NARRATION_ACCENT_IDS,
+  NARRATION_VOICE_CHOICES,
   TRAVEL_VIDEO_STYLE_IDS,
   buildTravelVideoPrompt,
   isTravelVideoPending,
@@ -51,7 +54,8 @@ const PostSchema = z.object({
   narration: z
     .object({
       id: z.string().uuid(),
-      voice: z.enum(NARRATION_VOICE_IDS),
+      voice: z.enum(NARRATION_VOICE_CHOICES),
+      accent: z.enum(NARRATION_ACCENT_IDS).optional(),
       text: z.string().max(200),
     })
     .optional(),
@@ -150,7 +154,14 @@ export async function POST(req: NextRequest) {
   }
 
   // 4b. 口白：確認音檔是這個人試聽時存的，並以實際長度決定影片秒數（不信任前端）
-  let narration: { text: string; voice: string; path: string; seconds: number; videoSeconds: number } | null = null;
+  let narration: {
+    text: string;
+    voice: string;
+    accent: string | null;
+    path: string;
+    seconds: number;
+    videoSeconds: number;
+  } | null = null;
   if (body.narration) {
     const text = sanitizeNarration(body.narration.text);
     const narrationPath = narrationStoragePath(user.id, body.narration.id);
@@ -167,7 +178,14 @@ export async function POST(req: NextRequest) {
     if (narrationTooLong(seconds)) {
       return NextResponse.json({ error: "這句話念起來太長了，請縮短一點（影片最長 15 秒）" }, { status: 400 });
     }
-    narration = { text, voice: body.narration.voice, path: narrationPath, seconds, videoSeconds: videoSecondsForNarration(seconds) };
+    narration = {
+      text,
+      voice: body.narration.voice,
+      accent: body.narration.voice === MY_VOICE ? null : body.narration.accent ?? DEFAULT_NARRATION_ACCENT,
+      path: narrationPath,
+      seconds,
+      videoSeconds: videoSecondsForNarration(seconds),
+    };
   }
 
   // 5. 照片存 Storage（影片清單顯示封面用）
@@ -205,6 +223,8 @@ export async function POST(req: NextRequest) {
         ? {
             narration_text: narration.text,
             narration_voice: narration.voice,
+            // 預設口音不寫：沒跑 add-narration-voices.sql 的環境照常可用
+            ...(narration.accent && narration.accent !== DEFAULT_NARRATION_ACCENT ? { narration_accent: narration.accent } : {}),
             narration_path: narration.path,
             narration_seconds: Number(narration.seconds.toFixed(2)),
             duration_seconds: narration.videoSeconds,

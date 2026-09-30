@@ -5,7 +5,9 @@
 
 import type { ChapterOverrides } from "./chapter-content";
 import type {
-  NarrationVoiceId,
+  MyVoiceStatus,
+  NarrationAccentId,
+  NarrationVoiceChoice,
   TravelNarration,
   TravelVideo,
   TravelVideoQuota,
@@ -153,7 +155,8 @@ export const api = {
     images: string[];
     sizes: { width: number; height: number }[];
     lines: string[];
-    voice: NarrationVoiceId;
+    voice: NarrationVoiceChoice;
+    accent?: NarrationAccentId;
     place?: string;
   }) =>
     apiFetch<{ video: TravelVideo; quota: TravelVideoQuota }>("/api/ai/travel-video/montage", {
@@ -168,7 +171,7 @@ export const api = {
     apiFetch<{ text: string }>("/api/ai/travel-video/script", { method: "POST", json: input, timeoutMs: 45000 }),
 
   // 試聽口白：AI 配音約 10～20 秒
-  createTravelNarration: (input: { text: string; voice: NarrationVoiceId }) =>
+  createTravelNarration: (input: { text: string; voice: NarrationVoiceChoice; accent?: NarrationAccentId }) =>
     apiFetch<{ narration: TravelNarration }>("/api/ai/travel-video/narration", {
       method: "POST",
       json: input,
@@ -179,7 +182,7 @@ export const api = {
     image: string;
     style: TravelVideoStyleId;
     place?: string;
-    narration?: { id: string; voice: NarrationVoiceId; text: string };
+    narration?: { id: string; voice: NarrationVoiceChoice; accent?: NarrationAccentId; text: string };
   }) =>
     apiFetch<{ video: TravelVideo; quota: TravelVideoQuota }>("/api/ai/travel-video", {
       method: "POST",
@@ -189,6 +192,13 @@ export const api = {
 
   deleteTravelVideo: (id: string) =>
     apiFetch<{ ok: true }>(`/api/ai/travel-video/${id}`, { method: "DELETE" }),
+
+  // 我的聲音（專業版）：錄一段自己的聲音，影片口白用自己的聲音念
+  getMyVoice: () => apiFetch<{ status: MyVoiceStatus }>("/api/ai/voice-clone"),
+  // 轉檔＋送去平台複製約 10～30 秒
+  createMyVoice: (input: { audio: string; consent: true }) =>
+    apiFetch<{ status: MyVoiceStatus }>("/api/ai/voice-clone", { method: "POST", json: input, timeoutMs: 65000 }),
+  deleteMyVoice: () => apiFetch<{ status: MyVoiceStatus }>("/api/ai/voice-clone", { method: "DELETE" }),
 
   // 拍照問暖暖：看圖模型約 10～15 秒；和拍照記餐共用每月拍照次數
   askPhoto: (input: { imageBase64: string; mimeType?: string; question?: string; place?: string }) =>
