@@ -68,7 +68,7 @@ export function wrapSubtitle(text: string, maxChars: number): string {
 }
 
 /** filtergraph 參數值裡的路徑要跳脫 \ : ' */
-function escapeFilterPath(p: string): string {
+export function escapeFilterPath(p: string): string {
   return p.replace(/\\/g, "\\\\").replace(/:/g, "\\:").replace(/'/g, "\\'");
 }
 
@@ -237,7 +237,7 @@ function resolveFfmpegPath(): Promise<string> {
   return executablePath;
 }
 
-async function runFfmpeg(
+export async function runFfmpeg(
   args: string[],
   timeoutMs = FFMPEG_TIMEOUT_MS,
   env: NodeJS.ProcessEnv = process.env

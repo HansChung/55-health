@@ -219,9 +219,95 @@ export function defaultVideoQuota(tier: string): number {
   return DEFAULT_VIDEO_QUOTA[tier] ?? 0;
 }
 
+// ── 多張照片遊記影片（montage）：照片慢慢移動＋每張一句配音與字幕，伺服器 ffmpeg 合成 ──
+
+export type TravelVideoKind = "single" | "montage";
+export const MONTAGE_MIN_PHOTOS = 3;
+export const MONTAGE_MAX_PHOTOS = 5;
+/** 一次送出的照片（base64 data URL）合計上限：Vercel request body 上限 4.5MB */
+export const MONTAGE_MAX_TOTAL_CHARS = 4_200_000;
+/** 前端目標：超過就把照片再壓小一點 */
+export const MONTAGE_CLIENT_TARGET_CHARS = 3_800_000;
+/** 每張照片的一句話：約 2.2 字／秒 → 最多約 9 秒 */
+export const MONTAGE_LINE_MAX = 20;
+
+/** 每月遊記支數（只花配音費，一支約 0.1 算力） */
+export const DEFAULT_MONTAGE_QUOTA: Record<string, number> = { free: 0, basic: 10, pro: 30 };
+export function montageQuota(tier: string): number {
+  return DEFAULT_MONTAGE_QUOTA[tier] ?? 0;
+}
+
+export function sanitizeMontageLine(text: string | null | undefined): string {
+  return [...sanitizeNarration(text)].slice(0, MONTAGE_LINE_MAX).join("");
+}
+
+/** AI 一次看完全部照片、每張寫一句（串成一段小遊記） */
+export function buildMontageScriptPrompt(count: number, place: string): string {
+  return (
+    `你是幫台灣長輩寫出遊日記的小幫手。下面依序有 ${count} 張同一趟出遊的照片，` +
+    `請每張寫一句口白，串起來像一段溫暖的小遊記（有開頭、有結尾）。` +
+    "用長輩第一人稱、口語、繁體中文（台灣用語）；" +
+    `每句 8～${MONTAGE_LINE_MAX} 個字，不要用引號、表情符號或英文，不要提到「照片」或「影片」，` +
+    "看不出是哪裡就不要硬寫地名。" +
+    (place ? `這趟去的地方：${place}。` : "") +
+    `只回 JSON：{"lines": ["第1張的句子", …]}，lines 要剛好 ${count} 句、照照片順序。`
+  );
+}
+
+export interface MontagePhoto {
+  path: string;
+  width: number;
+  height: number;
+  line: string;
+  audio_path: string | null;
+  narration_seconds: number | null;
+  clip_path: string | null;
+  clip_seconds: number | null;
+}
+
+/** travel_videos.montage 欄位 */
+export interface MontageState {
+  size: { width: number; height: number };
+  photos: MontagePhoto[];
+  /** 連續失敗次數（成功一步就歸零） */
+  attempts: number;
+}
+
+export type MontageStage = "tts" | "clips" | "final";
+
+export function montageStage(state: MontageState): MontageStage {
+  if (state.photos.some((p) => !p.audio_path)) return "tts";
+  if (state.photos.some((p) => !p.clip_path)) return "clips";
+  return "final";
+}
+
+/** 給畫面顯示的進度：配音中／剪輯第幾張／合成中 */
+export function montageProgress(state: MontageState): { stage: MontageStage; done: number; total: number } {
+  const stage = montageStage(state);
+  const total = state.photos.length;
+  const done =
+    stage === "tts"
+      ? state.photos.filter((p) => p.audio_path).length
+      : stage === "clips"
+        ? state.photos.filter((p) => p.clip_path).length
+        : total;
+  return { stage, done, total };
+}
+
+export function montageProgressLabel(p: { stage: MontageStage; done: number; total: number }): string {
+  if (p.stage === "tts") return "暖暖正在配音…";
+  if (p.stage === "clips") return `正在剪輯第 ${Math.min(p.done + 1, p.total)}／${p.total} 張`;
+  return "快好了，正在合成影片…";
+}
+
 /** 前端顯示用的影片資料（API 回傳格式） */
 export interface TravelVideo {
   id: string;
+  kind: TravelVideoKind;
+  /** 遊記：每張照片那一句話 */
+  montage_lines: string[] | null;
+  /** 遊記製作進度（做好或失敗就是 null） */
+  montage_progress: { stage: MontageStage; done: number; total: number } | null;
   status: TravelVideoStatus;
   style: TravelVideoStyleId;
   place: string | null;

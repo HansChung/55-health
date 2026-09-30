@@ -13,6 +13,7 @@ import { compressImage } from "@/lib/image-utils";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/telemetry";
 import { enableWebPush, hasWebPushSubscription, isWebPushSupported } from "@/lib/push/client";
+import { TravelMontageForm } from "@/components/travel-montage-form";
 import {
   NARRATION_MAX_CHARS,
   NARRATION_VOICES,
@@ -21,6 +22,7 @@ import {
   TRAVEL_VIDEO_STYLES,
   checkVideoImageSize,
   isTravelVideoPending,
+  montageProgressLabel,
   sanitizeNarration,
   type NarrationVoiceId,
   type TravelNarration,
@@ -80,6 +82,9 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
   const toast = useToast();
   const [videos, setVideos] = useState<TravelVideo[]>([]);
   const [quota, setQuota] = useState<TravelVideoQuota | null>(null);
+  const [montageQuota, setMontageQuota] = useState<TravelVideoQuota | null>(null);
+  // 一張照片（AI 影片平台做動畫）／多張照片遊記（自己伺服器做）
+  const [mode, setMode] = useState<"single" | "montage">("single");
   const [enabled, setEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
@@ -114,13 +119,17 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
       for (const v of res.videos) {
         const before = lastStatus.current[v.id];
         if (before && isTravelVideoPending(before)) {
-          if (v.status === "succeeded") toast.success("影片做好了！可以播放、分享給家人");
-          else if (v.status === "failed") toast.info("有一支影片沒做成功，不會扣次數，換張照片再試試");
+          const montage = v.kind === "montage";
+          if (v.status === "succeeded") toast.success(montage ? "遊記影片做好了！可以播放、分享給家人" : "影片做好了！可以播放、分享給家人");
+          else if (v.status === "failed") {
+            toast.info(montage ? "有一支遊記沒做成功，不會扣次數，請再做一次" : "有一支影片沒做成功，不會扣次數，換張照片再試試");
+          }
         }
         lastStatus.current[v.id] = v.status;
       }
       setVideos(res.videos);
       setQuota(res.quota);
+      setMontageQuota(res.montage_quota ?? null);
       setEnabled(res.enabled);
       return res.videos;
     } catch (e) {
@@ -147,6 +156,20 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
   }, []);
 
   const hasPending = videos.some((v) => isTravelVideoPending(v.status));
+  // 單張影片和遊記各自一次一支（遊記在做時，一樣可以做單張影片）
+  const singlePending = videos.some((v) => v.kind !== "montage" && isTravelVideoPending(v.status));
+  const montagePending = videos.some((v) => v.kind === "montage" && isTravelVideoPending(v.status));
+  const montageUnlimited = (montageQuota?.limit ?? 0) >= 9999;
+  const montageRemaining = montageQuota ? Math.max(0, montageQuota.limit - montageQuota.used) : null;
+  const montageBlocked = !enabled
+    ? "遊記影片還在準備中，請稍後再來"
+    : montageQuota && montageQuota.limit === 0
+      ? "升級方案就可以做遊記影片喔"
+      : montageRemaining === 0 && !montageUnlimited
+        ? "本月的遊記影片次數用完了，下個月再來做吧"
+        : montagePending
+          ? "上一支遊記還在做，做好再做下一支"
+          : null;
 
   // 有影片在做 → 上一次查完後過 10 秒再查（不會疊加請求）
   useEffect(() => {
@@ -162,7 +185,7 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
     ? "影片功能還在準備中，請稍後再來"
     : remaining === 0 && !unlimited
       ? "本月的影片次數用完了，下個月再來做吧"
-      : hasPending
+      : singlePending
         ? "上一支影片還在做，做好再做下一支"
         : !photo
           ? "先選一張照片喔"
@@ -304,7 +327,8 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
 
   const handleShare = async (v: TravelVideo) => {
     if (!v.video_url) return;
-    const text = `我用暖暖做了一支出遊回憶影片${v.place ? `（${v.place}）` : ""}，給你看看！`;
+    const kindLabel = v.kind === "montage" ? "遊記影片" : "出遊回憶影片";
+    const text = `我用暖暖做了一支${kindLabel}${v.place ? `（${v.place}）` : ""}，給你看看！`;
     trackEvent("travel_video_share", { style: v.style });
     try {
       if (navigator.share) {
@@ -345,15 +369,60 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
       }}>
         <Mascot size={60} mood="excited" />
         <div style={{ flex: 1, fontSize: "var(--fs-sm)", color: "var(--ink-1)", lineHeight: 1.5 }}>
-          拍一張出遊的照片，暖暖幫你變成 <strong>{TRAVEL_VIDEO_DURATION_SECONDS} 秒小影片</strong>，傳給家人一起看！
-          {quota && (
+          {mode === "single" ? (
+            <>拍一張出遊的照片，暖暖幫你變成 <strong>{TRAVEL_VIDEO_DURATION_SECONDS} 秒小影片</strong>，傳給家人一起看！</>
+          ) : (
+            <>選幾張出遊照片，暖暖做成<strong>有配音、有字幕的遊記影片</strong>，照片會慢慢移動！</>
+          )}
+          {mode === "single" && quota && (
             <div style={{ marginTop: 6, fontWeight: 700, color: "var(--primary-deep)" }}>
               {unlimited ? "管理員不限次數" : `本月還可以做 ${remaining} 支（共 ${quota.limit} 支）`}
+            </div>
+          )}
+          {mode === "montage" && montageQuota && montageQuota.limit > 0 && (
+            <div style={{ marginTop: 6, fontWeight: 700, color: "var(--primary-deep)" }}>
+              {montageUnlimited ? "管理員不限次數" : `本月還可以做 ${montageRemaining} 支遊記（共 ${montageQuota.limit} 支）`}
             </div>
           )}
         </div>
       </div>
 
+      {/* 一張／多張 */}
+      <div role="tablist" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 16 }}>
+        {([
+          { id: "single", emoji: "🎬", label: "一張照片", desc: "AI 讓照片動起來" },
+          { id: "montage", emoji: "📚", label: "多張照片", desc: "做成遊記影片" },
+        ] as const).map((m) => (
+          <button
+            key={m.id}
+            role="tab"
+            aria-selected={mode === m.id}
+            onClick={() => setMode(m.id)}
+            style={{
+              ...choiceButton(mode === m.id),
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "12px 8px",
+            }}
+          >
+            <span style={{ fontSize: 28 }} aria-hidden="true">{m.emoji}</span>
+            <span>{m.label}</span>
+            <span style={{ fontSize: "var(--fs-xs)", fontWeight: 500, color: "var(--ink-2)" }}>{m.desc}</span>
+          </button>
+        ))}
+      </div>
+
+      {mode === "montage" ? (
+        <TravelMontageForm
+          blockedReason={montageBlocked}
+          knownIds={videos.map((v) => v.id)}
+          reloadVideos={reload}
+          onCreated={(video, q) => {
+            lastStatus.current[video.id] = video.status;
+            setVideos((prev) => [video, ...prev]);
+            setMontageQuota(q);
+          }}
+        />
+      ) : (
+      <>
       {/* ① 選照片 */}
       <div style={sectionTitle}>① 選一張照片</div>
       {preparing ? (
@@ -541,6 +610,8 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
         <br />
         照片會傳送給 AI 影片服務（邁笙平台／MiniMax）製作影片；AI 做的動作不一定完美，不滿意可以換張照片再做
       </div>
+      </>
+      )}
 
       {/* 做好時通知我 */}
       {pushOffer && (
@@ -603,6 +674,7 @@ function VideoCard({
 }) {
   const styleMeta = TRAVEL_VIDEO_STYLES.find((s) => s.id === v.style);
   const pending = isTravelVideoPending(v.status);
+  const montage = v.kind === "montage";
 
   return (
     <div className="card" style={{ padding: 14 }}>
@@ -644,22 +716,36 @@ function VideoCard({
                     animation: "spin 1s linear infinite",
                   }}
                 />
-                <div role="status">暖暖正在做影片…</div>
-                <div style={{ fontWeight: 500, fontSize: "var(--fs-xs)" }}>通常要 5～60 分鐘，可以先去做別的事</div>
+                <div role="status">
+                  {montage && v.montage_progress ? montageProgressLabel(v.montage_progress) : "暖暖正在做影片…"}
+                </div>
+                <div style={{ fontWeight: 500, fontSize: "var(--fs-xs)" }}>
+                  {montage ? "通常 1～3 分鐘，停在這頁會做得比較快" : "通常要 5～60 分鐘，可以先去做別的事"}
+                </div>
               </>
             ) : (
-              <div role="status">這支沒做成功（不會扣次數）<br />換張照片再試試</div>
+              <div role="status">
+                {montage ? "這支遊記沒做成功（不會扣次數）" : "這支沒做成功（不會扣次數）"}
+                <br />
+                {montage ? "請再做一次" : "換張照片再試試"}
+              </div>
             )}
           </div>
         </div>
       )}
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
-        <span aria-hidden="true">{styleMeta?.emoji ?? "🎬"}</span>
-        <span style={{ fontWeight: 700, color: "var(--ink-1)" }}>{v.place || styleMeta?.label || "出遊影片"}</span>
+        <span aria-hidden="true">{montage ? "📚" : styleMeta?.emoji ?? "🎬"}</span>
+        <span style={{ fontWeight: 700, color: "var(--ink-1)" }}>
+          {v.place || (montage ? `遊記影片（${v.montage_lines?.length ?? 0} 張）` : styleMeta?.label || "出遊影片")}
+        </span>
         <span style={{ marginLeft: "auto", fontSize: "var(--fs-xs)" }}>{formatWhen(v.created_at)}</span>
       </div>
-      {v.narration_text && (
+      {montage && v.montage_lines ? (
+        <ol style={{ margin: "6px 0 0", paddingLeft: 26, listStyle: "decimal", fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.6 }}>
+          {v.montage_lines.map((line, i) => <li key={i}>{line}</li>)}
+        </ol>
+      ) : v.narration_text && (
         <div style={{ marginTop: 6, fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
           <span aria-hidden="true">🗣️ </span>「{v.narration_text}」
         </div>

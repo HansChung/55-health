@@ -78,6 +78,19 @@ stack works well for auth + meal/diary CRUD:
   `LK888_WEBHOOK_SECRET` + public https `NEXT_PUBLIC_APP_URL`: tasks are created with
   `notify_url=/api/webhooks/lk888/<secret>`; the webhook is unsigned, so it only triggers a re-query of
   `/v1/skills/task-status` by task_id. Without it, completion is only detected while the screen polls.
+- **多張照片遊記（montage, `kind='montage'`）** is rendered entirely on our server — no video platform:
+  `POST /api/ai/travel-video/montage` stores 3–5 photos + one line each (AI can write them via
+  `/montage/script`, one multi-image Gemini call) and `syncMontage` (`travel-montage-server.ts`) advances it
+  on every list poll: ① all lines TTS'd in parallel → ② one Ken Burns clip per photo (`montage-compose.ts`:
+  blurred fill + `zoompan` + fades + ASS subtitle, video only) → ③ clips concatenated with `-c copy` +
+  narrations `adelay`ed/`amix`ed → `video.mp4`. Progress lives in `travel_videos.montage` (jsonb); a
+  `lease_until` lease (conditional update) stops overlapping polls from double-processing. Each step is
+  budgeted to fit the 60 s function. Whoever actually did work (held the lease) and left it unfinished
+  calls `POST /api/cron/montage-step` (Bearer `CRON_SECRET`, answers 202 and works in `after()`), so the
+  montage finishes and pushes even after the elder leaves the page; without `CRON_SECRET` it only advances
+  while the screen polls. Needs
+  `supabase/add-travel-video-montage.sql`. Separate monthly quota (`DEFAULT_MONTAGE_QUOTA`), costs only TTS
+  (~0.01 算力 per line). The Linux ffmpeg has every filter used (verified in Docker amazonlinux).
 - Needs `supabase/add-travel-videos.sql` (table, bucket, `ai_usage` service `minimax_video`,
   `subscription_plans.ai_video_quota`). Quota counts non-failed rows incl. soft-deleted ones.
   "One pending video per user" is enforced by the partial unique index
