@@ -20,7 +20,7 @@ export default function ApiConfigsPage() {
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+      <div className="adm-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, color: "#fff", margin: 0 }}>API 設定</h1>
         <button onClick={() => setShowForm(!showForm)} style={{
           background: "#3b82f6", color: "#fff", border: "none",
@@ -44,7 +44,7 @@ export default function ApiConfigsPage() {
         background: "#1e293b", borderRadius: 12,
         border: "1px solid #334155", overflow: "hidden",
       }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div className="adm-table-scroll"><table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ background: "#0f172a", color: "#94a3b8", fontSize: 12, textAlign: "left" }}>
               <th style={{ padding: "12px 16px" }}>Provider</th>
@@ -80,7 +80,7 @@ export default function ApiConfigsPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
   );
@@ -126,7 +126,7 @@ function ConfigForm({ onSaved }: { onSaved: () => void }) {
   };
 
   return (
-    <div style={{
+    <div className="adm-grid-2" style={{
       background: "#1e293b", padding: 20, borderRadius: 12,
       border: "1px solid #334155", marginBottom: 16,
       display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12,

@@ -1,9 +1,11 @@
 "use client";
 
+// 後台外框：桌機左側選單；手機（< 768px）改成頂部列＋「☰」抽屜選單（樣式在 admin.css）
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
+import "./admin.css";
 
 const navItems = [
   { href: "/admin", label: "總覽", icon: "📊" },
@@ -18,12 +20,17 @@ const navItems = [
   { href: "/admin/chapters", label: "書本練習內容", icon: "📖" },
 ];
 
+function isActive(pathname: string, href: string) {
+  return pathname === href || (href !== "/admin" && pathname.startsWith(href));
+}
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createSupabaseBrowser();
   const [checking, setChecking] = useState(true);
   const [userEmail, setUserEmail] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -37,6 +44,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     })();
   }, []);
 
+  // 換頁就收起手機選單
+  useEffect(() => { setMenuOpen(false); }, [pathname]);
+
   if (checking) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#0f172a", color: "#fff" }}>
@@ -45,54 +55,56 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
+  const current = navItems.find((it) => isActive(pathname, it.href));
+
   return (
-    <div className="admin-root" style={{ minHeight: "100vh", display: "flex", background: "#0f172a", color: "#e2e8f0", fontFamily: "system-ui, -apple-system, sans-serif" }}>
-      <aside className="admin-nav" style={{
-        width: 240,
-        background: "#1e293b",
-        borderRight: "1px solid #334155",
-        padding: "24px 16px",
-        display: "flex", flexDirection: "column", gap: 4,
-      }}>
-        <div style={{ padding: "0 12px 24px", borderBottom: "1px solid #334155", marginBottom: 16 }}>
-          <div style={{ fontSize: 20, fontWeight: 700, color: "#fff" }}>🧡 暖暖 Admin</div>
-          <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>{userEmail}</div>
+    <div className="admin-root">
+      {/* 手機才看得到：頂部列 */}
+      <header className="admin-topbar">
+        <button
+          className="admin-menu-button"
+          onClick={() => setMenuOpen(true)}
+          aria-label="打開選單"
+          aria-expanded={menuOpen}
+        >
+          ☰
+        </button>
+        <div className="admin-topbar-title">
+          {current ? `${current.icon} ${current.label}` : "🧡 暖暖 Admin"}
+        </div>
+      </header>
+
+      {menuOpen && <div className="admin-backdrop" onClick={() => setMenuOpen(false)} aria-hidden="true" />}
+
+      <aside className={`admin-nav${menuOpen ? " open" : ""}`}>
+        <div className="admin-brand">
+          <div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: "#fff" }}>🧡 暖暖 Admin</div>
+            <div style={{ fontSize: 12, color: "#64748b", marginTop: 4, wordBreak: "break-all" }}>{userEmail}</div>
+          </div>
+          <button className="admin-menu-close" onClick={() => setMenuOpen(false)} aria-label="關閉選單">✕</button>
         </div>
         {navItems.map((it) => {
-          const active = pathname === it.href || (it.href !== "/admin" && pathname.startsWith(it.href));
+          const active = isActive(pathname, it.href);
           return (
-            <Link key={it.href} href={it.href} style={{
-              padding: "10px 14px",
-              borderRadius: 8,
-              background: active ? "#334155" : "transparent",
-              color: active ? "#fff" : "#cbd5e1",
-              fontSize: 14,
-              display: "flex", alignItems: "center", gap: 10,
-              textDecoration: "none",
-            }}>
+            <Link key={it.href} href={it.href} className={`admin-nav-link${active ? " active" : ""}`}>
               <span style={{ fontSize: 18 }}>{it.icon}</span>
               {it.label}
             </Link>
           );
         })}
         <div style={{ marginTop: "auto" }}>
-          <Link href="/" style={{
-            padding: "10px 14px", borderRadius: 8, color: "#94a3b8",
-            fontSize: 14, display: "flex", alignItems: "center", gap: 10,
-            textDecoration: "none",
-          }}>← 回到 App</Link>
+          <Link href="/" className="admin-nav-link muted">← 回到 App</Link>
           <button
             onClick={async () => { await supabase.auth.signOut(); router.push("/"); }}
-            style={{
-              width: "100%", padding: "10px 14px", borderRadius: 8,
-              background: "transparent", color: "#ef4444",
-              fontSize: 14, textAlign: "left", border: "none", cursor: "pointer",
-            }}
-          >登出</button>
+            className="admin-nav-link danger"
+          >
+            登出
+          </button>
         </div>
       </aside>
 
-      <main className="admin-main" style={{ flex: 1, padding: 32, overflow: "auto" }}>
+      <main className="admin-main">
         {children}
       </main>
     </div>

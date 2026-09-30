@@ -96,6 +96,14 @@ stack works well for auth + meal/diary CRUD:
   "One pending video per user" is enforced by the partial unique index
   `travel_videos_one_pending_per_user` (insert → 23505 → 409), so concurrent POSTs can't double-charge.
 
+### 後台（/admin）手機版
+- Admin pages keep their desktop styles inline; below 768px `src/app/admin/admin.css` overrides them via
+  `adm-*` classes (with `!important`, since inline styles win otherwise): `adm-header`, `adm-grid-2`
+  (2-col form → 1 col, `span 2` children reset), `adm-stats` (→ 2 per row), `adm-split`, `adm-card` /
+  `adm-card-row` / `adm-card-thumb` / `adm-card-actions`, `adm-row-wrap` + `adm-row-tools`, and every
+  `<table>` is wrapped in `.adm-table-scroll` (scrolls sideways). The layout swaps the sidebar for a
+  sticky top bar + ☰ drawer. New admin pages should reuse these classes.
+
 ### 研學團（study tours）
 - Home 「研學團」/ 我的 → 「研學護照」→ subpages `study-tours` / `study-passport` (free for all tiers).
   Registration only — no payment (`fee_text` is display-only). Admin at `/admin/study-tours`

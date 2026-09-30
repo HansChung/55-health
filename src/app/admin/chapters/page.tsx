@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api, type AdminChapterListItem, type AdminChapterDetail } from "@/lib/api-client";
 import {
   BLOCK_TYPE_LABELS,
@@ -62,6 +62,8 @@ export default function ChaptersAdminPage() {
   const reloadList = () => api.adminListChapters().then((d) => setList(d.chapters)).catch(console.error);
   useEffect(() => { reloadList(); }, []);
 
+  const editorRef = useRef<HTMLDivElement>(null);
+
   const open = async (id: string) => {
     setSelectedId(id);
     setMsg("");
@@ -70,6 +72,10 @@ export default function ChaptersAdminPage() {
       setDetail(d);
       setForm(d.overrides ?? {});
       setPublished(d.published);
+      // 手機上編輯區在清單下面：選好章節自動捲過去
+      if (window.matchMedia("(max-width: 767px)").matches) {
+        requestAnimationFrame(() => editorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+      }
     } catch (e) {
       setMsg("載入失敗：" + (e as Error).message);
     }
@@ -169,7 +175,7 @@ export default function ChaptersAdminPage() {
         欄位留空＝使用預設（灰字）。儲存後不用重新部署，立即生效。
       </p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 18, alignItems: "start" }}>
+      <div className="adm-split" style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 18, alignItems: "start" }}>
         {/* 章節清單 */}
         <div style={card}>
           <button style={{ ...btn("#38bdf8", "#0f172a"), width: "100%", marginBottom: 10 }} onClick={() => setCreating((v) => !v)}>
@@ -189,7 +195,7 @@ export default function ChaptersAdminPage() {
             </div>
           )}
           <input style={input} placeholder="搜尋編號或標題…" value={q} onChange={(e) => setQ(e.target.value)} />
-          <div style={{ marginTop: 10, maxHeight: "70vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
+          <div className="adm-list-scroll" style={{ marginTop: 10, maxHeight: "70vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
             {filtered.map((c) => (
               <button
                 key={c.id}
@@ -214,9 +220,9 @@ export default function ChaptersAdminPage() {
         </div>
 
         {/* 編輯區 */}
-        <div style={card}>
+        <div ref={editorRef} style={{ ...card, scrollMarginTop: 64 }}>
           {!detail ? (
-            <div style={{ color: "#64748b", padding: 40, textAlign: "center" }}>← 從左邊選一個章節，或按「＋ 新增章節」</div>
+            <div style={{ color: "#64748b", padding: 40, textAlign: "center" }}>先從章節清單選一個章節，或按「＋ 新增章節」</div>
           ) : (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
@@ -239,7 +245,7 @@ export default function ChaptersAdminPage() {
               {/* 章首圖片 / 影片 */}
               <div style={{ ...panel, marginBottom: 16 }}>
                 <div style={{ ...panelTitle, marginBottom: 10 }}>🖼️ 章首圖片與影片</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <div className="adm-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                   <div>
                     <label style={label}>章首圖片網址（jpg/png，建議 1200px 寬）</label>
                     <input style={input} value={form.heroImageUrl ?? ""} onChange={(e) => set("heroImageUrl", e.target.value)} placeholder="https://…/image.jpg" />
@@ -284,7 +290,7 @@ export default function ChaptersAdminPage() {
               </div>
 
               {/* 文字欄位 */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div className="adm-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 {EDITABLE_TEXT_FIELDS.map((f) => {
                   const multi = MULTILINE_FIELDS.has(f);
                   const def = (detail.defaults[f] as string | undefined) ?? "";
@@ -322,7 +328,7 @@ export default function ChaptersAdminPage() {
                   <button style={smallBtn} onClick={() => set("entries", [...entries, { id: `e${Date.now().toString(36)}`, label: "", hint: "", emoji: "" }])}>＋ 新增</button>
                 </div>
                 {entries.map((e, i) => (
-                  <div key={e.id + i} style={{ display: "grid", gridTemplateColumns: "60px 1fr 1.4fr 1fr 32px", gap: 6, marginBottom: 6 }}>
+                  <div key={e.id + i} className="adm-entry-row" style={{ display: "grid", gridTemplateColumns: "60px 1fr 1.4fr 1fr 32px", gap: 6, marginBottom: 6 }}>
                     <input style={input} placeholder="表情" value={e.emoji ?? ""} onChange={(ev) => setEntry(i, { emoji: ev.target.value })} />
                     <input style={input} placeholder="標籤" value={e.label} onChange={(ev) => setEntry(i, { label: ev.target.value })} />
                     <input style={input} placeholder="提示" value={e.hint ?? ""} onChange={(ev) => setEntry(i, { hint: ev.target.value })} />

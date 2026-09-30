@@ -26,16 +26,16 @@ export default function AdminDashboard() {
         總覽
       </h1>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 32 }}>
+      <div className="adm-stats" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 32 }}>
         <StatCard label="本月 AI 成本" value={`$${monthCost.toFixed(4)}`} sub="USD" color="#10b981" />
         <StatCard label="呼叫次數" value={monthCount.toString()} sub="次" color="#3b82f6" />
         <StatCard label="總 token 量" value={monthTokens.toLocaleString()} sub="tokens" color="#f59e0b" />
         <StatCard label="使用人數" value={data.topUsers.length.toString()} sub="人" color="#a855f7" />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div className="adm-split" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <Card title="各服務分佈">
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div className="adm-table-scroll"><table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid #334155", color: "#94a3b8", fontSize: 12, textAlign: "left" }}>
                 <th style={{ padding: "8px 0" }}>服務</th>
@@ -54,7 +54,7 @@ export default function AdminDashboard() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </Card>
 
         <Card title="每日成本趨勢">
@@ -63,7 +63,7 @@ export default function AdminDashboard() {
       </div>
 
       <Card title="Top 10 用戶" style={{ marginTop: 16 }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div className="adm-table-scroll"><table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid #334155", color: "#94a3b8", fontSize: 12, textAlign: "left" }}>
               <th style={{ padding: "8px 0" }}>用戶</th>
@@ -80,7 +80,7 @@ export default function AdminDashboard() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </Card>
     </div>
   );

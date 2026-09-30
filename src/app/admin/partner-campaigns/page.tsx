@@ -36,7 +36,7 @@ export default function PartnerCampaignsPage() {
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+      <div className="adm-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, color: "#fff", margin: 0 }}>合作活動</h1>
         <button onClick={() => { setEditing(null); setShowForm(!showForm); }} style={primaryButton}>
           {showForm ? "取消" : "+ 新增活動"}
@@ -57,7 +57,7 @@ export default function PartnerCampaignsPage() {
         />
       )}
 
-      <div style={{
+      <div className="adm-stats" style={{
         display: "grid",
         gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
         gap: 12,
@@ -75,16 +75,16 @@ export default function PartnerCampaignsPage() {
           const clicks = campaign.metrics?.clicks ?? 0;
           const ctr = formatCtr(clicks, impressions);
           return (
-          <div key={campaign.id} style={{
+          <div key={campaign.id} className="adm-card" style={{
             background: "#1e293b", border: "1px solid #334155",
             borderRadius: 12, padding: 18,
           }}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}>
+            <div className="adm-card-row" style={{ display: "flex", justifyContent: "space-between", gap: 16 }}>
               {campaign.image_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={campaign.image_url} alt="" style={{ width: 120, height: 80, objectFit: "cover", borderRadius: 8, flexShrink: 0, background: "#0f172a" }} />
+                <img src={campaign.image_url} alt="" className="adm-card-thumb" style={{ width: 120, height: 80, objectFit: "cover", borderRadius: 8, flexShrink: 0, background: "#0f172a" }} />
               ) : (
-                <div style={{ width: 120, height: 80, borderRadius: 8, flexShrink: 0, background: "#0f172a", border: "1px dashed #334155", color: "#64748b", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div className="adm-card-thumb" style={{ width: 120, height: 80, borderRadius: 8, flexShrink: 0, background: "#0f172a", border: "1px dashed #334155", color: "#64748b", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   尚無圖片
                 </div>
               )}
@@ -107,10 +107,12 @@ export default function PartnerCampaignsPage() {
                   ))}
                 </div>
               </div>
-              <div style={{ textAlign: "right", minWidth: 160 }}>
-                <div style={{ fontSize: 13, color: "#94a3b8" }}>曝光 {impressions.toLocaleString()}</div>
-                <div style={{ fontSize: 13, color: "#94a3b8" }}>點擊 {clicks.toLocaleString()}</div>
-                <div style={{ fontSize: 18, color: "#fff", fontWeight: 800, marginTop: 6 }}>CTR {ctr}</div>
+              <div className="adm-card-actions" style={{ textAlign: "right", minWidth: 160 }}>
+                <div className="adm-card-metrics">
+                  <div style={{ fontSize: 13, color: "#94a3b8" }}>曝光 {impressions.toLocaleString()}</div>
+                  <div style={{ fontSize: 13, color: "#94a3b8" }}>點擊 {clicks.toLocaleString()}</div>
+                  <div style={{ fontSize: 18, color: "#fff", fontWeight: 800, marginTop: 6 }}>CTR {ctr}</div>
+                </div>
                 <button
                   onClick={() => { setEditing(campaign); setShowForm(true); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                   style={{ ...smallButton, marginTop: 10, color: "#bfdbfe", borderColor: "#1e3a8a" }}
@@ -218,7 +220,7 @@ function CampaignForm({
   };
 
   return (
-    <div style={{
+    <div className="adm-grid-2" style={{
       background: "#1e293b", padding: 20, borderRadius: 12,
       border: "1px solid #334155", marginBottom: 16,
       display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12,

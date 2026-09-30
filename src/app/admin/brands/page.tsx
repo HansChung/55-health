@@ -65,9 +65,9 @@ export default function BrandsPage() {
         <h2 style={{ fontSize: 16, fontWeight: 700, color: "#fff", margin: "0 0 14px" }}>目前品牌</h2>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {brands.map((b) => (
-            <div key={b.id} style={{ display: "flex", alignItems: "center", gap: 12, background: "#0f172a", borderRadius: 8, padding: "10px 14px" }}>
+            <div key={b.id} className="adm-row-wrap" style={{ display: "flex", alignItems: "center", gap: 12, background: "#0f172a", borderRadius: 8, padding: "10px 14px" }}>
               <span style={{ fontSize: 22 }}>{b.logo_emoji}</span>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ color: "#fff", fontWeight: 700 }}>
                   {b.app_name}
                   <span style={{ marginLeft: 8, fontSize: 12, color: "#64748b" }}>{b.id}</span>
@@ -76,10 +76,12 @@ export default function BrandsPage() {
                 <div style={{ color: "#94a3b8", fontSize: 13 }}>🌐 {b.host}</div>
               </div>
               <span style={{ width: 22, height: 22, borderRadius: 5, background: b.primary_color, border: "1px solid #334155" }} />
-              <button onClick={() => edit(b)} style={{ background: "#334155", color: "#fff", border: "none", padding: "6px 12px", borderRadius: 6, fontSize: 13, cursor: "pointer" }}>編輯</button>
-              {b.id !== "default" && (
-                <button onClick={() => remove(b.id)} style={{ background: "transparent", color: "#f87171", border: "1px solid #7f1d1d", padding: "6px 10px", borderRadius: 6, fontSize: 13, cursor: "pointer" }}>刪除</button>
-              )}
+              <div className="adm-row-tools" style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => edit(b)} style={{ background: "#334155", color: "#fff", border: "none", padding: "6px 12px", borderRadius: 6, fontSize: 13, cursor: "pointer" }}>編輯</button>
+                {b.id !== "default" && (
+                  <button onClick={() => remove(b.id)} style={{ background: "transparent", color: "#f87171", border: "1px solid #7f1d1d", padding: "6px 10px", borderRadius: 6, fontSize: 13, cursor: "pointer" }}>刪除</button>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -90,7 +92,7 @@ export default function BrandsPage() {
         <h2 style={{ fontSize: 16, fontWeight: 700, color: "#fff", margin: "0 0 14px" }}>
           {editing ? `編輯：${editing}` : "新增品牌"}
         </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <div className="adm-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
           <div>
             <label style={label}>品牌代號（小寫英數，建後不可改）</label>
             <input style={{ ...input, opacity: editing ? 0.5 : 1 }} disabled={!!editing}

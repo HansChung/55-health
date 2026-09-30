@@ -25,7 +25,7 @@ export default function TelemetryPage() {
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+      <div className="adm-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, color: "#fff", margin: 0 }}>使用與錯誤</h1>
         <select value={days} onChange={(e) => setDays(Number(e.target.value))} style={{
           background: "#1e293b", color: "#fff", border: "1px solid #334155",
@@ -40,7 +40,7 @@ export default function TelemetryPage() {
       {!data ? <div style={{ color: "#94a3b8" }}>載入中…</div> : (
         <>
           {/* 數字卡 */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 24 }}>
+          <div className="adm-stats" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 24 }}>
             <div style={stat}>
               <div style={{ fontSize: 32, fontWeight: 800, color: "#38bdf8" }}>{data.active_users}</div>
               <div style={{ fontSize: 13, color: "#94a3b8", marginTop: 4 }}>活躍使用者</div>
@@ -64,14 +64,14 @@ export default function TelemetryPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {data.usage.map((u) => (
                   <div key={u.name} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{ width: 130, color: "#e2e8f0", fontSize: 14 }}>{USAGE_LABEL[u.name] ?? u.name}</div>
+                    <div className="adm-bar-label" style={{ width: 130, color: "#e2e8f0", fontSize: 14 }}>{USAGE_LABEL[u.name] ?? u.name}</div>
                     <div style={{ flex: 1, background: "#0f172a", borderRadius: 6, overflow: "hidden", height: 22 }}>
                       <div style={{
                         width: `${Math.min(100, (u.count / data.usage[0].count) * 100)}%`,
                         height: "100%", background: "#38bdf8",
                       }} />
                     </div>
-                    <div style={{ width: 110, textAlign: "right", color: "#94a3b8", fontSize: 13 }}>
+                    <div className="adm-bar-value" style={{ width: 110, textAlign: "right", color: "#94a3b8", fontSize: 13 }}>
                       {u.count} 次 · {u.users} 人
                     </div>
                   </div>
