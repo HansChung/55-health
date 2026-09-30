@@ -134,10 +134,32 @@ export const api = {
 
   // 出遊回憶影片（MiniMax）；列表會順便同步進行中的影片，做好時要轉存影片 → 給長一點的逾時
   listTravelVideos: () =>
-    apiFetch<{ videos: TravelVideo[]; quota: TravelVideoQuota; enabled: boolean }>(
+    apiFetch<{ videos: TravelVideo[]; quota: TravelVideoQuota; montage_quota?: TravelVideoQuota; enabled: boolean }>(
       "/api/ai/travel-video",
       { timeoutMs: 60000, retries: 0 }
     ),
+
+  // 多張照片遊記：AI 一次看全部照片、每張寫一句（看圖約 10～20 秒）
+  writeTravelMontageScript: (input: { images: string[]; place?: string }) =>
+    apiFetch<{ lines: string[] }>("/api/ai/travel-video/montage/script", {
+      method: "POST",
+      json: input,
+      timeoutMs: 55000,
+    }),
+
+  // 建立遊記（照片上傳＋開始配音）；逾時要比伺服器 maxDuration 長
+  createTravelMontage: (input: {
+    images: string[];
+    sizes: { width: number; height: number }[];
+    lines: string[];
+    voice: NarrationVoiceId;
+    place?: string;
+  }) =>
+    apiFetch<{ video: TravelVideo; quota: TravelVideoQuota }>("/api/ai/travel-video/montage", {
+      method: "POST",
+      json: input,
+      timeoutMs: 70000,
+    }),
 
   // 逾時要比伺服器 maxDuration（60 秒）長：前端先放棄時，伺服器可能已經建好付費任務
   // AI 看照片寫一句口白（看圖模型約 10～15 秒）

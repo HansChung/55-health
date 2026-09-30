@@ -13,7 +13,10 @@ import {
   TRAVEL_VIDEO_DURATION_SECONDS,
   buildSubtitleCues,
   isTravelVideoPending,
+  montageProgress,
+  type MontageState,
   type TravelVideo,
+  type TravelVideoKind,
   type TravelVideoStatus,
   type TravelVideoStyleId,
 } from "../travel-video";
@@ -116,6 +119,10 @@ export interface TravelVideoRow {
   narration_path?: string | null;
   narration_seconds?: number | null;
   duration_seconds?: number | null;
+  // 多張照片遊記（add-travel-video-montage.sql；舊資料沒有這些欄位）
+  kind?: TravelVideoKind | null;
+  montage?: MontageState | null;
+  lease_until?: string | null;
 }
 
 type Admin = ReturnType<typeof createSupabaseAdmin>;
@@ -135,11 +142,15 @@ export function toClientVideo(admin: Admin, row: TravelVideoRow): TravelVideo {
     created_at: row.created_at,
     completed_at: row.completed_at,
     narration_text: row.narration_text ?? null,
+    kind: row.kind === "montage" ? "montage" : "single",
+    montage_lines: row.kind === "montage" && row.montage ? row.montage.photos.map((p) => p.line) : null,
+    montage_progress:
+      row.kind === "montage" && row.montage && isTravelVideoPending(row.status) ? montageProgress(row.montage) : null,
   };
 }
 
 /** 只在狀態仍是 queued/running 時才改（避免兩個輪詢同時進來重複記帳） */
-async function finishRow(
+export async function finishRow(
   admin: Admin,
   row: TravelVideoRow,
   patch: Partial<TravelVideoRow>
@@ -160,12 +171,17 @@ async function finishRow(
 }
 
 /** 影片做好／失敗時推播給本人（沒訂閱推播或沒設 VAPID 就什麼都不做） */
-async function notifyOwner(row: TravelVideoRow): Promise<void> {
+export async function notifyOwner(row: TravelVideoRow): Promise<void> {
   const where = row.place ? `「${row.place}」的` : "";
+  const montage = row.kind === "montage";
   const message =
     row.status === "succeeded"
-      ? { title: "🎬 出遊影片做好了！", body: `${where}回憶影片做好了，點這裡播放、分享給家人` }
-      : { title: "出遊影片這次沒做成功", body: "不會扣次數，換張照片再試試看" };
+      ? montage
+        ? { title: "📚 遊記影片做好了！", body: `${where}遊記影片做好了，點這裡播放、分享給家人` }
+        : { title: "🎬 出遊影片做好了！", body: `${where}回憶影片做好了，點這裡播放、分享給家人` }
+      : montage
+        ? { title: "遊記影片這次沒做成功", body: "不會扣次數，請再做一次試試看" }
+        : { title: "出遊影片這次沒做成功", body: "不會扣次數，換張照片再試試看" };
   try {
     await sendPushToUser(row.user_id, {
       ...message,
@@ -195,7 +211,7 @@ async function markFailed(admin: Admin, row: TravelVideoRow, reason: string): Pr
   return { ...row, status: "failed", error_message: reason };
 }
 
-async function reloadRow(admin: Admin, row: TravelVideoRow): Promise<TravelVideoRow> {
+export async function reloadRow(admin: Admin, row: TravelVideoRow): Promise<TravelVideoRow> {
   const { data } = await admin.from("travel_videos").select("*").eq("id", row.id).maybeSingle();
   return (data as TravelVideoRow | null) ?? row;
 }

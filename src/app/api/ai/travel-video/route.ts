@@ -21,6 +21,7 @@ import {
   isPastDeadline,
   type TravelVideoRow,
 } from "@/lib/ai/travel-video-server";
+import { syncMontage } from "@/lib/ai/travel-montage-server";
 import { wavDurationSeconds } from "@/lib/ai/lk888-tts";
 import { travelVideoNotifyUrl } from "@/lib/ai/travel-video-webhook";
 import {
@@ -78,15 +79,23 @@ export async function GET() {
   let rows = (data ?? []) as TravelVideoRow[];
   if (enabled) {
     rows = await Promise.all(
-      rows.map((r) => (isTravelVideoPending(r.status) ? syncTravelVideo(r).catch(() => r) : r))
+      rows.map((r) => {
+        if (!isTravelVideoPending(r.status)) return r;
+        // 遊記在自己伺服器做（配音→剪輯→合成），每次輪詢推進一段；單張影片向平台查進度
+        return (r.kind === "montage" ? syncMontage(r) : syncTravelVideo(r)).catch(() => r);
+      })
     );
   }
 
-  const quota = await checkUserQuota(user.id, "video");
+  const [quota, montageQuota] = await Promise.all([
+    checkUserQuota(user.id, "video"),
+    checkUserQuota(user.id, "montage"),
+  ]);
   const admin = createSupabaseAdmin();
   return NextResponse.json({
     videos: rows.map((r) => toClientVideo(admin, r)),
     quota: { used: quota.used, limit: quota.limit, tier: quota.tier },
+    montage_quota: { used: montageQuota.used, limit: montageQuota.limit, tier: montageQuota.tier },
     enabled,
   });
 }
@@ -109,6 +118,7 @@ export async function POST(req: NextRequest) {
     .from("travel_videos")
     .select("*")
     .eq("user_id", user.id)
+    .neq("kind", "montage") // 遊記另外算，不會擋住單張影片
     .in("status", ["queued", "running"])
     .is("deleted_at", null);
   for (const r of (pendingRows ?? []) as TravelVideoRow[]) {

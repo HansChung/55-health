@@ -1,6 +1,6 @@
 import { createSupabaseAdmin } from "../supabase/server";
 import { calculateCost } from "./pricing";
-import { defaultVideoQuota } from "../travel-video";
+import { defaultVideoQuota, montageQuota } from "../travel-video";
 
 interface TrackUsageParams {
   userId: string | null;
@@ -57,7 +57,7 @@ export async function trackAiUsage(params: TrackUsageParams) {
 /** 檢查用戶本月配額是否還夠 */
 export async function checkUserQuota(
   userId: string,
-  service: "photo" | "voice" | "video"
+  service: "photo" | "voice" | "video" | "montage"
 ): Promise<{
   allowed: boolean;
   used: number;
@@ -90,6 +90,20 @@ export async function checkUserQuota(
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
 
+  if (service === "montage") {
+    // 多張照片遊記：只花配音費，另外計次（失敗的不算；刪掉的仍算）
+    const { count } = await supabase
+      .from("travel_videos")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("kind", "montage")
+      .neq("status", "failed")
+      .gte("created_at", startOfMonth.toISOString());
+    const used = count ?? 0;
+    const limit = montageQuota(tier);
+    return { allowed: used < limit, used, limit, tier };
+  }
+
   if (service === "video") {
     // 分開查：ai_video_quota 欄位是後加的（add-travel-videos.sql），沒跑 SQL 時退回程式預設值，
     // 也不會連帶讓拍照／語音配額查詢失敗
@@ -104,6 +118,7 @@ export async function checkUserQuota(
       .from("travel_videos")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
+      .neq("kind", "montage") // 遊記另外計次
       .neq("status", "failed")
       .gte("created_at", startOfMonth.toISOString());
 
