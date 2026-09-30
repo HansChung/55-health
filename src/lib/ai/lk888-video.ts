@@ -56,8 +56,10 @@ export function buildImageToVideoBody(opts: {
     ...(opts.notifyUrl ? { notify_url: opts.notifyUrl } : {}),
     // 模型專屬參數一律放 params；select 類參數要傳字串
     params: {
-      mode: "shouweizhen", // 首尾幀：傳 1 張 = 以這張當首幀的圖生影片
-      images: [opts.imageUrl],
+      mode: "shouweizhen", // 首尾幀模式
+      // 首幀＝尾幀＝同一張照片：影片必須回到原照片，H3 就不會中途換成自己生成的場景或冒出陌生人
+      // （實測只給首幀時曾在第 3 秒切到新鏡頭並多出一對男女；頭尾同圖則全程是原場景、動態幅度不變）
+      images: [opts.imageUrl, opts.imageUrl],
       duration: String(opts.durationSeconds ?? TRAVEL_VIDEO_DURATION_SECONDS),
       resolution: VIDEO_RESOLUTION,
       aspect_ratio: "adaptive", // 跟著照片比例
