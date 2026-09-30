@@ -336,6 +336,8 @@ export interface MontageState {
   photos: MontagePhoto[];
   /** 連續失敗次數（成功一步就歸零） */
   attempts: number;
+  /** 選「我的聲音」時，建立當下用的是哪一個聲音（中途重錄／刪除不會混到別的聲音） */
+  voice_clone_id?: string | null;
 }
 
 export type MontageStage = "tts" | "clips" | "final";

@@ -184,7 +184,14 @@ async function runTts(admin: Admin, row: TravelVideoRow, state: MontageState): P
   const voice = voiceOf(row);
   const accent = accentOf(row);
   // 建立遊記時已檢查過方案，背景配音不再擋（避免做到一半因方案到期失敗）
-  const resolved = await resolveSpeaker(admin, { userId: row.user_id, tier: "", voice, accent, checkTier: false });
+  const resolved = await resolveSpeaker(admin, {
+    userId: row.user_id,
+    tier: "",
+    voice,
+    accent,
+    checkTier: false,
+    cloneId: state.voice_clone_id ?? null,
+  });
   if (!resolved.ok) throw new MontageFatalError(`voice unavailable: ${resolved.error}`);
   const { speaker } = resolved;
   const service = speaker.kind === "clone" ? "minimax_tts" : "gemini_tts";

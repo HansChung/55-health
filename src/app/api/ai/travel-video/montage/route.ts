@@ -126,6 +126,7 @@ export async function POST(req: NextRequest) {
       clip_seconds: null,
     })),
     attempts: 0,
+    voice_clone_id: speaker.cloneId,
   };
   const place = sanitizePlace(body.place) || null;
   const { data: inserted, error: insErr } = await admin

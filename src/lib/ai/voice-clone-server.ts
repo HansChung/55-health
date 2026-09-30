@@ -69,6 +69,19 @@ export async function loadActiveVoice(admin: Admin, userId: string): Promise<Voi
   return (data as VoiceCloneRow | null) ?? null;
 }
 
+/** 指定的那個聲音（要是本人的、沒被刪除／換掉） */
+async function loadVoiceById(admin: Admin, userId: string, cloneId: string): Promise<VoiceCloneRow | null> {
+  const { data, error } = await admin
+    .from("voice_clones")
+    .select(COLUMNS)
+    .eq("id", cloneId)
+    .eq("user_id", userId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as VoiceCloneRow | null) ?? null;
+}
+
 /** 這 30 天還能錄幾次（刪掉的也算，避免一直刪了重錄） */
 export async function remainingClones(admin: Admin, userId: string, now = new Date()): Promise<number> {
   const since = new Date(now.getTime() - 30 * 86_400_000).toISOString();
@@ -81,6 +94,24 @@ export async function remainingClones(admin: Admin, userId: string, now = new Da
   return Math.max(0, VOICE_CLONES_PER_30_DAYS - (count ?? 0));
 }
 
+/**
+ * 錄音名額：這 30 天內依建立順序排，排在前 VOICE_CLONES_PER_30_DAYS 名內才算數。
+ * 同時送出好幾段時，每一段都先占位再來排，超過的就退回（不會先付費才發現超過）
+ */
+export async function reservationWithinLimit(admin: Admin, userId: string, cloneId: string, now = new Date()): Promise<boolean> {
+  const since = new Date(now.getTime() - 30 * 86_400_000).toISOString();
+  const { data, error } = await admin
+    .from("voice_clones")
+    .select("id")
+    .eq("user_id", userId)
+    .gte("created_at", since)
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true })
+    .limit(VOICE_CLONES_PER_30_DAYS);
+  if (error) throw error;
+  return ((data ?? []) as { id: string }[]).some((r) => r.id === cloneId);
+}
+
 export type SpeakerResult =
   | { ok: true; speaker: NarrationSpeaker; cloneId: string | null; activated: boolean }
   | { ok: false; status: number; error: string };
@@ -91,7 +122,15 @@ export type SpeakerResult =
  */
 export async function resolveSpeaker(
   admin: Admin,
-  opts: { userId: string; tier: string; voice: NarrationVoiceChoice; accent?: NarrationAccentId | null; checkTier?: boolean }
+  opts: {
+    userId: string;
+    tier: string;
+    voice: NarrationVoiceChoice;
+    accent?: NarrationAccentId | null;
+    checkTier?: boolean;
+    /** 指定要用哪一個聲音（遊記建立時記下的）；沒給就用現在的聲音 */
+    cloneId?: string | null;
+  }
 ): Promise<SpeakerResult> {
   if (opts.voice !== MY_VOICE) {
     return {
@@ -104,7 +143,10 @@ export async function resolveSpeaker(
   if (opts.checkTier !== false && !voiceCloneAllowed(opts.tier)) {
     return { ok: false, status: 403, error: "用自己的聲音念是專業版功能，升級後就可以使用" };
   }
-  const row = await loadActiveVoice(admin, opts.userId);
+  const row = opts.cloneId ? await loadVoiceById(admin, opts.userId, opts.cloneId) : await loadActiveVoice(admin, opts.userId);
+  if (!row && opts.cloneId) {
+    return { ok: false, status: 410, error: "你的聲音已經刪除或重錄了，這支遊記沒辦法用原本的聲音做完" };
+  }
   if (!row) return { ok: false, status: 400, error: "還沒錄好你的聲音，先到「我的聲音」錄一段喔" };
   if (isVoiceExpired(row)) {
     return { ok: false, status: 410, error: "錄好的聲音超過 7 天沒用，已經失效了，請重新錄一次" };

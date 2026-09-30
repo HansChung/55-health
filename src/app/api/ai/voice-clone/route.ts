@@ -16,6 +16,7 @@ import { TRAVEL_VIDEO_BUCKET } from "@/lib/ai/travel-video-server";
 import {
   loadActiveVoice,
   remainingClones,
+  reservationWithinLimit,
   toMyVoice,
   voiceCloneAllowed,
 } from "@/lib/ai/voice-clone-server";
@@ -139,12 +140,37 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "錄音裡聽不到聲音，請靠近手機、大聲一點再錄一次" }, { status: 400 });
   }
 
+  // 先占一個名額再付費複製：同時送好幾次時，只有排在每 30 天上限內的會真的送去平台。
+  // 占位的那一筆先當作「已停用」（deleted_at），不會被當成能用的聲音，也不會撞到「一人一個聲音」的唯一索引
+  const now = new Date();
+  const cloneId = crypto.randomUUID();
+  const { error: resErr } = await admin.from("voice_clones").insert({
+    id: cloneId,
+    user_id: user.id,
+    provider_voice_id: `pending:${cloneId}`,
+    model: CLONE_TTS_MODEL,
+    sample_seconds: Number(seconds.toFixed(2)),
+    consent_text: VOICE_CONSENT_TEXT,
+    consented_at: now.toISOString(),
+    deleted_at: now.toISOString(),
+  });
+  if (resErr) {
+    console.error("[api] voice clone reserve:", resErr);
+    return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
+  }
+  const dropReservation = () => admin.from("voice_clones").delete().eq("id", cloneId).then(() => undefined);
+  if (tier !== "admin" && !(await reservationWithinLimit(admin, user.id, cloneId))) {
+    await dropReservation();
+    return NextResponse.json({ error: "這個月重錄的次數用完了，下個月再來錄喔" }, { status: 429 });
+  }
+
   let cloned;
   try {
     cloned = await cloneVoice(wav, `nn-${user.id.slice(0, 8)}-${Date.now().toString(36)}`);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("[api] voice clone failed:", msg);
+    await dropReservation(); // 沒複製成功不佔這個月的次數
     await trackAiUsage({
       userId: user.id,
       service: "minimax_tts",
@@ -166,30 +192,47 @@ export async function POST(req: NextRequest) {
     model: `${CLONE_TTS_MODEL}-clone`,
     endpoint: ENDPOINT,
     success: true,
-    metadata: { provider: "lk888", voice_id: cloned.voiceId, sample_seconds: Number(seconds.toFixed(1)) },
+    metadata: { provider: "lk888", voice_id: cloned.voiceId, voice_clone_id: cloneId, sample_seconds: Number(seconds.toFixed(1)) },
   });
 
-  // 一個人只留一個聲音：舊的先停用再存新的（同時送兩次時，唯一索引會擋下後到的那筆）
-  const now = new Date();
-  const cloneId = crypto.randomUUID();
+  // 付過費的聲音先存進占位那一筆（還是停用狀態），之後換不成功也不會弄丟
   const demoUrl = await keepDemo(admin, user.id, cloneId, cloned.demoUrl);
-  await admin.from("voice_clones").update({ deleted_at: now.toISOString() }).eq("user_id", user.id).is("deleted_at", null);
-  const { error: insErr } = await admin.from("voice_clones").insert({
-    id: cloneId,
-    user_id: user.id,
-    provider_voice_id: cloned.voiceId,
-    model: CLONE_TTS_MODEL,
-    sample_seconds: Number(seconds.toFixed(2)),
-    demo_url: demoUrl,
-    consent_text: VOICE_CONSENT_TEXT,
-    consented_at: now.toISOString(),
-    expires_at: cloned.expiresAt ?? new Date(now.getTime() + UNUSED_VOICE_TTL_MS).toISOString(),
-  });
-  if (insErr) {
-    if (insErr.code === "23505") {
+  const { error: saveErr } = await admin
+    .from("voice_clones")
+    .update({
+      provider_voice_id: cloned.voiceId,
+      demo_url: demoUrl,
+      expires_at: cloned.expiresAt ?? new Date(now.getTime() + UNUSED_VOICE_TTL_MS).toISOString(),
+    })
+    .eq("id", cloneId);
+  if (saveErr) {
+    console.error("[api] voice clone save:", saveErr, "voice_id:", cloned.voiceId);
+    return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
+  }
+
+  // 換成新的聲音：舊的停用 → 新的啟用；啟用失敗就把舊的還原，不會兩個都沒有
+  const { data: retired, error: retireErr } = await admin
+    .from("voice_clones")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("user_id", user.id)
+    .is("deleted_at", null)
+    .select("id");
+  if (retireErr) {
+    console.error("[api] voice clone retire:", retireErr);
+    return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
+  }
+  const { error: activateErr } = await admin.from("voice_clones").update({ deleted_at: null }).eq("id", cloneId);
+  if (activateErr) {
+    const retiredIds = ((retired ?? []) as { id: string }[]).map((r) => r.id);
+    if (retiredIds.length > 0) {
+      const { error: restoreErr } = await admin.from("voice_clones").update({ deleted_at: null }).in("id", retiredIds);
+      if (restoreErr && restoreErr.code !== "23505") console.error("[api] voice clone restore:", restoreErr);
+    }
+    // 23505：同時送出的另一段錄音已經先換上了
+    if (activateErr.code === "23505") {
       return NextResponse.json({ error: "剛剛已經在處理另一段錄音了，請稍等一下再看看" }, { status: 409 });
     }
-    console.error("[api] voice clone insert:", insErr);
+    console.error("[api] voice clone activate:", activateErr);
     return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
   }
 

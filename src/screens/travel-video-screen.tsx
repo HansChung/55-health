@@ -170,6 +170,8 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
 
   const handleMyVoiceChanged = (status: MyVoiceStatus, ready: boolean) => {
     setMyVoice(status);
+    // 聲音換了（重錄／刪除）：用舊聲音做的試聽不能再拿去做影片
+    setPreview((p) => (p?.voice === MY_VOICE ? null : p));
     if (ready) {
       // 剛錄好：直接幫打開錄音畫面的那個表單選「我的聲音」
       if (sheetFor === "montage") setMontageVoice(MY_VOICE);
