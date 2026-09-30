@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api-client";
+import { TAIWAN_COUNTIES, guessCounty } from "@/lib/weather";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
 import {
   BROADCAST_MAX,
@@ -203,6 +204,9 @@ function TourForm({
   const [endsAt, setEndsAt] = useState(isoToTaipeiInput(initial?.ends_at));
   const [deadline, setDeadline] = useState(isoToTaipeiInput(initial?.registration_deadline));
   const [meetingPoint, setMeetingPoint] = useState(initial?.meeting_point ?? "");
+  // 天氣預報的縣市：""＝從集合地點、活動名稱自動判斷
+  const [county, setCounty] = useState(initial?.weather_county ?? "");
+  const guessedCounty = guessCounty(meetingPoint, title);
   const [fee, setFee] = useState(initial?.fee_text ?? "");
   const [capacity, setCapacity] = useState(String(initial?.capacity ?? 20));
   const [walking, setWalking] = useState(String(initial?.walking_level ?? 1));
@@ -236,6 +240,8 @@ function TourForm({
       walking_level: Number(walking),
       accessibility_note: accessibility.trim(),
       contact_phone: phone.trim(),
+      // 有改才送（還沒跑 add-study-tour-weather.sql 的環境，不改就不會因為沒有這個欄位而存不進去）
+      ...(county !== (initial?.weather_county ?? "") ? { weather_county: county || null } : {}),
     };
     setSaving(true);
     try {
@@ -280,6 +286,12 @@ function TourForm({
       </Field>
       <Field label="集合地點" wide>
         <input value={meetingPoint} onChange={(e) => setMeetingPoint(e.target.value)} placeholder="彰化火車站前站 7-11 門口" style={inputStyle} />
+      </Field>
+      <Field label="天氣預報地區（行前提醒會附上天氣）">
+        <select value={county} onChange={(e) => setCounty(e.target.value)} style={inputStyle}>
+          <option value="">自動判斷{guessedCounty ? `（${guessedCounty}）` : "（判斷不出來，請選）"}</option>
+          {TAIWAN_COUNTIES.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
       </Field>
       <Field label="費用說明（只顯示，不線上收費）">
         <input value={fee} onChange={(e) => setFee(e.target.value)} placeholder="每人 NT$980（含午餐、保險）" style={inputStyle} />

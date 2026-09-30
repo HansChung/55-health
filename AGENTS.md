@@ -113,6 +113,13 @@ stack works well for auth + meal/diary CRUD:
   file from `process.cwd()/public/music`, so every route that can advance a montage lists `./public/music/*.m4a`
   in `outputFileTracingIncludes`; a missing file only logs a warning and the video is made without music.
   Single-photo (H3) videos have their own ambient audio and get no music.
+- **家人按讚、留言** (needs `supabase/add-travel-video-comments.sql`): accepted family members see the
+  elder's finished videos in 家人狀況 (`GET /api/family/videos`, `FamilyVideos`) unless the elder turned off
+  `family_links.permissions.videos` (missing key = visible). Reactions (❤️👍😂🥹👏, toggle) and ≤100-char
+  comments live in `travel_video_comments` (server-only RLS; `POST/DELETE /api/ai/travel-video/[id]/comments`).
+  Family activity pushes to the elder (`/?open=travel-video`); an elder's comment pushes to the family who
+  interacted with that video; a finished video pushes to all family who can see it (`notifyFamilyNewVideo`,
+  called from `notifyOwner`). `video-comments-server.ts` must not import `travel-video-server.ts` (cycle).
 - Needs `supabase/add-travel-videos.sql` (table, bucket, `ai_usage` service `minimax_video`,
   `subscription_plans.ai_video_quota`). Quota counts non-failed rows incl. soft-deleted ones.
   "One pending video per user" is enforced by the partial unique index
@@ -160,6 +167,11 @@ stack works well for auth + meal/diary CRUD:
     elder's tour page / passport card shows the latest ones, so people without push still see them.
   - **報到名單**: `checked_in_at` is set by the `study_tour_stamps_checkin` trigger on the first stamp;
     elders without phones are checked in manually (`PATCH …/registrations/[regId]` `{checked_in}`).
+  - **天氣** (`CWA_API_KEY`, 中央氣象署 open data, free; optional `supabase/add-study-tour-weather.sql`):
+    reminders append the forecast for the tour's start period (F-C0032-001, county level, next 36 h) and the
+    elder's tour page shows a weather card for tours starting within 36 h. County = `study_tours.weather_county`
+    (admin select) or `guessCounty(meeting_point, title)`. Forecasts are cached 30 min per county per instance;
+    any failure just omits the weather. `CWA_API_BASE` exists only to point local tests at a fake server.
   - **家人抵達通知** is opt-in by the elder: `family_links.permissions.trips` (default off; asked once on
     the tour page after registering, toggle in 家人共享). Sent from `after()` in the stamp route only when
     a stamp is new. `family_links` has only select/insert RLS policies, so `PATCH`/`DELETE /api/family/[id]`

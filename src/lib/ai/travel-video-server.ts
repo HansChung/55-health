@@ -7,6 +7,7 @@ import { createSupabaseAdmin } from "../supabase/server";
 import { trackAiUsage } from "./usage-tracker";
 import { calculateCost } from "./pricing";
 import { queryVideoTask, VIDEO_RESOLUTION } from "./lk888-video";
+import { notifyFamilyNewVideo } from "../video-comments-server";
 import { sendPushToUser } from "../push/send";
 import { ComposeBudgetError, composeNarratedVideo } from "./video-compose";
 import {
@@ -193,6 +194,8 @@ export async function notifyOwner(row: TravelVideoRow): Promise<void> {
   } catch (e) {
     console.warn("[travel-video] push failed:", e);
   }
+  // 做好了也告訴家人（長輩沒關掉「出遊影片」權限的）
+  if (row.status === "succeeded") await notifyFamilyNewVideo(row);
 }
 
 async function markFailed(admin: Admin, row: TravelVideoRow, reason: string): Promise<TravelVideoRow> {
