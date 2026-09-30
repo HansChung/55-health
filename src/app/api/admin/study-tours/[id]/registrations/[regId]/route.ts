@@ -31,8 +31,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!reg) return NextResponse.json({ error: "找不到這筆報名" }, { status: 404 });
 
   if ("checked_in" in parsed.data) {
-    if ((reg as { status: string }).status === "cancelled") {
+    const status = (reg as { status: string }).status;
+    if (status === "cancelled") {
       return NextResponse.json({ error: "已取消的報名不能報到" }, { status: 409 });
+    }
+    // 候補的人不能直接按報到（會變成「報到了卻還在候補」，名額也對不上）：
+    // 請他現場掃碼（蓋章會把候補轉正取），或先調高名額讓他遞補
+    if (parsed.data.checked_in && status !== "confirmed") {
+      return NextResponse.json({ error: "候補中的報名不能直接報到，請讓長輩現場掃碼，或先調高名額遞補" }, { status: 409 });
     }
     const checkedInAt = parsed.data.checked_in ? new Date().toISOString() : null;
     const { error } = await supabase

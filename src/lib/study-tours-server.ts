@@ -85,6 +85,26 @@ export async function isLinkedElder(admin: Admin, familyUserId: string, elderId:
  *   - 還沒結束的已發布研學團（找活動）
  *   - 我報名過／幫家人報名過的研學團（我的護照，含已結束的）
  */
+/** 每一團各抓最新 5 則廣播（一起查再 limit 的話，一團廣播很多就會把別團擠掉） */
+async function loadLatestBroadcasts(
+  admin: Admin,
+  tourIds: string[]
+): Promise<{ data: (StudyTourBroadcast & { tour_id: string })[]; error: { message: string } | null }> {
+  const results = await Promise.all(
+    tourIds.map((tourId) =>
+      admin
+        .from("study_tour_broadcasts")
+        .select(BROADCAST_COLUMNS)
+        .eq("tour_id", tourId)
+        .order("created_at", { ascending: false })
+        .limit(5)
+    )
+  );
+  const failed = results.find((r) => r.error);
+  if (failed?.error) return { data: [], error: failed.error };
+  return { data: results.flatMap((r) => (r.data ?? []) as (StudyTourBroadcast & { tour_id: string })[]), error: null };
+}
+
 export async function loadStudyToursForUser(admin: Admin, userId: string, now: Date = new Date()): Promise<StudyTourView[]> {
   const { data: myRegData, error: myRegError } = await admin
     .from("study_tour_registrations")
@@ -126,21 +146,14 @@ export async function loadStudyToursForUser(admin: Admin, userId: string, now: D
       .in("tour_id", ids)
       .neq("status", "cancelled"),
     admin.from("study_tour_stamps").select("tour_id, stop_id, user_id, stamped_at").in("tour_id", ids).eq("user_id", userId),
-    myTourIds.length > 0
-      ? admin
-          .from("study_tour_broadcasts")
-          .select(BROADCAST_COLUMNS)
-          .in("tour_id", myTourIds)
-          .order("created_at", { ascending: false })
-          .limit(50)
-      : Promise.resolve({ data: [], error: null }),
+    loadLatestBroadcasts(admin, myTourIds),
   ]);
   if (stopsRes.error) throw stopsRes.error;
   if (regsRes.error) throw regsRes.error;
   if (stampsRes.error) throw stampsRes.error;
   // 廣播表是後加的（add-study-tour-day-ops.sql）：還沒建就當沒有廣播，不要整頁壞掉
   if (broadcastsRes.error) console.warn("[study-tours] broadcasts unavailable:", broadcastsRes.error.message);
-  const broadcasts = ((broadcastsRes.error ? [] : broadcastsRes.data) ?? []) as (StudyTourBroadcast & { tour_id: string })[];
+  const broadcasts = broadcastsRes.error ? [] : broadcastsRes.data;
 
   const stops = (stopsRes.data ?? []) as StudyTourStopRow[];
   const regs = (regsRes.data ?? []) as Pick<StudyTourRegistrationRow, "id" | "tour_id" | "status" | "party_size" | "created_at">[];
@@ -157,7 +170,6 @@ export async function loadStudyToursForUser(admin: Admin, userId: string, now: D
         myStamps: stamps.filter((s) => s.tour_id === tour.id),
         broadcasts: broadcasts
           .filter((b) => b.tour_id === tour.id)
-          .slice(0, 5)
           .map(({ id, message, created_at }) => ({ id, message, created_at })),
         userId,
         now,
@@ -373,6 +385,9 @@ async function pushToUsers(
   return { users: unique.length, devices: results.reduce((n, r) => n + r.sent, 0) };
 }
 
+/** 行前提醒每批幾筆報名（一次標記、一起推播） */
+const REMINDER_BATCH = 50;
+
 function tourDeepLink(tourId: string) {
   return `/?open=study-tours&tour=${tourId}`;
 }
@@ -460,40 +475,46 @@ export async function sendTourReminders(
     } & Record<string, string | null>>;
     const positions = waitlistPositions(regs);
 
-    for (const reg of regs) {
-      if (reg[column]) continue;
-      // 先標記再推播：排程同時跑兩次時，只有標記成功的那次會推
-      const { data: claimed } = await admin
+    // 先算好每個人要收到什麼；沒有訊息的（例如當天早上還在候補）不標記，之後轉正取仍收得到
+    const pending = regs.flatMap((reg) => {
+      if (reg[column]) return [];
+      const base = { status: reg.status, participant_name: reg.participant_name, waitlist_position: positions.get(reg.id) ?? null };
+      const participantMsg = reminderMessage(kind, tour, { ...base, for_self: true });
+      if (!participantMsg) return [];
+      const family = reg.registered_by && reg.registered_by !== reg.user_id ? reg.registered_by : null;
+      const familyMsg = family ? reminderMessage(kind, tour, { ...base, for_self: false }) : null;
+      return [{ reg, participantMsg, family, familyMsg }];
+    });
+
+    // 一批一批：整批一次標記（只有標記成功的才推，排程同時跑兩次也不會重複），再並行推播，
+    // 大團（上限 500 人）也能在排程時限內跑完
+    for (let i = 0; i < pending.length; i += REMINDER_BATCH) {
+      const batch = pending.slice(i, i + REMINDER_BATCH);
+      const { data: claimedData, error: claimError } = await admin
         .from("study_tour_registrations")
         .update({ [column]: new Date().toISOString() })
-        .eq("id", reg.id)
+        .in("id", batch.map((p) => p.reg.id))
         .is(column, null)
-        .select("id")
-        .maybeSingle();
-      if (!claimed) continue;
+        .select("id");
+      if (claimError) throw claimError;
+      const claimed = new Set(((claimedData ?? []) as { id: string }[]).map((r) => r.id));
 
-      const forSelf = !reg.registered_by || reg.registered_by === reg.user_id;
-      const participantMsg = reminderMessage(kind, tour, {
-        status: reg.status,
-        for_self: true,
-        participant_name: reg.participant_name,
-        waitlist_position: positions.get(reg.id) ?? null,
-      });
-      if (!participantMsg) continue;
-      reminded += 1;
       const url = tourDeepLink(tour.id);
-      const tag = `study-tour-${kind}-${reg.id}`;
-      devices += (await pushToUsers([reg.user_id], participantMsg, url, tag)).devices;
-      // 家人代報的：也提醒家人（訊息帶上長輩的名字）
-      if (!forSelf && reg.registered_by) {
-        const familyMsg = reminderMessage(kind, tour, {
-          status: reg.status,
-          for_self: false,
-          participant_name: reg.participant_name,
-          waitlist_position: positions.get(reg.id) ?? null,
-        });
-        if (familyMsg) devices += (await pushToUsers([reg.registered_by], familyMsg, url, `${tag}-family`)).devices;
-      }
+      const sent = await Promise.all(
+        batch
+          .filter((p) => claimed.has(p.reg.id))
+          .map(async ({ reg, participantMsg, family, familyMsg }) => {
+            const tag = `study-tour-${kind}-${reg.id}`;
+            const [self, fam] = await Promise.all([
+              pushToUsers([reg.user_id], participantMsg, url, tag),
+              // 家人代報的：也提醒家人（訊息帶上長輩的名字）
+              family && familyMsg ? pushToUsers([family], familyMsg, url, `${tag}-family`) : Promise.resolve({ users: 0, devices: 0 }),
+            ]);
+            return self.devices + fam.devices;
+          })
+      );
+      reminded += sent.length;
+      devices += sent.reduce((n, d) => n + d, 0);
     }
   }
   return { tours: tours.length, reminded, devices };

@@ -557,7 +557,9 @@ function TourDetailPanel({ tourId, onChanged }: { tourId: string; onChanged: () 
                   <span style={{ color: r.status === "confirmed" ? "#6ee7b7" : r.status === "waitlisted" ? "#fcd34d" : "#64748b" }}>{REG_STATUS[r.status]}</span>
                 </td>
                 <td style={cell}>
-                  {r.status === "cancelled" ? "—" : (
+                  {r.status === "cancelled" ? "—" : r.status === "waitlisted" && !r.checked_in_at ? (
+                    <span title="候補不能直接報到：請長輩現場掃碼（會轉正取），或調高名額遞補" style={{ color: "#64748b", fontSize: 13 }}>候補中</span>
+                  ) : (
                     <button
                       onClick={() => toggleCheckin(r)}
                       title={r.checked_in_at ? "按一下取消報到" : "沒掃碼的長輩，由領隊按報到"}
