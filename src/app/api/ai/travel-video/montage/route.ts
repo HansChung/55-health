@@ -1,6 +1,6 @@
 // ────────────────────────────────────────────────
 // 多張照片遊記影片：3～5 張照片 + 每張一句話 + 聲音 → 建立一支遊記（在自己伺服器用 ffmpeg 做）
-// POST { images: dataURL[], sizes: {width,height}[], lines: string[], voice, accent?, place? }
+// POST { images: dataURL[], sizes: {width,height}[], lines: string[], voice, accent?, music?, place? }
 // 建立後在背景先開始配音，之後由背景接力（/api/cron/montage-step）與畫面輪詢接著做
 // ────────────────────────────────────────────────
 import { NextRequest, NextResponse, after } from "next/server";
@@ -17,6 +17,7 @@ import {
   MONTAGE_MAX_TOTAL_CHARS,
   MONTAGE_MIN_PHOTOS,
   DEFAULT_NARRATION_ACCENT,
+  MONTAGE_MUSIC_IDS,
   MY_VOICE,
   NARRATION_ACCENT_IDS,
   NARRATION_VOICE_CHOICES,
@@ -40,6 +41,8 @@ const PostSchema = z
     lines: z.array(z.string().max(200)),
     voice: z.enum(NARRATION_VOICE_CHOICES),
     accent: z.enum(NARRATION_ACCENT_IDS).optional(),
+    // 配樂：沒給＝不要音樂（舊版 App 送出的請求）
+    music: z.enum(MONTAGE_MUSIC_IDS).nullable().optional(),
     place: z.string().max(100).optional(),
   })
   .refine((b) => b.sizes.length === b.images.length && b.lines.length === b.images.length, "length mismatch")
@@ -127,6 +130,7 @@ export async function POST(req: NextRequest) {
     })),
     attempts: 0,
     voice_clone_id: speaker.cloneId,
+    music: body.music ?? null,
   };
   const place = sanitizePlace(body.place) || null;
   const { data: inserted, error: insErr } = await admin

@@ -340,6 +340,34 @@ export interface MontageState {
   attempts: number;
   /** 選「我的聲音」時，建立當下用的是哪一個聲音（中途重錄／刪除不會混到別的聲音） */
   voice_clone_id?: string | null;
+  /** 配樂（public/music/<id>.m4a）；null／沒有＝不要音樂（舊的遊記沒有這個欄位） */
+  music?: MontageMusicId | null;
+}
+
+/**
+ * 遊記配樂：2026-09-30 用邁笙 Suno v4.5 做的純音樂（一次做好、所有影片共用），
+ * 事先處理成前 90 秒、-28 LUFS、結尾淡出（見 AGENTS.md）。id 會存進 montage.music，不要改名
+ */
+export const MONTAGE_MUSIC = [
+  { id: "warm", label: "溫馨", emoji: "🌷" },
+  { id: "light", label: "輕快", emoji: "☀️" },
+  { id: "nostalgic", label: "懷舊", emoji: "📻" },
+  { id: "piano", label: "鋼琴", emoji: "🎹" },
+  { id: "folk", label: "民謠風", emoji: "🏮" },
+  { id: "nature", label: "大自然", emoji: "🌿" },
+] as const;
+
+export type MontageMusicId = (typeof MONTAGE_MUSIC)[number]["id"];
+export const MONTAGE_MUSIC_IDS = MONTAGE_MUSIC.map((m) => m.id) as [MontageMusicId, ...MontageMusicId[]];
+export const DEFAULT_MONTAGE_MUSIC: MontageMusicId = "warm";
+
+export function isMontageMusicId(v: unknown): v is MontageMusicId {
+  return typeof v === "string" && (MONTAGE_MUSIC_IDS as readonly string[]).includes(v);
+}
+
+/** 前端試聽／伺服器合成都用這個檔名（伺服器從 public/music 讀檔） */
+export function montageMusicFile(id: MontageMusicId): string {
+  return `/music/${id}.m4a`;
 }
 
 export type MontageStage = "tts" | "clips" | "final";

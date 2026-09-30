@@ -6,6 +6,7 @@
 import type { ChapterOverrides } from "./chapter-content";
 import type { VideoCommentsView, VideoReaction } from "./video-comments";
 import type {
+  MontageMusicId,
   MyVoiceStatus,
   NarrationAccentId,
   NarrationVoiceChoice,
@@ -158,6 +159,8 @@ export const api = {
     lines: string[];
     voice: NarrationVoiceChoice;
     accent?: NarrationAccentId;
+    /** 配樂；null＝不要音樂 */
+    music: MontageMusicId | null;
     place?: string;
   }) =>
     apiFetch<{ video: TravelVideo; quota: TravelVideoQuota }>("/api/ai/travel-video/montage", {

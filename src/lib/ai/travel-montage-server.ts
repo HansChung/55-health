@@ -6,6 +6,8 @@
  * 同一支遊記同時只讓一個請求處理（lease_until 租約）；每一步做完就存進度，中斷了下次接著做
  */
 
+import { access } from "node:fs/promises";
+import path from "node:path";
 import { createSupabaseAdmin } from "../supabase/server";
 import { trackAiUsage } from "./usage-tracker";
 import { synthesizeNarration } from "./lk888-tts";
@@ -24,7 +26,9 @@ import {
   DEFAULT_NARRATION_ACCENT,
   NARRATION_ACCENT_IDS,
   NARRATION_VOICE_CHOICES,
+  isMontageMusicId,
   isTravelVideoPending,
+  montageMusicFile,
   montageStage,
   type MontageState,
   type NarrationAccentId,
@@ -314,7 +318,7 @@ async function runFinal(admin: Admin, row: TravelVideoRow, state: MontageState, 
   const clips = await Promise.all(state.photos.map((p) => download(admin, p.clip_path!)));
   const narrations = await Promise.all(state.photos.map((p) => download(admin, p.audio_path!)));
   const clipSeconds = state.photos.map((p) => Number(p.clip_seconds ?? 0));
-  const video = await muxMontage({ clips, narrations, clipSeconds, deadline });
+  const video = await muxMontage({ clips, narrations, clipSeconds, deadline, musicPath: await musicPathFor(state) });
   const videoPath = montageVideoPath(row);
   await upload(admin, videoPath, video, "video/mp4", true);
 
@@ -331,6 +335,22 @@ async function runFinal(admin: Admin, row: TravelVideoRow, state: MontageState, 
   await admin.storage.from(TRAVEL_VIDEO_BUCKET).remove(montageIntermediatePaths(row, state.photos.length));
   await notifyOwner(updated);
   return updated;
+}
+
+/**
+ * 配樂檔在伺服器上的位置（public/music 由 next.config 的 outputFileTracingIncludes 帶進函式）。
+ * 找不到檔案就不加音樂（照樣把影片做出來），並留下記錄
+ */
+async function musicPathFor(state: MontageState): Promise<string | null> {
+  if (!isMontageMusicId(state.music)) return null;
+  const file = path.join(process.cwd(), "public", montageMusicFile(state.music));
+  try {
+    await access(file);
+    return file;
+  } catch {
+    console.warn(`[montage] music file missing: ${file}`);
+    return null;
+  }
 }
 
 async function failMontage(admin: Admin, row: TravelVideoRow, reason: string): Promise<TravelVideoRow> {
