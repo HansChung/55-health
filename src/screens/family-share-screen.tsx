@@ -222,6 +222,11 @@ function FamilyCard({ link, colorIdx, onTogglePermission, onRemove }: {
             on={link.permissions.trips ?? false}
             onChange={(v) => onTogglePermission(link, "trips", v)}
           />
+          <PermissionRow
+            label="出遊影片（看影片、按讚留言）" icon="camera"
+            on={link.permissions.videos ?? true}
+            onChange={(v) => onTogglePermission(link, "videos", v)}
+          />
           {link.invite_code && link.status === "pending" && (
             <div style={{
               marginTop: 12, padding: 12,
@@ -359,6 +364,8 @@ function InviteModal({ onClose, onCreated }: {
               onChange={(v) => setPerm({ ...perm, voice: v })} />
             <PermissionRow label="研學團抵達通知" icon="bell" on={perm.trips ?? false}
               onChange={(v) => setPerm({ ...perm, trips: v })} />
+            <PermissionRow label="出遊影片（看影片、按讚留言）" icon="camera" on={perm.videos ?? true}
+              onChange={(v) => setPerm({ ...perm, videos: v })} />
           </div>
         </Field>
 

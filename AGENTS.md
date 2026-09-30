@@ -105,6 +105,13 @@ stack works well for auth + meal/diary CRUD:
   voice costs a one-time 18.8 算力 activation** and an unused voice expires after 7 days — `claimFirstUse`
   (`activating_until`) makes sure only one request does that first synthesis, and montages TTS only the first
   line on first use.
+- **家人按讚、留言** (needs `supabase/add-travel-video-comments.sql`): accepted family members see the
+  elder's finished videos in 家人狀況 (`GET /api/family/videos`, `FamilyVideos`) unless the elder turned off
+  `family_links.permissions.videos` (missing key = visible). Reactions (❤️👍😂🥹👏, toggle) and ≤100-char
+  comments live in `travel_video_comments` (server-only RLS; `POST/DELETE /api/ai/travel-video/[id]/comments`).
+  Family activity pushes to the elder (`/?open=travel-video`); an elder's comment pushes to the family who
+  interacted with that video; a finished video pushes to all family who can see it (`notifyFamilyNewVideo`,
+  called from `notifyOwner`). `video-comments-server.ts` must not import `travel-video-server.ts` (cycle).
 - Needs `supabase/add-travel-videos.sql` (table, bucket, `ai_usage` service `minimax_video`,
   `subscription_plans.ai_video_quota`). Quota counts non-failed rows incl. soft-deleted ones.
   "One pending video per user" is enforced by the partial unique index

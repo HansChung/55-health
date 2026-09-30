@@ -11,6 +11,7 @@ const InviteSchema = z.object({
     diary: z.boolean().optional(),
     voice: z.boolean().optional(),
     trips: z.boolean().optional(),
+    videos: z.boolean().optional(),
   }).optional(),
 });
 
