@@ -4,6 +4,7 @@
  */
 
 import type { ChapterOverrides } from "./chapter-content";
+import type { VideoCommentsView, VideoReaction } from "./video-comments";
 import type {
   MyVoiceStatus,
   NarrationAccentId,
@@ -192,6 +193,16 @@ export const api = {
 
   deleteTravelVideo: (id: string) =>
     apiFetch<{ ok: true }>(`/api/ai/travel-video/${id}`, { method: "DELETE" }),
+
+  // 出遊影片的按讚、留言（影片本人或看得到影片的家人）
+  reactToVideo: (id: string, emoji: VideoReaction) =>
+    apiFetch<{ comments: VideoCommentsView }>(`/api/ai/travel-video/${id}/comments`, { method: "POST", json: { emoji } }),
+  commentOnVideo: (id: string, body: string) =>
+    apiFetch<{ comments: VideoCommentsView }>(`/api/ai/travel-video/${id}/comments`, { method: "POST", json: { body } }),
+  deleteVideoComment: (id: string, commentId: string) =>
+    apiFetch<{ comments: VideoCommentsView }>(`/api/ai/travel-video/${id}/comments/${commentId}`, { method: "DELETE" }),
+  // 家人看長輩的出遊影片
+  familyVideos: () => apiFetch<{ elders: FamilyElderVideos[] }>("/api/family/videos"),
 
   // 我的聲音（專業版）：錄一段自己的聲音，影片口白用自己的聲音念
   getMyVoice: () => apiFetch<{ status: MyVoiceStatus }>("/api/ai/voice-clone"),
@@ -632,6 +643,8 @@ export interface FamilyPermissions {
   voice?: boolean;
   /** 研學團抵達通知（長輩同意才開，預設關） */
   trips?: boolean;
+  /** 出遊影片：家人看得到、可以按讚留言（沒設定＝看得到） */
+  videos?: boolean;
 }
 
 /** 子女儀表板：單一長輩狀態總覽 */
@@ -941,4 +954,11 @@ export interface AdminPartnerCampaign extends PartnerCampaign {
   created_at: string;
   updated_at: string;
   metrics?: { impressions: number; clicks: number };
+}
+
+/** 家人看板：一位長輩的出遊影片 */
+export interface FamilyElderVideos {
+  elder_id: string;
+  name: string;
+  videos: TravelVideo[];
 }

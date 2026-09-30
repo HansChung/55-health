@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
+import { loadCommentsViews } from "@/lib/video-comments-server";
 import { checkUserQuota, trackAiUsage } from "@/lib/ai/usage-tracker";
 import {
   createImageToVideoTask,
@@ -96,8 +97,10 @@ export async function GET(req: NextRequest) {
     checkUserQuota(user.id, "montage"),
   ]);
   const admin = createSupabaseAdmin();
+  const done = rows.filter((r) => r.status === "succeeded");
+  const comments = await loadCommentsViews(admin, done, user.id);
   return NextResponse.json({
-    videos: rows.map((r) => toClientVideo(admin, r)),
+    videos: rows.map((r) => ({ ...toClientVideo(admin, r), ...(comments.has(r.id) ? { comments: comments.get(r.id) } : {}) })),
     quota: { used: quota.used, limit: quota.limit, tier: quota.tier },
     montage_quota: { used: montageQuota.used, limit: montageQuota.limit, tier: montageQuota.tier },
     enabled,

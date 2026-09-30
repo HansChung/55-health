@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/telemetry";
 import { enableWebPush, hasWebPushSubscription, isWebPushSupported } from "@/lib/push/client";
 import { TravelMontageForm } from "@/components/travel-montage-form";
+import { VideoComments } from "@/components/video-comments";
 import { NarrationVoicePicker, myVoiceReady } from "@/components/narration-voice-picker";
 import { MyVoiceSheet } from "@/components/my-voice-sheet";
 import {
@@ -814,6 +815,10 @@ function VideoCard({
           >
             ⬇️ 存到手機
           </a>
+          {/* 家人的按讚、留言（家人在「家人狀況」看得到做好的影片） */}
+          <div style={{ borderTop: "1px solid var(--line)", paddingTop: 12 }}>
+            <VideoComments videoId={v.id} initial={v.comments} viewer="owner" />
+          </div>
         </div>
       )}
 

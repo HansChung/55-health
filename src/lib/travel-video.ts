@@ -4,6 +4,8 @@
  * 可選「口白＋字幕」：AI 配音念一句遊記，字幕照原句燒進影片
  */
 
+import type { VideoCommentsView } from "./video-comments";
+
 export const TRAVEL_VIDEO_DURATION_SECONDS = 10;
 /** H3 可做 4～15 秒 */
 export const TRAVEL_VIDEO_MIN_SECONDS = 4;
@@ -385,6 +387,8 @@ export interface TravelVideo {
   completed_at: string | null;
   /** 有選口白時的原句（字幕內容） */
   narration_text: string | null;
+  /** 家人的按讚、留言（做好的影片才有） */
+  comments?: VideoCommentsView;
 }
 
 /** 試聽過的口白（音檔已存在伺服器，送出影片時帶 id） */

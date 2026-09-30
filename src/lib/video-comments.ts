@@ -1,0 +1,158 @@
+// ────────────────────────────────────────────────
+// 出遊影片的按讚、留言：前後端共用的型別與整理邏輯
+// ────────────────────────────────────────────────
+
+export const VIDEO_REACTIONS = ["❤️", "👍", "😂", "🥹", "👏"] as const;
+export type VideoReaction = (typeof VIDEO_REACTIONS)[number];
+
+export const VIDEO_COMMENT_MAX = 100;
+/** 同一個人對同一支影片最多留幾則（避免洗版） */
+export const VIDEO_COMMENTS_PER_AUTHOR = 30;
+
+/** 快速留言：長輩打字比較慢，點一下就送出 */
+export const QUICK_REPLIES_FOR_ELDER = ["謝謝你 🥰", "下次一起去！", "有空回來吃飯喔"] as const;
+export const QUICK_REPLIES_FOR_FAMILY = ["好美喔！", "玩得開心嗎？", "下次帶我一起去 😆"] as const;
+
+export interface CommentAuthor {
+  name: string;
+  /** 家人的稱謂（女兒、兒子…）；本人沒有 */
+  relationship: string | null;
+  is_me: boolean;
+  /** 影片主人（長輩） */
+  is_owner: boolean;
+}
+
+export interface VideoComment {
+  id: string;
+  author: CommentAuthor;
+  body: string;
+  created_at: string;
+  can_delete: boolean;
+}
+
+export interface VideoReactionSummary {
+  emoji: VideoReaction;
+  count: number;
+  mine: boolean;
+  /** 誰按的（顯示用） */
+  names: string[];
+}
+
+export interface VideoCommentsView {
+  reactions: VideoReactionSummary[];
+  /** 舊的在前 */
+  comments: VideoComment[];
+}
+
+export const EMPTY_COMMENTS: VideoCommentsView = { reactions: [], comments: [] };
+
+export interface CommentRow {
+  id: string;
+  video_id: string;
+  author_id: string;
+  emoji: string | null;
+  body: string | null;
+  created_at: string;
+}
+
+export function isVideoReaction(v: unknown): v is VideoReaction {
+  return typeof v === "string" && (VIDEO_REACTIONS as readonly string[]).includes(v);
+}
+
+/** 留言文字：去控制字元、壓成一行、限制長度 */
+export function sanitizeComment(text: string | null | undefined): string {
+  if (!text) return "";
+  return [...text.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim()]
+    .slice(0, VIDEO_COMMENT_MAX)
+    .join("");
+}
+
+/** 顯示名字：「小美（女兒）」 */
+export function authorLabel(a: Pick<CommentAuthor, "name" | "relationship" | "is_me">): string {
+  if (a.is_me) return "我";
+  return a.relationship ? `${a.name}（${a.relationship}）` : a.name;
+}
+
+/**
+ * 把一支影片的留言列整理成畫面要的樣子。
+ * directory：author_id → 名字／稱謂（影片主人與他的家人）；查不到的人（例如已解除連結）顯示「家人」
+ */
+export function buildCommentsView(opts: {
+  rows: CommentRow[];
+  viewerId: string;
+  ownerId: string;
+  directory: Map<string, { name: string; relationship: string | null }>;
+}): VideoCommentsView {
+  const { rows, viewerId, ownerId, directory } = opts;
+  const author = (id: string): CommentAuthor => {
+    const d = directory.get(id);
+    return {
+      name: d?.name ?? "家人",
+      relationship: id === ownerId ? null : d?.relationship ?? null,
+      is_me: id === viewerId,
+      is_owner: id === ownerId,
+    };
+  };
+  const sorted = [...rows].sort((a, b) => a.created_at.localeCompare(b.created_at));
+
+  const reactions: VideoReactionSummary[] = [];
+  for (const emoji of VIDEO_REACTIONS) {
+    const mine = sorted.filter((r) => r.emoji === emoji);
+    if (mine.length === 0) continue;
+    reactions.push({
+      emoji,
+      count: mine.length,
+      mine: mine.some((r) => r.author_id === viewerId),
+      names: mine.map((r) => authorLabel(author(r.author_id))),
+    });
+  }
+
+  const comments = sorted
+    .filter((r) => r.body)
+    .map((r) => ({
+      id: r.id,
+      author: author(r.author_id),
+      body: r.body as string,
+      created_at: r.created_at,
+      // 自己的留言可以刪；長輩可以刪自己影片底下任何一則
+      can_delete: r.author_id === viewerId || viewerId === ownerId,
+    }));
+
+  return { reactions, comments };
+}
+
+/** 推播文字：家人對長輩的影片按讚／留言 */
+export function commentPushForOwner(opts: {
+  authorName: string;
+  relationship: string | null;
+  place: string | null;
+  emoji?: VideoReaction | null;
+  body?: string | null;
+}): { title: string; body: string } {
+  const who = opts.relationship ? `${opts.authorName}（${opts.relationship}）` : opts.authorName;
+  const video = opts.place ? `「${opts.place}」的影片` : "你的出遊影片";
+  if (opts.emoji) return { title: `${opts.emoji} ${who}`, body: `${who}對${video}按了 ${opts.emoji}` };
+  return { title: `💬 ${who}留言了`, body: opts.body ?? "" };
+}
+
+/** 推播文字：長輩回覆（給在這支影片留過言、按過讚的家人） */
+export function commentPushForFamily(opts: { elderName: string; body: string }): { title: string; body: string } {
+  return { title: `💬 ${opts.elderName}回覆了`, body: opts.body };
+}
+
+/** 推播文字：長輩做好一支新影片（給看得到影片的家人） */
+export function newVideoPushForFamily(opts: { elderName: string; place: string | null; montage: boolean }): {
+  title: string;
+  body: string;
+} {
+  const what = opts.montage ? "遊記影片" : "出遊影片";
+  return {
+    title: `🎬 ${opts.elderName}做了一支${what}`,
+    body: `${opts.place ? `在「${opts.place}」，` : ""}點這裡看看，給${opts.elderName}按個讚吧`,
+  };
+}
+
+/** 家人預設看得到影片（長輩在「家人共享」可以關） */
+export function familyCanSeeVideos(permissions: Record<string, unknown> | null | undefined): boolean {
+  return permissions?.videos !== false;
+}
