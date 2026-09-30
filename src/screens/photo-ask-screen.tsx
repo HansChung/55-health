@@ -84,6 +84,8 @@ export function PhotoAskScreen({ onBack, initialPlace }: PhotoAskScreenProps) {
   const [quota, setQuota] = useState<{ used: number; limit: number } | null>(null);
   const [speakingIndex, setSpeakingIndex] = useState<number | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  // 每換一張照片就 +1：還在問的舊問題回來時，照片已經換了就丟掉
+  const photoVersion = useRef(0);
 
   useEffect(() => () => stopGuideSpeech(), []);
 
@@ -100,6 +102,8 @@ export function PhotoAskScreen({ onBack, initialPlace }: PhotoAskScreenProps) {
       const dataUrl = await compressImage(file);
       stopGuideSpeech();
       setSpeakingIndex(null);
+      photoVersion.current += 1;
+      setAsking(false);
       setPhoto(dataUrl);
       setAnswers([]);
       setError(null);
@@ -118,6 +122,7 @@ export function PhotoAskScreen({ onBack, initialPlace }: PhotoAskScreenProps) {
     setSpeakingIndex(null);
     setError(null);
     setAsking(true);
+    const version = photoVersion.current;
     try {
       const { mimeType, base64 } = splitDataUrl(photo);
       const res = await api.askPhoto({
@@ -126,19 +131,20 @@ export function PhotoAskScreen({ onBack, initialPlace }: PhotoAskScreenProps) {
         question: finalQuestion,
         place: place.trim() || undefined,
       });
+      if (version !== photoVersion.current) return; // 問的時候換了照片：這個回答是舊照片的
       setAnswers((prev) => [...prev, { question: finalQuestion, result: res.result }]);
       setQuota({ used: res.quota.used, limit: res.quota.limit });
       trackEvent("photo_ask", { category: res.result.category, follow_up: answers.length > 0 });
     } catch (e) {
-      if (e instanceof ApiError && e.status === 429) {
-        setError({ message: e.message || "本月拍照次數已用完", upgrade: true });
-      } else {
-        setError({
-          message: e instanceof ApiError && !e.isNetwork ? e.message : "網路不太穩，等一下再問一次",
-        });
-      }
+      if (version !== photoVersion.current) return;
+      // 只有伺服器說「次數用完／要升級」（帶 upgradeUrl）才請長輩升級；AI 服務忙線的 429 只請他等一下
+      const upgrade = e instanceof ApiError && Boolean((e.data as { upgradeUrl?: string } | null)?.upgradeUrl);
+      setError({
+        message: e instanceof ApiError && !e.isNetwork ? e.message : "網路不太穩，等一下再問一次",
+        upgrade,
+      });
     }
-    setAsking(false);
+    if (version === photoVersion.current) setAsking(false);
   };
 
   const toggleSpeak = (index: number, result: PhotoAskResult) => {
