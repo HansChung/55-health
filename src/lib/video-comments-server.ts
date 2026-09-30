@@ -126,23 +126,33 @@ export async function toggleReaction(admin: Admin, videoId: string, userId: stri
   return !insErr;
 }
 
-/** 留言；超過每人每支影片的上限就回 null */
+/**
+ * 留言；超過每人每支影片的上限就回 null（刪掉的不算）。
+ * 先存再排：這個人在這支影片、還在的留言依時間排，排在上限內才留下，否則把剛存的刪掉。
+ * 同時從兩台裝置送出也不會超過上限
+ */
 export async function addComment(admin: Admin, videoId: string, userId: string, body: string): Promise<string | null> {
-  const { count, error: countErr } = await admin
-    .from("travel_video_comments")
-    .select("id", { count: "exact", head: true })
-    .eq("video_id", videoId)
-    .eq("author_id", userId)
-    .not("body", "is", null);
-  if (countErr) throw countErr;
-  if ((count ?? 0) >= VIDEO_COMMENTS_PER_AUTHOR) return null;
   const { data, error } = await admin
     .from("travel_video_comments")
     .insert({ video_id: videoId, author_id: userId, body })
     .select("id")
     .single();
   if (error) throw error;
-  return (data as { id: string }).id;
+  const id = (data as { id: string }).id;
+  const { data: kept, error: rankErr } = await admin
+    .from("travel_video_comments")
+    .select("id")
+    .eq("video_id", videoId)
+    .eq("author_id", userId)
+    .not("body", "is", null)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true })
+    .limit(VIDEO_COMMENTS_PER_AUTHOR);
+  if (rankErr) throw rankErr;
+  if (((kept ?? []) as { id: string }[]).some((r) => r.id === id)) return id;
+  await admin.from("travel_video_comments").delete().eq("id", id);
+  return null;
 }
 
 /** 刪留言：自己的，或長輩刪自己影片底下的 */
@@ -229,7 +239,7 @@ export async function notifyFamilyNewVideo(row: { id: string; user_id: string; p
       .map((l) => l.family_user_id as string);
     if (targets.length === 0) return;
     const { data: profile } = await admin.from("profiles").select("display_name").eq("id", row.user_id).maybeSingle();
-    const elderName = (profile as { display_name: string | null } | null)?.display_name?.trim() || "家人";
+    const elderName = (profile as { display_name: string | null } | null)?.display_name?.trim() || "長輩";
     const msg = newVideoPushForFamily({ elderName, place: row.place, montage: row.kind === "montage" });
     await push(targets, msg, FAMILY_VIDEOS_LINK, `family-new-video-${row.id}`);
   } catch (e) {
