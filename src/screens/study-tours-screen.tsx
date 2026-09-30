@@ -39,8 +39,8 @@ interface StudyToursScreenProps {
   initialTourId?: string | null;
   initialView?: View;
   displayName?: string | null;
-  /** 拍照問暖暖（帶目前這團的名稱當地點） */
-  onPhotoAsk?: (place?: string) => void;
+  /** 拍照問暖暖（帶目前這團的名稱當地點；從某一團打開時帶 id，返回時回到那一團） */
+  onPhotoAsk?: (place?: string, tourId?: string) => void;
 }
 
 const sectionTitle: React.CSSProperties = {
@@ -153,7 +153,7 @@ export function StudyToursScreen({ onBack, initialTourId = null, initialView = "
           displayName={displayName}
           onToursChanged={(next) => (next ? setTours(next) : load())}
           onOpenCertificate={() => setCertificateTourId(selected.id)}
-          onPhotoAsk={onPhotoAsk ? () => onPhotoAsk(selected.title) : undefined}
+          onPhotoAsk={onPhotoAsk ? () => onPhotoAsk(selected.title, selected.id) : undefined}
         />
       )}
 

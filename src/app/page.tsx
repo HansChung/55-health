@@ -106,7 +106,11 @@ export default function Page() {
   const [studyToursKey, setStudyToursKey] = useState(0);
   const [stampSheet, setStampSheet] = useState<StampSheetState | null>(null);
   // 拍照問暖暖：從研學團打開時帶活動名稱，返回時回研學團
-  const [photoAsk, setPhotoAsk] = useState<{ place: string | null; returnTo: Subpage }>({ place: null, returnTo: null });
+  const [photoAsk, setPhotoAsk] = useState<{ place: string | null; returnTo: Subpage; tourId: string | null }>({
+    place: null,
+    returnTo: null,
+    tourId: null,
+  });
 
   // 章節開篇 QR 深連結：/?open=voice|camera|photo&from=chapter0100
   useEffect(() => {
@@ -166,8 +170,13 @@ export default function Page() {
       setSubpage("study-tours");
     }
     else if (open === "photo-ask") {
-      setPhotoAsk({ place: null, returnTo: null });
-      setSubpage("photo-ask");
+      // 方案資料已載入就先擋；還沒載入就先打開，由 API 擋（回「升級」提示）
+      const openPhotoAsk = () => {
+        setPhotoAsk({ place: null, returnTo: null, tourId: null });
+        setSubpage("photo-ask");
+      };
+      if (profile) requireFeature("ai_photo", openPhotoAsk);
+      else openPhotoAsk();
     }
 
     url.searchParams.delete("open");
@@ -715,7 +724,7 @@ export default function Page() {
               setSubpage("study-tours");
             }}
             onPhotoAsk={() => requireFeature("ai_photo", () => {
-              setPhotoAsk({ place: null, returnTo: null });
+              setPhotoAsk({ place: null, returnTo: null, tourId: null });
               setSubpage("photo-ask");
             })}
             caregiver={careElderCount > 0 ? { count: careElderCount, needsAttention: careNeedsAttention } : null}
@@ -805,8 +814,8 @@ export default function Page() {
           initialTourId={subpage === "study-tours" ? studyTourId : null}
           initialView={subpage === "study-passport" ? "passport" : "list"}
           displayName={profile?.display_name}
-          onPhotoAsk={(place) => requireFeature("ai_photo", () => {
-            setPhotoAsk({ place: place ?? null, returnTo: subpage });
+          onPhotoAsk={(place, tourId) => requireFeature("ai_photo", () => {
+            setPhotoAsk({ place: place ?? null, returnTo: subpage, tourId: tourId ?? null });
             setSubpage("photo-ask");
           })}
         />
@@ -815,8 +824,12 @@ export default function Page() {
         <PhotoAskScreen
           initialPlace={photoAsk.place}
           onBack={() => {
-            if (photoAsk.returnTo) setStudyToursKey((k) => k + 1);
-            setSubpage(photoAsk.returnTo);
+            if (photoAsk.returnTo) {
+              // 從某一團的介紹頁打開 → 回到那一團（不是回到列表）
+              setStudyTourId(photoAsk.tourId);
+              setStudyToursKey((k) => k + 1);
+            }
+            setSubpage(photoAsk.returnTo === "study-passport" && photoAsk.tourId ? "study-tours" : photoAsk.returnTo);
           }}
         />
       )}

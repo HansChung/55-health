@@ -4,6 +4,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { resolveGeminiConfig } from "@/lib/ai/gemini";
 import { askAboutPhoto } from "@/lib/ai/photo-ask";
 import { trackAiUsage, checkUserQuota } from "@/lib/ai/usage-tracker";
+import { hasFeature, requiredTierLabel, type SubscriptionTier } from "@/lib/feature-gates";
 import {
   DEFAULT_PHOTO_QUESTION,
   PHOTO_ASK_PLACE_MAX,
@@ -30,6 +31,13 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "未登入" }, { status: 401 });
 
   const quota = await checkUserQuota(user.id, "photo");
+  // 方案把關：不只靠前端（深連結、直接呼叫 API 都繞得過前端檢查）；管理員不限
+  if (quota.tier !== "admin" && !hasFeature(quota.tier as SubscriptionTier, "ai_photo")) {
+    return NextResponse.json(
+      { error: `拍照問暖暖是${requiredTierLabel("ai_photo")}功能，升級後就可以使用`, upgradeUrl: "/pricing" },
+      { status: 403 }
+    );
+  }
   if (!quota.allowed) {
     return NextResponse.json(
       {
