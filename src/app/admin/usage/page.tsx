@@ -13,7 +13,7 @@ export default function UsagePage() {
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+      <div className="adm-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, color: "#fff", margin: 0 }}>Token 用量</h1>
         <select value={days} onChange={(e) => setDays(Number(e.target.value))} style={{
           background: "#1e293b", color: "#fff", border: "1px solid #334155",
@@ -45,7 +45,7 @@ export default function UsagePage() {
             border: "1px solid #334155", marginBottom: 16,
           }}>
             <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 16 }}>每日成本</div>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <div className="adm-table-scroll"><table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid #334155", color: "#94a3b8", fontSize: 12, textAlign: "left" }}>
                   <th style={{ padding: "8px 0" }}>日期</th>
@@ -62,7 +62,7 @@ export default function UsagePage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           </div>
         </>
       )}

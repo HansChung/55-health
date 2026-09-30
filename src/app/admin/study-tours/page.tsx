@@ -70,7 +70,7 @@ export default function StudyToursAdminPage() {
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+      <div className="adm-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, color: "#fff", margin: 0 }}>研學團</h1>
         <button onClick={() => { setEditing(null); setShowForm(!showForm); }} style={primaryButton}>
           {showForm ? "取消" : "+ 新增研學團"}
@@ -97,7 +97,7 @@ export default function StudyToursAdminPage() {
         />
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12, marginBottom: 16 }}>
+      <div className="adm-stats" style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12, marginBottom: 16 }}>
         <StatCard label="研學團" value={`${tours.length}`} hint={`已發布 ${tours.filter((t) => t.status === "published").length} 個`} />
         <StatCard label="正取人數" value={`${totalPeople}`} hint="含同行家人" />
         <StatCard label="候補人數" value={`${totalWaiting}`} hint="有名額會自動遞補" />
@@ -109,13 +109,13 @@ export default function StudyToursAdminPage() {
           const status = STATUS_LABELS[tour.status];
           const open = expanded === tour.id;
           return (
-            <div key={tour.id} style={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 12, padding: 18 }}>
-              <div style={{ display: "flex", gap: 16 }}>
+            <div key={tour.id} className="adm-card" style={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 12, padding: 18 }}>
+              <div className="adm-card-row" style={{ display: "flex", gap: 16 }}>
                 {tour.cover_image_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={tour.cover_image_url} alt="" style={{ width: 120, height: 80, objectFit: "cover", borderRadius: 8, flexShrink: 0 }} />
+                  <img src={tour.cover_image_url} alt="" className="adm-card-thumb" style={{ width: 120, height: 80, objectFit: "cover", borderRadius: 8, flexShrink: 0 }} />
                 ) : (
-                  <div style={{ width: 120, height: 80, borderRadius: 8, flexShrink: 0, background: "#0f172a", border: "1px dashed #334155", color: "#64748b", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div className="adm-card-thumb" style={{ width: 120, height: 80, borderRadius: 8, flexShrink: 0, background: "#0f172a", border: "1px dashed #334155", color: "#64748b", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     尚無封面
                   </div>
                 )}
@@ -135,7 +135,7 @@ export default function StudyToursAdminPage() {
                     <span>結業 {tour.counts.completed} 人</span>
                   </div>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 150 }}>
+                <div className="adm-card-actions" style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 150 }}>
                   <button onClick={() => setExpanded(open ? null : tour.id)} style={{ ...smallButton, color: "#bfdbfe", borderColor: "#1e3a8a" }}>
                     {open ? "收起" : "站點與報名名單"}
                   </button>
@@ -245,7 +245,7 @@ function TourForm({
   };
 
   return (
-    <div style={{ background: "#1e293b", padding: 20, borderRadius: 12, border: "1px solid #334155", marginBottom: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+    <div className="adm-grid-2" style={{ background: "#1e293b", padding: 20, borderRadius: 12, border: "1px solid #334155", marginBottom: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
       <div style={{ gridColumn: "span 2", fontSize: 15, fontWeight: 700, color: "#fff" }}>
         {initial ? `編輯：${initial.title}` : "新增研學團（先存成草稿，站點設定好再發布）"}
       </div>
@@ -427,7 +427,7 @@ function TourDetailPanel({ tourId, onChanged }: { tourId: string; onChanged: () 
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
         {stops.map((stop, i) => (
           <div key={stop.id}>
-            <div style={{ display: "flex", gap: 12, alignItems: "center", background: "#0f172a", borderRadius: 8, padding: 12 }}>
+            <div className="adm-row-wrap" style={{ display: "flex", gap: 12, alignItems: "center", background: "#0f172a", borderRadius: 8, padding: 12 }}>
               <div style={{ fontSize: 28 }}>{stop.stamp_emoji}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ color: "#fff", fontWeight: 700 }}>第 {i + 1} 站　{stop.name}</div>
@@ -436,7 +436,7 @@ function TourDetailPanel({ tourId, onChanged }: { tourId: string; onChanged: () 
                 </div>
                 <div style={{ color: "#6ee7b7", fontSize: 12, marginTop: 2 }}>已有 {stop.stamp_count} 人蓋章</div>
               </div>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end", maxWidth: 300 }}>
+              <div className="adm-row-tools" style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end", maxWidth: 300 }}>
                 <button onClick={() => move(stop, -1)} disabled={i === 0} style={tinyButton}>↑</button>
                 <button onClick={() => move(stop, 1)} disabled={i === stops.length - 1} style={tinyButton}>↓</button>
                 <button onClick={() => setEditingStop(editingStop !== "new" && editingStop?.id === stop.id ? null : stop)} style={tinyButton}>編輯</button>
@@ -463,7 +463,7 @@ function TourDetailPanel({ tourId, onChanged }: { tourId: string; onChanged: () 
         </div>
       </div>
       <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+        <div className="adm-table-scroll"><table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
             <tr style={{ color: "#94a3b8", textAlign: "left" }}>
               {["狀態", "姓名", "電話", "人數", "備註", "來源", "集章", "報名時間", ""].map((h) => (
@@ -495,7 +495,7 @@ function TourDetailPanel({ tourId, onChanged }: { tourId: string; onChanged: () 
               <tr><td colSpan={9} style={{ ...cell, color: "#64748b", textAlign: "center" }}>還沒有人報名</td></tr>
             )}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
   );
@@ -534,7 +534,7 @@ function StopForm({
   };
 
   return (
-    <div style={{ background: "#0f172a", border: "1px solid #334155", borderRadius: 8, padding: 14, margin: "8px 0", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+    <div className="adm-grid-2" style={{ background: "#0f172a", border: "1px solid #334155", borderRadius: 8, padding: 14, margin: "8px 0", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
       <Field label="站名">
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="龍山寺" style={inputStyle} />
       </Field>

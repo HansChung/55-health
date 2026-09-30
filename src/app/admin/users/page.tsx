@@ -60,7 +60,7 @@ export default function UsersPage() {
         border: "1px solid #334155", overflow: "hidden",
       }}>
         {loading ? <div style={{ padding: 24, color: "#94a3b8" }}>載入中…</div> : (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div className="adm-table-scroll"><table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#0f172a", color: "#94a3b8", fontSize: 12, textAlign: "left" }}>
                 <th style={{ padding: "12px 16px" }}>用戶</th>
@@ -107,7 +107,7 @@ export default function UsersPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
     </div>

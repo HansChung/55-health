@@ -32,7 +32,7 @@ export default function ConversationsPage() {
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+      <div className="adm-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, color: "#fff", margin: 0 }}>
           對話記錄
           <span style={{ fontSize: 14, color: "#64748b", fontWeight: 400, marginLeft: 12 }}>
@@ -128,6 +128,7 @@ function SessionCard({ session, open, onToggle }: {
     }}>
       <button
         onClick={onToggle}
+        className="adm-conv-row"
         style={{
           width: "100%", padding: "14px 16px",
           background: "transparent", border: "none",
@@ -154,13 +155,13 @@ function SessionCard({ session, open, onToggle }: {
             「{session.preview || "（無用戶訊息）"}」
           </div>
         </div>
-        <div style={{ textAlign: "right", fontSize: 11, color: "#64748b" }}>
+        <div className="adm-conv-meta" style={{ textAlign: "right", fontSize: 11, color: "#64748b" }}>
           <div>{new Date(session.latest_at).toLocaleString("zh-TW", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
           <div style={{ marginTop: 2 }}>
             💬 {session.user_message_count} · ⏱ {durationSec}s
           </div>
         </div>
-        <span style={{ color: "#64748b", fontSize: 18 }}>{open ? "▲" : "▼"}</span>
+        <span className="adm-conv-toggle" style={{ color: "#64748b", fontSize: 18 }}>{open ? "▲" : "▼"}</span>
       </button>
 
       {open && (
