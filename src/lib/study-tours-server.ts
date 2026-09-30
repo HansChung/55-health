@@ -5,6 +5,8 @@
 import { randomBytes } from "node:crypto";
 import { createSupabaseAdmin } from "@/lib/supabase/server";
 import { sendPushToUser } from "@/lib/push/send";
+import { tourForecast, tourForecasts } from "@/lib/weather-server";
+import { toTourWeather, weatherReminderText } from "@/lib/weather";
 import {
   arrivalMessage,
   buildStudyTourView,
@@ -159,10 +161,22 @@ export async function loadStudyToursForUser(admin: Admin, userId: string, now: D
   const regs = (regsRes.data ?? []) as Pick<StudyTourRegistrationRow, "id" | "tour_id" | "status" | "party_size" | "created_at">[];
   const stamps = (stampsRes.data ?? []) as StudyTourStampRow[];
 
+  // 36 小時內要出發的活動：附上出發那個時段的天氣（同一個縣市 30 分鐘內共用一次查詢）
+  const weather = new Map(
+    await Promise.all(
+      [...tours.values()]
+        .filter((t) => t.status === "published" && isWithinForecast(t.starts_at, now))
+        .map(async (t) => {
+          const f = await tourForecast(t);
+          return [t.id, f ? toTourWeather(f.county, f.period) : null] as const;
+        })
+    )
+  );
+
   return [...tours.values()]
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
-    .map((tour) =>
-      buildStudyTourView({
+    .map((tour) => ({
+      ...buildStudyTourView({
         tour,
         stops: stops.filter((s) => s.tour_id === tour.id),
         activeRegs: regs.filter((r) => r.tour_id === tour.id),
@@ -173,8 +187,15 @@ export async function loadStudyToursForUser(admin: Admin, userId: string, now: D
           .map(({ id, message, created_at }) => ({ id, message, created_at })),
         userId,
         now,
-      })
-    );
+      }),
+      weather: weather.get(tour.id) ?? null,
+    }));
+}
+
+/** 預報只有未來 36 小時（氣象署 F-C0032-001） */
+function isWithinForecast(startsAt: string, now: Date): boolean {
+  const t = new Date(startsAt).getTime() - now.getTime();
+  return t > -3 * 3600_000 && t < 36 * 3600_000;
 }
 
 /** 推給報名的人；家人幫忙報的也推給家人 */
@@ -448,21 +469,26 @@ export async function sendTourReminders(
   // 抓前後兩天內出發的已發布研學團，再用台灣日期精準比對
   const from = new Date(now.getTime() - 36 * 3600_000).toISOString();
   const to = new Date(now.getTime() + 60 * 3600_000).toISOString();
+  // select *：weather_county 是 add-study-tour-weather.sql 加的，還沒跑 SQL 時也不會壞
   const { data: toursData, error } = await admin
     .from("study_tours")
-    .select("id, title, starts_at, meeting_point")
+    .select("*")
     .eq("status", "published")
     .gte("starts_at", from)
     .lte("starts_at", to);
   if (error) throw error;
-  const tours = ((toursData ?? []) as { id: string; title: string; starts_at: string; meeting_point: string }[]).filter(
+  const tours = ((toursData ?? []) as StudyTourRow[]).filter(
     (t) => tourStartsOn(t, kind, now) && new Date(t.starts_at).getTime() > now.getTime()
   );
 
   const column = kind === "day_before" ? "reminded_day_before_at" : "reminded_same_day_at";
+  // 出發那個時段的天氣（中央氣象署）：所有團一起查、整體最多等 8 秒；沒設金鑰或查不到就不帶
+  const forecasts = await tourForecasts(tours);
   let reminded = 0;
   let devices = 0;
   for (const tour of tours) {
+    const forecast = forecasts.get(tour.id);
+    const weather = forecast ? weatherReminderText(forecast.period) : null;
     const { data: regsData, error: regsError } = await admin
       .from("study_tour_registrations")
       .select(`id, user_id, registered_by, participant_name, status, created_at, ${column}`)
@@ -479,10 +505,10 @@ export async function sendTourReminders(
     const pending = regs.flatMap((reg) => {
       if (reg[column]) return [];
       const base = { status: reg.status, participant_name: reg.participant_name, waitlist_position: positions.get(reg.id) ?? null };
-      const participantMsg = reminderMessage(kind, tour, { ...base, for_self: true });
+      const participantMsg = reminderMessage(kind, tour, { ...base, for_self: true }, weather);
       if (!participantMsg) return [];
       const family = reg.registered_by && reg.registered_by !== reg.user_id ? reg.registered_by : null;
-      const familyMsg = family ? reminderMessage(kind, tour, { ...base, for_self: false }) : null;
+      const familyMsg = family ? reminderMessage(kind, tour, { ...base, for_self: false }, weather) : null;
       return [{ reg, participantMsg, family, familyMsg }];
     });
 

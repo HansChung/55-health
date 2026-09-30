@@ -159,6 +159,11 @@ stack works well for auth + meal/diary CRUD:
     elder's tour page / passport card shows the latest ones, so people without push still see them.
   - **報到名單**: `checked_in_at` is set by the `study_tour_stamps_checkin` trigger on the first stamp;
     elders without phones are checked in manually (`PATCH …/registrations/[regId]` `{checked_in}`).
+  - **天氣** (`CWA_API_KEY`, 中央氣象署 open data, free; optional `supabase/add-study-tour-weather.sql`):
+    reminders append the forecast for the tour's start period (F-C0032-001, county level, next 36 h) and the
+    elder's tour page shows a weather card for tours starting within 36 h. County = `study_tours.weather_county`
+    (admin select) or `guessCounty(meeting_point, title)`. Forecasts are cached 30 min per county per instance;
+    any failure just omits the weather. `CWA_API_BASE` exists only to point local tests at a fake server.
   - **家人抵達通知** is opt-in by the elder: `family_links.permissions.trips` (default off; asked once on
     the tour page after registering, toggle in 家人共享). Sent from `after()` in the stamp route only when
     a stamp is new. `family_links` has only select/insert RLS policies, so `PATCH`/`DELETE /api/family/[id]`
