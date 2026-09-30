@@ -11,7 +11,8 @@ export type FeatureKey =
   | "line_share"
   | "partner_offers"
   | "alerts_center"
-  | "travel_video";
+  | "travel_video"
+  | "voice_clone";
 
 const TIER_RANK: Record<SubscriptionTier, number> = {
   free: 0,
@@ -31,6 +32,8 @@ export const FEATURE_MIN_TIER: Record<FeatureKey, SubscriptionTier> = {
   partner_offers: "pro",
   alerts_center: "pro",
   travel_video: "basic",
+  // 出遊影片用自己的聲音念：每個聲音第一次使用平台要收一筆啟用費，只開給專業版
+  voice_clone: "pro",
 };
 
 export function hasFeature(tier: SubscriptionTier | null | undefined, feature: FeatureKey) {

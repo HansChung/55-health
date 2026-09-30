@@ -116,6 +116,8 @@ export interface TravelVideoRow {
   // 口白＋字幕（add-travel-video-narration.sql；沒選口白時為 null／沒有這些欄位）
   narration_text?: string | null;
   narration_voice?: string | null;
+  /** add-narration-voices.sql：口音；用自己的聲音時是 null */
+  narration_accent?: string | null;
   narration_path?: string | null;
   narration_seconds?: number | null;
   duration_seconds?: number | null;

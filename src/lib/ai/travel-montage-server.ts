@@ -8,7 +8,8 @@
 
 import { createSupabaseAdmin } from "../supabase/server";
 import { trackAiUsage } from "./usage-tracker";
-import { synthesizeNarration, ttsModel } from "./lk888-tts";
+import { synthesizeNarration } from "./lk888-tts";
+import { claimOrAwaitFirstUse, markVoiceActivated, releaseFirstUse, resolveSpeaker } from "./voice-clone-server";
 import { ComposeBudgetError, fetchSubtitleFont } from "./video-compose";
 import { MIN_CLIP_BUDGET_MS, muxMontage, renderMontageClip } from "./montage-compose";
 import { isPublicHttpsUrl } from "./travel-video-webhook";
@@ -20,11 +21,14 @@ import {
   type TravelVideoRow,
 } from "./travel-video-server";
 import {
-  NARRATION_VOICE_IDS,
+  DEFAULT_NARRATION_ACCENT,
+  NARRATION_ACCENT_IDS,
+  NARRATION_VOICE_CHOICES,
   isTravelVideoPending,
   montageStage,
   type MontageState,
-  type NarrationVoiceId,
+  type NarrationAccentId,
+  type NarrationVoiceChoice,
 } from "../travel-video";
 
 type Admin = ReturnType<typeof createSupabaseAdmin>;
@@ -112,10 +116,18 @@ async function scheduleContinuation(videoId: string, origin: string | null | und
   }
 }
 
-function voiceOf(row: TravelVideoRow): NarrationVoiceId {
-  const v = row.narration_voice as NarrationVoiceId | null | undefined;
-  return v && NARRATION_VOICE_IDS.includes(v) ? v : "female";
+function voiceOf(row: TravelVideoRow): NarrationVoiceChoice {
+  const v = row.narration_voice as NarrationVoiceChoice | null | undefined;
+  return v && NARRATION_VOICE_CHOICES.includes(v) ? v : "female";
 }
+
+function accentOf(row: TravelVideoRow): NarrationAccentId {
+  const a = row.narration_accent as NarrationAccentId | null | undefined;
+  return a && NARRATION_ACCENT_IDS.includes(a) ? a : DEFAULT_NARRATION_ACCENT;
+}
+
+/** 重試也沒用的錯誤（例如選的「我的聲音」被刪掉、過期）→ 直接失敗，不扣次數 */
+class MontageFatalError extends Error {}
 
 /** 搶租約：沒人在處理（或上一個處理者逾時）才拿得到 */
 async function acquireLease(admin: Admin, row: TravelVideoRow): Promise<TravelVideoRow | null> {
@@ -164,34 +176,68 @@ async function upload(admin: Admin, storagePath: string, body: Buffer, contentTy
   if (error) throw new Error(`upload ${storagePath} failed: ${error.message}`);
 }
 
-/** 1. 配音：還沒配的句子同時送出；成功的先存起來，有失敗就丟錯（下次只補失敗的） */
+/**
+ * 1. 配音：還沒配的句子同時送出；成功的先存起來，有失敗就丟錯（下次只補失敗的）。
+ * 「我的聲音」還沒啟用時先只配第一句（平台第一次合成收啟用費，不能同時送好幾句），成功後其餘再一起送
+ */
 async function runTts(admin: Admin, row: TravelVideoRow, state: MontageState): Promise<MontageState> {
   const voice = voiceOf(row);
-  const todo = state.photos.map((p, i) => ({ p, i })).filter(({ p }) => !p.audio_path);
-  const results = await Promise.allSettled(
-    todo.map(async ({ p, i }) => {
-      const tts = await synthesizeNarration(p.line, voice);
-      const audioPath = montageAudioPath(row, i);
-      await upload(admin, audioPath, tts.audio, "audio/wav");
-      await trackAiUsage({
-        userId: row.user_id,
-        service: "gemini_tts",
-        model: tts.model,
-        endpoint: MONTAGE_ENDPOINT,
-        success: true,
-        metadata: {
-          provider: "lk888",
-          video_id: row.id,
-          voice,
-          chars: [...p.line].length,
-          seconds: Number(tts.seconds.toFixed(2)),
-          task_id: tts.taskId,
-          platform_cost: tts.platformCost,
-        },
-      });
-      return { i, audioPath, seconds: tts.seconds };
-    })
-  );
+  const accent = accentOf(row);
+  // 建立遊記時已檢查過方案，背景配音不再擋（避免做到一半因方案到期失敗）
+  const resolved = await resolveSpeaker(admin, {
+    userId: row.user_id,
+    tier: "",
+    voice,
+    accent,
+    checkTier: false,
+    cloneId: state.voice_clone_id ?? null,
+  });
+  if (!resolved.ok) throw new MontageFatalError(`voice unavailable: ${resolved.error}`);
+  const { speaker } = resolved;
+  const service = speaker.kind === "clone" ? "minimax_tts" : "gemini_tts";
+
+  type Line = { p: MontageState["photos"][number]; i: number };
+  const synthOne = async ({ p, i }: Line) => {
+    const tts = await synthesizeNarration(p.line, speaker);
+    const audioPath = montageAudioPath(row, i);
+    await upload(admin, audioPath, tts.audio, "audio/wav");
+    await trackAiUsage({
+      userId: row.user_id,
+      service,
+      model: tts.model,
+      endpoint: MONTAGE_ENDPOINT,
+      success: true,
+      metadata: {
+        provider: "lk888",
+        video_id: row.id,
+        voice,
+        accent: speaker.kind === "preset" ? accent : null,
+        ...(resolved.cloneId ? { voice_clone_id: resolved.cloneId } : {}),
+        chars: [...p.line].length,
+        seconds: Number(tts.seconds.toFixed(2)),
+        task_id: tts.taskId,
+        platform_cost: tts.platformCost,
+      },
+    });
+    return { i, audioPath, seconds: tts.seconds };
+  };
+
+  let todo: Line[] = state.photos.map((p, i) => ({ p, i })).filter(({ p }) => !p.audio_path);
+  let results: PromiseSettledResult<Awaited<ReturnType<typeof synthOne>>>[] = [];
+  const firstUse =
+    resolved.cloneId && !resolved.activated && todo.length > 0
+      ? await claimOrAwaitFirstUse(admin, resolved.cloneId)
+      : null;
+  // 別的請求正在做第一次配音（例如同時在試聽），等了還沒好 → 這次先不做，下次再接著做
+  if (firstUse === "busy") throw new ComposeBudgetError();
+  if (resolved.cloneId && firstUse === "claimed") {
+    // 這次只配第一句（第一次比較慢），其餘下一輪再一起送，免得超過 60 秒
+    results = await Promise.allSettled([synthOne(todo[0])]);
+    if (results[0].status === "fulfilled") await markVoiceActivated(admin, resolved.cloneId);
+    else await releaseFirstUse(admin, resolved.cloneId);
+    todo = [];
+  }
+  results = results.concat(await Promise.allSettled(todo.map(synthOne)));
 
   const next: MontageState = { ...state, photos: state.photos.map((p) => ({ ...p })) };
   const errors: string[] = [];
@@ -204,12 +250,12 @@ async function runTts(admin: Admin, row: TravelVideoRow, state: MontageState): P
       errors.push(msg);
       await trackAiUsage({
         userId: row.user_id,
-        service: "gemini_tts",
-        model: ttsModel(),
+        service,
+        model: speaker.kind === "clone" ? "speech-2.8" : "gem-3.1-tts",
         endpoint: MONTAGE_ENDPOINT,
         success: false,
         errorMessage: msg,
-        metadata: { video_id: row.id },
+        metadata: { video_id: row.id, voice },
       });
     }
   }
@@ -350,6 +396,7 @@ async function processLeased(admin: Admin, leased: TravelVideoRow, opts: { budge
     if (e instanceof ComposeBudgetError) {
       return saveState(admin, current, state, { lease_until: null }).catch(() => current);
     }
+    if (e instanceof MontageFatalError) return failMontage(admin, current, e.message);
     const msg = e instanceof Error ? e.message : String(e);
     console.error("[montage] step failed:", msg);
     const fresh = ((await reloadRow(admin, current)).montage as MontageState | null) ?? state;

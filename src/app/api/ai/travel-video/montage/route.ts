@@ -1,6 +1,6 @@
 // ────────────────────────────────────────────────
 // 多張照片遊記影片：3～5 張照片 + 每張一句話 + 聲音 → 建立一支遊記（在自己伺服器用 ffmpeg 做）
-// POST { images: dataURL[], sizes: {width,height}[], lines: string[], voice, place? }
+// POST { images: dataURL[], sizes: {width,height}[], lines: string[], voice, accent?, place? }
 // 建立後在背景先開始配音，之後由背景接力（/api/cron/montage-step）與畫面輪詢接著做
 // ────────────────────────────────────────────────
 import { NextRequest, NextResponse, after } from "next/server";
@@ -11,11 +11,15 @@ import { isVideoProviderConfigured } from "@/lib/ai/lk888-video";
 import { TRAVEL_VIDEO_BUCKET, toClientVideo, type TravelVideoRow } from "@/lib/ai/travel-video-server";
 import { MONTAGE_STALE_MS, montagePhotoPath, syncMontage } from "@/lib/ai/travel-montage-server";
 import { montageSize } from "@/lib/ai/montage-compose";
+import { resolveSpeaker } from "@/lib/ai/voice-clone-server";
 import {
   MONTAGE_MAX_PHOTOS,
   MONTAGE_MAX_TOTAL_CHARS,
   MONTAGE_MIN_PHOTOS,
-  NARRATION_VOICE_IDS,
+  DEFAULT_NARRATION_ACCENT,
+  MY_VOICE,
+  NARRATION_ACCENT_IDS,
+  NARRATION_VOICE_CHOICES,
   isTravelVideoPending,
   sanitizeMontageLine,
   sanitizePlace,
@@ -34,7 +38,8 @@ const PostSchema = z
     images: z.array(z.string().max(MAX_IMAGE_CHARS).regex(IMAGE_DATA_URL)).min(MONTAGE_MIN_PHOTOS).max(MONTAGE_MAX_PHOTOS),
     sizes: z.array(z.object({ width: z.number().int().min(1).max(20000), height: z.number().int().min(1).max(20000) })),
     lines: z.array(z.string().max(200)),
-    voice: z.enum(NARRATION_VOICE_IDS),
+    voice: z.enum(NARRATION_VOICE_CHOICES),
+    accent: z.enum(NARRATION_ACCENT_IDS).optional(),
     place: z.string().max(100).optional(),
   })
   .refine((b) => b.sizes.length === b.images.length && b.lines.length === b.images.length, "length mismatch")
@@ -87,6 +92,10 @@ export async function POST(req: NextRequest) {
   if (lines.some((l) => !l)) {
     return NextResponse.json({ error: "每張照片都要寫一句話（可以按「AI 幫我寫」）" }, { status: 400 });
   }
+  // 選「我的聲音」：現在就確認方案、有錄好、沒過期（背景配音時才發現就太晚了）
+  const speaker = await resolveSpeaker(admin, { userId: user.id, tier: quota.tier, voice: body.voice, accent: body.accent });
+  if (!speaker.ok) return NextResponse.json({ error: speaker.error }, { status: speaker.status });
+  const accent = body.voice === MY_VOICE ? null : body.accent ?? DEFAULT_NARRATION_ACCENT;
 
   const id = crypto.randomUUID();
   const photoPaths = body.images.map((_, i) => montagePhotoPath(user.id, id, i));
@@ -117,6 +126,7 @@ export async function POST(req: NextRequest) {
       clip_seconds: null,
     })),
     attempts: 0,
+    voice_clone_id: speaker.cloneId,
   };
   const place = sanitizePlace(body.place) || null;
   const { data: inserted, error: insErr } = await admin
@@ -133,6 +143,8 @@ export async function POST(req: NextRequest) {
       photo_path: photoPaths[0],
       narration_text: lines.join("／"),
       narration_voice: body.voice,
+      // 預設口音不寫：沒跑 add-narration-voices.sql 的環境照常可用
+      ...(accent && accent !== DEFAULT_NARRATION_ACCENT ? { narration_accent: accent } : {}),
       montage: state,
     })
     .select("*")

@@ -14,9 +14,12 @@ import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/telemetry";
 import { enableWebPush, hasWebPushSubscription, isWebPushSupported } from "@/lib/push/client";
 import { TravelMontageForm } from "@/components/travel-montage-form";
+import { NarrationVoicePicker, myVoiceReady } from "@/components/narration-voice-picker";
+import { MyVoiceSheet } from "@/components/my-voice-sheet";
 import {
+  DEFAULT_NARRATION_ACCENT,
+  MY_VOICE,
   NARRATION_MAX_CHARS,
-  NARRATION_VOICES,
   TRAVEL_VIDEO_DURATION_SECONDS,
   TRAVEL_VIDEO_PLACE_MAX,
   TRAVEL_VIDEO_STYLES,
@@ -24,7 +27,9 @@ import {
   isTravelVideoPending,
   montageProgressLabel,
   sanitizeNarration,
-  type NarrationVoiceId,
+  type MyVoiceStatus,
+  type NarrationAccentId,
+  type NarrationVoiceChoice,
   type TravelNarration,
   type TravelVideo,
   type TravelVideoQuota,
@@ -98,13 +103,25 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
 
   // 口白＋字幕
   const [withNarration, setWithNarration] = useState(false);
-  const [voice, setVoice] = useState<NarrationVoiceId>("female");
+  const [voice, setVoice] = useState<NarrationVoiceChoice>("female");
+  const [accent, setAccent] = useState<NarrationAccentId>(DEFAULT_NARRATION_ACCENT);
+  // 遊記表單的聲音／口音（放這層：錄好「我的聲音」時可以直接幫它選好）
+  const [montageVoice, setMontageVoice] = useState<NarrationVoiceChoice>("female");
+  const [montageAccent, setMontageAccent] = useState<NarrationAccentId>(DEFAULT_NARRATION_ACCENT);
+  // 我的聲音（專業版）：null＝還在查；sheetFor＝從哪個表單打開錄音畫面
+  const [myVoice, setMyVoice] = useState<MyVoiceStatus | null>(null);
+  const [sheetFor, setSheetFor] = useState<"single" | "montage" | null>(null);
   const [script, setScript] = useState("");
   const [writing, setWriting] = useState(false);
   const [previewing, setPreviewing] = useState(false);
   const [preview, setPreview] = useState<TravelNarration | null>(null);
-  // 改了字或換聲音，試聽就要重來
-  const previewMatches = Boolean(preview && preview.voice === voice && preview.text === sanitizeNarration(script));
+  // 改了字、換聲音或口音，試聽就要重來（我的聲音沒有口音）
+  const previewMatches = Boolean(
+    preview &&
+      preview.voice === voice &&
+      (voice === MY_VOICE || preview.accent === accent) &&
+      preview.text === sanitizeNarration(script)
+  );
   const submittingRef = useRef(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pushOffer, setPushOffer] = useState(false);
@@ -142,6 +159,31 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
   }, [toast]);
 
   useEffect(() => { reload(); }, [reload]);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.getMyVoice()
+      .then((res) => { if (!cancelled) setMyVoice(res.status); })
+      .catch(() => { if (!cancelled) setMyVoice({ allowed: false, voice: null, remaining: 0 }); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleMyVoiceChanged = (status: MyVoiceStatus, ready: boolean) => {
+    setMyVoice(status);
+    // 聲音換了（重錄／刪除）：用舊聲音做的試聽不能再拿去做影片
+    setPreview((p) => (p?.voice === MY_VOICE ? null : p));
+    if (ready) {
+      // 剛錄好：直接幫打開錄音畫面的那個表單選「我的聲音」
+      if (sheetFor === "montage") setMontageVoice(MY_VOICE);
+      else setVoice(MY_VOICE);
+      setSheetFor(null);
+    }
+    // 刪掉了：選著「我的聲音」的表單改回阿嬤
+    if (!myVoiceReady(status)) {
+      setVoice((v) => (v === MY_VOICE ? "female" : v));
+      setMontageVoice((v) => (v === MY_VOICE ? "female" : v));
+    }
+  };
 
   // 這台裝置還沒開推播 → 提供「做好時通知我」
   useEffect(() => {
@@ -238,7 +280,7 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
 
   /** 產生口白配音（試聽或送出前）；失敗會丟錯 */
   const requestNarration = async (): Promise<TravelNarration> => {
-    const res = await api.createTravelNarration({ text: script, voice });
+    const res = await api.createTravelNarration({ text: script, voice, accent: voice === MY_VOICE ? undefined : accent });
     setPreview(res.narration);
     return res.narration;
   };
@@ -248,7 +290,7 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
     setPreviewing(true);
     try {
       await requestNarration();
-      trackEvent("travel_video_narration_preview", { voice });
+      trackEvent("travel_video_narration_preview", { voice, accent: voice === MY_VOICE ? null : accent });
     } catch (e) {
       toast.error(friendlyError(e, "配音暫時沒成功，請再試一次"));
     } finally {
@@ -272,7 +314,14 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
         image: photo,
         style,
         place: place.trim() || undefined,
-        narration: narration ? { id: narration.id, voice: narration.voice, text: narration.text } : undefined,
+        narration: narration
+          ? {
+              id: narration.id,
+              voice: narration.voice,
+              accent: narration.voice === MY_VOICE ? undefined : narration.accent,
+              text: narration.text,
+            }
+          : undefined,
       });
       trackEvent("travel_video_create", { style, narration: Boolean(narration), voice: narration?.voice });
       lastStatus.current[res.video.id] = res.video.status;
@@ -420,6 +469,12 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
             setVideos((prev) => [video, ...prev]);
             setMontageQuota(q);
           }}
+          voice={montageVoice}
+          accent={montageAccent}
+          onVoice={setMontageVoice}
+          onAccent={setMontageAccent}
+          myVoice={myVoice}
+          onSetupMyVoice={() => setSheetFor("montage")}
         />
       ) : (
       <>
@@ -528,22 +583,14 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
       {withNarration && (
         <div className="card" style={{ marginTop: 12, padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ fontSize: "var(--fs-sm)", fontWeight: 700, color: "var(--ink-2)" }}>用誰的聲音？</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            {NARRATION_VOICES.map((v) => (
-              <button
-                key={v.id}
-                onClick={() => setVoice(v.id)}
-                aria-pressed={voice === v.id}
-                style={{
-                  ...choiceButton(voice === v.id),
-                  display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
-                }}
-              >
-                <span style={{ fontSize: 30 }} aria-hidden="true">{v.emoji}</span>
-                <span style={{ whiteSpace: "nowrap" }}>{v.label}</span>
-              </button>
-            ))}
-          </div>
+          <NarrationVoicePicker
+            voice={voice}
+            accent={accent}
+            onVoice={setVoice}
+            onAccent={setAccent}
+            myVoice={myVoice}
+            onSetupMyVoice={() => setSheetFor("single")}
+          />
 
           <label htmlFor="travel-narration" style={{ fontSize: "var(--fs-sm)", fontWeight: 700, color: "var(--ink-2)" }}>
             想說什麼？<span style={{ fontWeight: 500, color: "var(--ink-3)" }}>（{[...script].length}/{NARRATION_MAX_CHARS} 字，字幕會照這句顯示）</span>
@@ -659,6 +706,10 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
             />
           ))}
         </div>
+      )}
+
+      {sheetFor && (
+        <MyVoiceSheet status={myVoice} onClose={() => setSheetFor(null)} onChanged={handleMyVoiceChanged} />
       )}
     </SubPage>
   );

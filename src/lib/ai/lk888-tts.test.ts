@@ -1,5 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
-import { buildTtsPrompt, synthesizeNarration, wavDurationSeconds } from "./lk888-tts";
+import {
+  buildTtsPrompt,
+  buildTtsRequest,
+  parseCloneResponse,
+  synthesizeNarration,
+  wavDurationSeconds,
+} from "./lk888-tts";
 
 /** 產生一段 PCM WAV：24kHz 單聲道 16-bit */
 function makeWav(seconds: number, extraChunk = false): Buffer {
@@ -43,6 +49,56 @@ describe("buildTtsPrompt", () => {
   });
 });
 
+describe("口音", () => {
+  it("預設台灣口音：指示和原本實測過的一模一樣", () => {
+    expect(buildTtsPrompt("好漂亮", "female", "taiwan")).toBe(buildTtsPrompt("好漂亮", "female"));
+  });
+
+  it("換口音：不提台灣人設、帶口音描述、要求一字不改，原句放最後", () => {
+    const p = buildTtsPrompt("好漂亮", "male", "sichuan");
+    expect(p).toContain("elderly grandfather");
+    expect(p).not.toContain("Taiwanese grandfather");
+    expect(p).toContain("Sichuan accent");
+    expect(p).toContain("without adding or changing any word");
+    expect(p.endsWith(": 好漂亮")).toBe(true);
+    expect(buildTtsPrompt("好漂亮", "young_female", "cantonese")).toContain("young woman in her late twenties");
+    expect(buildTtsPrompt("好漂亮", "female", "taigi")).toContain("Taiwanese Hokkien accent");
+  });
+});
+
+describe("buildTtsRequest", () => {
+  it("AI 聲音：gem-3.1-tts＋預設音色＋口音指示", () => {
+    const r = buildTtsRequest("好漂亮", { kind: "preset", voice: "young_male", accent: "hakka" });
+    expect(r.model).toBe("gem-3.1-tts");
+    expect(r.params).toEqual({ voice_id: "Achird" });
+    expect(r.prompt).toContain("Hakka");
+  });
+
+  it("我的聲音：speech-2.8＋複製的音色、HD，只送原句（語氣指示會被念出來）", () => {
+    const r = buildTtsRequest("好漂亮", { kind: "clone", providerVoiceId: "LK_1_2" });
+    expect(r).toEqual({ model: "speech-2.8", prompt: "好漂亮", params: { voice_id: "LK_1_2", quality: "hd" } });
+  });
+});
+
+describe("parseCloneResponse", () => {
+  it("成功：取 voice_id、試聽、到期時間", () => {
+    expect(
+      parseCloneResponse(200, { voice_id: "LK_9", demo_audio: "https://cdn/demo.mp3", expires_at: "2026-10-07T10:00:00+08:00", model: "speech-2.8" })
+    ).toEqual({ voiceId: "LK_9", demoUrl: "https://cdn/demo.mp3", expiresAt: "2026-10-07T10:00:00+08:00" });
+    expect(parseCloneResponse(200, { voice_id: "LK_9" })).toEqual({ voiceId: "LK_9", demoUrl: null, expiresAt: null });
+  });
+
+  it("失敗：看 HTTP 狀態；402 是平台餘額不足；錄音太短帶著平台訊息", () => {
+    expect(() => parseCloneResponse(402, { error: { message: "余额不足", type: "payment_required" } })).toThrowError(
+      expect.objectContaining({ code: "insufficient_balance" })
+    );
+    expect(() => parseCloneResponse(400, { error: { message: "voice duration too short", type: "invalid_request" } })).toThrow(
+      /voice duration too short/
+    );
+    expect(() => parseCloneResponse(200, {})).toThrowError(expect.objectContaining({ code: "bad_response" }));
+  });
+});
+
 describe("synthesizeNarration（攔截 fetch）", () => {
   it("送出 gem-3.1-tts、輪詢到完成、下載音檔並算秒數", async () => {
     vi.stubEnv("LK888_API_KEY", "sk-test");
@@ -62,7 +118,7 @@ describe("synthesizeNarration（攔截 fetch）", () => {
       return new Response(new Uint8Array(wav));
     });
     try {
-      const p = synthesizeNarration("今天來到日月潭", "male");
+      const p = synthesizeNarration("今天來到日月潭", { kind: "preset", voice: "male" });
       await vi.advanceTimersByTimeAsync(2_500);
       const r = await p;
       expect(r.seconds).toBeCloseTo(3.2, 3);
@@ -89,7 +145,7 @@ describe("synthesizeNarration 總期限", () => {
     });
     try {
       const started = Date.now();
-      const p = synthesizeNarration("好漂亮", "female");
+      const p = synthesizeNarration("好漂亮", { kind: "preset", voice: "female" });
       const assertion = expect(p).rejects.toMatchObject({ code: "timeout" });
       await vi.advanceTimersByTimeAsync(46_000);
       await assertion;
