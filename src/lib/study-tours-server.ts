@@ -6,12 +6,19 @@ import { randomBytes } from "node:crypto";
 import { createSupabaseAdmin } from "@/lib/supabase/server";
 import { sendPushToUser } from "@/lib/push/send";
 import {
+  arrivalMessage,
   buildStudyTourView,
+  reminderMessage,
+  sanitizeBroadcast,
   studyTourErrorFromDb,
   summarizeSeats,
+  tourStartsOn,
+  waitlistPositions,
+  type TourReminderKind,
   type AdminStudyTour,
   type AdminStudyTourRegistration,
   type AdminStudyTourStop,
+  type StudyTourBroadcast,
   type StudyTourElder,
   type StudyTourRegistrationRow,
   type StudyTourRow,
@@ -26,6 +33,9 @@ type Admin = ReturnType<typeof createSupabaseAdmin>;
 const PUBLIC_STOP_COLUMNS = "id, tour_id, position, name, description, fun_fact, stamp_emoji";
 const REG_COLUMNS =
   "id, tour_id, user_id, registered_by, participant_name, participant_phone, party_size, note, status, source, completed_at, cancelled_at, created_at";
+/** 報到欄位是 add-study-tour-day-ops.sql 加的 */
+const ADMIN_REG_COLUMNS = `${REG_COLUMNS}, checked_in_at`;
+const BROADCAST_COLUMNS = "id, tour_id, message, created_at";
 
 /** QR 上的蓋章代碼：128 bit 亂數，猜不到 */
 export function generateStampToken(): string {
@@ -75,6 +85,26 @@ export async function isLinkedElder(admin: Admin, familyUserId: string, elderId:
  *   - 還沒結束的已發布研學團（找活動）
  *   - 我報名過／幫家人報名過的研學團（我的護照，含已結束的）
  */
+/** 每一團各抓最新 5 則廣播（一起查再 limit 的話，一團廣播很多就會把別團擠掉） */
+async function loadLatestBroadcasts(
+  admin: Admin,
+  tourIds: string[]
+): Promise<{ data: (StudyTourBroadcast & { tour_id: string })[]; error: { message: string } | null }> {
+  const results = await Promise.all(
+    tourIds.map((tourId) =>
+      admin
+        .from("study_tour_broadcasts")
+        .select(BROADCAST_COLUMNS)
+        .eq("tour_id", tourId)
+        .order("created_at", { ascending: false })
+        .limit(5)
+    )
+  );
+  const failed = results.find((r) => r.error);
+  if (failed?.error) return { data: [], error: failed.error };
+  return { data: results.flatMap((r) => (r.data ?? []) as (StudyTourBroadcast & { tour_id: string })[]), error: null };
+}
+
 export async function loadStudyToursForUser(admin: Admin, userId: string, now: Date = new Date()): Promise<StudyTourView[]> {
   const { data: myRegData, error: myRegError } = await admin
     .from("study_tour_registrations")
@@ -107,7 +137,8 @@ export async function loadStudyToursForUser(admin: Admin, userId: string, now: D
   if (tours.size === 0) return [];
 
   const ids = [...tours.keys()];
-  const [stopsRes, regsRes, stampsRes] = await Promise.all([
+  const myTourIds = [...new Set(myRegs.map((r) => r.tour_id))];
+  const [stopsRes, regsRes, stampsRes, broadcastsRes] = await Promise.all([
     admin.from("study_tour_stops").select(PUBLIC_STOP_COLUMNS).in("tour_id", ids),
     admin
       .from("study_tour_registrations")
@@ -115,10 +146,14 @@ export async function loadStudyToursForUser(admin: Admin, userId: string, now: D
       .in("tour_id", ids)
       .neq("status", "cancelled"),
     admin.from("study_tour_stamps").select("tour_id, stop_id, user_id, stamped_at").in("tour_id", ids).eq("user_id", userId),
+    loadLatestBroadcasts(admin, myTourIds),
   ]);
   if (stopsRes.error) throw stopsRes.error;
   if (regsRes.error) throw regsRes.error;
   if (stampsRes.error) throw stampsRes.error;
+  // 廣播表是後加的（add-study-tour-day-ops.sql）：還沒建就當沒有廣播，不要整頁壞掉
+  if (broadcastsRes.error) console.warn("[study-tours] broadcasts unavailable:", broadcastsRes.error.message);
+  const broadcasts = broadcastsRes.error ? [] : broadcastsRes.data;
 
   const stops = (stopsRes.data ?? []) as StudyTourStopRow[];
   const regs = (regsRes.data ?? []) as Pick<StudyTourRegistrationRow, "id" | "tour_id" | "status" | "party_size" | "created_at">[];
@@ -133,6 +168,9 @@ export async function loadStudyToursForUser(admin: Admin, userId: string, now: D
         activeRegs: regs.filter((r) => r.tour_id === tour.id),
         myRegs: myRegs.filter((r) => r.tour_id === tour.id),
         myStamps: stamps.filter((s) => s.tour_id === tour.id),
+        broadcasts: broadcasts
+          .filter((b) => b.tour_id === tour.id)
+          .map(({ id, message, created_at }) => ({ id, message, created_at })),
         userId,
         now,
       })
@@ -242,14 +280,24 @@ export async function loadAdminTours(admin: Admin): Promise<AdminStudyTour[]> {
 export async function loadAdminTourDetail(
   admin: Admin,
   tourId: string
-): Promise<{ stops: AdminStudyTourStop[]; registrations: AdminStudyTourRegistration[] } | null> {
+): Promise<{
+  stops: AdminStudyTourStop[];
+  registrations: AdminStudyTourRegistration[];
+  broadcasts: (StudyTourBroadcast & { recipients: number })[];
+} | null> {
   const { data: tour } = await admin.from("study_tours").select("id").eq("id", tourId).maybeSingle();
   if (!tour) return null;
 
-  const [stopsRes, regsRes, stampsRes] = await Promise.all([
+  const [stopsRes, regsRes, stampsRes, broadcastsRes] = await Promise.all([
     admin.from("study_tour_stops").select("*").eq("tour_id", tourId).order("position").order("created_at"),
-    admin.from("study_tour_registrations").select(REG_COLUMNS).eq("tour_id", tourId).order("created_at"),
+    admin.from("study_tour_registrations").select(ADMIN_REG_COLUMNS).eq("tour_id", tourId).order("created_at"),
     admin.from("study_tour_stamps").select("stop_id, user_id").eq("tour_id", tourId),
+    admin
+      .from("study_tour_broadcasts")
+      .select(`${BROADCAST_COLUMNS}, recipients`)
+      .eq("tour_id", tourId)
+      .order("created_at", { ascending: false })
+      .limit(20),
   ]);
   if (stopsRes.error) throw stopsRes.error;
   if (regsRes.error) throw regsRes.error;
@@ -282,9 +330,20 @@ export async function loadAdminTourDetail(
     completed_at: r.completed_at,
     created_at: r.created_at,
     cancelled_at: r.cancelled_at,
+    checked_in_at: r.checked_in_at ?? null,
   }));
 
-  return { stops, registrations };
+  if (broadcastsRes.error) console.warn("[study-tours] broadcasts unavailable:", broadcastsRes.error.message);
+  const broadcasts = ((broadcastsRes.error ? [] : broadcastsRes.data) ?? []).map(
+    (b: { id: string; message: string; created_at: string; recipients: number }) => ({
+      id: b.id,
+      message: b.message,
+      created_at: b.created_at,
+      recipients: b.recipients,
+    })
+  );
+
+  return { stops, registrations, broadcasts };
 }
 
 /** 站點增減後重新判斷誰集滿（失敗只記 log，不影響站點本身的修改） */
@@ -303,4 +362,196 @@ export async function nextStopPosition(admin: Admin, tourId: string): Promise<nu
     .limit(1);
   const last = (data ?? [])[0] as { position: number } | undefined;
   return last ? last.position + 1 : 1;
+}
+
+// ── 出發當天：集合廣播、行前提醒、家人抵達通知 ──
+
+/** 推播給一群人（同一人只推一次）；回傳推到幾個人、幾台裝置 */
+async function pushToUsers(
+  userIds: Iterable<string>,
+  message: { title: string; body: string },
+  url: string,
+  tag: string
+): Promise<{ users: number; devices: number }> {
+  const unique = [...new Set([...userIds].filter(Boolean))];
+  const results = await Promise.all(
+    unique.map((uid) =>
+      sendPushToUser(uid, { ...message, url, tag }).catch((e) => {
+        console.warn("[study-tours] push failed:", e);
+        return { sent: 0, removed: 0 };
+      })
+    )
+  );
+  return { users: unique.length, devices: results.reduce((n, r) => n + r.sent, 0) };
+}
+
+/** 行前提醒每批幾筆報名（一次標記、一起推播） */
+const REMINDER_BATCH = 50;
+
+function tourDeepLink(tourId: string) {
+  return `/?open=study-tours&tour=${tourId}`;
+}
+
+/**
+ * 集合廣播：存一筆紀錄（長輩的活動頁看得到），再推播給正取的人（家人代報的也推給家人）。
+ * 回傳收到的人數與推到幾台裝置（沒開推播的人仍然可以在 App 裡看到）
+ */
+export async function broadcastToTour(
+  admin: Admin,
+  tourId: string,
+  rawMessage: string,
+  sentBy: string
+): Promise<{ id: string; recipients: number; devices: number } | { error: string; status: number }> {
+  const message = sanitizeBroadcast(rawMessage);
+  if (!message) return { error: "請輸入要廣播的內容", status: 400 };
+  const { data: tour } = await admin.from("study_tours").select("id, title").eq("id", tourId).maybeSingle();
+  if (!tour) return { error: "找不到這個研學團", status: 404 };
+
+  const { data: regsData, error: regsError } = await admin
+    .from("study_tour_registrations")
+    .select("user_id, registered_by")
+    .eq("tour_id", tourId)
+    .eq("status", "confirmed");
+  if (regsError) throw regsError;
+  const regs = (regsData ?? []) as { user_id: string; registered_by: string | null }[];
+  const targets = new Set<string>();
+  for (const r of regs) {
+    targets.add(r.user_id);
+    if (r.registered_by) targets.add(r.registered_by);
+  }
+
+  const { data: row, error } = await admin
+    .from("study_tour_broadcasts")
+    .insert({ tour_id: tourId, message, sent_by: sentBy, recipients: regs.length })
+    .select("id")
+    .single();
+  if (error || !row) throw error ?? new Error("broadcast insert failed");
+
+  const { devices } = await pushToUsers(
+    targets,
+    { title: `📢 ${(tour as { title: string }).title}`, body: message },
+    tourDeepLink(tourId),
+    `study-tour-broadcast-${(row as { id: string }).id}`
+  );
+  return { id: (row as { id: string }).id, recipients: regs.length, devices };
+}
+
+/**
+ * 行前提醒（每天排程跑）：前一天晚上／當天早上，推給明天／今天出發的團員。
+ * 每種提醒每筆報名只推一次（reminded_*_at），排程重跑也不會重複
+ */
+export async function sendTourReminders(
+  admin: Admin,
+  kind: TourReminderKind,
+  now: Date = new Date()
+): Promise<{ tours: number; reminded: number; devices: number }> {
+  // 抓前後兩天內出發的已發布研學團，再用台灣日期精準比對
+  const from = new Date(now.getTime() - 36 * 3600_000).toISOString();
+  const to = new Date(now.getTime() + 60 * 3600_000).toISOString();
+  const { data: toursData, error } = await admin
+    .from("study_tours")
+    .select("id, title, starts_at, meeting_point")
+    .eq("status", "published")
+    .gte("starts_at", from)
+    .lte("starts_at", to);
+  if (error) throw error;
+  const tours = ((toursData ?? []) as { id: string; title: string; starts_at: string; meeting_point: string }[]).filter(
+    (t) => tourStartsOn(t, kind, now) && new Date(t.starts_at).getTime() > now.getTime()
+  );
+
+  const column = kind === "day_before" ? "reminded_day_before_at" : "reminded_same_day_at";
+  let reminded = 0;
+  let devices = 0;
+  for (const tour of tours) {
+    const { data: regsData, error: regsError } = await admin
+      .from("study_tour_registrations")
+      .select(`id, user_id, registered_by, participant_name, status, created_at, ${column}`)
+      .eq("tour_id", tour.id)
+      .neq("status", "cancelled");
+    if (regsError) throw regsError;
+    const regs = (regsData ?? []) as unknown as Array<{
+      id: string; user_id: string; registered_by: string | null; participant_name: string;
+      status: StudyTourRegistrationRow["status"]; created_at: string;
+    } & Record<string, string | null>>;
+    const positions = waitlistPositions(regs);
+
+    // 先算好每個人要收到什麼；沒有訊息的（例如當天早上還在候補）不標記，之後轉正取仍收得到
+    const pending = regs.flatMap((reg) => {
+      if (reg[column]) return [];
+      const base = { status: reg.status, participant_name: reg.participant_name, waitlist_position: positions.get(reg.id) ?? null };
+      const participantMsg = reminderMessage(kind, tour, { ...base, for_self: true });
+      if (!participantMsg) return [];
+      const family = reg.registered_by && reg.registered_by !== reg.user_id ? reg.registered_by : null;
+      const familyMsg = family ? reminderMessage(kind, tour, { ...base, for_self: false }) : null;
+      return [{ reg, participantMsg, family, familyMsg }];
+    });
+
+    // 一批一批：整批一次標記（只有標記成功的才推，排程同時跑兩次也不會重複），再並行推播，
+    // 大團（上限 500 人）也能在排程時限內跑完
+    for (let i = 0; i < pending.length; i += REMINDER_BATCH) {
+      const batch = pending.slice(i, i + REMINDER_BATCH);
+      const { data: claimedData, error: claimError } = await admin
+        .from("study_tour_registrations")
+        .update({ [column]: new Date().toISOString() })
+        .in("id", batch.map((p) => p.reg.id))
+        .is(column, null)
+        .select("id");
+      if (claimError) throw claimError;
+      const claimed = new Set(((claimedData ?? []) as { id: string }[]).map((r) => r.id));
+
+      const url = tourDeepLink(tour.id);
+      const sent = await Promise.all(
+        batch
+          .filter((p) => claimed.has(p.reg.id))
+          .map(async ({ reg, participantMsg, family, familyMsg }) => {
+            const tag = `study-tour-${kind}-${reg.id}`;
+            const [self, fam] = await Promise.all([
+              pushToUsers([reg.user_id], participantMsg, url, tag),
+              // 家人代報的：也提醒家人（訊息帶上長輩的名字）
+              family && familyMsg ? pushToUsers([family], familyMsg, url, `${tag}-family`) : Promise.resolve({ users: 0, devices: 0 }),
+            ]);
+            return self.devices + fam.devices;
+          })
+      );
+      reminded += sent.length;
+      devices += sent.reduce((n, d) => n + d, 0);
+    }
+  }
+  return { tours: tours.length, reminded, devices };
+}
+
+/**
+ * 家人抵達通知：長輩掃碼蓋到新的章 → 推給「長輩同意分享研學動態」的家人（family_links.permissions.trips）。
+ * 預設不通知；失敗不影響蓋章
+ */
+export async function notifyFamilyArrival(
+  admin: Admin,
+  input: { elderId: string; tourId: string; tourTitle: string; stopName: string; stampedCount: number; totalStops: number; justCompleted: boolean }
+): Promise<number> {
+  try {
+    const { data: links } = await admin
+      .from("family_links")
+      .select("family_user_id, permissions")
+      .eq("owner_id", input.elderId)
+      .eq("status", "accepted");
+    const targets = ((links ?? []) as { family_user_id: string | null; permissions: Record<string, boolean> | null }[])
+      .filter((l) => l.family_user_id && l.permissions?.trips === true)
+      .map((l) => l.family_user_id as string);
+    if (targets.length === 0) return 0;
+
+    const { data: profile } = await admin.from("profiles").select("display_name").eq("id", input.elderId).maybeSingle();
+    const elderName = (profile as { display_name: string | null } | null)?.display_name?.trim() || "家人";
+    const message = arrivalMessage({ ...input, elderName });
+    const { users, devices } = await pushToUsers(
+      targets,
+      message,
+      "/?open=caregiver",
+      `study-tour-arrival-${input.tourId}-${input.elderId}`
+    );
+    console.info(`[study-tours] arrival notice → ${users} family member(s), ${devices} device(s)`);
+    return users;
+  } catch (e) {
+    console.warn("[study-tours] notifyFamilyArrival failed:", e);
+    return 0;
+  }
 }

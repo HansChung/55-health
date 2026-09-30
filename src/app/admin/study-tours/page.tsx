@@ -6,7 +6,10 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api-client";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
 import {
+  BROADCAST_MAX,
+  BROADCAST_TEMPLATES,
   STAMP_EMOJIS,
+  checkinSummary,
   WALKING_LEVELS,
   formatTourDateRange,
   isoToTaipeiInput,
@@ -14,6 +17,7 @@ import {
   type AdminStudyTour,
   type AdminStudyTourRegistration,
   type AdminStudyTourStop,
+  type StudyTourBroadcast,
   type StudyTourRow,
   type StudyTourStatus,
   csvCell,
@@ -79,7 +83,8 @@ export default function StudyToursAdminPage() {
 
       <div style={{ background: "#1e3a8a", padding: 16, borderRadius: 8, color: "#dbeafe", fontSize: 13, marginBottom: 16, lineHeight: 1.7 }}>
         報名只登記、不收費（費用只顯示文字，由主辦單位另外收）。名額滿了自動排候補，有人取消會依序遞補並推播通知。<br />
-        每一站會自動產生專屬 QR Code：按「列印 QR」印出來貼在現場，長輩用手機相機掃了就蓋章。管理員掃碼不受活動時間限制，可以先測試。
+        每一站會自動產生專屬 QR Code：按「列印 QR」印出來貼在現場，長輩用手機相機掃了就蓋章。管理員掃碼不受活動時間限制，可以先測試。<br />
+        行前提醒會自動推播：出發前一天 20:00、出發當天 06:00。當天用「站點與報名名單」裡的集合廣播與報到名單。
       </div>
 
       {error && <div style={{ color: "#fecaca", marginBottom: 12 }}>錯誤：{error}</div>}
@@ -312,6 +317,9 @@ function TourDetailPanel({ tourId, onChanged }: { tourId: string; onChanged: () 
   const [tour, setTour] = useState<StudyTourRow | null>(null);
   const [stops, setStops] = useState<AdminStudyTourStop[]>([]);
   const [regs, setRegs] = useState<AdminStudyTourRegistration[]>([]);
+  const [broadcasts, setBroadcasts] = useState<(StudyTourBroadcast & { recipients: number })[]>([]);
+  const [broadcastText, setBroadcastText] = useState("");
+  const [sending, setSending] = useState(false);
   const [editingStop, setEditingStop] = useState<AdminStudyTourStop | "new" | null>(null);
   const [showCancelled, setShowCancelled] = useState(false);
   const [error, setError] = useState("");
@@ -322,6 +330,7 @@ function TourDetailPanel({ tourId, onChanged }: { tourId: string; onChanged: () 
       setTour(data.tour);
       setStops(data.stops);
       setRegs(data.registrations);
+      setBroadcasts(data.broadcasts ?? []);
       setError("");
     } catch (e) {
       setError((e as Error).message);
@@ -380,13 +389,42 @@ function TourDetailPanel({ tourId, onChanged }: { tourId: string; onChanged: () 
     }
   };
 
+  const sendBroadcast = async () => {
+    const message = broadcastText.trim();
+    if (!message || sending) return;
+    const people = regs.filter((r) => r.status === "confirmed").length;
+    if (!confirm(`要推播給全團（正取 ${people} 組）嗎？\n\n「${message}」`)) return;
+    setSending(true);
+    try {
+      const res = await api.adminBroadcastStudyTour(tourId, message);
+      setBroadcastText("");
+      alert(`已送出給 ${res.recipients} 組，推播到 ${res.devices} 台手機。\n沒開通知的人打開 App 也看得到這則廣播。`);
+      load();
+    } catch (e) {
+      alert((e as Error).message);
+    }
+    setSending(false);
+  };
+
+  const toggleCheckin = async (reg: AdminStudyTourRegistration) => {
+    const next = !reg.checked_in_at;
+    if (!next && !confirm(`取消 ${reg.participant_name} 的報到？`)) return;
+    try {
+      const res = await api.adminCheckInStudyTourRegistration(tourId, reg.id, next);
+      setRegs((prev) => prev.map((r) => (r.id === reg.id ? { ...r, checked_in_at: res.checked_in_at } : r)));
+    } catch (e) {
+      alert((e as Error).message);
+    }
+  };
+
   const exportCsv = () => {
     if (!tour) return;
-    const header = ["狀態", "姓名", "電話", "人數", "備註", "來源", "集章", "結業", "報名時間"];
+    const header = ["狀態", "報到", "姓名", "電話", "人數", "備註", "來源", "集章", "結業", "報名時間"];
     const rows = regs
       .filter((r) => showCancelled || r.status !== "cancelled")
       .map((r) => [
         REG_STATUS[r.status],
+        r.checked_in_at ? new Date(r.checked_in_at).toLocaleTimeString("zh-TW", { timeZone: "Asia/Taipei", hour: "2-digit", minute: "2-digit" }) : "",
         r.participant_name,
         r.participant_phone,
         String(r.party_size),
@@ -408,10 +446,44 @@ function TourDetailPanel({ tourId, onChanged }: { tourId: string; onChanged: () 
   };
 
   const visibleRegs = regs.filter((r) => showCancelled || r.status !== "cancelled");
+  const checkin = checkinSummary(regs);
 
   return (
     <div style={{ marginTop: 16, borderTop: "1px solid #334155", paddingTop: 16 }}>
       {error && <div style={{ color: "#fecaca", marginBottom: 12 }}>錯誤：{error}</div>}
+
+      {/* 集合廣播 */}
+      <div style={{ background: "#0f172a", border: "1px solid #1e3a8a", borderRadius: 10, padding: 14, marginBottom: 20 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 8 }}>📢 集合廣播</div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+          {BROADCAST_TEMPLATES.map((t) => (
+            <button key={t} type="button" onClick={() => setBroadcastText(t)} style={{ ...tinyButton, borderColor: "#1e3a8a", color: "#bfdbfe" }}>{t}</button>
+          ))}
+        </div>
+        <textarea
+          value={broadcastText}
+          onChange={(e) => setBroadcastText(e.target.value.slice(0, BROADCAST_MAX))}
+          placeholder="例如：10:30 在大門口集合，遊覽車準時出發"
+          rows={2}
+          style={{ ...inputStyle, resize: "vertical" }}
+        />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 12, color: "#64748b" }}>推播給正取的人（家人代報的也會收到）；{broadcastText.length}/{BROADCAST_MAX}</span>
+          <button onClick={sendBroadcast} disabled={!broadcastText.trim() || sending} style={{ ...primaryButton, padding: "8px 14px", fontSize: 13, opacity: !broadcastText.trim() || sending ? 0.5 : 1 }}>
+            {sending ? "送出中…" : "📢 發送給全團"}
+          </button>
+        </div>
+        {broadcasts.length > 0 && (
+          <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 4 }}>
+            {broadcasts.slice(0, 5).map((b) => (
+              <div key={b.id} style={{ fontSize: 12, color: "#94a3b8" }}>
+                {new Date(b.created_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                ・{b.recipients} 組・<span style={{ color: "#e2e8f0" }}>{b.message}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>集章站點（{stops.length} 站）</div>
@@ -453,7 +525,14 @@ function TourDetailPanel({ tourId, onChanged }: { tourId: string; onChanged: () 
       </div>
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, gap: 12, flexWrap: "wrap" }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>報名名單（{regs.filter((r) => r.status !== "cancelled").length} 組）</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>
+          報名名單（{regs.filter((r) => r.status !== "cancelled").length} 組）
+          {checkin.groups > 0 && (
+            <span style={{ marginLeft: 8, fontSize: 13, fontWeight: 600, color: checkin.checkedGroups === checkin.groups ? "#6ee7b7" : "#fcd34d" }}>
+              已報到 {checkin.checkedGroups}／{checkin.groups} 組（{checkin.checkedPeople}／{checkin.people} 人）
+            </span>
+          )}
+        </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <label style={{ fontSize: 12, color: "#94a3b8", display: "flex", gap: 6, alignItems: "center" }}>
             <input type="checkbox" checked={showCancelled} onChange={(e) => setShowCancelled(e.target.checked)} />
@@ -466,7 +545,7 @@ function TourDetailPanel({ tourId, onChanged }: { tourId: string; onChanged: () 
         <div className="adm-table-scroll"><table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
             <tr style={{ color: "#94a3b8", textAlign: "left" }}>
-              {["狀態", "姓名", "電話", "人數", "備註", "來源", "集章", "報名時間", ""].map((h) => (
+              {["狀態", "報到", "姓名", "電話", "人數", "備註", "來源", "集章", "報名時間", ""].map((h) => (
                 <th key={h} style={{ padding: "6px 8px", borderBottom: "1px solid #334155", fontWeight: 600 }}>{h}</th>
               ))}
             </tr>
@@ -477,8 +556,27 @@ function TourDetailPanel({ tourId, onChanged }: { tourId: string; onChanged: () 
                 <td style={cell}>
                   <span style={{ color: r.status === "confirmed" ? "#6ee7b7" : r.status === "waitlisted" ? "#fcd34d" : "#64748b" }}>{REG_STATUS[r.status]}</span>
                 </td>
+                <td style={cell}>
+                  {r.status === "cancelled" ? "—" : r.status === "waitlisted" && !r.checked_in_at ? (
+                    <span title="候補不能直接報到：請長輩現場掃碼（會轉正取），或調高名額遞補" style={{ color: "#64748b", fontSize: 13 }}>候補中</span>
+                  ) : (
+                    <button
+                      onClick={() => toggleCheckin(r)}
+                      title={r.checked_in_at ? "按一下取消報到" : "沒掃碼的長輩，由領隊按報到"}
+                      style={{ ...tinyButton, color: r.checked_in_at ? "#6ee7b7" : "#fcd34d", borderColor: r.checked_in_at ? "#065f46" : "#78350f" }}
+                    >
+                      {r.checked_in_at
+                        ? `✅ ${new Date(r.checked_in_at).toLocaleTimeString("zh-TW", { timeZone: "Asia/Taipei", hour: "2-digit", minute: "2-digit", hour12: false })}`
+                        : "未到・按報到"}
+                    </button>
+                  )}
+                </td>
                 <td style={cell}>{r.participant_name}</td>
-                <td style={cell}>{r.participant_phone || "—"}</td>
+                <td style={cell}>
+                  {r.participant_phone ? (
+                    <a href={`tel:${r.participant_phone.replace(/[^0-9+#]/g, "")}`} style={{ color: "#93c5fd" }}>{r.participant_phone}</a>
+                  ) : "—"}
+                </td>
                 <td style={cell}>{r.party_size}</td>
                 <td style={{ ...cell, maxWidth: 200 }}>{r.note || "—"}</td>
                 <td style={cell}>{sourceLabel(r)}</td>
@@ -492,7 +590,7 @@ function TourDetailPanel({ tourId, onChanged }: { tourId: string; onChanged: () 
               </tr>
             ))}
             {visibleRegs.length === 0 && (
-              <tr><td colSpan={9} style={{ ...cell, color: "#64748b", textAlign: "center" }}>還沒有人報名</td></tr>
+              <tr><td colSpan={10} style={{ ...cell, color: "#64748b", textAlign: "center" }}>還沒有人報名</td></tr>
             )}
           </tbody>
         </table></div>

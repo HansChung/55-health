@@ -11,6 +11,14 @@
     {
       "path": "/api/cron/daily-care",
       "schedule": "0 23 * * *"
+    },
+    {
+      "path": "/api/cron/study-tour-reminders?kind=day_before",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/study-tour-reminders?kind=same_day",
+      "schedule": "0 22 * * *"
     }
   ]
 }

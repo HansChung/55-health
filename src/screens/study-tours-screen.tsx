@@ -9,12 +9,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { SubPage } from "@/components/sub-page";
 import { Mascot } from "@/components/mascot";
-import { api, ApiError } from "@/lib/api-client";
+import { api, ApiError, type FamilyLink } from "@/lib/api-client";
+import { usePushOffer } from "@/hooks/use-push-offer";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/telemetry";
 import { canSpeakGuide, speakGuideParagraphs, stopGuideSpeech } from "@/lib/speak-guide";
 import {
   MAX_PARTY_SIZE,
+  formatBroadcastTime,
   formatCertificateDate,
   formatTourDateRange,
   formatTourDay,
@@ -26,6 +28,7 @@ import {
   stampProgress,
   tourShareUrl,
   walkingLevelMeta,
+  type StudyTourBroadcast,
   type StudyTourElder,
   type StudyTourRegistrationView,
   type StudyTourView,
@@ -83,6 +86,7 @@ function hasStarted(tour: StudyTourView, now = Date.now()) {
 export function StudyToursScreen({ onBack, initialTourId = null, initialView = "list", displayName, onPhotoAsk }: StudyToursScreenProps) {
   const [tours, setTours] = useState<StudyTourView[] | null>(null);
   const [elders, setElders] = useState<StudyTourElder[]>([]);
+  const [familyLinks, setFamilyLinks] = useState<FamilyLink[]>([]);
   const [loadError, setLoadError] = useState("");
   const [view, setView] = useState<View>(initialView);
   const [selectedId, setSelectedId] = useState<string | null>(initialTourId);
@@ -91,9 +95,13 @@ export function StudyToursScreen({ onBack, initialTourId = null, initialView = "
   const load = useCallback(async () => {
     setLoadError("");
     try {
-      const data = await api.listStudyTours();
+      const [data, family] = await Promise.all([
+        api.listStudyTours(),
+        api.listFamily().catch(() => ({ family: [] as FamilyLink[] })),
+      ]);
       setTours(data.tours);
       setElders(data.elders);
+      setFamilyLinks(family.family ?? []);
     } catch (e) {
       setLoadError(e instanceof ApiError ? e.message : "載入失敗，請檢查網路");
     }
@@ -150,6 +158,8 @@ export function StudyToursScreen({ onBack, initialTourId = null, initialView = "
         <TourDetail
           tour={selected}
           elders={elders}
+          familyLinks={familyLinks}
+          onFamilyLinksChanged={setFamilyLinks}
           displayName={displayName}
           onToursChanged={(next) => (next ? setTours(next) : load())}
           onOpenCertificate={() => setCertificateTourId(selected.id)}
@@ -297,6 +307,8 @@ function InfoRow({ icon, label, children }: { icon: string; label: string; child
 function TourDetail({
   tour,
   elders,
+  familyLinks,
+  onFamilyLinksChanged,
   displayName,
   onToursChanged,
   onOpenCertificate,
@@ -304,6 +316,8 @@ function TourDetail({
 }: {
   tour: StudyTourView;
   elders: StudyTourElder[];
+  familyLinks: FamilyLink[];
+  onFamilyLinksChanged: (links: FamilyLink[]) => void;
   displayName?: string | null;
   onToursChanged: (tours: StudyTourView[] | null) => void;
   onOpenCertificate: () => void;
@@ -376,6 +390,15 @@ function TourDetail({
         }}>
           這個研學團已經取消了，詳情請聯絡主辦單位
         </div>
+      )}
+
+      {tour.broadcasts.length > 0 && <BroadcastBox broadcasts={tour.broadcasts.slice(0, 3)} />}
+
+      {tour.registrations.length > 0 && tour.status === "published" && !isOver(tour) && (
+        <>
+          <PushOfferCard />
+          {own && <FamilyArrivalConsent links={familyLinks} onChanged={onFamilyLinksChanged} />}
+        </>
       )}
 
       <div className="card" style={{ padding: "4px 18px", marginTop: 16 }}>
@@ -706,6 +729,12 @@ function Passport({
               </div>
             </button>
 
+            {tour.broadcasts[0] && !isOver(tour) && (
+              <div style={{ marginTop: 10 }}>
+                <BroadcastBox broadcasts={[tour.broadcasts[0]]} compact />
+              </div>
+            )}
+
             <div style={{ fontSize: "var(--fs-base)", fontWeight: 800, margin: "12px 0 10px", color: done ? "var(--gold)" : "var(--primary-deep)" }}>
               {total === 0 ? "這團還沒設定集章站" : done ? `🎓 已集滿 ${total} 章` : `已集 ${stamped}／${total} 章`}
             </div>
@@ -852,5 +881,122 @@ function Certificate({ tour, onClose }: { tour: StudyTourView; onClose: () => vo
       </div>
     </div>,
     document.body
+  );
+}
+
+// ── 出發當天：領隊通知、開啟通知、家人抵達通知 ──
+
+function BroadcastBox({ broadcasts, compact }: { broadcasts: StudyTourBroadcast[]; compact?: boolean }) {
+  return (
+    <div role="status" style={{
+      marginTop: compact ? 0 : 14, padding: compact ? 12 : 14, borderRadius: "var(--r-md)",
+      background: "#FFF4DC", border: "2px solid var(--gold)",
+    }}>
+      <div style={{ fontSize: "var(--fs-sm)", fontWeight: 800, color: "#8A5A00" }}>📢 領隊通知</div>
+      {broadcasts.map((b, i) => (
+        <div key={b.id} style={{ marginTop: 6, opacity: i === 0 ? 1 : 0.75 }}>
+          <div style={{ fontSize: i === 0 ? "var(--fs-base)" : "var(--fs-sm)", fontWeight: i === 0 ? 800 : 600, lineHeight: 1.4 }}>{b.message}</div>
+          <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-2)" }}>{formatBroadcastTime(b.created_at)}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PushOfferCard() {
+  const toast = useToast();
+  const { offer, busy, enable } = usePushOffer();
+  if (!offer) return null;
+  return (
+    <div style={{
+      marginTop: 14, padding: 14, borderRadius: "var(--r-md)", background: "var(--gold-soft)",
+      display: "flex", flexDirection: "column", gap: 10,
+    }}>
+      <div style={{ fontSize: "var(--fs-sm)", lineHeight: 1.5 }}>
+        🔔 <strong>開啟通知</strong>，出發前的提醒和領隊的集合廣播，手機才會跳出來。
+      </div>
+      <button
+        onClick={() =>
+          enable()
+            .then(() => {
+              trackEvent("study_tour_push_enabled");
+              toast.success("已開啟通知，出發前會提醒你");
+            })
+            .catch((e) => toast.error(e instanceof Error && e.message ? e.message : "開啟通知沒成功，請再試一次"))
+        }
+        disabled={busy}
+        className="btn-ghost"
+        style={{ width: "100%", opacity: busy ? 0.6 : 1 }}
+      >
+        {busy ? "設定中…" : "開啟通知"}
+      </button>
+    </div>
+  );
+}
+
+const ARRIVAL_DISMISS_KEY = "nuannuan_trip_arrival_ask_dismissed";
+
+/**
+ * 問長輩一次：要不要讓家人收到「已抵達哪一站」的通知？（預設不通知，長輩同意才開）
+ * 只問已連結、還沒同意的家人；按「先不要」之後就不再問（可以到「家人共享」各別打開）
+ */
+function FamilyArrivalConsent({ links, onChanged }: { links: FamilyLink[]; onChanged: (links: FamilyLink[]) => void }) {
+  const toast = useToast();
+  const [saving, setSaving] = useState(false);
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      return localStorage.getItem(ARRIVAL_DISMISS_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const pending = links.filter((l) => l.status === "accepted" && l.family_user_id && l.permissions?.trips !== true);
+  const alreadyOn = links.some((l) => l.status === "accepted" && l.permissions?.trips === true);
+  if (dismissed || pending.length === 0 || alreadyOn) return null;
+
+  const names = pending.map((l) => l.family_name).join("、");
+  const allow = async () => {
+    setSaving(true);
+    try {
+      const updated = await Promise.all(
+        pending.map((l) => api.updateFamily(l.id, { permissions: { ...l.permissions, trips: true } }).then((r) => r.link))
+      );
+      onChanged(links.map((l) => updated.find((u) => u.id === l.id) ?? l));
+      trackEvent("study_tour_family_arrival_on", { count: updated.length });
+      toast.success(`好的，蓋章時會通知${names}`);
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "設定沒成功，請再試一次");
+    }
+    setSaving(false);
+  };
+  const skip = () => {
+    try {
+      localStorage.setItem(ARRIVAL_DISMISS_KEY, "1");
+    } catch { /* ignore */ }
+    setDismissed(true);
+  };
+
+  return (
+    <div style={{
+      marginTop: 14, padding: 14, borderRadius: "var(--r-md)",
+      background: "var(--sage-soft)", border: "1px solid #B5D2B0",
+    }}>
+      <div style={{ fontSize: "var(--fs-sm)", lineHeight: 1.6 }}>
+        👨‍👩‍👧 要讓 <strong>{names}</strong> 知道你到了哪裡嗎？
+        <br />
+        每到一站掃碼蓋章時，會通知他們「已抵達○○」。
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 10 }}>
+        <button onClick={allow} disabled={saving} className="btn-primary" style={{ fontSize: "var(--fs-sm)", padding: "12px 8px", minHeight: 52 }}>
+          {saving ? "設定中…" : "好，通知家人"}
+        </button>
+        <button onClick={skip} disabled={saving} className="btn-ghost" style={{ fontSize: "var(--fs-sm)", padding: "12px 8px", minHeight: 52 }}>
+          先不要
+        </button>
+      </div>
+      <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-2)", marginTop: 8 }}>
+        之後可以在「我的 → 家人共享」隨時關掉
+      </div>
+    </div>
   );
 }
