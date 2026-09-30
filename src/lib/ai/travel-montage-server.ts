@@ -11,6 +11,7 @@ import { trackAiUsage } from "./usage-tracker";
 import { synthesizeNarration, ttsModel } from "./lk888-tts";
 import { ComposeBudgetError, fetchSubtitleFont } from "./video-compose";
 import { MIN_CLIP_BUDGET_MS, muxMontage, renderMontageClip } from "./montage-compose";
+import { isPublicHttpsUrl } from "./travel-video-webhook";
 import {
   TRAVEL_VIDEO_BUCKET,
   finishRow,
@@ -69,6 +70,46 @@ export function montageAllPaths(row: Pick<TravelVideoRow, "user_id" | "id" | "mo
     ...montageIntermediatePaths(row, count),
     montageVideoPath(row),
   ];
+}
+
+/** 背景接力的端點（/api/cron/* 不受 rate limit，用 CRON_SECRET 驗證） */
+export const MONTAGE_STEP_PATH = "/api/cron/montage-step";
+
+/**
+ * 背景接力網址：優先用正式網址（NEXT_PUBLIC_APP_URL），沒有才用這次請求的網址。
+ * 沒設 CRON_SECRET 就不接力（只靠畫面輪詢推進）
+ */
+export function montageContinueUrl(
+  env: Record<string, string | undefined>,
+  requestOrigin?: string | null
+): string | null {
+  if (!env.CRON_SECRET) return null;
+  const app = env.NEXT_PUBLIC_APP_URL;
+  const base = app && isPublicHttpsUrl(app) ? app : requestOrigin;
+  if (!base) return null;
+  return `${base.replace(/\/+$/, "")}${MONTAGE_STEP_PATH}`;
+}
+
+/** 上一步失敗過：接力前先等一下再試（避免服務短暫忙線時連續失敗 5 次就放棄） */
+export function montageRetryDelayMs(attempts: number): number {
+  return Math.min(12_000, Math.max(0, attempts) * 4_000);
+}
+
+/** 叫下一棒：對方收到就馬上回 202，在它自己的函式裡做下一段 */
+async function scheduleContinuation(videoId: string, origin: string | null | undefined): Promise<void> {
+  const url = montageContinueUrl(process.env, origin);
+  if (!url) return;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${process.env.CRON_SECRET}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ id: videoId }),
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (!res.ok) console.warn(`[montage] continuation HTTP ${res.status}`);
+  } catch (e) {
+    console.warn("[montage] continuation failed:", e);
+  }
 }
 
 function voiceOf(row: TravelVideoRow): NarrationVoiceId {
@@ -260,21 +301,38 @@ async function failMontage(admin: Admin, row: TravelVideoRow, reason: string): P
 }
 
 /**
- * 推進一支遊記的製作（畫面輪詢、建立後的背景工作都會呼叫）。
- * 拿不到租約（別的請求正在做）就原樣回傳
+ * 推進一支遊記的製作（畫面輪詢、建立後的背景工作、背景接力都會呼叫）。
+ * 拿不到租約（別的請求正在做）就原樣回傳。
+ * 這次有做事、而且還沒做完 → 叫下一棒接著做：長輩離開畫面也會做完並推播
+ * （只有拿到租約的人會叫下一棒，所以不會越叫越多）
  */
-export async function syncMontage(row: TravelVideoRow, opts: { budgetMs?: number } = {}): Promise<TravelVideoRow> {
-  if (!isTravelVideoPending(row.status) || !row.montage) return row;
+export async function syncMontage(
+  row: TravelVideoRow,
+  opts: { budgetMs?: number; origin?: string | null } = {}
+): Promise<TravelVideoRow> {
+  const { row: result, worked } = await advanceMontage(row, opts);
+  if (worked && isTravelVideoPending(result.status)) await scheduleContinuation(result.id, opts.origin);
+  return result;
+}
+
+async function advanceMontage(
+  row: TravelVideoRow,
+  opts: { budgetMs?: number }
+): Promise<{ row: TravelVideoRow; worked: boolean }> {
+  if (!isTravelVideoPending(row.status) || !row.montage) return { row, worked: false };
   const admin = createSupabaseAdmin();
   if (Date.now() - new Date(row.created_at).getTime() > MONTAGE_STALE_MS) {
-    return failMontage(admin, row, "montage timeout");
+    return { row: await failMontage(admin, row, "montage timeout"), worked: false };
   }
   const leased = await acquireLease(admin, row);
-  if (!leased?.montage) return row;
+  if (!leased?.montage) return { row, worked: false };
+  return { row: await processLeased(admin, leased, opts), worked: true };
+}
 
+async function processLeased(admin: Admin, leased: TravelVideoRow, opts: { budgetMs?: number }): Promise<TravelVideoRow> {
   const deadline = Date.now() + (opts.budgetMs ?? WORK_BUDGET_MS);
   let current = leased;
-  let state: MontageState = leased.montage;
+  let state: MontageState = leased.montage!;
   try {
     if (montageStage(state) === "tts") {
       state = { ...(await runTts(admin, current, state)), attempts: 0 };

@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     "/api/ai/travel-video": ["./node_modules/ffmpeg-static/ffmpeg"],
     // 多張照片遊記：建立後在背景先開始做（配音、剪輯要用 ffmpeg）
     "/api/ai/travel-video/montage": ["./node_modules/ffmpeg-static/ffmpeg"],
+    "/api/cron/montage-step": ["./node_modules/ffmpeg-static/ffmpeg"],
     "/api/webhooks/lk888/[secret]": ["./node_modules/ffmpeg-static/ffmpeg"],
   },
   // Capacitor build 時透過 BUILD_TARGET=mobile 切換成 static export

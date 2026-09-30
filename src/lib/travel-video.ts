@@ -224,6 +224,10 @@ export function defaultVideoQuota(tier: string): number {
 export type TravelVideoKind = "single" | "montage";
 export const MONTAGE_MIN_PHOTOS = 3;
 export const MONTAGE_MAX_PHOTOS = 5;
+/** 一次送出的照片（base64 data URL）合計上限：Vercel request body 上限 4.5MB */
+export const MONTAGE_MAX_TOTAL_CHARS = 4_200_000;
+/** 前端目標：超過就把照片再壓小一點 */
+export const MONTAGE_CLIENT_TARGET_CHARS = 3_800_000;
 /** 每張照片的一句話：約 2.2 字／秒 → 最多約 9 秒 */
 export const MONTAGE_LINE_MAX = 20;
 

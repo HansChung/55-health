@@ -57,7 +57,7 @@ const PostSchema = z.object({
     .optional(),
 });
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "未登入" }, { status: 401 });
@@ -82,7 +82,7 @@ export async function GET() {
       rows.map((r) => {
         if (!isTravelVideoPending(r.status)) return r;
         // 遊記在自己伺服器做（配音→剪輯→合成），每次輪詢推進一段；單張影片向平台查進度
-        return (r.kind === "montage" ? syncMontage(r) : syncTravelVideo(r)).catch(() => r);
+        return (r.kind === "montage" ? syncMontage(r, { origin: new URL(req.url).origin }) : syncTravelVideo(r)).catch(() => r);
       })
     );
   }

@@ -9,6 +9,7 @@ import { checkUserQuota, countMonthlyEndpointUsage, trackAiUsage } from "@/lib/a
 import { getGeminiModel, isGeminiConfigured, parseModelJson, resolveGeminiConfig } from "@/lib/ai/gemini";
 import {
   MONTAGE_MAX_PHOTOS,
+  MONTAGE_MAX_TOTAL_CHARS,
   MONTAGE_MIN_PHOTOS,
   buildMontageScriptPrompt,
   sanitizeMontageLine,
@@ -21,10 +22,13 @@ export const maxDuration = 60;
 
 const IMAGE_DATA_URL = /^data:image\/jpeg;base64,([A-Za-z0-9+/]+={0,2})$/;
 
-const PostSchema = z.object({
-  images: z.array(z.string().max(1_400_000).regex(IMAGE_DATA_URL)).min(MONTAGE_MIN_PHOTOS).max(MONTAGE_MAX_PHOTOS),
-  place: z.string().max(100).optional(),
-});
+const PostSchema = z
+  .object({
+    images: z.array(z.string().max(1_400_000).regex(IMAGE_DATA_URL)).min(MONTAGE_MIN_PHOTOS).max(MONTAGE_MAX_PHOTOS),
+    place: z.string().max(100).optional(),
+  })
+  // 和建立遊記同一個上限：整包超過 Vercel 4.5MB 會在進來之前就被擋掉
+  .refine((b) => b.images.reduce((n, s) => n + s.length, 0) <= MONTAGE_MAX_TOTAL_CHARS, "too large");
 
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseServer();

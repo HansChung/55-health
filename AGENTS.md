@@ -85,7 +85,10 @@ stack works well for auth + meal/diary CRUD:
   blurred fill + `zoompan` + fades + ASS subtitle, video only) → ③ clips concatenated with `-c copy` +
   narrations `adelay`ed/`amix`ed → `video.mp4`. Progress lives in `travel_videos.montage` (jsonb); a
   `lease_until` lease (conditional update) stops overlapping polls from double-processing. Each step is
-  budgeted to fit the 60 s function; interrupted work resumes on the next poll. Needs
+  budgeted to fit the 60 s function. Whoever actually did work (held the lease) and left it unfinished
+  calls `POST /api/cron/montage-step` (Bearer `CRON_SECRET`, answers 202 and works in `after()`), so the
+  montage finishes and pushes even after the elder leaves the page; without `CRON_SECRET` it only advances
+  while the screen polls. Needs
   `supabase/add-travel-video-montage.sql`. Separate monthly quota (`DEFAULT_MONTAGE_QUOTA`), costs only TTS
   (~0.01 算力 per line). The Linux ffmpeg has every filter used (verified in Docker amazonlinux).
 - Needs `supabase/add-travel-videos.sql` (table, bucket, `ai_usage` service `minimax_video`,

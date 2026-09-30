@@ -1,7 +1,7 @@
 // ────────────────────────────────────────────────
 // 多張照片遊記影片：3～5 張照片 + 每張一句話 + 聲音 → 建立一支遊記（在自己伺服器用 ffmpeg 做）
 // POST { images: dataURL[], sizes: {width,height}[], lines: string[], voice, place? }
-// 建立後在背景先開始配音；之後畫面每次輪詢 GET /api/ai/travel-video 會接著做
+// 建立後在背景先開始配音，之後由背景接力（/api/cron/montage-step）與畫面輪詢接著做
 // ────────────────────────────────────────────────
 import { NextRequest, NextResponse, after } from "next/server";
 import { z } from "zod";
@@ -13,6 +13,7 @@ import { MONTAGE_STALE_MS, montagePhotoPath, syncMontage } from "@/lib/ai/travel
 import { montageSize } from "@/lib/ai/montage-compose";
 import {
   MONTAGE_MAX_PHOTOS,
+  MONTAGE_MAX_TOTAL_CHARS,
   MONTAGE_MIN_PHOTOS,
   NARRATION_VOICE_IDS,
   isTravelVideoPending,
@@ -26,7 +27,6 @@ export const maxDuration = 60;
 const IMAGE_DATA_URL = /^data:image\/jpeg;base64,([A-Za-z0-9+/]+={0,2})$/;
 // Vercel request body 上限 4.5MB：前端每張壓到長邊 1280px，通常一張 < 500KB
 const MAX_IMAGE_CHARS = 1_400_000;
-const MAX_TOTAL_CHARS = 4_200_000;
 const PENDING_MESSAGE = "上一支遊記還在做，做好再做下一支喔";
 
 const PostSchema = z
@@ -38,7 +38,7 @@ const PostSchema = z
     place: z.string().max(100).optional(),
   })
   .refine((b) => b.sizes.length === b.images.length && b.lines.length === b.images.length, "length mismatch")
-  .refine((b) => b.images.reduce((n, s) => n + s.length, 0) <= MAX_TOTAL_CHARS, "too large");
+  .refine((b) => b.images.reduce((n, s) => n + s.length, 0) <= MONTAGE_MAX_TOTAL_CHARS, "too large");
 
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseServer();
@@ -146,7 +146,13 @@ export async function POST(req: NextRequest) {
   }
 
   // 回應之後在背景先開始配音（同一個函式執行，受 maxDuration 限制；做不完的由輪詢接手）
-  after(() => syncMontage(inserted as TravelVideoRow).then(() => undefined).catch((e) => console.error("[montage] kickoff failed:", e)));
+  // 做不完的由背景接力（/api/cron/montage-step）一段一段做完，長輩離開畫面也會做好並推播
+  const origin = new URL(req.url).origin;
+  after(() =>
+    syncMontage(inserted as TravelVideoRow, { origin })
+      .then(() => undefined)
+      .catch((e) => console.error("[montage] kickoff failed:", e))
+  );
 
   return NextResponse.json({
     video: toClientVideo(admin, inserted as TravelVideoRow),

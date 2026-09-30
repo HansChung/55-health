@@ -18,7 +18,12 @@ import {
   sanitizeMontageLine,
   type MontageState,
 } from "../travel-video";
-import { montageAllPaths, montageIntermediatePaths } from "./travel-montage-server";
+import {
+  montageAllPaths,
+  montageContinueUrl,
+  montageIntermediatePaths,
+  montageRetryDelayMs,
+} from "./travel-montage-server";
 
 describe("遊記影片：版面與秒數", () => {
   it("直式照片比較多才做直式影片，一樣多時做橫式", () => {
@@ -139,5 +144,22 @@ describe("遊記影片：進度與設定", () => {
       "u/v/line-0.wav", "u/v/clip-0.mp4", "u/v/line-1.wav", "u/v/clip-1.mp4",
       "u/v/video.mp4",
     ]);
+  });
+});
+
+describe("遊記影片：背景接力", () => {
+  it("有 CRON_SECRET 才接力；優先用正式網址，沒有才用這次請求的網址", () => {
+    expect(montageContinueUrl({}, "https://nuan55.com")).toBeNull();
+    expect(montageContinueUrl({ CRON_SECRET: "s", NEXT_PUBLIC_APP_URL: "https://nuan55.com/" }, "https://x.vercel.app"))
+      .toBe("https://nuan55.com/api/cron/montage-step");
+    expect(montageContinueUrl({ CRON_SECRET: "s", NEXT_PUBLIC_APP_URL: "http://localhost:3000" }, "http://localhost:3055"))
+      .toBe("http://localhost:3055/api/cron/montage-step");
+    expect(montageContinueUrl({ CRON_SECRET: "s" }, null)).toBeNull();
+  });
+
+  it("上一步失敗過就先等一下再試，最多等 12 秒", () => {
+    expect(montageRetryDelayMs(0)).toBe(0);
+    expect(montageRetryDelayMs(1)).toBe(4000);
+    expect(montageRetryDelayMs(10)).toBe(12000);
   });
 });

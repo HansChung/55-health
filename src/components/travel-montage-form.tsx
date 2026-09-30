@@ -11,6 +11,7 @@ import { compressImage } from "@/lib/image-utils";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/telemetry";
 import {
+  MONTAGE_CLIENT_TARGET_CHARS,
   MONTAGE_LINE_MAX,
   MONTAGE_MAX_PHOTOS,
   MONTAGE_MIN_PHOTOS,
@@ -59,6 +60,19 @@ function choiceButton(active: boolean): React.CSSProperties {
   };
 }
 
+/** 整包照片太大（送不過 Vercel 4.5MB 上限）→ 每張再壓小一點 */
+async function fitPhotosToBudget(photos: MontagePhotoDraft[]): Promise<MontagePhotoDraft[]> {
+  const total = photos.reduce((n, p) => n + p.dataUrl.length, 0);
+  if (total <= MONTAGE_CLIENT_TARGET_CHARS) return photos;
+  return Promise.all(
+    photos.map(async (p) => {
+      const blob = await (await fetch(p.dataUrl)).blob();
+      const dataUrl = await compressImage(new File([blob], "photo.jpg", { type: "image/jpeg" }), { maxSide: 1024, quality: 0.7 });
+      return { ...p, dataUrl, ...(await imageSize(dataUrl)) };
+    })
+  );
+}
+
 function imageSize(src: string): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -90,6 +104,10 @@ export function TravelMontageForm({
   const [writing, setWriting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
+  // AI 寫稿要等十幾秒：回來時照片（張數、順序）已經改了，就不要套用舊的句子
+  const photosRef = useRef(photos);
+  photosRef.current = photos;
+  const photoKeys = (list: MontagePhotoDraft[]) => list.map((p) => p.key).join("|");
 
   const friendlyError = (e: unknown, fallback: string) =>
     e instanceof ApiError && !e.isNetwork && !/^HTTP \d+$/.test(e.message) ? e.message : fallback;
@@ -142,6 +160,7 @@ export function TravelMontageForm({
   const cleanLines = lines.map(sanitizeMontageLine);
   const reason =
     blockedReason ??
+    (writing ? "AI 正在寫，寫好再送出" : null) ??
     (!enoughPhotos
       ? `先選 ${MONTAGE_MIN_PHOTOS}～${MONTAGE_MAX_PHOTOS} 張照片`
       : cleanLines.some((l) => !l)
@@ -152,12 +171,19 @@ export function TravelMontageForm({
     if (!enoughPhotos || writing) return;
     setWriting(true);
     try {
+      const sent = await fitPhotosToBudget(photos);
+      if (sent !== photos) setPhotos(sent);
+      const keys = photoKeys(sent);
       const res = await api.writeTravelMontageScript({
-        images: photos.map((p) => p.dataUrl),
+        images: sent.map((p) => p.dataUrl),
         place: place.trim() || undefined,
       });
+      if (photoKeys(photosRef.current) !== keys || res.lines.length !== sent.length) {
+        toast.info("照片有變動，請再按一次「AI 幫我寫」");
+        return;
+      }
       setLines(res.lines);
-      trackEvent("travel_montage_script_ai", { photos: photos.length });
+      trackEvent("travel_montage_script_ai", { photos: sent.length });
     } catch (e) {
       toast.error(friendlyError(e, "AI 這次沒寫出來，請再按一次或自己寫寫看"));
     } finally {
@@ -170,9 +196,10 @@ export function TravelMontageForm({
     submittingRef.current = true;
     setSubmitting(true);
     try {
+      const sent = await fitPhotosToBudget(photos);
       const res = await api.createTravelMontage({
-        images: photos.map((p) => p.dataUrl),
-        sizes: photos.map(({ width, height }) => ({ width, height })),
+        images: sent.map((p) => p.dataUrl),
+        sizes: sent.map(({ width, height }) => ({ width, height })),
         lines: cleanLines,
         voice,
         place: place.trim() || undefined,
@@ -186,7 +213,8 @@ export function TravelMontageForm({
     } catch (e) {
       // 斷線／逾時：伺服器可能已經收到 → 看清單多了一支製作中的遊記，就當作送出成功
       const latest = await reloadVideos();
-      if (latest?.some((v) => v.kind === "montage" && v.montage_progress && !knownIds.includes(v.id))) {
+      // 不管現在是製作中、做好了還是失敗，只要多了一支新的遊記，就代表伺服器收到了（別讓長輩重送重複付費）
+      if (latest?.some((v) => v.kind === "montage" && !knownIds.includes(v.id))) {
         setPhotos([]);
         setLines([]);
         toast.info("遊記已經送出，正在製作中，不用再送一次");
@@ -209,12 +237,12 @@ export function TravelMontageForm({
       {photos.length < MONTAGE_MAX_PHOTOS && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <label style={pickButton}>
-            <input type="file" accept="image/*" multiple onChange={handleFiles} style={hiddenInput} disabled={preparing} />
+            <input type="file" accept="image/*" multiple onChange={handleFiles} style={hiddenInput} disabled={preparing || writing} />
             <span style={{ fontSize: 32 }} aria-hidden="true">🖼️</span>
             {preparing ? "處理中…" : "從相簿選"}
           </label>
           <label style={pickButton}>
-            <input type="file" accept="image/*" capture="environment" onChange={handleFiles} style={hiddenInput} disabled={preparing} />
+            <input type="file" accept="image/*" capture="environment" onChange={handleFiles} style={hiddenInput} disabled={preparing || writing} />
             <span style={{ fontSize: 32 }} aria-hidden="true">📷</span>
             拍一張加進來
           </label>
@@ -255,6 +283,7 @@ export function TravelMontageForm({
                       )
                     }
                     rows={2}
+                    disabled={writing}
                     placeholder={i === 0 ? "例如：今天跟老伴來日月潭" : "這張想說什麼？"}
                     aria-label={`第 ${i + 1} 張的一句話`}
                     style={{
@@ -264,9 +293,9 @@ export function TravelMontageForm({
                     }}
                   />
                   <div style={{ display: "flex", gap: 6, marginTop: 8, alignItems: "center" }}>
-                    <button onClick={() => move(i, -1)} disabled={i === 0} aria-label="往前移" style={{ ...smallButton, opacity: i === 0 ? 0.35 : 1 }}>▲</button>
-                    <button onClick={() => move(i, 1)} disabled={i === photos.length - 1} aria-label="往後移" style={{ ...smallButton, opacity: i === photos.length - 1 ? 0.35 : 1 }}>▼</button>
-                    <button onClick={() => remove(i)} aria-label={`拿掉第 ${i + 1} 張`} style={smallButton}>✕</button>
+                    <button onClick={() => move(i, -1)} disabled={writing || i === 0} aria-label="往前移" style={{ ...smallButton, opacity: writing || i === 0 ? 0.35 : 1 }}>▲</button>
+                    <button onClick={() => move(i, 1)} disabled={writing || i === photos.length - 1} aria-label="往後移" style={{ ...smallButton, opacity: writing || i === photos.length - 1 ? 0.35 : 1 }}>▼</button>
+                    <button onClick={() => remove(i)} disabled={writing} aria-label={`拿掉第 ${i + 1} 張`} style={{ ...smallButton, opacity: writing ? 0.35 : 1 }}>✕</button>
                     <span style={{ marginLeft: "auto", fontSize: "var(--fs-xs)", color: "var(--ink-3)" }}>
                       {[...(lines[i] ?? "")].length}/{MONTAGE_LINE_MAX}
                     </span>
