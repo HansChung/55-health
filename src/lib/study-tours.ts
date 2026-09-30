@@ -90,6 +90,14 @@ export interface StudyTourView {
   stops: StudyTourStopView[];
   /** 我的報名（自己的＋我幫家人報的，不含已取消） */
   registrations: StudyTourRegistrationView[];
+  /** 領隊的集合廣播（有報名才看得到，新的在前） */
+  broadcasts: StudyTourBroadcast[];
+}
+
+export interface StudyTourBroadcast {
+  id: string;
+  message: string;
+  created_at: string;
 }
 
 export interface StudyTourElder {
@@ -158,6 +166,8 @@ export interface AdminStudyTourRegistration {
   completed_at: string | null;
   created_at: string;
   cancelled_at: string | null;
+  /** 報到時間（第一次掃碼自動記，或領隊手動按） */
+  checked_in_at: string | null;
 }
 
 // ── 時間（台灣時間） ──
@@ -465,6 +475,7 @@ export interface StudyTourRegistrationRow {
   completed_at: string | null;
   cancelled_at: string | null;
   created_at: string;
+  checked_in_at?: string | null;
 }
 
 export interface StudyTourStampRow {
@@ -483,6 +494,8 @@ export function buildStudyTourView(input: {
   myRegs: StudyTourRegistrationRow[];
   /** 我自己在這團的集章 */
   myStamps: StudyTourStampRow[];
+  /** 這團的集合廣播（只有報了名的人會拿到） */
+  broadcasts?: StudyTourBroadcast[];
   userId: string;
   now?: Date;
 }): StudyTourView {
@@ -544,6 +557,9 @@ export function buildStudyTourView(input: {
     registration_open: isRegistrationOpen(tour, input.now),
     stops,
     registrations,
+    broadcasts: registrations.length > 0
+      ? [...(input.broadcasts ?? [])].sort((a, b) => b.created_at.localeCompare(a.created_at))
+      : [],
   };
 }
 
@@ -567,4 +583,98 @@ export function csvCell(value: string | null | undefined): string {
   let v = value ?? "";
   if (/^[=+\-@\t\r]/.test(v)) v = `'${v}`;
   return /[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+}
+
+// ── 出發當天：行前提醒、集合廣播、家人抵達通知、報到 ──
+
+export type TourReminderKind = "day_before" | "same_day";
+
+/** 台灣日期 YYYY-MM-DD */
+export function taipeiDateKey(date: Date): string {
+  const p = taipeiParts(date);
+  return `${p.year}-${p.month}-${p.day}`;
+}
+
+/** 這團是不是在「今天／明天」（台灣日期）出發 */
+export function tourStartsOn(tour: { starts_at: string }, kind: TourReminderKind, now: Date = new Date()): boolean {
+  const target = new Date(now.getTime() + (kind === "day_before" ? 24 * 3600_000 : 0));
+  return taipeiDateKey(new Date(tour.starts_at)) === taipeiDateKey(target);
+}
+
+/** 行前提醒推播內容（候補的人只在前一天告知還在候補） */
+export function reminderMessage(
+  kind: TourReminderKind,
+  tour: { title: string; starts_at: string; meeting_point: string },
+  reg: { status: StudyTourRegistrationStatus; for_self: boolean; participant_name: string; waitlist_position?: number | null }
+): { title: string; body: string } | null {
+  const who = reg.for_self ? "" : `（${reg.participant_name}）`;
+  const when = formatTourClock(tour.starts_at);
+  const where = tour.meeting_point ? `在「${tour.meeting_point}」集合` : "準時集合";
+  if (reg.status === "waitlisted") {
+    if (kind !== "day_before") return null;
+    const pos = reg.waitlist_position ? `第 ${reg.waitlist_position} 位` : "中";
+    return { title: `⏳ 「${tour.title}」明天出發`, body: `${who}目前還在候補${pos}，有名額會馬上通知你` };
+  }
+  if (reg.status !== "confirmed") return null;
+  return kind === "day_before"
+    ? { title: `🧭 明天出發：${tour.title}`, body: `${who}${when} ${where}。記得帶水、帽子和常吃的藥` }
+    : { title: `🧭 今天出發：${tour.title}`, body: `${who}${when} ${where}，出門前記得帶藥喔` };
+}
+
+export const BROADCAST_MAX = 120;
+/** 領隊常用的集合廣播（點一下就帶入，可以再改） */
+export const BROADCAST_TEMPLATES = [
+  "10:30 在大門口集合",
+  "遊覽車在停車場等大家，請慢慢走過來",
+  "午餐時間到了，請到餐廳集合",
+  "下一站要出發了，請到集合點",
+] as const;
+
+export function sanitizeBroadcast(text: unknown): string {
+  if (typeof text !== "string") return "";
+  return text.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, BROADCAST_MAX);
+}
+
+/** 家人抵達通知的推播內容 */
+export function arrivalMessage(input: {
+  elderName: string;
+  tourTitle: string;
+  stopName: string;
+  stampedCount: number;
+  totalStops: number;
+  justCompleted: boolean;
+}): { title: string; body: string } {
+  if (input.justCompleted) {
+    return {
+      title: `🎓 ${input.elderName}完成了「${input.tourTitle}」`,
+      body: `集滿 ${input.totalStops} 個章，拿到結業證書了！`,
+    };
+  }
+  return {
+    title: `🏮 ${input.elderName}已抵達「${input.stopName}」`,
+    body: `${input.tourTitle}・第 ${input.stampedCount}／${input.totalStops} 站`,
+  };
+}
+
+/** 報到名單摘要（不算已取消的）：組數與人數 */
+export function checkinSummary(
+  regs: { status: StudyTourRegistrationStatus; party_size: number; checked_in_at: string | null }[]
+): { checkedGroups: number; groups: number; checkedPeople: number; people: number } {
+  const active = regs.filter((r) => r.status === "confirmed");
+  const checked = active.filter((r) => r.checked_in_at);
+  return {
+    checkedGroups: checked.length,
+    groups: active.length,
+    checkedPeople: checked.reduce((n, r) => n + r.party_size, 0),
+    people: active.reduce((n, r) => n + r.party_size, 0),
+  };
+}
+
+/** 廣播時間：今天的只寫時間，其他寫日期 */
+export function formatBroadcastTime(iso: string, now: Date = new Date()): string {
+  const d = new Date(iso);
+  const clock = formatTourClock(iso);
+  if (taipeiDateKey(d) === taipeiDateKey(now)) return `今天 ${clock}`;
+  const p = taipeiParts(d);
+  return `${Number(p.month)}/${Number(p.day)} ${clock}`;
 }

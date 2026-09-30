@@ -117,7 +117,7 @@ export default function Page() {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     const open = url.searchParams.get("open");
-    if (open && ["voice", "camera", "photo", "travel-video", "study-tours", "photo-ask"].includes(open)) {
+    if (open && ["voice", "camera", "photo", "travel-video", "study-tours", "photo-ask", "caregiver"].includes(open)) {
       pendingOpenRef.current = open;
     }
     // 研學團站點 QR：/?stamp=代碼 → 先記下來（還沒登入的話登入後再蓋），網址上的代碼馬上拿掉
@@ -169,6 +169,8 @@ export default function Page() {
       setStudyToursKey((k) => k + 1);
       setSubpage("study-tours");
     }
+    // 家人收到「長輩已抵達」通知點進來 → 家人狀況
+    else if (open === "caregiver") setSubpage("caregiver");
     else if (open === "photo-ask") {
       // 方案資料已載入就先擋；還沒載入就先打開，由 API 擋（回「升級」提示）
       const openPhotoAsk = () => {

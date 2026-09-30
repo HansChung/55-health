@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-guard";
 import { isStampToken, type StudyTourStampResult } from "@/lib/study-tours";
-import { studyTourDbError } from "@/lib/study-tours-server";
+import { notifyFamilyArrival, studyTourDbError } from "@/lib/study-tours-server";
 
 /**
  * 掃站點 QR Code 蓋章。
@@ -62,5 +62,19 @@ export async function POST(req: NextRequest) {
     completed: r.completed,
     just_completed: r.just_completed,
   };
+  // 蓋到新的章 → 通知長輩同意分享的家人「已抵達」（預設不通知；失敗不影響蓋章）
+  if (r.newly_stamped) {
+    after(() =>
+      notifyFamilyArrival(admin, {
+        elderId: user.id,
+        tourId: r.tour_id,
+        tourTitle: result.tour_title,
+        stopName: result.stop.name,
+        stampedCount: r.stamped_count,
+        totalStops: r.total_stops,
+        justCompleted: r.just_completed,
+      }).then(() => undefined)
+    );
+  }
   return NextResponse.json({ result });
 }

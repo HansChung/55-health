@@ -15,6 +15,7 @@ import type {
   AdminStudyTour,
   AdminStudyTourRegistration,
   AdminStudyTourStop,
+  StudyTourBroadcast,
   StudyTourElder,
   StudyTourRow,
   StudyTourStampResult,
@@ -465,9 +466,12 @@ export const api = {
     apiFetch<{ tour: StudyTourRow }>("/api/admin/study-tours", { method: "POST", json: input }),
 
   adminGetStudyTour: (id: string) =>
-    apiFetch<{ tour: StudyTourRow; stops: AdminStudyTourStop[]; registrations: AdminStudyTourRegistration[] }>(
-      `/api/admin/study-tours/${id}`
-    ),
+    apiFetch<{
+      tour: StudyTourRow;
+      stops: AdminStudyTourStop[];
+      registrations: AdminStudyTourRegistration[];
+      broadcasts: (StudyTourBroadcast & { recipients: number })[];
+    }>(`/api/admin/study-tours/${id}`),
 
   adminUpdateStudyTour: (id: string, patch: Record<string, unknown>) =>
     apiFetch<{ tour: StudyTourRow }>(`/api/admin/study-tours/${id}`, { method: "PATCH", json: patch }),
@@ -487,6 +491,18 @@ export const api = {
 
   adminDeleteStudyTourStop: (tourId: string, stopId: string) =>
     apiFetch<{ ok: true }>(`/api/admin/study-tours/${tourId}/stops/${stopId}`, { method: "DELETE" }),
+
+  adminCheckInStudyTourRegistration: (tourId: string, registrationId: string, checkedIn: boolean) =>
+    apiFetch<{ ok: true; checked_in_at: string | null }>(`/api/admin/study-tours/${tourId}/registrations/${registrationId}`, {
+      method: "PATCH",
+      json: { checked_in: checkedIn },
+    }),
+
+  adminBroadcastStudyTour: (tourId: string, message: string) =>
+    apiFetch<{ id: string; recipients: number; devices: number }>(`/api/admin/study-tours/${tourId}/broadcast`, {
+      method: "POST",
+      json: { message },
+    }),
 
   adminCancelStudyTourRegistration: (tourId: string, registrationId: string) =>
     apiFetch<{ ok: true; promoted: number }>(`/api/admin/study-tours/${tourId}/registrations/${registrationId}`, {
@@ -604,6 +620,8 @@ export interface FamilyPermissions {
   alerts?: boolean;
   diary?: boolean;
   voice?: boolean;
+  /** 研學團抵達通知（長輩同意才開，預設關） */
+  trips?: boolean;
 }
 
 /** 子女儀表板：單一長輩狀態總覽 */

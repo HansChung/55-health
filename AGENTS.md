@@ -127,6 +127,21 @@ stack works well for auth + meal/diary CRUD:
   `registered_by` is the family member. Share/push deep link: `/?open=study-tours&tour=<id>`.
 - Local e2e: SQL scenario + 20-way concurrency tests were run against the Supabase CLI stack; remember
   the local rate limit for OTP emails (`[auth.rate_limit] email_sent`, default 2/h).
+- 出發當天（needs `supabase/add-study-tour-day-ops.sql`）:
+  - **行前提醒**: Vercel cron `/api/cron/study-tour-reminders?kind=day_before` (12:00 UTC = 20:00 Taipei,
+    tours starting tomorrow) and `?kind=same_day` (22:00 UTC = 06:00 Taipei, tours starting that Taipei day).
+    Needs `CRON_SECRET`. Each registration is claimed by setting `reminded_*_at` **before** pushing, so a
+    re-run never double-sends. Confirmed → elder (+ the family member who registered them); waitlisted
+    only gets the day-before "still on the waitlist" note.
+  - **集合廣播**: admin `POST /api/admin/study-tours/[id]/broadcast` (≤120 chars) pushes to confirmed
+    participants + `registered_by`, and stores a row in `study_tour_broadcasts` (server-only RLS); the
+    elder's tour page / passport card shows the latest ones, so people without push still see them.
+  - **報到名單**: `checked_in_at` is set by the `study_tour_stamps_checkin` trigger on the first stamp;
+    elders without phones are checked in manually (`PATCH …/registrations/[regId]` `{checked_in}`).
+  - **家人抵達通知** is opt-in by the elder: `family_links.permissions.trips` (default off; asked once on
+    the tour page after registering, toggle in 家人共享). Sent from `after()` in the stamp route only when
+    a stamp is new. `family_links` has only select/insert RLS policies, so `PATCH`/`DELETE /api/family/[id]`
+    write with the service role filtered by `owner_id = user.id`.
 
 ### 拍照問暖暖（photo ask）
 - Home 「拍照問暖暖」, and a button on 研學團 pages (prefills the tour title as the place) → subpage

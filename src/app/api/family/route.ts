@@ -10,6 +10,7 @@ const InviteSchema = z.object({
     alerts: z.boolean().optional(),
     diary: z.boolean().optional(),
     voice: z.boolean().optional(),
+    trips: z.boolean().optional(),
   }).optional(),
 });
 
