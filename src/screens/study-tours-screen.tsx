@@ -26,6 +26,7 @@ import {
   registrationStatusLabel,
   seatsLabel,
   stampProgress,
+  taipeiDateKey,
   tourShareUrl,
   walkingLevelMeta,
   type StudyTourBroadcast,
@@ -33,6 +34,7 @@ import {
   type StudyTourRegistrationView,
   type StudyTourView,
 } from "@/lib/study-tours";
+import type { TourWeather } from "@/lib/weather";
 
 type View = "list" | "passport";
 
@@ -393,6 +395,8 @@ function TourDetail({
       )}
 
       {tour.broadcasts.length > 0 && <BroadcastBox broadcasts={tour.broadcasts.slice(0, 3)} />}
+
+      {tour.weather && tour.status === "published" && <WeatherCard weather={tour.weather} startsAt={tour.starts_at} />}
 
       {tour.registrations.length > 0 && tour.status === "published" && !isOver(tour) && (
         <>
@@ -885,6 +889,29 @@ function Certificate({ tour, onClose }: { tour: StudyTourView; onClose: () => vo
 }
 
 // ── 出發當天：領隊通知、開啟通知、家人抵達通知 ──
+
+/** 出發那個時段的天氣（中央氣象署，出發前 36 小時內才有） */
+function WeatherCard({ weather, startsAt }: { weather: TourWeather; startsAt: string }) {
+  const day = taipeiDateKey(new Date(startsAt)) === taipeiDateKey(new Date()) ? "今天" : "明天";
+  return (
+    <div style={{
+      marginTop: 14, padding: 14, borderRadius: "var(--r-md)",
+      background: "#EAF4FB", border: "2px solid #9CC7E4", display: "flex", gap: 12, alignItems: "flex-start",
+    }}>
+      <div style={{ fontSize: 36, lineHeight: 1 }} aria-hidden="true">{weather.emoji}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: "var(--fs-sm)", fontWeight: 800, color: "#2F5D7C" }}>
+          {day}出發時的天氣（{weather.county}）
+        </div>
+        <div style={{ fontSize: "var(--fs-base)", fontWeight: 700, lineHeight: 1.5, marginTop: 2 }}>{weather.summary}</div>
+        {weather.advice && (
+          <div style={{ fontSize: "var(--fs-base)", color: "var(--ink-1)", lineHeight: 1.5, marginTop: 4 }}>👉 {weather.advice}</div>
+        )}
+        <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-3)", marginTop: 4 }}>資料來源：中央氣象署</div>
+      </div>
+    </div>
+  );
+}
 
 function BroadcastBox({ broadcasts, compact }: { broadcasts: StudyTourBroadcast[]; compact?: boolean }) {
   return (

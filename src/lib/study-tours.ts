@@ -6,6 +6,7 @@
 // 名額／候補／蓋章的規則在 supabase/add-study-tours.sql 的函式裡（鎖住活動，避免超賣）。
 // ────────────────────────────────────────────────
 
+import { TAIWAN_COUNTIES, type TourWeather } from "./weather";
 import { z } from "zod";
 import { isHttpUrl } from "./url-safety";
 
@@ -92,6 +93,8 @@ export interface StudyTourView {
   registrations: StudyTourRegistrationView[];
   /** 領隊的集合廣播（有報名才看得到，新的在前） */
   broadcasts: StudyTourBroadcast[];
+  /** 出發前 36 小時內：出發那個時段的天氣預報 */
+  weather?: TourWeather | null;
 }
 
 export interface StudyTourBroadcast {
@@ -137,6 +140,7 @@ export interface AdminStudyTour {
   status: StudyTourStatus;
   created_at: string;
   updated_at: string;
+  weather_county?: string | null;
   counts: { confirmed_people: number; waitlisted_people: number; registrations: number; stops: number; completed: number };
 }
 
@@ -363,6 +367,8 @@ export const tourPatchSchema = z.object({
   walking_level: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
   accessibility_note: z.string().trim().max(500).optional(),
   contact_phone: z.string().trim().max(40).optional(),
+  // 天氣預報的縣市；null＝從集合地點自動判斷
+  weather_county: z.enum(TAIWAN_COUNTIES).nullable().optional(),
   registration_deadline: isoString.nullable().optional(),
   status: z.enum(["draft", "published", "cancelled"]).optional(),
 });
@@ -447,6 +453,8 @@ export interface StudyTourRow {
   status: StudyTourStatus;
   created_at: string;
   updated_at: string;
+  /** 天氣預報用哪個縣市（add-study-tour-weather.sql；null＝從集合地點判斷） */
+  weather_county?: string | null;
 }
 
 export interface StudyTourStopRow {
@@ -605,7 +613,9 @@ export function tourStartsOn(tour: { starts_at: string }, kind: TourReminderKind
 export function reminderMessage(
   kind: TourReminderKind,
   tour: { title: string; starts_at: string; meeting_point: string },
-  reg: { status: StudyTourRegistrationStatus; for_self: boolean; participant_name: string; waitlist_position?: number | null }
+  reg: { status: StudyTourRegistrationStatus; for_self: boolean; participant_name: string; waitlist_position?: number | null },
+  /** 出發時段的天氣一句（weatherReminderText）；沒有就不提 */
+  weather: string | null = null
 ): { title: string; body: string } | null {
   const who = reg.for_self ? "" : `（${reg.participant_name}）`;
   const when = formatTourClock(tour.starts_at);
@@ -616,9 +626,10 @@ export function reminderMessage(
     return { title: `⏳ 「${tour.title}」明天出發`, body: `${who}目前還在候補${pos}，有名額會馬上通知你` };
   }
   if (reg.status !== "confirmed") return null;
+  const sky = weather ? `\n${weather}` : "";
   return kind === "day_before"
-    ? { title: `🧭 明天出發：${tour.title}`, body: `${who}${when} ${where}。記得帶水、帽子和常吃的藥` }
-    : { title: `🧭 今天出發：${tour.title}`, body: `${who}${when} ${where}，出門前記得帶藥喔` };
+    ? { title: `🧭 明天出發：${tour.title}`, body: `${who}${when} ${where}。記得帶水、帽子和常吃的藥${sky}` }
+    : { title: `🧭 今天出發：${tour.title}`, body: `${who}${when} ${where}，出門前記得帶藥喔${sky}` };
 }
 
 export const BROADCAST_MAX = 120;
