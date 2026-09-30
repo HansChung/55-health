@@ -105,6 +105,14 @@ stack works well for auth + meal/diary CRUD:
   voice costs a one-time 18.8 算力 activation** and an unused voice expires after 7 days — `claimFirstUse`
   (`activating_until`) makes sure only one request does that first synthesis, and montages TTS only the first
   line on first use.
+- **遊記配樂**: `montage.music` picks a track from `MONTAGE_MUSIC` (`public/music/<id>.m4a`, also used for the
+  in-app preview). Tracks were generated once (2026-09-30) with Suno v4.5 via lk888 (instrumental), then cut to
+  90 s, normalized to -28 LUFS with two-pass `loudnorm`, 4 s fade-out, AAC 96k — keep new tracks at that level.
+  `buildMuxArgs` loops the track, fades it in/out and ducks it under the narration (`sidechaincompress`); the
+  mono narration is copied to both channels with `pan` (not `aformat`, which is −3 dB). The final mux reads the
+  file from `process.cwd()/public/music`, so every route that can advance a montage lists `./public/music/*.m4a`
+  in `outputFileTracingIncludes`; a missing file only logs a warning and the video is made without music.
+  Single-photo (H3) videos have their own ambient audio and get no music.
 - Needs `supabase/add-travel-videos.sql` (table, bucket, `ai_usage` service `minimax_video`,
   `subscription_plans.ai_video_quota`). Quota counts non-failed rows incl. soft-deleted ones.
   "One pending video per user" is enforced by the partial unique index

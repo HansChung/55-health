@@ -5,7 +5,7 @@
 // 影片在暖暖自己的伺服器上做（照片慢慢移動＋配音＋字幕），通常 1～3 分鐘
 // ────────────────────────────────────────────────
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, ApiError } from "@/lib/api-client";
 import { compressImage } from "@/lib/image-utils";
 import { useToast } from "@/hooks/use-toast";
@@ -16,8 +16,12 @@ import {
   MONTAGE_LINE_MAX,
   MONTAGE_MAX_PHOTOS,
   MONTAGE_MIN_PHOTOS,
+  DEFAULT_MONTAGE_MUSIC,
+  MONTAGE_MUSIC,
   MY_VOICE,
   TRAVEL_VIDEO_PLACE_MAX,
+  montageMusicFile,
+  type MontageMusicId,
   sanitizeMontageLine,
   type MyVoiceStatus,
   type NarrationAccentId,
@@ -106,6 +110,30 @@ export function TravelMontageForm({
   const [photos, setPhotos] = useState<MontagePhotoDraft[]>([]);
   const [lines, setLines] = useState<string[]>([]);
   const [place, setPlace] = useState("");
+  // 配樂：點一下就選、同時播 12 秒試聽；null＝不要音樂
+  const [music, setMusic] = useState<MontageMusicId | null>(DEFAULT_MONTAGE_MUSIC);
+  const [previewing, setPreviewing] = useState<MontageMusicId | null>(null);
+  const previewRef = useRef<HTMLAudioElement | null>(null);
+  const previewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stopPreview = () => {
+    previewRef.current?.pause();
+    if (previewTimer.current) clearTimeout(previewTimer.current);
+    setPreviewing(null);
+  };
+  useEffect(() => () => {
+    previewRef.current?.pause();
+    if (previewTimer.current) clearTimeout(previewTimer.current);
+  }, []);
+  const pickMusic = (id: MontageMusicId | null) => {
+    setMusic(id);
+    stopPreview();
+    if (!id) return;
+    const audio = (previewRef.current ??= new Audio());
+    audio.src = montageMusicFile(id);
+    audio.currentTime = 0;
+    audio.play().then(() => setPreviewing(id)).catch(() => { /* 瀏覽器不讓播就算了 */ });
+    previewTimer.current = setTimeout(stopPreview, 12_000);
+  };
   const [preparing, setPreparing] = useState(false);
   const [writing, setWriting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -201,6 +229,7 @@ export function TravelMontageForm({
     if (reason || submittingRef.current) return;
     submittingRef.current = true;
     setSubmitting(true);
+    stopPreview();
     try {
       const sent = await fitPhotosToBudget(photos);
       const res = await api.createTravelMontage({
@@ -209,9 +238,10 @@ export function TravelMontageForm({
         lines: cleanLines,
         voice,
         accent: voice === MY_VOICE ? undefined : accent,
+        music,
         place: place.trim() || undefined,
       });
-      trackEvent("travel_montage_create", { photos: photos.length, voice, accent: voice === MY_VOICE ? null : accent });
+      trackEvent("travel_montage_create", { photos: photos.length, voice, accent: voice === MY_VOICE ? null : accent, music });
       onCreated(res.video, res.quota);
       setPhotos([]);
       setLines([]);
@@ -340,9 +370,42 @@ export function TravelMontageForm({
         />
       </div>
 
-      {/* ④ 地點 */}
+      {/* ④ 配樂 */}
+      <div style={sectionTitle}>
+        ④ 配樂<span style={{ fontWeight: 500, color: "var(--ink-3)", fontSize: "var(--fs-sm)" }}>（點一下可以試聽，說話時會自動變小聲）</span>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} role="group" aria-label="配樂">
+        {[{ id: null, label: "不要音樂", emoji: "🔇" }, ...MONTAGE_MUSIC].map((m) => {
+          const active = music === m.id;
+          return (
+            <button
+              key={m.id ?? "none"}
+              onClick={() => pickMusic(m.id)}
+              aria-pressed={active}
+              style={{
+                padding: "12px 10px", minHeight: 52, borderRadius: "var(--r-md)",
+                background: active ? "var(--primary-soft)" : "var(--surface)",
+                border: `3px solid ${active ? "var(--primary)" : "var(--line)"}`,
+                fontSize: "var(--fs-base)", fontWeight: 700, color: "var(--ink-1)", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              }}
+            >
+              <span aria-hidden="true">{m.emoji}</span>
+              <span>{m.label}</span>
+              {previewing === m.id && <span aria-label="試聽中">🔊</span>}
+            </button>
+          );
+        })}
+      </div>
+      {previewing && (
+        <button onClick={stopPreview} className="btn-ghost" style={{ marginTop: 10, width: "100%", fontSize: "var(--fs-sm)" }}>
+          ⏹ 停止試聽
+        </button>
+      )}
+
+      {/* ⑤ 地點 */}
       <label htmlFor="montage-place" style={{ ...sectionTitle, display: "block" }}>
-        ④ 去了哪裡？<span style={{ fontWeight: 500, color: "var(--ink-3)", fontSize: "var(--fs-sm)" }}>（可以不填）</span>
+        ⑤ 去了哪裡？<span style={{ fontWeight: 500, color: "var(--ink-3)", fontSize: "var(--fs-sm)" }}>（可以不填）</span>
       </label>
       <input
         id="montage-place"

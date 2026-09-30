@@ -95,6 +95,24 @@ describe("遊記影片：ffmpeg 參數", () => {
     expect(args.slice(args.indexOf("-t"), args.indexOf("-t") + 2)).toEqual(["-t", "15.50"]);
   });
 
+  it("有配樂：循環讀入、淡入淡出、說話時自動壓低，口白以原音量轉成立體聲", () => {
+    const args = buildMuxArgs({ listPath: "/t/list.txt", audioPaths: ["/t/a0.wav", "/t/a1.wav"], clipSeconds: [6, 7], outPath: "/t/o.mp4", musicPath: "/m/warm.m4a" });
+    const i = args.indexOf("/m/warm.m4a");
+    expect(args.slice(i - 3, i + 1)).toEqual(["-stream_loop", "-1", "-i", "/m/warm.m4a"]);
+    const graph = args[args.indexOf("-filter_complex") + 1];
+    expect(graph).toContain("apad,atrim=0:13.00[narr]");
+    expect(graph).toContain("[narr]pan=stereo|c0=c0|c1=c0,asplit=2[voice][key]");
+    expect(graph).toContain("[3:a]aresample=44100,atrim=0:13.00,asetpts=PTS-STARTPTS,afade=t=in:d=1.5,afade=t=out:st=10.00:d=3[bgm]");
+    expect(graph).toContain("[bgm][key]sidechaincompress=");
+    expect(graph.endsWith("[voice][duck]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[aout]")).toBe(true);
+  });
+
+  it("沒有配樂：跟原本一樣只有口白", () => {
+    const args = buildMuxArgs({ listPath: "/t/list.txt", audioPaths: ["/t/a0.wav"], clipSeconds: [6], outPath: "/t/o.mp4", musicPath: null });
+    expect(args).not.toContain("-stream_loop");
+    expect(args[args.indexOf("-filter_complex") + 1]).not.toContain("sidechaincompress");
+  });
+
   it("concat 清單的路徑有單引號也不會壞", () => {
     expect(buildConcatList(["/tmp/a.mp4", "/tmp/it's.mp4"])).toBe("file '/tmp/a.mp4'\nfile '/tmp/it'\\''s.mp4'\n");
   });

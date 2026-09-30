@@ -127,27 +127,50 @@ export function narrationStarts(clipSeconds: number[]): number[] {
   });
 }
 
-/** 片段接起來（不重新編碼）＋口白依序疊上 */
+/**
+ * 配樂的混音：配樂檔已事先做成 -28 LUFS（public/music），這裡只做淡入淡出，
+ * 並在有人說話時自動壓低（sidechaincompress 以口白當觸發），讓長輩聽得清楚
+ */
+export function buildMusicGraph(musicInput: number, total: number): string[] {
+  const t = total.toFixed(2);
+  const fadeOutStart = Math.max(0, total - 3).toFixed(2);
+  return [
+    // 口白是單聲道：左右聲道各複製一份（用 aformat 轉會小 3dB），混出來的配樂才不會被壓成單聲道
+    "[narr]pan=stereo|c0=c0|c1=c0,asplit=2[voice][key]",
+    `[${musicInput}:a]aresample=44100,atrim=0:${t},asetpts=PTS-STARTPTS,` +
+      `afade=t=in:d=1.5,afade=t=out:st=${fadeOutStart}:d=3[bgm]`,
+    "[bgm][key]sidechaincompress=threshold=0.015:ratio=6:attack=30:release=600[duck]",
+    "[voice][duck]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[aout]",
+  ];
+}
+
+/** 片段接起來（不重新編碼）＋口白依序疊上；有配樂就墊在底下 */
 export function buildMuxArgs(opts: {
   listPath: string;
   audioPaths: string[];
   clipSeconds: number[];
   outPath: string;
+  /** 配樂檔（public/music/*.m4a）；沒有就只有口白 */
+  musicPath?: string | null;
 }): string[] {
   const total = opts.clipSeconds.reduce((a, b) => a + b, 0);
   const starts = narrationStarts(opts.clipSeconds);
   const delays = opts.audioPaths.map(
     (_, i) => `[${i + 1}:a]aresample=44100,adelay=${Math.round(starts[i] * 1000)}:all=1[a${i}]`
   );
+  const withMusic = Boolean(opts.musicPath);
   const mix =
     opts.audioPaths.map((_, i) => `[a${i}]`).join("") +
     `amix=inputs=${opts.audioPaths.length}:duration=longest:dropout_transition=0:normalize=0,` +
-    `apad,atrim=0:${total.toFixed(2)}[aout]`;
+    `apad,atrim=0:${total.toFixed(2)}${withMusic ? "[narr]" : "[aout]"}`;
+  const music = withMusic ? buildMusicGraph(opts.audioPaths.length + 1, total) : [];
   return [
     "-hide_banner", "-y",
     "-f", "concat", "-safe", "0", "-i", opts.listPath,
     ...opts.audioPaths.flatMap((p) => ["-i", p]),
-    "-filter_complex", [...delays, mix].join(";"),
+    // 配樂比影片短也不會斷（循環播放）
+    ...(withMusic ? ["-stream_loop", "-1", "-i", opts.musicPath as string] : []),
+    "-filter_complex", [...delays, mix, ...music].join(";"),
     "-map", "0:v", "-map", "[aout]",
     "-c:v", "copy",
     "-c:a", "aac", "-b:a", "128k", "-ar", "44100",
@@ -218,6 +241,7 @@ export async function muxMontage(opts: {
   narrations: Buffer[];
   clipSeconds: number[];
   deadline: number;
+  musicPath?: string | null;
 }): Promise<Buffer> {
   const left = () => opts.deadline - Date.now();
   if (left() < 5_000) throw new ComposeBudgetError();
@@ -244,7 +268,7 @@ export async function muxMontage(opts: {
     await writeFile(listPath, buildConcatList(clipPaths), "utf8");
     const outPath = path.join(dir, "montage.mp4");
     const result = await runFfmpeg(
-      buildMuxArgs({ listPath, audioPaths, clipSeconds: opts.clipSeconds, outPath }),
+      buildMuxArgs({ listPath, audioPaths, clipSeconds: opts.clipSeconds, outPath, musicPath: opts.musicPath }),
       Math.min(MUX_TIMEOUT_MS, left())
     );
     if (result.code !== 0) throw new Error(`ffmpeg mux exited ${result.code}: ${result.stderr.slice(-600)}`);
