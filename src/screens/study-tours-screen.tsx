@@ -26,7 +26,7 @@ import {
   registrationStatusLabel,
   seatsLabel,
   stampProgress,
-  taipeiDateKey,
+  tourDayLabel,
   tourShareUrl,
   walkingLevelMeta,
   type StudyTourBroadcast,
@@ -892,7 +892,7 @@ function Certificate({ tour, onClose }: { tour: StudyTourView; onClose: () => vo
 
 /** 出發那個時段的天氣（中央氣象署，出發前 36 小時內才有） */
 function WeatherCard({ weather, startsAt }: { weather: TourWeather; startsAt: string }) {
-  const day = taipeiDateKey(new Date(startsAt)) === taipeiDateKey(new Date()) ? "今天" : "明天";
+  const day = tourDayLabel(startsAt);
   return (
     <div style={{
       marginTop: 14, padding: 14, borderRadius: "var(--r-md)",

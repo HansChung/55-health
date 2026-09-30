@@ -10,9 +10,13 @@ function cwa36hUrl(): string {
   return `${(process.env.CWA_API_BASE || "https://opendata.cwa.gov.tw").replace(/\/+$/, "")}/api/v1/rest/datastore/F-C0032-001`;
 }
 const CACHE_MS = 30 * 60 * 1000;
+/** 查不到（逾時、金鑰錯誤…）也記一下，5 分鐘內不再打，免得每一團都等一次逾時 */
+const FAIL_CACHE_MS = 5 * 60 * 1000;
 const TIMEOUT_MS = 6_000;
 
-const cache = new Map<TaiwanCounty, { at: number; periods: ForecastPeriod[] }>();
+const cache = new Map<TaiwanCounty, { at: number; periods: ForecastPeriod[] | null }>();
+/** 同一個縣市同時只查一次（好幾團在同一個縣市時共用） */
+const inflight = new Map<TaiwanCounty, Promise<ForecastPeriod[] | null>>();
 
 export function isWeatherConfigured(): boolean {
   return Boolean(process.env.CWA_API_KEY);
@@ -23,7 +27,15 @@ export async function countyForecast(county: TaiwanCounty): Promise<ForecastPeri
   const key = process.env.CWA_API_KEY;
   if (!key) return null;
   const hit = cache.get(county);
-  if (hit && Date.now() - hit.at < CACHE_MS) return hit.periods;
+  if (hit && Date.now() - hit.at < (hit.periods ? CACHE_MS : FAIL_CACHE_MS)) return hit.periods;
+  const running = inflight.get(county);
+  if (running) return running;
+  const task = fetchCountyForecast(county, key).finally(() => inflight.delete(county));
+  inflight.set(county, task);
+  return task;
+}
+
+async function fetchCountyForecast(county: TaiwanCounty, key: string): Promise<ForecastPeriod[] | null> {
   try {
     const url = `${cwa36hUrl()}?${new URLSearchParams({ Authorization: key, locationName: county, format: "JSON" })}`;
     const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS), cache: "no-store" });
@@ -34,6 +46,7 @@ export async function countyForecast(county: TaiwanCounty): Promise<ForecastPeri
     return periods;
   } catch (e) {
     console.warn(`[weather] ${county} forecast failed:`, e instanceof Error ? e.message : e);
+    cache.set(county, { at: Date.now(), periods: null });
     return null;
   }
 }
@@ -55,4 +68,22 @@ export async function tourForecast(tour: {
   const periods = await countyForecast(county);
   const period = periods ? periodAt(periods, tour.starts_at) : null;
   return period ? { county, period } : null;
+}
+
+/**
+ * 好幾團一起查（同時送出），整體最多等 budgetMs；沒查到的當作沒有天氣。
+ * 行前提醒用：天氣再慢也不能拖到提醒本身發不出去
+ */
+export async function tourForecasts<T extends { id: string; weather_county?: string | null; meeting_point: string; title: string; starts_at: string }>(
+  tours: T[],
+  budgetMs = 8_000
+): Promise<Map<string, { county: TaiwanCounty; period: ForecastPeriod } | null>> {
+  const result = new Map<string, { county: TaiwanCounty; period: ForecastPeriod } | null>();
+  const all = Promise.all(
+    tours.map((t) => tourForecast(t).then((f) => void result.set(t.id, f)).catch(() => void result.set(t.id, null)))
+  );
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  await Promise.race([all, new Promise<void>((r) => { timer = setTimeout(r, budgetMs); })]);
+  clearTimeout(timer);
+  return result;
 }

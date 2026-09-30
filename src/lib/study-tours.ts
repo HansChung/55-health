@@ -598,6 +598,17 @@ export function csvCell(value: string | null | undefined): string {
 export type TourReminderKind = "day_before" | "same_day";
 
 /** 台灣日期 YYYY-MM-DD */
+/** 活動是哪一天（以台灣日期比）：今天／明天／後天／昨天，其他顯示 10/3 */
+export function tourDayLabel(startsAt: string, now: Date = new Date()): string {
+  const day = (d: Date) => Date.parse(`${taipeiDateKey(d)}T00:00:00Z`);
+  const start = new Date(startsAt);
+  const diff = Math.round((day(start) - day(now)) / 86_400_000);
+  const named: Record<number, string> = { [-1]: "昨天", 0: "今天", 1: "明天", 2: "後天" };
+  if (named[diff]) return named[diff];
+  const [, m, d] = taipeiDateKey(start).split("-");
+  return `${Number(m)}/${Number(d)}`;
+}
+
 export function taipeiDateKey(date: Date): string {
   const p = taipeiParts(date);
   return `${p.year}-${p.month}-${p.day}`;

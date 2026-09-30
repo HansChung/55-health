@@ -5,7 +5,7 @@
 import { randomBytes } from "node:crypto";
 import { createSupabaseAdmin } from "@/lib/supabase/server";
 import { sendPushToUser } from "@/lib/push/send";
-import { tourForecast } from "@/lib/weather-server";
+import { tourForecast, tourForecasts } from "@/lib/weather-server";
 import { toTourWeather, weatherReminderText } from "@/lib/weather";
 import {
   arrivalMessage,
@@ -482,11 +482,12 @@ export async function sendTourReminders(
   );
 
   const column = kind === "day_before" ? "reminded_day_before_at" : "reminded_same_day_at";
+  // 出發那個時段的天氣（中央氣象署）：所有團一起查、整體最多等 8 秒；沒設金鑰或查不到就不帶
+  const forecasts = await tourForecasts(tours);
   let reminded = 0;
   let devices = 0;
   for (const tour of tours) {
-    // 出發那個時段的天氣（中央氣象署；沒設金鑰或查不到就不帶）
-    const forecast = await tourForecast(tour);
+    const forecast = forecasts.get(tour.id);
     const weather = forecast ? weatherReminderText(forecast.period) : null;
     const { data: regsData, error: regsError } = await admin
       .from("study_tour_registrations")
