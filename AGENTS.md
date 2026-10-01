@@ -105,6 +105,11 @@ stack works well for auth + meal/diary CRUD:
   voice costs a one-time 18.8 算力 activation** and an unused voice expires after 7 days — `claimFirstUse`
   (`activating_until`) makes sure only one request does that first synthesis, and montages TTS only the first
   line on first use.
+- **分享頁 `/v/<video id>`** (`src/app/v/[id]/page.tsx`): 「分享給家人」 now shares this page instead of the raw
+  mp4 URL, so LINE shows the photo + title (`openGraph` from `videoShareMeta`; no elder name — links get
+  forwarded; `robots: noindex`). Anyone with the link can watch (same exposure as the old public mp4 link);
+  only the owner / family who can see videos (logged in) get reactions & comments, everyone else gets an
+  「打開暖暖」 button (`/?open=caregiver`). Deleted or unfinished videos show a "deleted" message.
 - **遊記配樂**: `montage.music` picks a track from `MONTAGE_MUSIC` (`public/music/<id>.m4a`, also used for the
   in-app preview). Tracks were generated once (2026-09-30) with Suno v4.5 via lk888 (instrumental), then cut to
   90 s, normalized to -28 LUFS with two-pass `loudnorm`, 4 s fade-out, AAC 96k — keep new tracks at that level.
