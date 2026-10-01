@@ -7,6 +7,8 @@ import {
   sanitizePlace,
   TRAVEL_VIDEO_PLACE_MAX,
   TRAVEL_VIDEO_STYLES,
+  videoShareMeta,
+  videoSharePath,
 } from "./travel-video";
 
 describe("buildTravelVideoPrompt", () => {
@@ -136,5 +138,23 @@ describe("travelVideoExtrasLimit", () => {
     expect(travelVideoExtrasLimit(6)).toBe(48);
     expect(travelVideoExtrasLimit(0)).toBe(5);
     expect(travelVideoExtrasLimit(99999)).toBe(Number.POSITIVE_INFINITY);
+  });
+});
+
+describe("影片分享頁", () => {
+  it("網址", () => {
+    expect(videoSharePath("77777777-7777-4777-8777-777777777777")).toBe("/v/77777777-7777-4777-8777-777777777777");
+  });
+  it("標題：地點＋種類；說明：口白（太長會截斷），不放長輩名字", () => {
+    expect(videoShareMeta({ kind: "montage", place: "日月潭", narration_text: null, montage_lines: ["今天來日月潭", "湖水好漂亮"] })).toEqual({
+      title: "日月潭・遊記影片",
+      description: "「今天來日月潭／湖水好漂亮」用暖暖做的遊記影片",
+    });
+    expect(videoShareMeta({ kind: "single", place: null, narration_text: null, montage_lines: null })).toEqual({
+      title: "出遊回憶影片",
+      description: "用暖暖做的出遊回憶影片，點開來看看",
+    });
+    const long = videoShareMeta({ kind: "single", place: "鹿港", narration_text: "好".repeat(80), montage_lines: null });
+    expect(long.description).toContain("…」");
   });
 });

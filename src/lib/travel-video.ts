@@ -436,3 +436,22 @@ export interface TravelVideoQuota {
   limit: number;
   tier: string;
 }
+
+// ── 分享頁（/v/<影片 id>）：LINE 會抓縮圖和標題，打開就能播放 ──
+
+export function videoSharePath(id: string): string {
+  return `/v/${encodeURIComponent(id)}`;
+}
+
+/** 分享頁的標題與說明（LINE／FB 預覽用）。不放長輩的名字：連結可能被轉傳出去 */
+export function videoShareMeta(v: Pick<TravelVideo, "kind" | "place" | "narration_text" | "montage_lines">): {
+  title: string;
+  description: string;
+} {
+  const what = v.kind === "montage" ? "遊記影片" : "出遊回憶影片";
+  const title = v.place ? `${v.place}・${what}` : what;
+  const lines = v.kind === "montage" ? (v.montage_lines ?? []) : v.narration_text ? [v.narration_text] : [];
+  const said = lines.filter(Boolean).join("／");
+  const description = said ? `「${said.length > 60 ? `${said.slice(0, 60)}…` : said}」用暖暖做的${what}` : `用暖暖做的${what}，點開來看看`;
+  return { title, description };
+}
