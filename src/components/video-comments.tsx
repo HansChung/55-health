@@ -8,6 +8,8 @@
 import { useEffect, useRef, useState } from "react";
 import { api, ApiError } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
+import { DictationButton } from "@/components/dictation-button";
+import { appendDictation } from "@/lib/dictation";
 import { blobToDataUrl, useVoiceRecorder } from "@/hooks/use-voice-recorder";
 import { trackEvent } from "@/lib/telemetry";
 import { canSpeakGuide, speakGuideParagraphs, stopGuideSpeech } from "@/lib/speak-guide";
@@ -314,6 +316,12 @@ export function VideoComments({
               🎤 錄一段話{viewer === "owner" ? "回覆" : "給他"}
             </button>
           )}
+          {/* 用說的：放在輸入框上面一行（同一行的話手機上輸入框會太窄） */}
+          <DictationButton
+            where="comment"
+            disabled={busy}
+            onText={(heard) => setText((prev) => appendDictation(prev, heard, VIDEO_COMMENT_MAX))}
+          />
           <form
             onSubmit={(e) => {
               e.preventDefault();

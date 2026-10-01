@@ -15,6 +15,8 @@ import { trackEvent } from "@/lib/telemetry";
 import { enableWebPush, hasWebPushSubscription, isWebPushSupported } from "@/lib/push/client";
 import { TravelMontageForm } from "@/components/travel-montage-form";
 import { VideoComments } from "@/components/video-comments";
+import { DictationButton } from "@/components/dictation-button";
+import { appendDictation } from "@/lib/dictation";
 import { publicAppOrigin } from "@/lib/study-tours";
 import { NarrationVoicePicker, myVoiceReady } from "@/components/narration-voice-picker";
 import { MyVoiceSheet } from "@/components/my-voice-sheet";
@@ -611,6 +613,11 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
               borderRadius: "var(--r-md)", border: "2px solid var(--line)", background: "var(--surface)",
               color: "var(--ink-1)", boxSizing: "border-box", resize: "none", fontFamily: "inherit",
             }}
+          />
+          <DictationButton
+            where="narration"
+            disabled={writing}
+            onText={(heard) => setScript((prev) => appendDictation(prev, heard, NARRATION_MAX_CHARS))}
           />
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <button

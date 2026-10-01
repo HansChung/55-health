@@ -110,6 +110,11 @@ stack works well for auth + meal/diary CRUD:
   forwarded; `robots: noindex`). Anyone with the link can watch (same exposure as the old public mp4 link);
   only the owner / family who can see videos (logged in) get reactions & comments, everyone else gets an
   「打開暖暖」 button (`/?open=caregiver`). Deleted or unfinished videos show a "deleted" message.
+- **說話變文字** (`DictationButton` / `useDictation`): 「🗣️ 用說的」 on video comments, the single-video narration
+  and each montage line, using the browser's own `SpeechRecognition`/`webkitSpeechRecognition` (`zh-TW`,
+  one sentence per tap, free; Chrome sends audio to Google, Safari to Apple). It only renders when the API
+  exists — not in the Capacitor Android WebView or Firefox, where people just type. Newer Chrome exposes the
+  unprefixed `SpeechRecognition`, so mocks in tests must replace both names.
 - **遊記配樂**: `montage.music` picks a track from `MONTAGE_MUSIC` (`public/music/<id>.m4a`, also used for the
   in-app preview). Tracks were generated once (2026-09-30) with Suno v4.5 via lk888 (instrumental), then cut to
   90 s, normalized to -28 LUFS with two-pass `loudnorm`, 4 s fade-out, AAC 96k — keep new tracks at that level.
