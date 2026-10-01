@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { isVoiceExpired, toMyVoice, voiceCloneAllowed, type VoiceCloneRow } from "./voice-clone-server";
-import { buildToWavArgs, isWav, wavRms } from "./audio-convert";
+import { SAFE_AUDIO_INPUT, buildToWavArgs, isWav, wavRms } from "./audio-convert";
 
 function row(over: Partial<VoiceCloneRow> = {}): VoiceCloneRow {
   return {
@@ -72,5 +72,16 @@ describe("錄音檢查", () => {
     expect(args).toEqual(expect.arrayContaining(["-ac", "1", "-ar", "24000", "-c:a", "pcm_s16le", "-t", "60"]));
     expect(args[args.length - 1]).toBe("/tmp/out.wav");
     expect(buildToWavArgs("/tmp/in", "/tmp/out.wav")).not.toContain("-t");
+  });
+});
+
+describe("ffmpeg 讀使用者上傳的錄音：只准本機檔案、只准錄音格式（防 SSRF）", () => {
+  it("whitelist 放在 -i 前面", () => {
+    const args = buildToWavArgs("/tmp/in.bin", "/tmp/out.wav", 60);
+    const i = args.indexOf("-i");
+    expect(args.slice(i - SAFE_AUDIO_INPUT.length, i)).toEqual(SAFE_AUDIO_INPUT);
+    expect(SAFE_AUDIO_INPUT).toEqual(expect.arrayContaining(["-protocol_whitelist", "file"]));
+    const formats = SAFE_AUDIO_INPUT[SAFE_AUDIO_INPUT.indexOf("-format_whitelist") + 1];
+    expect(formats).not.toMatch(/dash|hls|concat|http/);
   });
 });

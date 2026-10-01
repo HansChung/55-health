@@ -99,6 +99,9 @@ export function buildClipArgs(opts: {
   ].join(";");
   return [
     "-hide_banner", "-y",
+    // 照片是使用者上傳的：只准讀本機檔案、只准圖片格式（偽裝成照片的串流清單會讓伺服器去連任意網址）
+    "-protocol_whitelist", "file",
+    "-format_whitelist", "image2,jpeg_pipe,png_pipe,webp_pipe",
     "-i", opts.photoPath,
     "-filter_complex", graph,
     "-map", "[v]",

@@ -79,6 +79,12 @@ describe("遊記影片：ffmpeg 參數", () => {
     expect(args.slice(args.indexOf("-frames:v"), args.indexOf("-frames:v") + 2)).toEqual(["-frames:v", "113"]);
   });
 
+  it("照片是使用者上傳的：只准本機檔案、只准圖片格式（防 SSRF）", () => {
+    const args = buildClipArgs({ photoPath: "/t/p.jpg", assPath: null, fontsDir: "f", size, seconds: 4, variant: 1, outPath: "o" });
+    const i = args.indexOf("-i");
+    expect(args.slice(i - 4, i)).toEqual(["-protocol_whitelist", "file", "-format_whitelist", "image2,jpeg_pipe,png_pipe,webp_pipe"]);
+  });
+
   it("沒有字幕時不加 ass 濾鏡", () => {
     const args = buildClipArgs({ photoPath: "p", assPath: null, fontsDir: "f", size, seconds: 4, variant: 1, outPath: "o" });
     expect(args[args.indexOf("-filter_complex") + 1]).not.toContain("ass=");

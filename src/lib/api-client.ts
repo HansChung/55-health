@@ -202,6 +202,13 @@ export const api = {
     apiFetch<{ comments: VideoCommentsView }>(`/api/ai/travel-video/${id}/comments`, { method: "POST", json: { emoji } }),
   commentOnVideo: (id: string, body: string) =>
     apiFetch<{ comments: VideoCommentsView }>(`/api/ai/travel-video/${id}/comments`, { method: "POST", json: { body } }),
+  // 語音留言：錄音 dataURL（轉檔約幾秒）
+  voiceCommentOnVideo: (id: string, audio: string) =>
+    apiFetch<{ comments: VideoCommentsView }>(`/api/ai/travel-video/${id}/comments`, {
+      method: "POST",
+      json: { audio },
+      timeoutMs: 65000,
+    }),
   deleteVideoComment: (id: string, commentId: string) =>
     apiFetch<{ comments: VideoCommentsView }>(`/api/ai/travel-video/${id}/comments/${commentId}`, { method: "DELETE" }),
   // 家人看長輩的出遊影片
