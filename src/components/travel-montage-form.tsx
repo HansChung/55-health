@@ -337,9 +337,12 @@ export function TravelMontageForm({
                       compact
                       where="montage"
                       disabled={writing}
-                      onText={(heard) =>
-                        setLines((prev) => prev.map((l, k) => (k === i ? appendDictation(l, heard, MONTAGE_LINE_MAX) : l)))
-                      }
+                      onText={(heard) => {
+                        // 說話時可能按了 ▲▼ 換順序或拿掉照片：用照片本身找它現在在第幾張，不用開始說話時的位置
+                        const at = photosRef.current.findIndex((x) => x.key === p.key);
+                        if (at < 0) return;
+                        setLines((prev) => prev.map((l, k) => (k === at ? appendDictation(l, heard, MONTAGE_LINE_MAX) : l)));
+                      }}
                     />
                     <span style={{ marginLeft: "auto", fontSize: "var(--fs-xs)", color: "var(--ink-3)", paddingTop: 8 }}>
                       {[...(lines[i] ?? "")].length}/{MONTAGE_LINE_MAX}
