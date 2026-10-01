@@ -11,6 +11,8 @@ import { compressImage } from "@/lib/image-utils";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/telemetry";
 import { NarrationVoicePicker } from "@/components/narration-voice-picker";
+import { DictationButton } from "@/components/dictation-button";
+import { appendDictation } from "@/lib/dictation";
 import {
   MONTAGE_CLIENT_TARGET_CHARS,
   MONTAGE_LINE_MAX,
@@ -329,13 +331,27 @@ export function TravelMontageForm({
                       resize: "none", fontFamily: "inherit",
                     }}
                   />
-                  <div style={{ display: "flex", gap: 6, marginTop: 8, alignItems: "center" }}>
+                  {/* 用說的＋字數；手機上一行放不下所以跟排序按鈕分開 */}
+                  <div style={{ display: "flex", gap: 6, marginTop: 6, alignItems: "flex-start" }}>
+                    <DictationButton
+                      compact
+                      where="montage"
+                      disabled={writing}
+                      onText={(heard) => {
+                        // 說話時可能按了 ▲▼ 換順序或拿掉照片：用照片本身找它現在在第幾張，不用開始說話時的位置
+                        const at = photosRef.current.findIndex((x) => x.key === p.key);
+                        if (at < 0) return;
+                        setLines((prev) => prev.map((l, k) => (k === at ? appendDictation(l, heard, MONTAGE_LINE_MAX) : l)));
+                      }}
+                    />
+                    <span style={{ marginLeft: "auto", fontSize: "var(--fs-xs)", color: "var(--ink-3)", paddingTop: 8 }}>
+                      {[...(lines[i] ?? "")].length}/{MONTAGE_LINE_MAX}
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", gap: 6, marginTop: 6, alignItems: "center" }}>
                     <button onClick={() => move(i, -1)} disabled={writing || i === 0} aria-label="往前移" style={{ ...smallButton, opacity: writing || i === 0 ? 0.35 : 1 }}>▲</button>
                     <button onClick={() => move(i, 1)} disabled={writing || i === photos.length - 1} aria-label="往後移" style={{ ...smallButton, opacity: writing || i === photos.length - 1 ? 0.35 : 1 }}>▼</button>
                     <button onClick={() => remove(i)} disabled={writing} aria-label={`拿掉第 ${i + 1} 張`} style={{ ...smallButton, opacity: writing ? 0.35 : 1 }}>✕</button>
-                    <span style={{ marginLeft: "auto", fontSize: "var(--fs-xs)", color: "var(--ink-3)" }}>
-                      {[...(lines[i] ?? "")].length}/{MONTAGE_LINE_MAX}
-                    </span>
                   </div>
                 </div>
               </div>
