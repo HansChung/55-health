@@ -15,6 +15,7 @@ import { trackEvent } from "@/lib/telemetry";
 import { enableWebPush, hasWebPushSubscription, isWebPushSupported } from "@/lib/push/client";
 import { TravelMontageForm } from "@/components/travel-montage-form";
 import { VideoComments } from "@/components/video-comments";
+import { publicAppOrigin } from "@/lib/study-tours";
 import { NarrationVoicePicker, myVoiceReady } from "@/components/narration-voice-picker";
 import { MyVoiceSheet } from "@/components/my-voice-sheet";
 import {
@@ -28,6 +29,7 @@ import {
   isTravelVideoPending,
   montageProgressLabel,
   sanitizeNarration,
+  videoSharePath,
   type MyVoiceStatus,
   type NarrationAccentId,
   type NarrationVoiceChoice,
@@ -379,13 +381,15 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
     if (!v.video_url) return;
     const kindLabel = v.kind === "montage" ? "遊記影片" : "出遊回憶影片";
     const text = `我用暖暖做了一支${kindLabel}${v.place ? `（${v.place}）` : ""}，給你看看！`;
-    trackEvent("travel_video_share", { style: v.style });
+    // 分享頁（LINE 會顯示縮圖和標題，打開就能播放；家人還能按讚留言）。App 裡 origin 是 localhost → 用正式網址
+    const url = `${publicAppOrigin(process.env.NEXT_PUBLIC_APP_URL, window.location.origin)}${videoSharePath(v.id)}`;
+    trackEvent("travel_video_share", { style: v.style, kind: v.kind });
     try {
       if (navigator.share) {
-        await navigator.share({ title: "出遊回憶影片", text, url: v.video_url });
+        await navigator.share({ title: kindLabel, text, url });
         return;
       }
-      await navigator.clipboard.writeText(`${text}\n${v.video_url}`);
+      await navigator.clipboard.writeText(`${text}\n${url}`);
       toast.success("已複製影片連結，可以貼到 LINE 給家人");
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") return; // 自己取消分享
