@@ -13,6 +13,8 @@ const nextConfig: NextConfig = {
     // 我的聲音：錄音轉 WAV；複製聲音的配音可能回 mp3，要轉成 WAV
     "/api/ai/voice-clone": ["./node_modules/ffmpeg-static/ffmpeg"],
     "/api/ai/travel-video/narration": ["./node_modules/ffmpeg-static/ffmpeg"],
+    // 語音留言：瀏覽器錄音 → m4a
+    "/api/ai/travel-video/[id]/comments": ["./node_modules/ffmpeg-static/ffmpeg"],
   },
   // Capacitor build 時透過 BUILD_TARGET=mobile 切換成 static export
   ...(process.env.BUILD_TARGET === "mobile" && {

@@ -120,6 +120,12 @@ stack works well for auth + meal/diary CRUD:
   Family activity pushes to the elder (`/?open=travel-video`); an elder's comment pushes to the family who
   interacted with that video; a finished video pushes to all family who can see it (`notifyFamilyNewVideo`,
   called from `notifyOwner`). `video-comments-server.ts` must not import `travel-video-server.ts` (cycle).
+  **念給我聽**: text comments have 🔊 (one) and 「全部念給我聽」 using the browser's speechSynthesis
+  (`speakGuideParagraphs`, free). **語音留言** (needs `supabase/add-video-voice-comments.sql`): owner and family
+  can record ≤60 s (`useVoiceRecorder`); `POST …/comments {audio}` converts webm/mp4 → WAV (length/silence
+  check) → AAC m4a (`wavToM4a`, plays on iOS too) stored at `{owner}/{video}/comments/{id}.m4a`; counts toward
+  the 30-per-author limit; deleting the comment or the video removes the file. The comments route needs ffmpeg
+  in `outputFileTracingIncludes`.
 - Needs `supabase/add-travel-videos.sql` (table, bucket, `ai_usage` service `minimax_video`,
   `subscription_plans.ai_video_quota`). Quota counts non-failed rows incl. soft-deleted ones.
   "One pending video per user" is enforced by the partial unique index

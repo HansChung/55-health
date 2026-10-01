@@ -67,3 +67,21 @@ export function wavRms(buf: Buffer): number {
   }
   throw new Error("WAV missing data chunk");
 }
+
+/** WAV → m4a（AAC 單聲道 64k）：語音留言用，iPhone、Android、電腦瀏覽器都能播 */
+export async function wavToM4a(wav: Buffer): Promise<Buffer> {
+  const dir = await mkdtemp(path.join(tmpdir(), "audio-"));
+  try {
+    const inPath = path.join(dir, "in.wav");
+    const outPath = path.join(dir, "out.m4a");
+    await writeFile(inPath, wav);
+    const result = await runFfmpeg(
+      ["-hide_banner", "-nostdin", "-y", "-i", inPath, "-ac", "1", "-c:a", "aac", "-b:a", "64k", "-movflags", "+faststart", outPath],
+      CONVERT_TIMEOUT_MS
+    );
+    if (result.code !== 0) throw new Error(`ffmpeg m4a exited ${result.code}: ${result.stderr.slice(-400)}`);
+    return await readFile(outPath);
+  } finally {
+    await rm(dir, { recursive: true, force: true }).catch(() => {});
+  }
+}

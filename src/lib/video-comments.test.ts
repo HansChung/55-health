@@ -2,8 +2,11 @@ import { describe, it, expect } from "vitest";
 import {
   authorLabel,
   buildCommentsView,
+  commentPushForFamily,
   commentPushForOwner,
+  commentsSpeechText,
   familyCanSeeVideos,
+  formatVoiceSeconds,
   isVideoReaction,
   newVideoPushForFamily,
   sanitizeComment,
@@ -95,5 +98,39 @@ describe("推播文字", () => {
       title: "🎬 王阿嬤做了一支遊記影片",
       body: "在「鹿港」，點這裡看看，給王阿嬤按個讚吧",
     });
+  });
+});
+
+describe("語音留言與念給我聽", () => {
+  const rows: CommentRow[] = [
+    row({ id: "t1", body: "好美喔！", author_id: DAUGHTER, created_at: "2026-10-01T01:00:00Z" }),
+    row({ id: "v1", audio_url: "https://cdn/v1.m4a", audio_seconds: 7.6, author_id: SON, created_at: "2026-10-01T01:01:00Z" }),
+    row({ id: "t2", body: "謝謝你們", author_id: OWNER, created_at: "2026-10-01T01:02:00Z" }),
+  ];
+
+  it("語音留言跟文字留言一起照時間排，帶網址和秒數", () => {
+    const v = buildCommentsView({ rows, viewerId: OWNER, ownerId: OWNER, directory });
+    expect(v.comments.map((c) => [c.id, c.body, c.audio_url, c.audio_seconds])).toEqual([
+      ["t1", "好美喔！", null, null],
+      ["v1", null, "https://cdn/v1.m4a", 7.6],
+      ["t2", "謝謝你們", null, null],
+    ]);
+  });
+
+  it("念給我聽：只念文字留言，說是誰說的", () => {
+    const v = buildCommentsView({ rows, viewerId: OWNER, ownerId: OWNER, directory });
+    expect(commentsSpeechText(v.comments)).toEqual(["小美（女兒）說：好美喔！", "我說：謝謝你們"]);
+  });
+
+  it("語音推播：家人傳給長輩、長輩回覆家人", () => {
+    expect(commentPushForOwner({ authorName: "小美", relationship: "女兒", place: null, voiceSeconds: 7.6 })).toEqual({
+      title: "🎤 小美（女兒）傳了一段語音",
+      body: "點這裡聽聽看（8 秒）",
+    });
+    expect(commentPushForFamily({ elderName: "王阿嬤", voiceSeconds: 0.4 })).toEqual({
+      title: "🎤 王阿嬤回覆了一段語音",
+      body: "點這裡聽聽看（1 秒）",
+    });
+    expect(formatVoiceSeconds(12.4)).toBe("12 秒");
   });
 });

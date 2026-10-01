@@ -6,6 +6,9 @@ export const VIDEO_REACTIONS = ["❤️", "👍", "😂", "🥹", "👏"] as con
 export type VideoReaction = (typeof VIDEO_REACTIONS)[number];
 
 export const VIDEO_COMMENT_MAX = 100;
+/** 語音留言：最長幾秒、至少幾秒（太短多半是不小心按到） */
+export const VOICE_COMMENT_MAX_SECONDS = 60;
+export const VOICE_COMMENT_MIN_SECONDS = 1;
 /** 同一個人對同一支影片最多留幾則（避免洗版） */
 export const VIDEO_COMMENTS_PER_AUTHOR = 30;
 
@@ -25,7 +28,11 @@ export interface CommentAuthor {
 export interface VideoComment {
   id: string;
   author: CommentAuthor;
-  body: string;
+  /** 文字留言；語音留言是 null */
+  body: string | null;
+  /** 語音留言 */
+  audio_url: string | null;
+  audio_seconds: number | null;
   created_at: string;
   can_delete: boolean;
 }
@@ -52,6 +59,9 @@ export interface CommentRow {
   author_id: string;
   emoji: string | null;
   body: string | null;
+  /** 語音留言（伺服器先把 audio_path 換成公開網址） */
+  audio_url?: string | null;
+  audio_seconds?: number | null;
   created_at: string;
 }
 
@@ -108,11 +118,13 @@ export function buildCommentsView(opts: {
   }
 
   const comments = sorted
-    .filter((r) => r.body)
+    .filter((r) => r.body || r.audio_url)
     .map((r) => ({
       id: r.id,
       author: author(r.author_id),
-      body: r.body as string,
+      body: r.body ?? null,
+      audio_url: r.audio_url ?? null,
+      audio_seconds: r.audio_seconds != null ? Number(r.audio_seconds) : null,
       created_at: r.created_at,
       // 自己的留言可以刪；長輩可以刪自己影片底下任何一則
       can_delete: r.author_id === viewerId || viewerId === ownerId,
@@ -128,16 +140,38 @@ export function commentPushForOwner(opts: {
   place: string | null;
   emoji?: VideoReaction | null;
   body?: string | null;
+  /** 語音留言的秒數 */
+  voiceSeconds?: number | null;
 }): { title: string; body: string } {
   const who = opts.relationship ? `${opts.authorName}（${opts.relationship}）` : opts.authorName;
   const video = opts.place ? `「${opts.place}」的影片` : "你的出遊影片";
   if (opts.emoji) return { title: `${opts.emoji} ${who}`, body: `${who}對${video}按了 ${opts.emoji}` };
+  if (opts.voiceSeconds != null) {
+    return { title: `🎤 ${who}傳了一段語音`, body: `點這裡聽聽看（${Math.max(1, Math.round(opts.voiceSeconds))} 秒）` };
+  }
   return { title: `💬 ${who}留言了`, body: opts.body ?? "" };
 }
 
 /** 推播文字：長輩回覆（給在這支影片留過言、按過讚的家人） */
-export function commentPushForFamily(opts: { elderName: string; body: string }): { title: string; body: string } {
-  return { title: `💬 ${opts.elderName}回覆了`, body: opts.body };
+export function commentPushForFamily(opts: { elderName: string; body?: string | null; voiceSeconds?: number | null }): {
+  title: string;
+  body: string;
+} {
+  if (opts.voiceSeconds != null) {
+    return { title: `🎤 ${opts.elderName}回覆了一段語音`, body: `點這裡聽聽看（${Math.max(1, Math.round(opts.voiceSeconds))} 秒）` };
+  }
+  return { title: `💬 ${opts.elderName}回覆了`, body: opts.body ?? "" };
+}
+
+/** 「念給我聽」：把文字留言排成要念的句子（語音留言不念，畫面上直接播） */
+export function commentsSpeechText(comments: Pick<VideoComment, "author" | "body">[]): string[] {
+  return comments
+    .filter((c) => c.body)
+    .map((c) => `${c.author.is_me ? "我" : authorLabel(c.author)}說：${c.body}`);
+}
+
+export function formatVoiceSeconds(seconds: number | null): string {
+  return `${Math.max(1, Math.round(seconds ?? 0))} 秒`;
 }
 
 /** 推播文字：長輩做好一支新影片（給看得到影片的家人） */
