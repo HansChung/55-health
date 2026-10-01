@@ -12,6 +12,7 @@ import { wavDurationSeconds } from "@/lib/ai/lk888-tts";
 import {
   addComment,
   addVoiceComment,
+  isVideoActive,
   loadCommentsViews,
   loadVideoAccess,
   notifyVideoComment,
@@ -93,6 +94,10 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     } else if ("audio" in parsed.data) {
       const voice = await prepareVoice(parsed.data.audio);
       if ("error" in voice) return NextResponse.json({ error: voice.error }, { status: 400 });
+      // 轉檔要幾秒：這段時間影片可能被刪了，存之前再確認一次
+      if (!(await isVideoActive(admin, found.video.id))) {
+        return NextResponse.json({ error: "這支影片已經刪除了" }, { status: 404 });
+      }
       const commentId = await addVoiceComment(admin, found, user.id, voice);
       if (!commentId) {
         return NextResponse.json({ error: `這支影片你已經留了 ${VIDEO_COMMENTS_PER_AUTHOR} 則，先休息一下吧` }, { status: 429 });

@@ -17,9 +17,19 @@ export function isWav(buf: Buffer): boolean {
   return buf.length >= 12 && buf.toString("ascii", 0, 4) === "RIFF" && buf.toString("ascii", 8, 12) === "WAVE";
 }
 
+/**
+ * 使用者上傳的錄音不能讓 ffmpeg 自己猜格式就照做：偽裝成音檔的 DASH／HLS 清單會讓伺服器去連任意網址（SSRF，
+ * 已在 Vercel 同款 Linux ffmpeg 重現）。只准讀本機檔案、只准常見的錄音格式
+ */
+export const SAFE_AUDIO_INPUT = [
+  "-protocol_whitelist", "file",
+  "-format_whitelist", "mov,mp4,m4a,3gp,3g2,mj2,matroska,webm,ogg,wav,mp3,aac",
+];
+
 export function buildToWavArgs(inPath: string, outPath: string, maxSeconds?: number): string[] {
   return [
     "-hide_banner", "-nostdin", "-y",
+    ...SAFE_AUDIO_INPUT,
     "-i", inPath,
     ...(maxSeconds ? ["-t", String(maxSeconds)] : []),
     "-vn", "-ac", "1", "-ar", "24000", "-c:a", "pcm_s16le",
@@ -76,7 +86,7 @@ export async function wavToM4a(wav: Buffer): Promise<Buffer> {
     const outPath = path.join(dir, "out.m4a");
     await writeFile(inPath, wav);
     const result = await runFfmpeg(
-      ["-hide_banner", "-nostdin", "-y", "-i", inPath, "-ac", "1", "-c:a", "aac", "-b:a", "64k", "-movflags", "+faststart", outPath],
+      ["-hide_banner", "-nostdin", "-y", ...SAFE_AUDIO_INPUT, "-i", inPath, "-ac", "1", "-c:a", "aac", "-b:a", "64k", "-movflags", "+faststart", outPath],
       CONVERT_TIMEOUT_MS
     );
     if (result.code !== 0) throw new Error(`ffmpeg m4a exited ${result.code}: ${result.stderr.slice(-400)}`);

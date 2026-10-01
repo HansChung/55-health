@@ -38,6 +38,10 @@ export function useVoiceRecorder(maxSeconds: number) {
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startedAt = useRef(0);
+  // 正在要麥克風權限（長輩可能連點兩下）：這段時間再按不會再開一個麥克風
+  const startingRef = useRef(false);
+  const [starting, setStarting] = useState(false);
+  const unmounted = useRef(false);
 
   const release = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -52,16 +56,28 @@ export function useVoiceRecorder(maxSeconds: number) {
 
   /** 開始錄音；失敗回錯誤原因（不支援／沒有麥克風權限） */
   const start = useCallback(async (): Promise<RecorderError | null> => {
+    if (startingRef.current || recorderRef.current?.state === "recording") return null;
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
       return "unsupported";
     }
+    startingRef.current = true;
+    setStarting(true);
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       });
     } catch {
+      startingRef.current = false;
+      setStarting(false);
       return "permission";
+    }
+    startingRef.current = false;
+    setStarting(false);
+    // 等權限的時候畫面已經關了：馬上把麥克風關掉
+    if (unmounted.current) {
+      stream.getTracks().forEach((t) => t.stop());
+      return null;
     }
     const mimeType = pickMimeType();
     streamRef.current = stream;
@@ -94,13 +110,18 @@ export function useVoiceRecorder(maxSeconds: number) {
 
   // 換掉錄音就釋放舊的；離開畫面就停止錄音、關麥克風
   useEffect(() => () => { if (result) URL.revokeObjectURL(result.url); }, [result]);
-  useEffect(() => () => {
-    if (recorderRef.current?.state === "recording") {
-      recorderRef.current.onstop = null;
-      recorderRef.current.stop();
-    }
-    release();
+  useEffect(() => {
+    // 開發模式 React 會掛載兩次：重新掛載時要把旗標還原
+    unmounted.current = false;
+    return () => {
+      unmounted.current = true;
+      if (recorderRef.current?.state === "recording") {
+        recorderRef.current.onstop = null;
+        recorderRef.current.stop();
+      }
+      release();
+    };
   }, []);
 
-  return { recording, seconds, result, start, stop, clear };
+  return { recording, starting, seconds, result, start, stop, clear };
 }

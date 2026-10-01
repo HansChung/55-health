@@ -310,7 +310,7 @@ export function VideoComments({
               </div>
             </div>
           ) : (
-            <button onClick={startRecording} disabled={busy} className="btn-ghost" style={{ fontSize: "var(--fs-base)" }}>
+            <button onClick={startRecording} disabled={busy || recorder.starting} className="btn-ghost" style={{ fontSize: "var(--fs-base)" }}>
               🎤 錄一段話{viewer === "owner" ? "回覆" : "給他"}
             </button>
           )}

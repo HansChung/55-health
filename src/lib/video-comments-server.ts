@@ -196,7 +196,9 @@ export async function addVoiceComment(
     await bucket.remove([audioPath]);
     throw error;
   }
-  if ((await keptCommentIds(admin, access.video.id, userId)).includes(id)) return id;
+  // 存好後再確認：轉檔時長輩剛好把影片刪了，就把這則收掉（刪影片那邊收完後也會再掃一次）
+  const keep = (await keptCommentIds(admin, access.video.id, userId)).includes(id) && (await isVideoActive(admin, access.video.id));
+  if (keep) return id;
   await admin.from("travel_video_comments").delete().eq("id", id);
   await bucket.remove([audioPath]);
   return null;
@@ -206,28 +208,43 @@ export async function addVoiceComment(
 export async function deleteComment(admin: Admin, access: VideoAccess, commentId: string, userId: string): Promise<boolean> {
   let q = admin
     .from("travel_video_comments")
-    .update({ deleted_at: new Date().toISOString() })
+    .select("*")
     .eq("id", commentId)
     .eq("video_id", access.video.id)
     .is("deleted_at", null);
   if (!access.isOwner) q = q.eq("author_id", userId);
-  const { data, error } = await q.select("*");
-  if (error) throw error;
-  const deleted = (data ?? []) as { audio_path?: string | null }[];
-  // 語音檔放在公開 bucket：刪了留言就把檔案也拿掉
-  const audio = deleted.map((d) => d.audio_path).filter((p): p is string => Boolean(p));
-  if (audio.length > 0) {
-    const { error: rmErr } = await admin.storage.from(TRAVEL_VIDEO_BUCKET).remove(audio);
-    if (rmErr) console.warn("[video-comments] voice file remove failed:", rmErr.message);
+  const { data: found, error: findErr } = await q.maybeSingle();
+  if (findErr) throw findErr;
+  if (!found) return false;
+  // 語音檔放在公開 bucket：先刪檔案，成功了才標記刪除（失敗就丟錯，留言還在，可以再刪一次）
+  const audioPath = (found as { audio_path?: string | null }).audio_path;
+  if (audioPath) {
+    const { error: rmErr } = await admin.storage.from(TRAVEL_VIDEO_BUCKET).remove([audioPath]);
+    if (rmErr) throw rmErr;
   }
-  return deleted.length > 0;
+  const { error } = await admin
+    .from("travel_video_comments")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", commentId)
+    .is("deleted_at", null);
+  if (error) throw error;
+  return true;
 }
 
 /** 刪影片時一起清掉語音留言的檔案 */
 export async function voiceCommentPaths(admin: Admin, videoId: string): Promise<string[]> {
   const { data, error } = await admin.from("travel_video_comments").select("*").eq("video_id", videoId);
-  if (error) return [];
+  // 查不到就丟錯：刪影片要中止（不然語音檔會留在公開 bucket、之後沒有地方再清）
+  if (error) throw error;
   return ((data ?? []) as { audio_path?: string | null }[]).map((r) => r.audio_path).filter((p): p is string => Boolean(p));
+}
+
+/** 影片還在嗎（做好、沒被刪） */
+export async function isVideoActive(admin: Admin, videoId: string): Promise<boolean> {
+  const { data, error } = await admin.from("travel_videos").select("status, deleted_at").eq("id", videoId).maybeSingle();
+  if (error) throw error;
+  const v = data as { status: string; deleted_at: string | null } | null;
+  return Boolean(v && v.status === "succeeded" && !v.deleted_at);
 }
 
 async function push(userIds: string[], message: { title: string; body: string }, url: string, tag: string) {
