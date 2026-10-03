@@ -15,6 +15,7 @@ import { trackEvent } from "@/lib/telemetry";
 import { enableWebPush, hasWebPushSubscription, isWebPushSupported } from "@/lib/push/client";
 import { TravelMontageForm } from "@/components/travel-montage-form";
 import { VideoComments } from "@/components/video-comments";
+import { MvComposerSheet } from "@/components/mv-composer-sheet";
 import { DictationButton } from "@/components/dictation-button";
 import { appendDictation } from "@/lib/dictation";
 import { publicAppOrigin } from "@/lib/study-tours";
@@ -30,6 +31,7 @@ import {
   checkVideoImageSize,
   isTravelVideoPending,
   montageProgressLabel,
+  mvProgressLabel,
   sanitizeNarration,
   videoSharePath,
   type MyVoiceStatus,
@@ -93,6 +95,9 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
   const [videos, setVideos] = useState<TravelVideo[]>([]);
   const [quota, setQuota] = useState<TravelVideoQuota | null>(null);
   const [montageQuota, setMontageQuota] = useState<TravelVideoQuota | null>(null);
+  // 遊記 MV（專業版）：額度、正在幫哪一支遊記做 MV
+  const [mvQuota, setMvQuota] = useState<TravelVideoQuota | null>(null);
+  const [mvFor, setMvFor] = useState<TravelVideo | null>(null);
   // 一張照片（AI 影片平台做動畫）／多張照片遊記（自己伺服器做）
   const [mode, setMode] = useState<"single" | "montage">("single");
   const [enabled, setEnabled] = useState(true);
@@ -142,9 +147,23 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
         const before = lastStatus.current[v.id];
         if (before && isTravelVideoPending(before)) {
           const montage = v.kind === "montage";
-          if (v.status === "succeeded") toast.success(montage ? "遊記影片做好了！可以播放、分享給家人" : "影片做好了！可以播放、分享給家人");
+          if (v.status === "succeeded") {
+            toast.success(
+              v.kind === "mv"
+                ? "MV 做好了！可以播放、分享給家人"
+                : montage
+                  ? "遊記影片做好了！可以播放、分享給家人"
+                  : "影片做好了！可以播放、分享給家人"
+            );
+          }
           else if (v.status === "failed") {
-            toast.info(montage ? "有一支遊記沒做成功，不會扣次數，請再做一次" : "有一支影片沒做成功，不會扣次數，換張照片再試試");
+            toast.info(
+              v.kind === "mv"
+                ? "有一支 MV 沒做成功，不會扣次數，請再做一次"
+                : montage
+                  ? "有一支遊記沒做成功，不會扣次數，請再做一次"
+                  : "有一支影片沒做成功，不會扣次數，換張照片再試試"
+            );
           }
         }
         lastStatus.current[v.id] = v.status;
@@ -152,6 +171,7 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
       setVideos(res.videos);
       setQuota(res.quota);
       setMontageQuota(res.montage_quota ?? null);
+      setMvQuota(res.mv_quota ?? null);
       setEnabled(res.enabled);
       return res.videos;
     } catch (e) {
@@ -204,7 +224,7 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
 
   const hasPending = videos.some((v) => isTravelVideoPending(v.status));
   // 單張影片和遊記各自一次一支（遊記在做時，一樣可以做單張影片）
-  const singlePending = videos.some((v) => v.kind !== "montage" && isTravelVideoPending(v.status));
+  const singlePending = videos.some((v) => v.kind === "single" && isTravelVideoPending(v.status));
   const montagePending = videos.some((v) => v.kind === "montage" && isTravelVideoPending(v.status));
   const montageUnlimited = (montageQuota?.limit ?? 0) >= 9999;
   const montageRemaining = montageQuota ? Math.max(0, montageQuota.limit - montageQuota.used) : null;
@@ -715,9 +735,27 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
               deleting={deletingId === v.id}
               onShare={() => handleShare(v)}
               onDelete={() => handleDelete(v)}
+              onMakeMv={() => setMvFor(v)}
             />
           ))}
         </div>
+      )}
+
+      {mvFor && (
+        <MvComposerSheet
+          source={mvFor}
+          quota={mvQuota}
+          blockedReason={
+            videos.some((x) => x.kind === "mv" && isTravelVideoPending(x.status)) ? "上一支 MV 還在做，做好再做下一支" : null
+          }
+          onClose={() => setMvFor(null)}
+          onCreated={(video, q) => {
+            lastStatus.current[video.id] = video.status;
+            setVideos((prev) => [video, ...prev]);
+            setMvQuota(q);
+            setMvFor(null);
+          }}
+        />
       )}
 
       {sheetFor && (
@@ -728,16 +766,20 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
 }
 
 function VideoCard({
-  video: v, deleting, onShare, onDelete,
+  video: v, deleting, onShare, onDelete, onMakeMv,
 }: {
   video: TravelVideo;
   deleting: boolean;
   onShare: () => void;
   onDelete: () => void;
+  /** 做好的遊記：做成 MV（打開做 MV 的畫面） */
+  onMakeMv?: () => void;
 }) {
   const styleMeta = TRAVEL_VIDEO_STYLES.find((s) => s.id === v.style);
   const pending = isTravelVideoPending(v.status);
   const montage = v.kind === "montage";
+  const mv = v.kind === "mv";
+  const [showLyrics, setShowLyrics] = useState(false);
 
   return (
     <div className="card" style={{ padding: 14 }}>
@@ -780,17 +822,25 @@ function VideoCard({
                   }}
                 />
                 <div role="status">
-                  {montage && v.montage_progress ? montageProgressLabel(v.montage_progress) : "暖暖正在做影片…"}
+                  {mv && v.mv_progress
+                    ? mvProgressLabel(v.mv_progress)
+                    : montage && v.montage_progress
+                      ? montageProgressLabel(v.montage_progress)
+                      : "暖暖正在做影片…"}
                 </div>
                 <div style={{ fontWeight: 500, fontSize: "var(--fs-xs)" }}>
-                  {montage ? "通常 1～3 分鐘，停在這頁會做得比較快" : "通常要 5～60 分鐘，可以先去做別的事"}
+                  {mv
+                    ? "通常 5～10 分鐘，可以先去做別的事，做好會通知你"
+                    : montage
+                      ? "通常 1～3 分鐘，停在這頁會做得比較快"
+                      : "通常要 5～60 分鐘，可以先去做別的事"}
                 </div>
               </>
             ) : (
               <div role="status">
-                {montage ? "這支遊記沒做成功（不會扣次數）" : "這支沒做成功（不會扣次數）"}
+                {mv ? "這支 MV 沒做成功（不會扣次數）" : montage ? "這支遊記沒做成功（不會扣次數）" : "這支沒做成功（不會扣次數）"}
                 <br />
-                {montage ? "請再做一次" : "換張照片再試試"}
+                {mv || montage ? "請再做一次" : "換張照片再試試"}
               </div>
             )}
           </div>
@@ -798,13 +848,31 @@ function VideoCard({
       )}
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
-        <span aria-hidden="true">{montage ? "📚" : styleMeta?.emoji ?? "🎬"}</span>
+        <span aria-hidden="true">{mv ? "🎵" : montage ? "📚" : styleMeta?.emoji ?? "🎬"}</span>
         <span style={{ fontWeight: 700, color: "var(--ink-1)" }}>
-          {v.place || (montage ? `遊記影片（${v.montage_lines?.length ?? 0} 張）` : styleMeta?.label || "出遊影片")}
+          {mv
+            ? `MV：${v.mv?.title ?? ""}${v.place ? `（${v.place}）` : ""}`
+            : v.place || (montage ? `遊記影片（${v.montage_lines?.length ?? 0} 張）` : styleMeta?.label || "出遊影片")}
         </span>
         <span style={{ marginLeft: "auto", fontSize: "var(--fs-xs)" }}>{formatWhen(v.created_at)}</span>
       </div>
-      {montage && v.montage_lines ? (
+      {mv && v.mv ? (
+        <div style={{ marginTop: 6 }}>
+          <button
+            onClick={() => setShowLyrics((x) => !x)}
+            className="btn-ghost"
+            style={{ fontSize: "var(--fs-sm)", padding: "8px 12px" }}
+            aria-expanded={showLyrics}
+          >
+            {showLyrics ? "收起歌詞" : "📜 看歌詞"}
+          </button>
+          {showLyrics && (
+            <div style={{ whiteSpace: "pre-wrap", fontSize: "var(--fs-base)", lineHeight: 1.8, marginTop: 8, color: "var(--ink-1)" }}>
+              {v.mv.lyrics}
+            </div>
+          )}
+        </div>
+      ) : montage && v.montage_lines ? (
         <ol style={{ margin: "6px 0 0", paddingLeft: 26, listStyle: "decimal", fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.6 }}>
           {v.montage_lines.map((line, i) => <li key={i}>{line}</li>)}
         </ol>
@@ -826,6 +894,11 @@ function VideoCard({
           >
             ⬇️ 存到手機
           </a>
+          {montage && onMakeMv && (
+            <button onClick={onMakeMv} className="btn-ghost" style={{ width: "100%", fontSize: "var(--fs-base)" }}>
+              🎵 把這趟寫成一首歌（MV）
+            </button>
+          )}
           {/* 家人的按讚、留言（家人在「家人狀況」看得到做好的影片） */}
           <div style={{ borderTop: "1px solid var(--line)", paddingTop: 12 }}>
             <VideoComments videoId={v.id} initial={v.comments} viewer="owner" />

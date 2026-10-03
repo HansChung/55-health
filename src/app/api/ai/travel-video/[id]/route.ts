@@ -4,6 +4,7 @@ import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server
 import { TRAVEL_VIDEO_BUCKET, rawVideoStoragePath, type TravelVideoRow } from "@/lib/ai/travel-video-server";
 import { isTravelVideoPending } from "@/lib/travel-video";
 import { montageAllPaths } from "@/lib/ai/travel-montage-server";
+import { mvAllPaths } from "@/lib/ai/travel-mv-server";
 import { voiceCommentPaths } from "@/lib/video-comments-server";
 
 /**
@@ -49,6 +50,7 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     row.narration_path,
     row.narration_path ? rawVideoStoragePath(row) : null, // 合成中途留下的原始影片（通常已刪）
     ...(row.kind === "montage" ? montageAllPaths(row) : []), // 遊記：每張照片、配音、片段
+    ...(row.kind === "mv" ? mvAllPaths(row) : []), // MV：照片、兩個版本的歌、片段
     ...voicePaths, // 家人的語音留言
   ].filter((p): p is string => Boolean(p));
   if (paths.length > 0) {

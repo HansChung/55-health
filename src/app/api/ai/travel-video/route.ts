@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
 import { loadCommentsViews } from "@/lib/video-comments-server";
+import { syncMv } from "@/lib/ai/travel-mv-server";
 import { checkUserQuota, trackAiUsage } from "@/lib/ai/usage-tracker";
 import {
   createImageToVideoTask,
@@ -87,14 +88,18 @@ export async function GET(req: NextRequest) {
       rows.map((r) => {
         if (!isTravelVideoPending(r.status)) return r;
         // 遊記在自己伺服器做（配音→剪輯→合成），每次輪詢推進一段；單張影片向平台查進度
-        return (r.kind === "montage" ? syncMontage(r, { origin: new URL(req.url).origin }) : syncTravelVideo(r)).catch(() => r);
+        const origin = new URL(req.url).origin;
+        const step =
+          r.kind === "montage" ? syncMontage(r, { origin }) : r.kind === "mv" ? syncMv(r, { origin }) : syncTravelVideo(r);
+        return step.catch(() => r);
       })
     );
   }
 
-  const [quota, montageQuota] = await Promise.all([
+  const [quota, montageQuota, mvQuota] = await Promise.all([
     checkUserQuota(user.id, "video"),
     checkUserQuota(user.id, "montage"),
+    checkUserQuota(user.id, "mv"),
   ]);
   const admin = createSupabaseAdmin();
   const done = rows.filter((r) => r.status === "succeeded");
@@ -103,6 +108,7 @@ export async function GET(req: NextRequest) {
     videos: rows.map((r) => ({ ...toClientVideo(admin, r), ...(comments.has(r.id) ? { comments: comments.get(r.id) } : {}) })),
     quota: { used: quota.used, limit: quota.limit, tier: quota.tier },
     montage_quota: { used: montageQuota.used, limit: montageQuota.limit, tier: montageQuota.tier },
+    mv_quota: { used: mvQuota.used, limit: mvQuota.limit, tier: mvQuota.tier },
     enabled,
   });
 }
@@ -125,7 +131,7 @@ export async function POST(req: NextRequest) {
     .from("travel_videos")
     .select("*")
     .eq("user_id", user.id)
-    .neq("kind", "montage") // 遊記另外算，不會擋住單張影片
+    .eq("kind", "single") // 遊記、MV 另外算，不會擋住單張影片
     .in("status", ["queued", "running"])
     .is("deleted_at", null);
   for (const r of (pendingRows ?? []) as TravelVideoRow[]) {

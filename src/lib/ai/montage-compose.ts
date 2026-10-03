@@ -195,10 +195,12 @@ export async function renderMontageClip(opts: {
   variant: number;
   font: Buffer | null;
   deadline: number;
+  /** MV：片段長度照分段計畫（不是依口白長度） */
+  seconds?: number;
 }): Promise<{ clip: Buffer; seconds: number }> {
   const left = () => opts.deadline - Date.now();
   if (left() < MIN_CLIP_BUDGET_MS) throw new ComposeBudgetError();
-  const seconds = montageClipSeconds(opts.narrationSeconds);
+  const seconds = opts.seconds ?? montageClipSeconds(opts.narrationSeconds);
   const dir = await mkdtemp(path.join(tmpdir(), "montage-clip-"));
   try {
     const photoPath = path.join(dir, "photo.jpg");
@@ -275,6 +277,54 @@ export async function muxMontage(opts: {
       Math.min(MUX_TIMEOUT_MS, left())
     );
     if (result.code !== 0) throw new Error(`ffmpeg mux exited ${result.code}: ${result.stderr.slice(-600)}`);
+    return await readFile(outPath);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
+// ── 遊記 MV：片段接起來＋整首歌 ──
+
+/** 片段直接接（不重新編碼）＋歌（淡入淡出、長度跟片段總長一樣） */
+export function buildMvMuxArgs(opts: { listPath: string; songPath: string; totalSeconds: number; outPath: string }): string[] {
+  const t = opts.totalSeconds.toFixed(2);
+  const fadeOut = Math.max(0, opts.totalSeconds - 4).toFixed(2);
+  return [
+    "-hide_banner", "-y",
+    "-f", "concat", "-safe", "0", "-i", opts.listPath,
+    "-i", opts.songPath,
+    "-filter_complex", `[1:a]atrim=0:${t},asetpts=PTS-STARTPTS,afade=t=in:d=0.5,afade=t=out:st=${fadeOut}:d=4[a]`,
+    "-map", "0:v", "-map", "[a]",
+    "-c:v", "copy",
+    "-c:a", "aac", "-b:a", "160k", "-ar", "44100",
+    "-t", t,
+    "-movflags", "+faststart",
+    opts.outPath,
+  ];
+}
+
+export async function muxMv(opts: { clips: Buffer[]; song: Buffer; totalSeconds: number; deadline: number }): Promise<Buffer> {
+  const left = () => opts.deadline - Date.now();
+  if (left() < 8_000) throw new ComposeBudgetError();
+  const dir = await mkdtemp(path.join(tmpdir(), "mv-mux-"));
+  try {
+    const clipPaths = await Promise.all(
+      opts.clips.map(async (c, i) => {
+        const p = path.join(dir, `clip-${i}.mp4`);
+        await writeFile(p, c);
+        return p;
+      })
+    );
+    const songPath = path.join(dir, "song.m4a");
+    await writeFile(songPath, opts.song);
+    const listPath = path.join(dir, "list.txt");
+    await writeFile(listPath, buildConcatList(clipPaths), "utf8");
+    const outPath = path.join(dir, "mv.mp4");
+    const result = await runFfmpeg(
+      buildMvMuxArgs({ listPath, songPath, totalSeconds: opts.totalSeconds, outPath }),
+      Math.min(MUX_TIMEOUT_MS, left())
+    );
+    if (result.code !== 0) throw new Error(`ffmpeg mv mux exited ${result.code}: ${result.stderr.slice(-600)}`);
     return await readFile(outPath);
   } finally {
     await rm(dir, { recursive: true, force: true });

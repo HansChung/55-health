@@ -288,7 +288,7 @@ export function defaultVideoQuota(tier: string): number {
 
 // ── 多張照片遊記影片（montage）：照片慢慢移動＋每張一句配音與字幕，伺服器 ffmpeg 合成 ──
 
-export type TravelVideoKind = "single" | "montage";
+export type TravelVideoKind = "single" | "montage" | "mv";
 export const MONTAGE_MIN_PHOTOS = 3;
 export const MONTAGE_MAX_PHOTOS = 5;
 /** 一次送出的照片（base64 data URL）合計上限：Vercel request body 上限 4.5MB */
@@ -300,6 +300,11 @@ export const MONTAGE_LINE_MAX = 20;
 
 /** 每月遊記支數（只花配音費，一支約 0.1 算力） */
 export const DEFAULT_MONTAGE_QUOTA: Record<string, number> = { free: 0, basic: 10, pro: 30 };
+/** 遊記 MV（Suno 做歌，每首約 0.54 算力）：只給專業版 */
+export const DEFAULT_MV_QUOTA: Record<string, number> = { free: 0, basic: 0, pro: 6 };
+export function mvQuota(tier: string): number {
+  return DEFAULT_MV_QUOTA[tier] ?? 0;
+}
 export function montageQuota(tier: string): number {
   return DEFAULT_MONTAGE_QUOTA[tier] ?? 0;
 }
@@ -397,6 +402,151 @@ export function montageProgressLabel(p: { stage: MontageStage; done: number; tot
   return "快好了，正在合成影片…";
 }
 
+// ── 遊記 MV：把遊記內容寫成一首歌（邁笙 Suno v4.5），配上遊記的照片 ──
+
+export const MV_LANGUAGES = [
+  { id: "mandarin", label: "國語", suno: "sung in Mandarin Chinese (Taiwan accent)" },
+  { id: "taigi", label: "台語", suno: "sung in Taiwanese Hokkien (台語), Taiwanese pronunciation" },
+] as const;
+export type MvLanguageId = (typeof MV_LANGUAGES)[number]["id"];
+export const MV_LANGUAGE_IDS = MV_LANGUAGES.map((l) => l.id) as [MvLanguageId, ...MvLanguageId[]];
+
+/** 曲風（id 會存進 travel_videos.mv，不要改名） */
+export const MV_STYLES = [
+  { id: "folk", label: "溫馨民歌", emoji: "🎸", suno: "warm acoustic folk ballad, gentle guitar, 1980s Taiwanese campus folk song style" },
+  { id: "oldies", label: "懷舊老歌", emoji: "📻", suno: "nostalgic 1970s Taiwanese oldies ballad, soft strings, piano and accordion" },
+  { id: "upbeat", label: "輕快", emoji: "☀️", suno: "cheerful upbeat pop, light drums, ukulele and hand claps, happy travel song" },
+  { id: "ballad", label: "抒情", emoji: "🎹", suno: "heartfelt slow pop ballad, piano and strings, warm and touching" },
+] as const;
+export type MvStyleId = (typeof MV_STYLES)[number]["id"];
+export const MV_STYLE_IDS = MV_STYLES.map((m) => m.id) as [MvStyleId, ...MvStyleId[]];
+
+export const MV_VOCALS = [
+  { id: "f", label: "女聲" },
+  { id: "m", label: "男聲" },
+] as const;
+export type MvVocal = (typeof MV_VOCALS)[number]["id"];
+
+/** MV 最長幾秒（歌超過就淡出收掉）、每段照片大約幾秒 */
+export const MV_MAX_SECONDS = 180;
+export const MV_SEGMENT_SECONDS = 9;
+export const MV_TITLE_MAX = 20;
+export const MV_LYRICS_MAX = 1200;
+
+export interface MvSegment {
+  photo: number;
+  seconds: number;
+  clip_path: string | null;
+}
+
+export interface MvState {
+  source_video_id: string;
+  language: MvLanguageId;
+  style: MvStyleId;
+  vocal: MvVocal;
+  title: string;
+  lyrics: string;
+  /** 邁笙 Suno 任務 */
+  task_id: string | null;
+  /** 做好的歌（轉成 m4a 存 Storage）；Suno 一次兩個版本，第二個留著 */
+  song_path: string | null;
+  alt_song_path: string | null;
+  song_seconds: number | null;
+  size: { width: number; height: number };
+  /** 從遊記複製來的照片 */
+  photos: { path: string; width: number; height: number }[];
+  segments: MvSegment[] | null;
+  attempts: number;
+}
+
+export type MvStage = "song" | "clips" | "final";
+
+export function mvStage(state: MvState): MvStage {
+  if (!state.song_path || !state.segments) return "song";
+  if (state.segments.some((s) => !s.clip_path)) return "clips";
+  return "final";
+}
+
+/** 歌有多長就分幾段（每段約 9 秒），照片輪流出現；總長＝歌長（最長 3 分鐘） */
+export function mvSegments(songSeconds: number, photoCount: number): MvSegment[] {
+  const total = Math.min(MV_MAX_SECONDS, Math.max(MV_SEGMENT_SECONDS, songSeconds));
+  const n = Math.max(Math.min(photoCount, 3), Math.round(total / MV_SEGMENT_SECONDS));
+  const each = Math.round((total / n) * 100) / 100;
+  return Array.from({ length: n }, (_, i) => ({ photo: i % Math.max(1, photoCount), seconds: each, clip_path: null }));
+}
+
+export function mvProgress(state: MvState): { stage: MvStage; done: number; total: number } {
+  const stage = mvStage(state);
+  const total = state.segments?.length ?? 0;
+  return { stage, done: state.segments?.filter((s) => s.clip_path).length ?? 0, total };
+}
+
+export function mvProgressLabel(p: { stage: MvStage; done: number; total: number }): string {
+  if (p.stage === "song") return "暖暖正在寫歌、唱歌…（約 1～3 分鐘）";
+  if (p.stage === "clips") return `正在剪 MV 第 ${Math.min(p.done + 1, p.total)}／${p.total} 段`;
+  return "快好了，正在合成 MV…";
+}
+
+/** 歌名、歌詞：去控制字元、限制長度（歌詞保留換行與 [Verse]／[Chorus] 標記） */
+export function sanitizeMvTitle(text: string | null | undefined): string {
+  return [...sanitizeNarration(text)].slice(0, MV_TITLE_MAX).join("");
+}
+export function sanitizeMvLyrics(text: string | null | undefined): string {
+  if (!text) return "";
+  return [
+    ...text
+      .replace(/\r\n?/g, "\n")
+      .replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, " ")
+      .split("\n")
+      .map((l) => l.replace(/\s+/g, " ").trim())
+      .join("\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim(),
+  ]
+    .slice(0, MV_LYRICS_MAX)
+    .join("");
+}
+
+/** AI 寫歌詞的指示：依遊記的地點與每張照片那句話，寫一首適合長輩唱的歌 */
+export function buildMvLyricsPrompt(opts: {
+  language: MvLanguageId;
+  style: MvStyleId;
+  place: string | null;
+  lines: string[];
+}): string {
+  const style = MV_STYLES.find((s) => s.id === opts.style) ?? MV_STYLES[0];
+  const story = opts.lines.filter(Boolean).map((l, i) => `${i + 1}. ${l}`).join("\n");
+  // 實測：只說「用台語寫」，模型會照著華語的遊記句子寫成華語 → 要明講「翻成台語」並給對照
+  const lang =
+    opts.language === "taigi"
+      ? [
+          "歌詞一定要全部用「台語」寫（台語漢字，教育部推薦用字），上面的句子是華語，要翻成道地的台語口語，不能照抄華語。",
+          "華語→台語對照：我們→阮、你們→恁、在→佇、這裡→遮、那裡→遐、很→真、漂亮→媠、高興→歡喜、一起→做伙、走路→行路、吃→食、看→看、喜歡→佮意、今天→今仔日、下次→後擺、老伴→老伴、舒服→爽快、慢慢→慢慢仔。",
+          "例：「今仔日佮老伴來日月潭，湖水真媠心內真歡喜」。不要羅馬字，不要華語詞。寫完自己檢查每一行都是台語。",
+        ].join("")
+      : "用繁體中文（台灣用語）寫，口語、溫暖。";
+  return [
+    "你是一位幫長輩寫歌的作詞人。請把下面這趟出遊寫成一首歌的歌詞。",
+    opts.place ? `地點：${opts.place}` : "",
+    `這趟出遊（每張照片一句）：\n${story || "（沒有文字，請寫一段溫馨的出遊回憶）"}`,
+    `曲風：${style.label}`,
+    lang,
+    "結構：[Verse 1] 4 行、[Chorus] 4 行、[Verse 2] 4 行、[Chorus] 4 行（副歌可以重複），每行 7～12 個字，盡量押韻，好唱好記。",
+    "只寫上面提到的地方和事情，不要編造沒去過的地點、人名或日期；不要提品牌、政治、宗教；不要英文。",
+    "歌名 10 個字以內。",
+    '只回 JSON：{"title":"歌名","lyrics":"[Verse 1]\\n第一行\\n…"}，歌詞用 \\n 換行，段落標記放在自己那一行。',
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+/** 送去 Suno 的曲風描述（歌詞另外給） */
+export function mvSunoPrompt(style: MvStyleId, language: MvLanguageId, vocal: MvVocal): string {
+  const s = MV_STYLES.find((x) => x.id === style) ?? MV_STYLES[0];
+  const l = MV_LANGUAGES.find((x) => x.id === language) ?? MV_LANGUAGES[0];
+  return `${s.suno}, ${vocal === "m" ? "warm male vocal" : "warm female vocal"}, ${l.suno}, clear lyrics, gentle tempo for seniors`;
+}
+
 /** 前端顯示用的影片資料（API 回傳格式） */
 export interface TravelVideo {
   id: string;
@@ -417,6 +567,10 @@ export interface TravelVideo {
   narration_text: string | null;
   /** 家人的按讚、留言（做好的影片才有） */
   comments?: VideoCommentsView;
+  /** MV：歌名、歌詞、製作進度 */
+  /** 不帶原始遊記的 id：MV 的分享連結被轉傳時，不能被拿去打開那支遊記 */
+  mv?: { title: string; lyrics: string; language: MvLanguageId; style: MvStyleId } | null;
+  mv_progress?: { stage: MvStage; done: number; total: number } | null;
 }
 
 /** 試聽過的口白（音檔已存在伺服器，送出影片時帶 id） */
@@ -444,13 +598,21 @@ export function videoSharePath(id: string): string {
 }
 
 /** 分享頁的標題與說明（LINE／FB 預覽用）。不放長輩的名字：連結可能被轉傳出去 */
-export function videoShareMeta(v: Pick<TravelVideo, "kind" | "place" | "narration_text" | "montage_lines">): {
+export function videoShareMeta(v: Pick<TravelVideo, "kind" | "place" | "narration_text" | "montage_lines"> & { mv?: TravelVideo["mv"] }): {
   title: string;
   description: string;
 } {
-  const what = v.kind === "montage" ? "遊記影片" : "出遊回憶影片";
-  const title = v.place ? `${v.place}・${what}` : what;
-  const lines = v.kind === "montage" ? (v.montage_lines ?? []) : v.narration_text ? [v.narration_text] : [];
+  const what = v.kind === "mv" ? "MV" : v.kind === "montage" ? "遊記影片" : "出遊回憶影片";
+  const title =
+    v.kind === "mv" && v.mv?.title ? `🎵 ${v.mv.title}${v.place ? `・${v.place}` : ""}` : v.place ? `${v.place}・${what}` : what;
+  const lines =
+    v.kind === "mv"
+      ? (v.mv?.lyrics ?? "").split("\n").filter((l) => l && !/^\[.*\]$/.test(l.trim())).slice(0, 2)
+      : v.kind === "montage"
+        ? (v.montage_lines ?? [])
+        : v.narration_text
+          ? [v.narration_text]
+          : [];
   const said = lines.filter(Boolean).join("／");
   const description = said ? `「${said.length > 60 ? `${said.slice(0, 60)}…` : said}」用暖暖做的${what}` : `用暖暖做的${what}，點開來看看`;
   return { title, description };

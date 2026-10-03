@@ -175,11 +175,11 @@ export function formatVoiceSeconds(seconds: number | null): string {
 }
 
 /** 推播文字：長輩做好一支新影片（給看得到影片的家人） */
-export function newVideoPushForFamily(opts: { elderName: string; place: string | null; montage: boolean }): {
+export function newVideoPushForFamily(opts: { elderName: string; place: string | null; montage: boolean; mv?: boolean }): {
   title: string;
   body: string;
 } {
-  const what = opts.montage ? "遊記影片" : "出遊影片";
+  const what = opts.mv ? "MV" : opts.montage ? "遊記影片" : "出遊影片";
   return {
     title: `🎬 ${opts.elderName}做了一支${what}`,
     body: `${opts.place ? `在「${opts.place}」，` : ""}點這裡看看，給${opts.elderName}按個讚吧`,

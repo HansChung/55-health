@@ -7,6 +7,9 @@ import type { ChapterOverrides } from "./chapter-content";
 import type { VideoCommentsView, VideoReaction } from "./video-comments";
 import type {
   MontageMusicId,
+  MvLanguageId,
+  MvStyleId,
+  MvVocal,
   MyVoiceStatus,
   NarrationAccentId,
   NarrationVoiceChoice,
@@ -139,7 +142,13 @@ export const api = {
 
   // 出遊回憶影片（MiniMax）；列表會順便同步進行中的影片，做好時要轉存影片 → 給長一點的逾時
   listTravelVideos: () =>
-    apiFetch<{ videos: TravelVideo[]; quota: TravelVideoQuota; montage_quota?: TravelVideoQuota; enabled: boolean }>(
+    apiFetch<{
+      videos: TravelVideo[];
+      quota: TravelVideoQuota;
+      montage_quota?: TravelVideoQuota;
+      mv_quota?: TravelVideoQuota;
+      enabled: boolean;
+    }>(
       "/api/ai/travel-video",
       { timeoutMs: 60000, retries: 0 }
     ),
@@ -189,6 +198,23 @@ export const api = {
     narration?: { id: string; voice: NarrationVoiceChoice; accent?: NarrationAccentId; text: string };
   }) =>
     apiFetch<{ video: TravelVideo; quota: TravelVideoQuota }>("/api/ai/travel-video", {
+      method: "POST",
+      json: input,
+      timeoutMs: 70000,
+    }),
+
+  // 遊記 MV（專業版）：AI 寫歌詞（約 10 秒）、建立 MV（開始做歌）
+  writeMvLyrics: (videoId: string, input: { language: MvLanguageId; style: MvStyleId }) =>
+    apiFetch<{ title: string; lyrics: string }>(`/api/ai/travel-video/${videoId}/mv/lyrics`, {
+      method: "POST",
+      json: input,
+      timeoutMs: 60000,
+    }),
+  createMv: (
+    videoId: string,
+    input: { language: MvLanguageId; style: MvStyleId; vocal: MvVocal; title: string; lyrics: string }
+  ) =>
+    apiFetch<{ video: TravelVideo; quota: TravelVideoQuota }>(`/api/ai/travel-video/${videoId}/mv`, {
       method: "POST",
       json: input,
       timeoutMs: 70000,

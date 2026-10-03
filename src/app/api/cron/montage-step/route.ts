@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/server";
 import { montageRetryDelayMs, syncMontage } from "@/lib/ai/travel-montage-server";
+import { syncMv } from "@/lib/ai/travel-mv-server";
 import type { TravelVideoRow } from "@/lib/ai/travel-video-server";
 import { isTravelVideoPending } from "@/lib/travel-video";
 
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
     .from("travel_videos")
     .select("*")
     .eq("id", id)
-    .eq("kind", "montage")
+    .in("kind", ["montage", "mv"]) // 遊記 MV 也用同一個接力端點
     .is("deleted_at", null)
     .maybeSingle();
   const row = data as TravelVideoRow | null;
@@ -38,11 +39,13 @@ export async function POST(req: NextRequest) {
 
   const origin = new URL(req.url).origin;
   after(async () => {
-    const wait = montageRetryDelayMs(row.montage?.attempts ?? 0);
+    const wait = montageRetryDelayMs((row.kind === "mv" ? row.mv?.attempts : row.montage?.attempts) ?? 0);
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-    await syncMontage(row, { origin, budgetMs: WORK_BUDGET_MS - wait }).catch((e) =>
-      console.error("[montage] continuation step failed:", e)
-    );
+    const step =
+      row.kind === "mv"
+        ? syncMv(row, { origin, budgetMs: WORK_BUDGET_MS - wait, waitForSong: true })
+        : syncMontage(row, { origin, budgetMs: WORK_BUDGET_MS - wait });
+    await step.catch((e) => console.error("[montage] continuation step failed:", e));
   });
   return NextResponse.json({ ok: true }, { status: 202 });
 }

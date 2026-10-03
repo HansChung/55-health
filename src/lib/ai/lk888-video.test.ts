@@ -99,6 +99,17 @@ describe("parseQueryResponse", () => {
     expect(parseQueryResponse(200, { state: "running", is_final: false, error: null, progress: "45" }).status).toBe("running");
   });
 
+  it("Suno 一次兩首：全部網址都帶出來", () => {
+    const r = parseQueryResponse(200, {
+      state: "success",
+      is_final: true,
+      result_url: "https://cdn/a.mp3",
+      result_urls: ["https://cdn/a.mp3", "https://cdn/b.mp3"],
+    });
+    expect(r.urls).toEqual(["https://cdn/a.mp3", "https://cdn/b.mp3"]);
+    expect(r.videoUrl).toBe("https://cdn/a.mp3");
+  });
+
   it("成功時優先取 result_urls[0]，並帶出平台扣費", () => {
     const r = parseQueryResponse(200, {
       state: "success",
@@ -112,6 +123,7 @@ describe("parseQueryResponse", () => {
     expect(r).toEqual({
       status: "succeeded",
       videoUrl: "https://cdn.example.com/video/abc.mp4",
+      urls: ["https://cdn.example.com/video/abc.mp4"],
       errorMessage: null,
       platformCost: 1.5,
     });
