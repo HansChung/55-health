@@ -73,7 +73,7 @@ describe("MV 方案與文字", () => {
   it("分享頁標題：🎵 歌名・地點；說明用前兩句歌詞（不含分段標記）", () => {
     const meta = videoShareMeta({
       kind: "mv", place: "日月潭", narration_text: null, montage_lines: null,
-      mv: { title: "湖邊的歌", lyrics: "[Verse 1]\n湖水藍藍\n風輕輕吹\n[Chorus]\n下次再來", language: "mandarin", style: "folk", source_video_id: "s" },
+      mv: { title: "湖邊的歌", lyrics: "[Verse 1]\n湖水藍藍\n風輕輕吹\n[Chorus]\n下次再來", language: "mandarin", style: "folk" },
     });
     expect(meta.title).toBe("🎵 湖邊的歌・日月潭");
     expect(meta.description).toBe("「湖水藍藍／風輕輕吹」用暖暖做的MV");
@@ -87,5 +87,13 @@ describe("MV 合成", () => {
     expect(graph).toBe("[1:a]atrim=0:150.00,asetpts=PTS-STARTPTS,afade=t=in:d=0.5,afade=t=out:st=146.00:d=4[a]");
     expect(args.slice(args.indexOf("-c:v"), args.indexOf("-c:v") + 2)).toEqual(["-c:v", "copy"]);
     expect(args.slice(args.indexOf("-t"), args.indexOf("-t") + 2)).toEqual(["-t", "150.00"]);
+  });
+});
+
+describe("MV 開頭標題", () => {
+  it("用書名號，不用表情符號；有地點才加", async () => {
+    const { mvTitleLine } = await import("./ai/travel-mv-server");
+    expect(mvTitleLine("湖邊的歌", "日月潭")).toBe("《湖邊的歌》　日月潭");
+    expect(mvTitleLine("湖邊的歌", null)).toBe("《湖邊的歌》");
   });
 });

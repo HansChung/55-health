@@ -568,7 +568,8 @@ export interface TravelVideo {
   /** 家人的按讚、留言（做好的影片才有） */
   comments?: VideoCommentsView;
   /** MV：歌名、歌詞、製作進度 */
-  mv?: { title: string; lyrics: string; language: MvLanguageId; style: MvStyleId; source_video_id: string } | null;
+  /** 不帶原始遊記的 id：MV 的分享連結被轉傳時，不能被拿去打開那支遊記 */
+  mv?: { title: string; lyrics: string; language: MvLanguageId; style: MvStyleId } | null;
   mv_progress?: { stage: MvStage; done: number; total: number } | null;
 }
 

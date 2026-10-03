@@ -7,7 +7,7 @@ import { NextRequest, NextResponse, after } from "next/server";
 import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
 import { checkUserQuota } from "@/lib/ai/usage-tracker";
-import { isVideoProviderConfigured } from "@/lib/ai/lk888-video";
+import { VideoProviderError, isVideoProviderConfigured } from "@/lib/ai/lk888-video";
 import { createSongTask } from "@/lib/ai/lk888-music";
 import { loadMvSource } from "@/lib/ai/travel-mv-source";
 import { mvPhotoPath, syncMv } from "@/lib/ai/travel-mv-server";
@@ -124,27 +124,53 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
       vocal: state.vocal,
     });
   } catch (e) {
-    console.error("[api] mv song create failed:", e instanceof Error ? e.message : e);
+    const msg = e instanceof Error ? e.message : String(e);
+    // 逾時：平台可能已經收下並扣費 → 保留這筆「製作中」（占住名額，長輩不會重送重複付費）；
+    // 沒有任務編號就等不到歌，45 分鐘後自動標記失敗（不扣次數）
+    if (e instanceof VideoProviderError && e.code === "timeout") {
+      console.error(`[api] MV 做歌任務建立逾時，保留待對帳：video_id=${mvId}`);
+      return NextResponse.json({
+        video: toClientVideo(admin, inserted as TravelVideoRow),
+        quota: { used: quota.used + 1, limit: quota.limit, tier: quota.tier },
+      });
+    }
+    console.error("[api] mv song create failed:", msg);
     await admin
       .from("travel_videos")
-      .update({ status: "failed", error_message: `song create failed: ${e instanceof Error ? e.message : e}`.slice(0, 500), completed_at: new Date().toISOString() })
+      .update({ status: "failed", error_message: `song create failed: ${msg}`.slice(0, 500), completed_at: new Date().toISOString() })
       .eq("id", mvId);
     await admin.storage.from(TRAVEL_VIDEO_BUCKET).remove(copied);
     return NextResponse.json({ error: "做歌暫時沒成功，請稍後再試（不會扣次數）" }, { status: 502 });
   }
 
+  // 任務編號一定要存進 DB 才開始等歌（存不進去就重試；背景工作是從 DB 讀的）。
+  // 欄位 task_id 也存一份：mv 欄位萬一沒寫進去，等歌時還找得到
   const started = { ...state, task_id: taskId };
-  const { data: running } = await admin
-    .from("travel_videos")
-    .update({ status: "running", task_id: taskId, mv: started, updated_at: new Date().toISOString() })
-    .eq("id", mvId)
-    .select("*")
-    .single();
-  const row = (running ?? { ...inserted, mv: started }) as TravelVideoRow;
+  let row: TravelVideoRow | null = null;
+  for (let attempt = 0; attempt < 3 && !row; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 500 * attempt));
+    const { data: running, error: upErr } = await admin
+      .from("travel_videos")
+      .update({ status: "running", task_id: taskId, mv: started, updated_at: new Date().toISOString() })
+      .eq("id", mvId)
+      .select("*")
+      .maybeSingle();
+    if (upErr) console.warn("[api] mv task id save failed:", upErr.message);
+    row = (running as TravelVideoRow | null) ?? null;
+  }
+  if (!row) {
+    // 歌已經在做（有付費）但編號沒存進去：留下紀錄方便對帳，不啟動背景工作
+    console.error(`[api] MV 任務編號沒存進資料庫，請人工對帳：video_id=${mvId} task_id=${taskId}`);
+    return NextResponse.json({
+      video: toClientVideo(admin, inserted as TravelVideoRow),
+      quota: { used: quota.used + 1, limit: quota.limit, tier: quota.tier },
+    });
+  }
 
   // 回應送出後先開始等歌（背景接力會接著做完，長輩離開畫面也會做好並推播）
   const origin = new URL(req.url).origin;
-  after(() => syncMv(row, { origin, waitForSong: true }).then(() => undefined).catch((e) => console.error("[mv] first step failed:", e)));
+  const startedRow = row;
+  after(() => syncMv(startedRow, { origin, waitForSong: true }).then(() => undefined).catch((e) => console.error("[mv] first step failed:", e)));
 
   return NextResponse.json({
     video: toClientVideo(admin, row),

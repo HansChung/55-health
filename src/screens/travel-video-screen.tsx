@@ -157,7 +157,13 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
             );
           }
           else if (v.status === "failed") {
-            toast.info(montage ? "有一支遊記沒做成功，不會扣次數，請再做一次" : "有一支影片沒做成功，不會扣次數，換張照片再試試");
+            toast.info(
+              v.kind === "mv"
+                ? "有一支 MV 沒做成功，不會扣次數，請再做一次"
+                : montage
+                  ? "有一支遊記沒做成功，不會扣次數，請再做一次"
+                  : "有一支影片沒做成功，不會扣次數，換張照片再試試"
+            );
           }
         }
         lastStatus.current[v.id] = v.status;

@@ -56,6 +56,11 @@ export function mvAllPaths(row: Pick<TravelVideoRow, "user_id" | "id" | "mv">): 
   ];
 }
 
+/** MV 開頭那一行：《歌名》　地點（字幕字型沒有表情符號，🎵 會變成方框，所以用書名號） */
+export function mvTitleLine(title: string, place: string | null | undefined): string {
+  return `《${title}》${place ? `　${place}` : ""}`;
+}
+
 /** 重試也沒用的錯誤（例如做歌失敗）→ 直接失敗，不扣次數 */
 class MvFatalError extends Error {}
 
@@ -71,9 +76,11 @@ async function saveMv(admin: Admin, row: TravelVideoRow, state: MvState, extra: 
  * wait＝背景接力在跑：時間內每 5 秒查一次；畫面輪詢只查一次（不讓清單請求卡 45 秒）
  */
 async function runSong(admin: Admin, row: TravelVideoRow, state: MvState, deadline: number, wait: boolean): Promise<MvState> {
-  if (!state.task_id) throw new MvFatalError("song task missing");
+  // 建立時逾時（平台可能其實收下了）就沒有任務編號：先等著，超過 MV_STALE_MS 會自動標記失敗
+  const taskId = state.task_id ?? row.task_id;
+  if (!taskId) return state;
   for (;;) {
-    const task = await queryVideoTask(state.task_id, 10_000);
+    const task = await queryVideoTask(taskId, 10_000);
     if (task.status === "failed") throw new MvFatalError(`song failed: ${task.errorMessage ?? "unknown"}`);
     if (task.status === "succeeded" && task.videoUrl) {
       const urls = (task.urls?.length ? task.urls : [task.videoUrl]).slice(0, 2);
@@ -97,7 +104,7 @@ async function runSong(admin: Admin, row: TravelVideoRow, state: MvState, deadli
         metadata: {
           provider: "lk888",
           video_id: row.id,
-          task_id: state.task_id,
+          task_id: taskId,
           platform_cost: task.platformCost,
           seconds: Number(first.seconds.toFixed(1)),
           language: state.language,
@@ -106,6 +113,7 @@ async function runSong(admin: Admin, row: TravelVideoRow, state: MvState, deadli
       });
       return {
         ...state,
+        task_id: taskId,
         song_path: mvSongPath(row, 1),
         alt_song_path: second ? mvSongPath(row, 2) : null,
         song_seconds: Number(first.seconds.toFixed(2)),
@@ -127,10 +135,12 @@ async function runClips(
   deadline: number
 ): Promise<{ row: TravelVideoRow; state: MvState }> {
   const segments = state.segments ?? [];
+  // 字幕字型只下載用得到的字：要用「實際燒上去的那一行」（含《》和全形空白），不然那些符號會變方框
+  const titleLine = state.title ? mvTitleLine(state.title, row.place) : "";
   let font: Buffer | null = null;
-  if (!segments[0]?.clip_path && state.title) {
+  if (!segments[0]?.clip_path && titleLine) {
     try {
-      font = await fetchSubtitleFont(`${state.title}${row.place ?? ""}`, FONT_TIMEOUT_MS);
+      font = await fetchSubtitleFont(titleLine, FONT_TIMEOUT_MS);
     } catch (e) {
       console.warn("[mv] title font unavailable, first clip without title:", e);
     }
@@ -144,8 +154,7 @@ async function runClips(
     const seg = next.segments![i];
     const photo = next.photos[seg.photo] ?? next.photos[0];
     if (!photos.has(seg.photo)) photos.set(seg.photo, await download(admin, photo.path));
-    // 字幕字型沒有表情符號（🎵 會變成方框）→ 用書名號
-    const title = i === 0 && state.title ? `《${state.title}》${row.place ? `　${row.place}` : ""}` : "";
+    const title = i === 0 ? titleLine : "";
     const { clip } = await renderMontageClip({
       photo: photos.get(seg.photo)!,
       line: title,
