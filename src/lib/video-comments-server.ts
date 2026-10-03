@@ -319,7 +319,7 @@ export async function notifyFamilyNewVideo(row: { id: string; user_id: string; p
     if (targets.length === 0) return;
     const { data: profile } = await admin.from("profiles").select("display_name").eq("id", row.user_id).maybeSingle();
     const elderName = (profile as { display_name: string | null } | null)?.display_name?.trim() || "長輩";
-    const msg = newVideoPushForFamily({ elderName, place: row.place, montage: row.kind === "montage" });
+    const msg = newVideoPushForFamily({ elderName, place: row.place, montage: row.kind === "montage", mv: row.kind === "mv" });
     await push(targets, msg, FAMILY_VIDEOS_LINK, `family-new-video-${row.id}`);
   } catch (e) {
     console.warn("[video-comments] family new-video push failed:", e);

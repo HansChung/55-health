@@ -37,7 +37,7 @@ export function VideoShareView({ shared }: { shared: SharedVideo | null }) {
 function SharedVideoCard({ shared }: { shared: SharedVideo }) {
   const v = shared.video;
   const { title } = videoShareMeta(v);
-  const lines = v.kind === "montage" ? (v.montage_lines ?? []) : v.narration_text ? [v.narration_text] : [];
+  const lines = v.kind === "mv" ? [] : v.kind === "montage" ? (v.montage_lines ?? []) : v.narration_text ? [v.narration_text] : [];
 
   return (
     <>
@@ -54,7 +54,7 @@ function SharedVideoCard({ shared }: { shared: SharedVideo }) {
         )}
         <div>
           <h1 style={{ fontSize: "var(--fs-xl, 24px)", fontWeight: 800, margin: 0, lineHeight: 1.4 }}>
-            {v.kind === "montage" ? "📚 " : "🎬 "}{title}
+            {v.kind === "mv" ? "" : v.kind === "montage" ? "📚 " : "🎬 "}{title}
           </h1>
           <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-3)", marginTop: 4 }}>{formatDay(v.created_at)}</div>
         </div>
@@ -62,6 +62,12 @@ function SharedVideoCard({ shared }: { shared: SharedVideo }) {
           <div style={{ fontSize: "var(--fs-base)", color: "var(--ink-2)", lineHeight: 1.7 }}>
             {lines.map((l, i) => <div key={i}>🗣️ 「{l}」</div>)}
           </div>
+        )}
+        {v.kind === "mv" && v.mv?.lyrics && (
+          <details>
+            <summary style={{ cursor: "pointer", fontWeight: 700 }}>📜 歌詞</summary>
+            <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.8, marginTop: 6 }}>{v.mv.lyrics}</div>
+          </details>
         )}
         {v.download_url && (
           <a href={v.download_url} className="btn-ghost" style={{ textAlign: "center", textDecoration: "none" }}>

@@ -115,6 +115,17 @@ stack works well for auth + meal/diary CRUD:
   one sentence per tap, free; Chrome sends audio to Google, Safari to Apple). It only renders when the API
   exists — not in the Capacitor Android WebView or Firefox, where people just type. Newer Chrome exposes the
   unprefixed `SpeechRecognition`, so mocks in tests must replace both names.
+- **遊記 MV** (`kind='mv'`, Pro only, 6/month via `mvQuota`; needs `supabase/add-travel-video-mv.sql`): from a
+  finished 遊記, `POST /api/ai/travel-video/[id]/mv/lyrics` has Gemini write title + lyrics (國語 or 台語 — the 台語
+  prompt needs the 華語→台語 word list or the model just echoes the Mandarin trip lines), the elder edits, then
+  `POST …/mv` copies the montage photos, inserts the row (one pending MV per user via the kind index) and starts
+  lk888 **Suno v4.5** (`lk888-music.ts`, custom lyrics in `params.lyrics`, ~0.54 算力 per call, two versions,
+  ~1–3 min). `travel-mv-server.ts` reuses the montage lease/continuation machinery (`montage-step` dispatches
+  on kind): song → both mp3s converted to stereo m4a (bucket has no audio/mpeg) → ~9 s Ken Burns segments
+  cycling the photos for the song length (≤180 s; first segment shows 《歌名》 — the subtitle font has no emoji)
+  → concat + song with fades. Only background steps wait for Suno (`waitForSong`); list polls check once. Suno
+  returns no lyric timestamps, so lyrics are shown under the video instead of as subtitles. Tested 2026-10-03:
+  a 台語 MV took ~2 min end to end locally and a listening check rated it Taiwanese Hokkien.
 - **遊記配樂**: `montage.music` picks a track from `MONTAGE_MUSIC` (`public/music/<id>.m4a`, also used for the
   in-app preview). Tracks were generated once (2026-09-30) with Suno v4.5 via lk888 (instrumental), then cut to
   90 s, normalized to -28 LUFS with two-pass `loudnorm`, 4 s fade-out, AAC 96k — keep new tracks at that level.

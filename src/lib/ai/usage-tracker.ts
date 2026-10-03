@@ -1,10 +1,10 @@
 import { createSupabaseAdmin } from "../supabase/server";
 import { calculateCost } from "./pricing";
-import { defaultVideoQuota, montageQuota } from "../travel-video";
+import { defaultVideoQuota, montageQuota, mvQuota } from "../travel-video";
 
 interface TrackUsageParams {
   userId: string | null;
-  service: "gemini_vision" | "gemini_text" | "openai_realtime" | "openai_chat" | "minimax_video" | "gemini_tts" | "minimax_tts";
+  service: "gemini_vision" | "gemini_text" | "openai_realtime" | "openai_chat" | "minimax_video" | "gemini_tts" | "minimax_tts" | "suno_music";
   model: string;
   inputTokens?: number;
   outputTokens?: number;
@@ -57,7 +57,7 @@ export async function trackAiUsage(params: TrackUsageParams) {
 /** 檢查用戶本月配額是否還夠 */
 export async function checkUserQuota(
   userId: string,
-  service: "photo" | "voice" | "video" | "montage"
+  service: "photo" | "voice" | "video" | "montage" | "mv"
 ): Promise<{
   allowed: boolean;
   used: number;
@@ -90,6 +90,20 @@ export async function checkUserQuota(
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
 
+  if (service === "mv") {
+    // 遊記 MV（做歌要算力）：專業版每月幾首；失敗的不算，刪掉的仍算
+    const { count } = await supabase
+      .from("travel_videos")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("kind", "mv")
+      .neq("status", "failed")
+      .gte("created_at", startOfMonth.toISOString());
+    const used = count ?? 0;
+    const limit = mvQuota(tier);
+    return { allowed: used < limit, used, limit, tier };
+  }
+
   if (service === "montage") {
     // 多張照片遊記：只花配音費，另外計次（失敗的不算；刪掉的仍算）
     const { count } = await supabase
@@ -118,7 +132,7 @@ export async function checkUserQuota(
       .from("travel_videos")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
-      .neq("kind", "montage") // 遊記另外計次
+      .eq("kind", "single") // 遊記、MV 另外計次
       .neq("status", "failed")
       .gte("created_at", startOfMonth.toISOString());
 

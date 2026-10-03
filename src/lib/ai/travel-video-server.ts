@@ -15,7 +15,9 @@ import {
   buildSubtitleCues,
   isTravelVideoPending,
   montageProgress,
+  mvProgress,
   type MontageState,
+  type MvState,
   type TravelVideo,
   type TravelVideoKind,
   type TravelVideoStatus,
@@ -125,6 +127,8 @@ export interface TravelVideoRow {
   // 多張照片遊記（add-travel-video-montage.sql；舊資料沒有這些欄位）
   kind?: TravelVideoKind | null;
   montage?: MontageState | null;
+  /** add-travel-video-mv.sql：MV 的歌詞、歌、片段 */
+  mv?: MvState | null;
   lease_until?: string | null;
 }
 
@@ -145,10 +149,21 @@ export function toClientVideo(admin: Admin, row: TravelVideoRow): TravelVideo {
     created_at: row.created_at,
     completed_at: row.completed_at,
     narration_text: row.narration_text ?? null,
-    kind: row.kind === "montage" ? "montage" : "single",
+    kind: row.kind === "montage" || row.kind === "mv" ? row.kind : "single",
     montage_lines: row.kind === "montage" && row.montage ? row.montage.photos.map((p) => p.line) : null,
     montage_progress:
       row.kind === "montage" && row.montage && isTravelVideoPending(row.status) ? montageProgress(row.montage) : null,
+    mv:
+      row.kind === "mv" && row.mv
+        ? {
+            title: row.mv.title,
+            lyrics: row.mv.lyrics,
+            language: row.mv.language,
+            style: row.mv.style,
+            source_video_id: row.mv.source_video_id,
+          }
+        : null,
+    mv_progress: row.kind === "mv" && row.mv && isTravelVideoPending(row.status) ? mvProgress(row.mv) : null,
   };
 }
 
@@ -177,8 +192,13 @@ export async function finishRow(
 export async function notifyOwner(row: TravelVideoRow): Promise<void> {
   const where = row.place ? `「${row.place}」的` : "";
   const montage = row.kind === "montage";
+  const mvTitle = row.mv?.title ? `「${row.mv.title}」` : "";
   const message =
-    row.status === "succeeded"
+    row.kind === "mv"
+      ? row.status === "succeeded"
+        ? { title: "🎵 MV 做好了！", body: `${mvTitle}MV 做好了，點這裡播放、分享給家人` }
+        : { title: "MV 這次沒做成功", body: "不會扣次數，請再做一次試試看" }
+      : row.status === "succeeded"
       ? montage
         ? { title: "📚 遊記影片做好了！", body: `${where}遊記影片做好了，點這裡播放、分享給家人` }
         : { title: "🎬 出遊影片做好了！", body: `${where}回憶影片做好了，點這裡播放、分享給家人` }

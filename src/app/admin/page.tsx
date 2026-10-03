@@ -142,6 +142,7 @@ function labelService(s: string) {
     minimax_video: "🎬 MiniMax 影片",
     gemini_tts: "🗣️ Gemini 配音",
     minimax_tts: "🎙️ 我的聲音（複製）",
+    suno_music: "🎵 MV 做歌（Suno）",
   } as Record<string, string>)[s] ?? s;
 }
 

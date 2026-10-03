@@ -104,7 +104,7 @@ export function montageRetryDelayMs(attempts: number): number {
 }
 
 /** 叫下一棒：對方收到就馬上回 202，在它自己的函式裡做下一段 */
-async function scheduleContinuation(videoId: string, origin: string | null | undefined): Promise<void> {
+export async function scheduleContinuation(videoId: string, origin: string | null | undefined): Promise<void> {
   const url = montageContinueUrl(process.env, origin);
   if (!url) return;
   try {
@@ -134,7 +134,7 @@ function accentOf(row: TravelVideoRow): NarrationAccentId {
 class MontageFatalError extends Error {}
 
 /** 搶租約：沒人在處理（或上一個處理者逾時）才拿得到 */
-async function acquireLease(admin: Admin, row: TravelVideoRow): Promise<TravelVideoRow | null> {
+export async function acquireLease(admin: Admin, row: TravelVideoRow): Promise<TravelVideoRow | null> {
   const now = new Date();
   const { data, error } = await admin
     .from("travel_videos")
@@ -167,13 +167,13 @@ async function saveState(
   return { ...row, ...patch } as TravelVideoRow;
 }
 
-async function download(admin: Admin, storagePath: string): Promise<Buffer> {
+export async function download(admin: Admin, storagePath: string): Promise<Buffer> {
   const { data, error } = await admin.storage.from(TRAVEL_VIDEO_BUCKET).download(storagePath);
   if (error || !data) throw new Error(`download ${storagePath} failed: ${error?.message ?? "missing"}`);
   return Buffer.from(await data.arrayBuffer());
 }
 
-async function upload(admin: Admin, storagePath: string, body: Buffer, contentType: string, cache = false) {
+export async function upload(admin: Admin, storagePath: string, body: Buffer, contentType: string, cache = false) {
   const { error } = await admin.storage
     .from(TRAVEL_VIDEO_BUCKET)
     .upload(storagePath, body, { contentType, upsert: true, ...(cache ? { cacheControl: "31536000" } : {}) });

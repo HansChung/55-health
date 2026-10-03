@@ -51,13 +51,19 @@ export function FamilyVideos() {
                   />
                 )}
                 <div style={{ display: "flex", gap: 8, fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
-                  <span aria-hidden="true">{v.kind === "montage" ? "📚" : "🎬"}</span>
+                  <span aria-hidden="true">{v.kind === "mv" ? "🎵" : v.kind === "montage" ? "📚" : "🎬"}</span>
                   <span style={{ fontWeight: 700, color: "var(--ink-1)" }}>
-                    {e.name}{v.place ? `・${v.place}` : ""}
+                    {e.name}{v.kind === "mv" && v.mv?.title ? `・MV「${v.mv.title}」` : ""}{v.place ? `・${v.place}` : ""}
                   </span>
                   <span style={{ marginLeft: "auto", fontSize: "var(--fs-xs)" }}>{formatWhen(v.created_at)}</span>
                 </div>
-                {v.narration_text && (
+                {v.kind === "mv" && v.mv?.lyrics && (
+                  <details>
+                    <summary style={{ cursor: "pointer", fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>📜 看歌詞</summary>
+                    <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.8, marginTop: 6 }}>{v.mv.lyrics}</div>
+                  </details>
+                )}
+                {v.kind !== "mv" && v.narration_text && (
                   <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
                     <span aria-hidden="true">🗣️ </span>「{v.narration_text}」
                   </div>

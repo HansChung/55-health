@@ -101,6 +101,8 @@ export function parseCreateResponse(httpStatus: number, json: Json): string {
 export interface VideoTaskResult {
   status: TravelVideoStatus;
   videoUrl: string | null;
+  /** 全部結果（Suno 一次做兩個版本）；videoUrl 是第一個 */
+  urls?: string[];
   errorMessage: string | null;
   /** 平台實際扣的算力值（完成後才有） */
   platformCost: number | null;
@@ -123,8 +125,9 @@ export function parseQueryResponse(httpStatus: number, json: Json): VideoTaskRes
 
   if (state === "success") {
     // 轉存還沒好時 result_url 會是空的 → 當作還在做，下次再查
+    const all = urls.filter((u): u is string => typeof u === "string" && Boolean(u));
     return url
-      ? { status: "succeeded", videoUrl: url, errorMessage: null, platformCost }
+      ? { status: "succeeded", videoUrl: url, urls: all.length > 0 ? all : [url], errorMessage: null, platformCost }
       : { status: "running", videoUrl: null, errorMessage: null, platformCost };
   }
   if (state === "failed" || json?.is_final === true) {

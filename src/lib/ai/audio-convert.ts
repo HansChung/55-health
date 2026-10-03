@@ -13,6 +13,27 @@ import { runFfmpeg } from "./video-compose";
 
 const CONVERT_TIMEOUT_MS = 20_000;
 
+/** 讀 WAV（RIFF）標頭算秒數；找 fmt / data 區塊，不假設固定 44 bytes */
+export function wavDurationSeconds(buf: Buffer): number {
+  if (buf.length < 12 || buf.toString("ascii", 0, 4) !== "RIFF" || buf.toString("ascii", 8, 12) !== "WAVE") {
+    throw new Error("not a WAV file");
+  }
+  let byteRate = 0;
+  let offset = 12;
+  while (offset + 8 <= buf.length) {
+    const id = buf.toString("ascii", offset, offset + 4);
+    const size = buf.readUInt32LE(offset + 4);
+    if (id === "fmt ") byteRate = buf.readUInt32LE(offset + 16);
+    if (id === "data") {
+      if (!byteRate) throw new Error("WAV missing fmt chunk");
+      const dataBytes = Math.min(size, buf.length - offset - 8);
+      return dataBytes / byteRate;
+    }
+    offset += 8 + size + (size % 2);
+  }
+  throw new Error("WAV missing data chunk");
+}
+
 export function isWav(buf: Buffer): boolean {
   return buf.length >= 12 && buf.toString("ascii", 0, 4) === "RIFF" && buf.toString("ascii", 8, 12) === "WAVE";
 }
@@ -91,6 +112,32 @@ export async function wavToM4a(wav: Buffer): Promise<Buffer> {
     );
     if (result.code !== 0) throw new Error(`ffmpeg m4a exited ${result.code}: ${result.stderr.slice(-400)}`);
     return await readFile(outPath);
+  } finally {
+    await rm(dir, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
+/**
+ * 做好的歌（Suno 回 mp3）→ 立體聲 m4a 存 Storage（bucket 不收 mp3），順便量長度；
+ * 超過 maxSeconds 的部分截掉（MV 合成時再淡出）
+ */
+export async function musicToM4a(input: Buffer, maxSeconds: number): Promise<{ m4a: Buffer; seconds: number }> {
+  const wav = await toWav(input, { maxSeconds });
+  const seconds = wavDurationSeconds(wav);
+  const dir = await mkdtemp(path.join(tmpdir(), "audio-"));
+  try {
+    const inPath = path.join(dir, "in.bin");
+    const outPath = path.join(dir, "out.m4a");
+    await writeFile(inPath, input);
+    const result = await runFfmpeg(
+      [
+        "-hide_banner", "-nostdin", "-y", ...SAFE_AUDIO_INPUT, "-i", inPath, "-t", String(maxSeconds),
+        "-vn", "-ac", "2", "-ar", "44100", "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", outPath,
+      ],
+      CONVERT_TIMEOUT_MS
+    );
+    if (result.code !== 0) throw new Error(`ffmpeg music m4a exited ${result.code}: ${result.stderr.slice(-400)}`);
+    return { m4a: await readFile(outPath), seconds };
   } finally {
     await rm(dir, { recursive: true, force: true }).catch(() => {});
   }
