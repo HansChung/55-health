@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
-import type { ProfileMedication, EmergencyContact } from "@/lib/api-client";
+import type { ProfileMedication, EmergencyContact, NotificationSettings } from "@/lib/api-client";
 
 export interface AppProfile {
   id: string;
@@ -17,6 +17,7 @@ export interface AppProfile {
   chronic_conditions: string[];
   medications: ProfileMedication[];
   emergency_contact?: EmergencyContact | null;
+  notification_settings?: NotificationSettings | null;
   subscription_tier: "free" | "basic" | "pro";
   is_admin: boolean;
 }

@@ -411,6 +411,8 @@ export const api = {
   updateProfile: (patch: Partial<ProfileData>) =>
     apiFetch<{ profile: ProfileData }>("/api/profile", { method: "PATCH", json: patch }),
 
+  dailyWeatherStatus: () => apiFetch<{ available: boolean }>("/api/daily-weather"),
+
   getVapidPublicKey: () =>
     apiFetch<{ configured: boolean; publicKey: string | null }>("/api/push/vapid-public-key"),
 
@@ -664,6 +666,8 @@ export interface NotificationSettings {
   family_alerts?: { on: boolean };
   /** 瀏覽器 Web Push（異常預警即時通知） */
   web_push?: { on: boolean };
+  /** 每天早上 7 點的天氣＋健康提醒（推播）；選好縣市就開 */
+  daily_weather?: { on: boolean; county: string | null };
 }
 
 export interface AiSuggestion {

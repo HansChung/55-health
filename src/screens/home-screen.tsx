@@ -1,7 +1,7 @@
 "use client";
 
 import { Meal, MealType } from "@/lib/types";
-import type { FavoriteMeal, MealRecord, PartnerCampaign, ProfileMedication } from "@/lib/api-client";
+import type { FavoriteMeal, MealRecord, NotificationSettings, PartnerCampaign, ProfileData, ProfileMedication } from "@/lib/api-client";
 import type { HealthAlert } from "@/lib/health-alerts";
 import { Icon } from "@/components/icons";
 import { Mascot } from "@/components/mascot";
@@ -10,6 +10,7 @@ import { MacroBar } from "@/components/macro-bar";
 import { FoodPlaceholder } from "@/components/food-placeholder";
 import { LockedFeatureCard } from "@/components/locked-feature-card";
 import { NavCard } from "@/components/nav-card";
+import { DailyWeatherCard } from "@/components/daily-weather-card";
 import { hasFeature, type SubscriptionTier } from "@/lib/feature-gates";
 
 interface HomeScreenProps {
@@ -47,6 +48,9 @@ interface HomeScreenProps {
   onPhotoAsk?: () => void;
   caregiver?: { count: number; needsAttention: boolean } | null;
   onCaregiver?: () => void;
+  /** 每天早上天氣：還沒設定過就在首頁問縣市 */
+  notificationSettings?: NotificationSettings | null;
+  onProfileUpdated?: (profile: ProfileData) => void;
 }
 
 const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
@@ -63,7 +67,7 @@ function getDateLabel(): string {
   return `${d.getMonth() + 1}月${d.getDate()}日　星期${WEEKDAYS[d.getDay()]}`;
 }
 
-export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart, onBlueprint, onBookPractice, onIot, onTravelVideo, onStudyTours, onPhotoAsk, caregiver = null, onCaregiver }: HomeScreenProps) {
+export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart, onBlueprint, onBookPractice, onIot, onTravelVideo, onStudyTours, onPhotoAsk, caregiver = null, onCaregiver, notificationSettings, onProfileUpdated }: HomeScreenProps) {
   // 從餐點計算今日營養
   const totals = meals.reduce(
     (s, m) => {
@@ -156,6 +160,8 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
           </div>
         </button>
       </div>
+
+      {onProfileUpdated && <DailyWeatherCard settings={notificationSettings} onSaved={onProfileUpdated} />}
 
       {caregiver && onCaregiver && (
         <NavCard

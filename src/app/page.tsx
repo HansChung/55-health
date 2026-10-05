@@ -683,6 +683,8 @@ export default function Page() {
             calories={totalCal}
             calorieGoal={calorieGoal}
             displayName={profile?.display_name}
+            notificationSettings={profile?.notification_settings}
+            onProfileUpdated={(updated) => setProfileDirectly(updated as AppProfile)}
             suggestion={suggestion}
             suggestionLoading={suggestionLoading}
             subscriptionTier={tier}
