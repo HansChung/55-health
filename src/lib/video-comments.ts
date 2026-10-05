@@ -49,6 +49,21 @@ export interface VideoCommentsView {
   reactions: VideoReactionSummary[];
   /** 舊的在前 */
   comments: VideoComment[];
+  /** 看過影片的家人（最近看的在前）；只有影片主人拿得到 */
+  viewers?: VideoViewer[];
+}
+
+export interface VideoViewer {
+  name: string;
+  relationship: string | null;
+  last_viewed_at: string;
+}
+
+/** travel_video_views 的一列 */
+export interface VideoViewRow {
+  video_id: string;
+  viewer_id: string;
+  last_viewed_at: string;
 }
 
 export const EMPTY_COMMENTS: VideoCommentsView = { reactions: [], comments: [] };
@@ -92,8 +107,10 @@ export function buildCommentsView(opts: {
   viewerId: string;
   ownerId: string;
   directory: Map<string, { name: string; relationship: string | null }>;
+  /** 這支影片的觀看紀錄（只有影片主人看得到「誰看過了」） */
+  views?: VideoViewRow[];
 }): VideoCommentsView {
-  const { rows, viewerId, ownerId, directory } = opts;
+  const { rows, viewerId, ownerId, directory, views } = opts;
   const author = (id: string): CommentAuthor => {
     const d = directory.get(id);
     return {
@@ -130,7 +147,24 @@ export function buildCommentsView(opts: {
       can_delete: r.author_id === viewerId || viewerId === ownerId,
     }));
 
-  return { reactions, comments };
+  if (!views || viewerId !== ownerId) return { reactions, comments };
+  // 只列還連著的家人（取消連結的人不顯示）
+  const viewers = views
+    .filter((v) => v.viewer_id !== ownerId && directory.has(v.viewer_id))
+    .sort((a, b) => b.last_viewed_at.localeCompare(a.last_viewed_at))
+    .map((v) => ({
+      name: directory.get(v.viewer_id)!.name,
+      relationship: directory.get(v.viewer_id)!.relationship,
+      last_viewed_at: v.last_viewed_at,
+    }));
+  return { reactions, comments, viewers };
+}
+
+/** 「王小美（女兒）、阿明看過了」；人多就「…等 5 人看過了」 */
+export function viewersLine(viewers: Pick<VideoViewer, "name" | "relationship">[], max = 3): string {
+  if (viewers.length === 0) return "";
+  const names = viewers.slice(0, max).map((v) => (v.relationship ? `${v.name}（${v.relationship}）` : v.name));
+  return viewers.length > max ? `${names.join("、")}等 ${viewers.length} 人看過了` : `${names.join("、")}看過了`;
 }
 
 /** 推播文字：家人對長輩的影片按讚／留言 */

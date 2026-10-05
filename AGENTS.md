@@ -147,6 +147,12 @@ stack works well for auth + meal/diary CRUD:
   check) → AAC m4a (`wavToM4a`, plays on iOS too) stored at `{owner}/{video}/comments/{id}.m4a`; counts toward
   the 30-per-author limit; deleting the comment or the video removes the file. The comments route needs ffmpeg
   in `outputFileTracingIncludes`.
+- **家人看過了** (needs `supabase/add-travel-video-views.sql`; display only, no push): when a family member who
+  can see the video presses play (家人狀況 or the share page while logged in), `markVideoViewed` →
+  `POST /api/ai/travel-video/[id]/view` upserts `travel_video_views` (one row per viewer, `last_viewed_at`;
+  the owner's own plays aren't recorded). `loadCommentsViews` attaches `viewers` **only to the owner's own
+  videos**, so the elder sees 「👀 王小美（女兒）看過了」 under the reactions and family never see who else
+  watched. Unlinked family are dropped (not in `authorDirectory`). Missing table → treated as no views.
 - Needs `supabase/add-travel-videos.sql` (table, bucket, `ai_usage` service `minimax_video`,
   `subscription_plans.ai_video_quota`). Quota counts non-failed rows incl. soft-deleted ones.
   "One pending video per user" is enforced by the partial unique index

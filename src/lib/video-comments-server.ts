@@ -16,6 +16,7 @@ import {
   type CommentRow,
   type VideoCommentsView,
   type VideoReaction,
+  type VideoViewRow,
 } from "@/lib/video-comments";
 
 type Admin = ReturnType<typeof createSupabaseAdmin>;
@@ -112,7 +113,10 @@ export async function loadCommentsViews(
     audio_url: r.audio_path ? bucket.getPublicUrl(r.audio_path).data.publicUrl : null,
   }));
   const owners = [...new Set(videos.map((v) => v.user_id))];
-  const dirs = new Map(await Promise.all(owners.map(async (o) => [o, await authorDirectory(admin, o)] as const)));
+  const [dirs, views] = await Promise.all([
+    Promise.all(owners.map(async (o) => [o, await authorDirectory(admin, o)] as const)).then((d) => new Map(d)),
+    loadVideoViews(admin, videos.filter((v) => v.user_id === viewerId).map((v) => v.id)),
+  ]);
   for (const v of videos) {
     result.set(
       v.id,
@@ -121,10 +125,33 @@ export async function loadCommentsViews(
         viewerId,
         ownerId: v.user_id,
         directory: dirs.get(v.user_id) ?? new Map(),
+        views: v.user_id === viewerId ? views.filter((r) => r.video_id === v.id) : undefined,
       })
     );
   }
   return result;
+}
+
+/** 長輩自己影片的觀看紀錄；表還沒建（還沒跑 SQL）就當作沒人看過 */
+async function loadVideoViews(admin: Admin, videoIds: string[]): Promise<VideoViewRow[]> {
+  if (videoIds.length === 0) return [];
+  const { data, error } = await admin
+    .from("travel_video_views")
+    .select("video_id, viewer_id, last_viewed_at")
+    .in("video_id", videoIds);
+  if (error) {
+    console.warn("[video-views] load failed:", error.message);
+    return [];
+  }
+  return (data ?? []) as VideoViewRow[];
+}
+
+/** 家人播放了影片 → 記下來（長輩那邊顯示「看過了」，不推播）；第一次看的時間保留 */
+export async function recordVideoView(admin: Admin, videoId: string, viewerId: string): Promise<void> {
+  const { error } = await admin
+    .from("travel_video_views")
+    .upsert({ video_id: videoId, viewer_id: viewerId, last_viewed_at: new Date().toISOString() }, { onConflict: "video_id,viewer_id" });
+  if (error) console.warn("[video-views] record failed:", error.message);
 }
 
 /** 按讚：沒按過就加上，按過就收回；回傳這次是不是「加上」 */

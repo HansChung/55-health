@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import { api, type FamilyElderVideos } from "@/lib/api-client";
 import { VideoComments } from "@/components/video-comments";
+import { markVideoViewed } from "@/lib/mark-video-viewed";
 
 function formatWhen(iso: string) {
   return new Date(iso).toLocaleDateString("zh-TW", { month: "numeric", day: "numeric" });
@@ -32,7 +33,10 @@ export function FamilyVideos() {
 
   return (
     <section style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 24 }} aria-label="出遊影片">
-      <div style={{ fontSize: "var(--fs-lg)", fontWeight: 800 }}>🎬 出遊影片</div>
+      <div>
+        <div style={{ fontSize: "var(--fs-lg)", fontWeight: 800 }}>🎬 出遊影片</div>
+        <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-3)", marginTop: 2 }}>你播放過的影片，長輩那邊會顯示「看過了」</div>
+      </div>
       {elders.map((e) => {
         const shown = expanded[e.elder_id] ? e.videos : e.videos.slice(0, FIRST_SHOWN);
         return (
@@ -47,6 +51,7 @@ export function FamilyVideos() {
                     controls
                     playsInline
                     preload="none"
+                    onPlay={() => markVideoViewed(v.id)}
                     style={{ width: "100%", maxHeight: 420, borderRadius: "var(--r-md)", background: "#000", display: "block" }}
                   />
                 )}

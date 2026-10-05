@@ -5,6 +5,7 @@
 // ────────────────────────────────────────────────
 
 import { VideoComments } from "@/components/video-comments";
+import { markVideoViewed } from "@/lib/mark-video-viewed";
 import { videoShareMeta } from "@/lib/travel-video";
 import type { SharedVideo } from "@/lib/video-share-server";
 
@@ -49,6 +50,8 @@ function SharedVideoCard({ shared }: { shared: SharedVideo }) {
             controls
             playsInline
             preload="metadata"
+            // 已登入、看得到影片的家人播放 → 長輩那邊顯示「看過了」
+            onPlay={shared.viewer === "family" ? () => markVideoViewed(v.id) : undefined}
             style={{ width: "100%", maxHeight: "70dvh", borderRadius: "var(--r-md)", background: "#000", display: "block" }}
           />
         )}
