@@ -37,16 +37,19 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   if (orig.variant_of || !orig.alt_song_path) {
     return NextResponse.json({ error: "這支 MV 沒有另一個版本可以換" }, { status: 409 });
   }
-  // 每支 MV 只能換一次（做壞了的不算）
-  const { data: existing } = await admin
+  // 每支 MV 只能換一次：做壞了的不算；刪掉的照算（不然刪了再換就能一直免費重做）
+  const { data: existing, error: existErr } = await admin
     .from("travel_videos")
     .select("id")
     .eq("user_id", user.id)
     .eq("kind", "mv")
     .eq("mv->>variant_of", id)
     .neq("status", "failed")
-    .is("deleted_at", null)
     .limit(1);
+  if (existErr) {
+    console.error("[api] mv alt lookup:", existErr);
+    return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
+  }
   if ((existing ?? []).length > 0) return NextResponse.json({ error: "另一個版本已經做過了" }, { status: 409 });
 
   // 第二首歌的長度（新的 MV 做歌時就記下來了；舊的現在量）

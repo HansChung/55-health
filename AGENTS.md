@@ -130,8 +130,9 @@ stack works well for auth + meal/diary CRUD:
   elder to the 遊記 tab) and the button under each finished 遊記.
 - **MV 換另一個版本** (free, not counted): Suno's second song (`mv.alt_song_path`) becomes a separate MV —
   `POST …/[mvId]/mv/alt` copies the photos + second song into a new row with `mv.variant_of` (the original
-  stays) and starts at the clips stage, so no lk888 call. Once per MV (a non-failed variant blocks it; the list
-  GET hides the button), variants can't be varied again, `usage-tracker` skips rows with `variant_of`. Older
+  stays) and starts at the clips stage, so no lk888 call. Once per MV (any non-failed variant blocks it, **even a
+  deleted one** — otherwise delete + redo is unlimited free ffmpeg work; the list GET hides the button with the
+  same rule), variants can't be varied again, `usage-tracker` skips rows with `variant_of`. Older
   MVs lack `alt_song_seconds`, so the route measures the second song with ffmpeg (traced for that route).
 - **遊記配樂**: `montage.music` picks a track from `MONTAGE_MUSIC` (`public/music/<id>.m4a`, also used for the
   in-app preview). Tracks were generated once (2026-09-30) with Suno v4.5 via lk888 (instrumental), then cut to
