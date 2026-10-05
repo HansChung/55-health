@@ -4,9 +4,11 @@
 -- ────────────────────────────────────────────────
 
 -- 1. ai_usage 允許「我的聲音」的配音／複製（邁笙 speech-2.8）
+--    清單要包含所有服務：這支比 add-travel-video-mv.sql 早寫，之後才跑的話不能把 MV 的 suno_music 拿掉
+--    （正式站已經有 suno_music 的紀錄，少了它這行會失敗）
 alter table ai_usage drop constraint if exists ai_usage_service_check;
 alter table ai_usage add constraint ai_usage_service_check
-  check (service in ('gemini_vision', 'gemini_text', 'openai_realtime', 'openai_chat', 'minimax_video', 'gemini_tts', 'minimax_tts'));
+  check (service in ('gemini_vision', 'gemini_text', 'openai_realtime', 'openai_chat', 'minimax_video', 'gemini_tts', 'minimax_tts', 'suno_music'));
 
 -- 2. 影片口白的口音（taiwan／taigi／hakka／cantonese／sichuan／shandong；用自己的聲音時是 null）
 alter table travel_videos add column if not exists narration_accent text;
