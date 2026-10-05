@@ -12,8 +12,8 @@ import { queryVideoTask } from "./lk888-video";
 import { SONG_MODEL } from "./lk888-music";
 import { musicToM4a } from "./audio-convert";
 import { ComposeBudgetError, fetchSubtitleFont } from "./video-compose";
-import { MIN_CLIP_BUDGET_MS, muxMv, renderMontageClip } from "./montage-compose";
-import { acquireLease, download, scheduleContinuation, upload } from "./travel-montage-server";
+import { clipBudgetNeededMs, muxMv, renderMontageClip } from "./montage-compose";
+import { acquireLease, download, leaseMsFor, releaseLease, scheduleContinuation, upload } from "./travel-montage-server";
 import { TRAVEL_VIDEO_BUCKET, finishRow, notifyOwner, reloadRow, type TravelVideoRow } from "./travel-video-server";
 import { MV_MAX_SECONDS, isTravelVideoPending, mvSegments, mvStage, type MvState } from "../travel-video";
 
@@ -149,10 +149,12 @@ async function runClips(
   const photos = new Map<number, Buffer>();
   let current = row;
   let next = state;
+  let lastClipMs: number | null = null;
   for (let i = 0; i < segments.length; i++) {
     if (next.segments![i].clip_path) continue;
-    if (deadline - Date.now() < MIN_CLIP_BUDGET_MS) throw new ComposeBudgetError();
+    if (deadline - Date.now() < clipBudgetNeededMs(lastClipMs)) throw new ComposeBudgetError();
     const seg = next.segments![i];
+    const clipStarted = Date.now();
     const photo = next.photos[seg.photo] ?? next.photos[0];
     if (!photos.has(seg.photo)) photos.set(seg.photo, await download(admin, photo.path));
     const title = i === 0 ? titleLine : "";
@@ -166,6 +168,7 @@ async function runClips(
       deadline,
       seconds: seg.seconds,
     });
+    lastClipMs = Date.now() - clipStarted;
     const clipPath = mvClipPath(row, i);
     await upload(admin, clipPath, clip, "video/mp4");
     next = {
@@ -228,7 +231,7 @@ export async function syncMv(
   if (!isTravelVideoPending(row.status) || !row.mv) return row;
   const admin = createSupabaseAdmin();
   if (Date.now() - new Date(row.created_at).getTime() > MV_STALE_MS) return failMv(admin, row, "mv timeout");
-  const leased = await acquireLease(admin, row);
+  const leased = await acquireLease(admin, row, leaseMsFor(opts.budgetMs ?? WORK_BUDGET_MS));
   if (!leased?.mv) return row;
   const result = await processLeased(admin, leased, opts);
   if (isTravelVideoPending(result.status)) await scheduleContinuation(result.id, opts.origin);
@@ -256,7 +259,9 @@ async function processLeased(
     }
     return await saveMv(admin, current, state, { lease_until: null });
   } catch (e) {
-    if (e instanceof ComposeBudgetError) return saveMv(admin, current, state, { lease_until: null }).catch(() => current);
+    // 時間不夠不算失敗：做好的片段每段都存了——只放租約，別用這一步開始時的舊進度把它們蓋掉
+    // （2026-10-05 正式站：雲端一步只做得完一段，舊寫法每次都把那一段抹掉，MV 永遠做不完）
+    if (e instanceof ComposeBudgetError) return releaseLease(admin, current).catch(() => current);
     if (e instanceof MvFatalError) return failMv(admin, current, e.message);
     const msg = e instanceof Error ? e.message : String(e);
     console.error("[mv] step failed:", msg);
