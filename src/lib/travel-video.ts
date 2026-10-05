@@ -452,6 +452,10 @@ export interface MvState {
   song_path: string | null;
   alt_song_path: string | null;
   song_seconds: number | null;
+  /** 第二個版本的長度（舊資料沒有，換版本時再量） */
+  alt_song_seconds?: number | null;
+  /** 「另一個版本」：從哪一支 MV 換來的（不扣次數、不能再換） */
+  variant_of?: string | null;
   size: { width: number; height: number };
   /** 從遊記複製來的照片 */
   photos: { path: string; width: number; height: number }[];
@@ -569,7 +573,16 @@ export interface TravelVideo {
   comments?: VideoCommentsView;
   /** MV：歌名、歌詞、製作進度 */
   /** 不帶原始遊記的 id：MV 的分享連結被轉傳時，不能被拿去打開那支遊記 */
-  mv?: { title: string; lyrics: string; language: MvLanguageId; style: MvStyleId } | null;
+  mv?: {
+    title: string;
+    lyrics: string;
+    language: MvLanguageId;
+    style: MvStyleId;
+    /** 這支是「另一個版本」 */
+    is_variant: boolean;
+    /** 還可以換另一個版本（有第二首歌、還沒換過） */
+    alt_available: boolean;
+  } | null;
   mv_progress?: { stage: MvStage; done: number; total: number } | null;
 }
 

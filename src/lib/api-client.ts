@@ -219,6 +219,9 @@ export const api = {
       json: input,
       timeoutMs: 70000,
     }),
+  /** MV 換另一個版本：另外做一支（不扣次數），原本的留著 */
+  createMvAltVersion: (mvId: string) =>
+    apiFetch<{ video: TravelVideo }>(`/api/ai/travel-video/${mvId}/mv/alt`, { method: "POST", timeoutMs: 70000 }),
 
   deleteTravelVideo: (id: string) =>
     apiFetch<{ ok: true }>(`/api/ai/travel-video/${id}`, { method: "DELETE" }),

@@ -99,7 +99,7 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
   const [mvQuota, setMvQuota] = useState<TravelVideoQuota | null>(null);
   const [mvFor, setMvFor] = useState<TravelVideo | null>(null);
   // 一張照片（AI 影片平台做動畫）／多張照片遊記（自己伺服器做）
-  const [mode, setMode] = useState<"single" | "montage">("single");
+  const [mode, setMode] = useState<"single" | "montage" | "mv">("single");
   const [enabled, setEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
@@ -419,6 +419,25 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
     }
   };
 
+  const [altBusyId, setAltBusyId] = useState<string | null>(null);
+  const handleAltVersion = async (v: TravelVideo) => {
+    if (altBusyId) return;
+    setAltBusyId(v.id);
+    try {
+      const { video } = await api.createMvAltVersion(v.id);
+      lastStatus.current[video.id] = video.status;
+      setVideos((prev) => [
+        video,
+        ...prev.map((x) => (x.id === v.id && x.mv ? { ...x, mv: { ...x.mv, alt_available: false } } : x)),
+      ]);
+      toast.success("開始做另一個版本了！原本那支會留著，做好會通知你");
+    } catch (e) {
+      toast.error(friendlyError(e, "另一個版本沒做成，請再試一次"));
+    } finally {
+      setAltBusyId(null);
+    }
+  };
+
   const handleDelete = async (v: TravelVideo) => {
     if (!confirm("確定要刪除這支影片？刪除後就找不回來了")) return;
     setDeletingId(v.id);
@@ -447,12 +466,23 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
         <div style={{ flex: 1, fontSize: "var(--fs-sm)", color: "var(--ink-1)", lineHeight: 1.5 }}>
           {mode === "single" ? (
             <>拍一張出遊的照片，暖暖幫你變成 <strong>{TRAVEL_VIDEO_DURATION_SECONDS} 秒小影片</strong>，傳給家人一起看！</>
-          ) : (
+          ) : mode === "montage" ? (
             <>選幾張出遊照片，暖暖做成<strong>有配音、有字幕的遊記影片</strong>，照片會慢慢移動！</>
+          ) : (
+            <>把做好的遊記寫成<strong>一首歌</strong>（國語、台語都可以），配上遊記的照片做成 2～3 分鐘的 MV！</>
           )}
           {mode === "single" && quota && (
             <div style={{ marginTop: 6, fontWeight: 700, color: "var(--primary-deep)" }}>
               {unlimited ? "管理員不限次數" : `本月還可以做 ${remaining} 支（共 ${quota.limit} 支）`}
+            </div>
+          )}
+          {mode === "mv" && mvQuota && (
+            <div style={{ marginTop: 6, fontWeight: 700, color: "var(--primary-deep)" }}>
+              {mvQuota.limit === 0
+                ? "專業版功能（每月 6 首）"
+                : mvQuota.limit >= 9999
+                  ? "管理員不限次數"
+                  : `本月還可以做 ${Math.max(0, mvQuota.limit - mvQuota.used)} 首（共 ${mvQuota.limit} 首）`}
             </div>
           )}
           {mode === "montage" && montageQuota && montageQuota.limit > 0 && (
@@ -464,10 +494,11 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
       </div>
 
       {/* 一張／多張 */}
-      <div role="tablist" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 16 }}>
+      <div role="tablist" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 16 }}>
         {([
-          { id: "single", emoji: "🎬", label: "一張照片", desc: "AI 讓照片動起來" },
-          { id: "montage", emoji: "📚", label: "多張照片", desc: "做成遊記影片" },
+          { id: "single", emoji: "🎬", label: "一張照片", desc: "照片動起來" },
+          { id: "montage", emoji: "📚", label: "多張照片", desc: "做成遊記" },
+          { id: "mv", emoji: "🎵", label: "做 MV", desc: "遊記寫成歌" },
         ] as const).map((m) => (
           <button
             key={m.id}
@@ -476,17 +507,24 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
             onClick={() => setMode(m.id)}
             style={{
               ...choiceButton(mode === m.id),
-              display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "12px 8px",
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "12px 4px",
             }}
           >
             <span style={{ fontSize: 28 }} aria-hidden="true">{m.emoji}</span>
-            <span>{m.label}</span>
+            {/* 手機上三格並排：字小一號、不斷行 */}
+            <span style={{ fontSize: "var(--fs-sm)", whiteSpace: "nowrap" }}>{m.label}</span>
             <span style={{ fontSize: "var(--fs-xs)", fontWeight: 500, color: "var(--ink-2)" }}>{m.desc}</span>
           </button>
         ))}
       </div>
 
-      {mode === "montage" ? (
+      {mode === "mv" ? (
+        <MvPicker
+          montages={videos.filter((v) => v.kind === "montage" && v.status === "succeeded" && v.video_url)}
+          onPick={(v) => setMvFor(v)}
+          onMakeMontage={() => setMode("montage")}
+        />
+      ) : mode === "montage" ? (
         <TravelMontageForm
           blockedReason={montageBlocked}
           knownIds={videos.map((v) => v.id)}
@@ -736,6 +774,9 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
               onShare={() => handleShare(v)}
               onDelete={() => handleDelete(v)}
               onMakeMv={() => setMvFor(v)}
+              onAltVersion={() => handleAltVersion(v)}
+              altBusy={altBusyId === v.id}
+              altBlocked={videos.some((x) => x.kind === "mv" && isTravelVideoPending(x.status))}
             />
           ))}
         </div>
@@ -766,7 +807,7 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
 }
 
 function VideoCard({
-  video: v, deleting, onShare, onDelete, onMakeMv,
+  video: v, deleting, onShare, onDelete, onMakeMv, onAltVersion, altBusy, altBlocked,
 }: {
   video: TravelVideo;
   deleting: boolean;
@@ -774,6 +815,11 @@ function VideoCard({
   onDelete: () => void;
   /** 做好的遊記：做成 MV（打開做 MV 的畫面） */
   onMakeMv?: () => void;
+  /** 做好的 MV：用同一次做歌的另一首，另外做一支（不扣次數） */
+  onAltVersion?: () => void;
+  altBusy?: boolean;
+  /** 有 MV 還在做（一次只能做一支） */
+  altBlocked?: boolean;
 }) {
   const styleMeta = TRAVEL_VIDEO_STYLES.find((s) => s.id === v.style);
   const pending = isTravelVideoPending(v.status);
@@ -853,6 +899,15 @@ function VideoCard({
           {mv
             ? `MV：${v.mv?.title ?? ""}${v.place ? `（${v.place}）` : ""}`
             : v.place || (montage ? `遊記影片（${v.montage_lines?.length ?? 0} 張）` : styleMeta?.label || "出遊影片")}
+          {mv && v.mv?.is_variant && (
+            <span style={{
+              marginLeft: 6, padding: "1px 8px", borderRadius: 999, whiteSpace: "nowrap",
+              background: "var(--surface-warm)", border: "1px solid var(--gold-soft)",
+              fontSize: "var(--fs-xs)", fontWeight: 700, color: "var(--primary-deep)",
+            }}>
+              另一個版本
+            </span>
+          )}
         </span>
         <span style={{ marginLeft: "auto", fontSize: "var(--fs-xs)" }}>{formatWhen(v.created_at)}</span>
       </div>
@@ -899,6 +954,21 @@ function VideoCard({
               🎵 把這趟寫成一首歌（MV）
             </button>
           )}
+          {mv && v.mv?.alt_available && onAltVersion && (
+            <div>
+              <button
+                onClick={onAltVersion}
+                disabled={altBusy || altBlocked}
+                className="btn-ghost"
+                style={{ width: "100%", fontSize: "var(--fs-base)" }}
+              >
+                {altBusy ? "準備中…" : "🔄 換另一個版本（不扣次數）"}
+              </button>
+              <div style={{ marginTop: 4, fontSize: "var(--fs-xs)", color: "var(--ink-3)", textAlign: "center" }}>
+                {altBlocked ? "上一支 MV 還在做，做好再換" : "同一首歌詞的另一種唱法，原本這支會留著"}
+              </div>
+            </div>
+          )}
           {/* 家人的按讚、留言（家人在「家人狀況」看得到做好的影片） */}
           <div style={{ borderTop: "1px solid var(--line)", paddingTop: 12 }}>
             <VideoComments videoId={v.id} initial={v.comments} viewer="owner" />
@@ -919,6 +989,58 @@ function VideoCard({
           {deleting ? "刪除中…" : "🗑️ 刪除這支影片"}
         </button>
       )}
+    </div>
+  );
+}
+
+/** 「做 MV」分頁：挑一支做好的遊記；還沒有遊記就先帶去做 */
+function MvPicker({
+  montages,
+  onPick,
+  onMakeMontage,
+}: {
+  montages: TravelVideo[];
+  onPick: (v: TravelVideo) => void;
+  onMakeMontage: () => void;
+}) {
+  if (montages.length === 0) {
+    return (
+      <div className="card" style={{ marginTop: 16, padding: 18, display: "flex", flexDirection: "column", gap: 12, textAlign: "center" }}>
+        <div style={{ fontSize: 40 }} aria-hidden="true">📚</div>
+        <div style={{ fontWeight: 800, fontSize: "var(--fs-lg)" }}>先做一支遊記</div>
+        <div style={{ color: "var(--ink-2)", lineHeight: 1.6 }}>
+          MV 會用遊記的照片和你寫的句子來寫歌。先選 3～5 張出遊照片做一支遊記，做好就能回來做 MV。
+        </div>
+        <button onClick={onMakeMontage} className="btn-primary">📚 去做遊記</button>
+      </div>
+    );
+  }
+  return (
+    <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={sectionTitle}>選一支遊記來寫成歌</div>
+      {montages.map((v) => (
+        <button
+          key={v.id}
+          onClick={() => onPick(v)}
+          className="card"
+          style={{
+            display: "flex", gap: 12, alignItems: "center", padding: 12, textAlign: "left",
+            border: "2px solid var(--line)", cursor: "pointer", background: "var(--surface)", width: "100%",
+          }}
+        >
+          {v.photo_url && (
+            <img src={v.photo_url} alt="" loading="lazy" style={{ width: 72, height: 72, objectFit: "cover", borderRadius: 12, flexShrink: 0 }} />
+          )}
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: "block", fontWeight: 800, color: "var(--ink-1)" }}>📚 {v.place || "遊記影片"}</span>
+            <span style={{ display: "block", fontSize: "var(--fs-xs)", color: "var(--ink-3)", marginTop: 2 }}>
+              {formatWhen(v.created_at)}
+              {v.montage_lines?.length ? `・${v.montage_lines.length} 張照片` : ""}
+            </span>
+          </span>
+          <span style={{ fontWeight: 800, fontSize: "var(--fs-sm)", color: "var(--primary-deep)", whiteSpace: "nowrap" }}>🎵 做成歌</span>
+        </button>
+      ))}
     </div>
   );
 }

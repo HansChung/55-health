@@ -104,8 +104,14 @@ export async function GET(req: NextRequest) {
   const admin = createSupabaseAdmin();
   const done = rows.filter((r) => r.status === "succeeded");
   const comments = await loadCommentsViews(admin, done, user.id);
+  // 已經換過版本（做好或還在做）的 MV 不再顯示「換另一個版本」
+  const varied = new Set(rows.filter((r) => r.kind === "mv" && r.status !== "failed").map((r) => r.mv?.variant_of));
   return NextResponse.json({
-    videos: rows.map((r) => ({ ...toClientVideo(admin, r), ...(comments.has(r.id) ? { comments: comments.get(r.id) } : {}) })),
+    videos: rows.map((r) => {
+      const v = toClientVideo(admin, r);
+      if (v.mv && varied.has(r.id)) v.mv = { ...v.mv, alt_available: false };
+      return { ...v, ...(comments.has(r.id) ? { comments: comments.get(r.id) } : {}) };
+    }),
     quota: { used: quota.used, limit: quota.limit, tier: quota.tier },
     montage_quota: { used: montageQuota.used, limit: montageQuota.limit, tier: montageQuota.tier },
     mv_quota: { used: mvQuota.used, limit: mvQuota.limit, tier: mvQuota.tier },
