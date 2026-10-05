@@ -33,6 +33,18 @@ and Stripe. Capacitor/Android is only a packaging target and is not needed for w
 - **Web Push + alert thresholds**: VAPID keys (`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`);
   SQL `add-push-subscriptions.sql` + `add-alert-thresholds.sql`. Family enables push under 提醒通知;
   elder thresholds under 健康狀況. Cron `check-anomalies` emails and pushes.
+- **每天早上天氣＋健康提醒** (needs `CWA_API_KEY` + VAPID + `supabase/add-daily-weather.sql`): the setting lives
+  in `notification_settings.daily_weather = { on, county }` (no new settings column). The home card
+  (`DailyWeatherCard`) asks for the county once — only when `GET /api/daily-weather` says it's available and the
+  browser can receive push; choosing a county enables push on that device; 「不用了」 stores `on:false`.
+  提醒通知 → 每天早上 toggles it / changes the county (county kept when off). Cron `/api/cron/daily-weather`
+  (`0 23 * * *` = 07:00 Taipei; **Hobby crons fire somewhere within that hour**) fetches all counties in one CWA
+  request (`countiesForecast`), and for each subscribed user claims `profiles.daily_weather_sent_on = today`
+  before pushing, so reruns never double-send. Text: `buildDailyWeatherPush` (today's period + tonight's low) with
+  one weather-based health tip (`weatherHealthTip`; `chronic_conditions` holds the 慢性病 page's English ids —
+  `hypertension` + cold → 量血壓, `diabetes`/`prediabetes` + hot → 白開水, `kidney` + hot → never "多喝水"
+  (fluid limits), …; Chinese words are matched too).
+  Local test: `CWA_API_BASE` pointed at a fake F-C0032-001 server.
 
 ### Running a real backend locally (no cloud Supabase needed)
 The app requires a live Supabase API to do anything past the login screen (auth is forced). A local

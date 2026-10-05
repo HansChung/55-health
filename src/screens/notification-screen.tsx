@@ -7,6 +7,9 @@ import { Toggle } from "@/components/toggle";
 import { api, type NotificationSettings } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import { enableWebPush, unsubscribeWebPush } from "@/lib/push/client";
+import { TAIWAN_COUNTIES } from "@/lib/weather";
+import { DAILY_WEATHER_HOUR } from "@/lib/daily-weather";
+import { dailyWeatherAvailable, saveDailyWeather } from "@/lib/daily-weather-client";
 
 interface NotificationScreenProps {
   onBack: () => void;
@@ -30,6 +33,9 @@ export function NotificationScreen({ onBack }: NotificationScreenProps) {
   const [saving, setSaving] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [pushConfigured, setPushConfigured] = useState(false);
+  const [weatherAvailable, setWeatherAvailable] = useState(false);
+  const [weatherBusy, setWeatherBusy] = useState(false);
+  const [weatherPicking, setWeatherPicking] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -44,7 +50,30 @@ export function NotificationScreen({ onBack }: NotificationScreenProps) {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
+    dailyWeatherAvailable().then(setWeatherAvailable).catch(() => undefined);
   }, []);
+
+  // 每天早上天氣：開（沒選縣市就先選）、關（縣市留著，下次打開不用再選）、換縣市
+  const saveWeather = async (on: boolean, county: string | null) => {
+    if (on && !county) {
+      setWeatherPicking(true);
+      toast.info("先選你住的縣市");
+      return;
+    }
+    setWeatherBusy(true);
+    try {
+      const updated = await saveDailyWeather({ on, county });
+      setSettings({ ...DEFAULT_SETTINGS, ...(updated.notification_settings ?? {}) });
+      setWeatherPicking(false);
+      if (on) toast.success(`每天早上 ${DAILY_WEATHER_HOUR} 點告訴你${county}的天氣`);
+    } catch (e) {
+      console.error("儲存天氣提醒失敗:", e);
+      toast.error(on ? "要按「允許」通知才收得到，請再試一次" : "沒存成功，請再試一次。");
+    }
+    setWeatherBusy(false);
+  };
+  const weatherCounty = settings.daily_weather?.county ?? null;
+  const weatherOn = Boolean(settings.daily_weather?.on && weatherCounty);
 
   const updateSetting = async (key: keyof NotificationSettings, value: unknown) => {
     const newSettings = { ...settings, [key]: value };
@@ -162,6 +191,43 @@ export function NotificationScreen({ onBack }: NotificationScreenProps) {
               last
             />
           </Card>
+
+          {weatherAvailable && (
+            <>
+              <SectionTitle>每天早上</SectionTitle>
+              <Card>
+                <NotifRow icon="🌤️" label="天氣和健康提醒"
+                  time={
+                    weatherBusy
+                      ? "處理中…"
+                      : weatherCounty
+                        ? `${String(DAILY_WEATHER_HOUR).padStart(2, "0")}:00 · ${weatherCounty}`
+                        : "選縣市後開啟"
+                  }
+                  on={weatherOn}
+                  onChange={(on) => saveWeather(on, weatherCounty)}
+                  last={!(weatherOn || weatherPicking)}
+                />
+                {(weatherOn || weatherPicking) && (
+                  <label style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", fontSize: "var(--fs-base)" }}>
+                    <span style={{ flexShrink: 0, color: "var(--ink-2)" }}>縣市</span>
+                    <select
+                      value={weatherCounty ?? ""}
+                      disabled={weatherBusy}
+                      onChange={(e) => e.target.value && saveWeather(true, e.target.value)}
+                      style={{
+                        flex: 1, minHeight: 48, padding: "8px 10px", borderRadius: 12, fontSize: "var(--fs-base)",
+                        border: "2px solid var(--line-strong)", background: "var(--surface)", color: "var(--ink-1)",
+                      }}
+                    >
+                      <option value="">請選縣市</option>
+                      {TAIWAN_COUNTIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </label>
+                )}
+              </Card>
+            </>
+          )}
 
           <SectionTitle>家人通知</SectionTitle>
           <Card>

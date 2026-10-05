@@ -87,3 +87,28 @@ export async function tourForecasts<T extends { id: string; weather_county?: str
   clearTimeout(timer);
   return result;
 }
+
+/**
+ * 好幾個縣市一次查（每天早上的天氣提醒用）：一個請求拿全部縣市，再挑要的；
+ * 查不到的縣市不放進結果（那些人今天就不發）
+ */
+export async function countiesForecast(counties: TaiwanCounty[]): Promise<Map<TaiwanCounty, ForecastPeriod[]>> {
+  const result = new Map<TaiwanCounty, ForecastPeriod[]>();
+  const key = process.env.CWA_API_KEY;
+  if (!key || counties.length === 0) return result;
+  try {
+    const url = `${cwa36hUrl()}?${new URLSearchParams({ Authorization: key, format: "JSON" })}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS * 2), cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    for (const county of new Set(counties)) {
+      const periods = parseCwa36h(json, county);
+      if (periods.length === 0) continue;
+      result.set(county, periods);
+      cache.set(county, { at: Date.now(), periods });
+    }
+  } catch (e) {
+    console.warn("[weather] all-county forecast failed:", e instanceof Error ? e.message : e);
+  }
+  return result;
+}
