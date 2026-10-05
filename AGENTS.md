@@ -41,7 +41,9 @@ and Stripe. Capacitor/Android is only a packaging target and is not needed for w
   (`0 23 * * *` = 07:00 Taipei; **Hobby crons fire somewhere within that hour**) fetches all counties in one CWA
   request (`countiesForecast`), and for each subscribed user claims `profiles.daily_weather_sent_on = today`
   before pushing, so reruns never double-send. Text: `buildDailyWeatherPush` (today's period + tonight's low) with
-  one weather-based health tip (`weatherHealthTip`; cold + 血壓/心 → 量血壓, 糖尿 + hot → 白開水, …).
+  one weather-based health tip (`weatherHealthTip`; `chronic_conditions` holds the 慢性病 page's English ids —
+  `hypertension` + cold → 量血壓, `diabetes`/`prediabetes` + hot → 白開水, `kidney` + hot → never "多喝水"
+  (fluid limits), …; Chinese words are matched too).
   Local test: `CWA_API_BASE` pointed at a fake F-C0032-001 server.
 
 ### Running a real backend locally (no cloud Supabase needed)

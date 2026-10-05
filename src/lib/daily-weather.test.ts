@@ -40,8 +40,10 @@ describe("每天早上天氣：設定", () => {
 });
 
 describe("每天早上天氣：健康提醒", () => {
-  it("冷＋高血壓 → 量血壓；只是冷 → 保暖", () => {
+  it("冷＋高血壓 → 量血壓（慢性病頁存英文 id，中文也認）；只是冷 → 保暖", () => {
+    expect(weatherHealthTip(p({ minT: 13, maxT: 17 }), null, ["hypertension"])).toContain("量血壓");
     expect(weatherHealthTip(p({ minT: 13, maxT: 17 }), null, ["高血壓"])).toContain("量血壓");
+    expect(weatherHealthTip(p({ minT: 13, maxT: 17 }), null, ["gout"])).not.toContain("量血壓");
     expect(weatherHealthTip(p({ minT: 10, maxT: 15 }), null, [])).toContain("保暖");
   });
   it("早晚溫差 8 度以上（早上涼才提外套；熱天溫差大講中暑）", () => {
@@ -49,6 +51,8 @@ describe("每天早上天氣：健康提醒", () => {
     expect(weatherHealthTip(p({ minT: 26, maxT: 33 }), p({ minT: 24 }), [])).toContain("中暑");
   });
   it("熱＋糖尿病 → 白開水；很熱 → 中暑", () => {
+    expect(weatherHealthTip(p({ minT: 26, maxT: 31 }), null, ["diabetes"])).toContain("白開水");
+    expect(weatherHealthTip(p({ minT: 26, maxT: 31 }), null, ["prediabetes"])).toContain("白開水");
     expect(weatherHealthTip(p({ minT: 26, maxT: 31 }), null, ["第二型糖尿病"])).toContain("白開水");
     expect(weatherHealthTip(p({ minT: 27, maxT: 34 }), null, [])).toContain("中暑");
   });
@@ -56,6 +60,12 @@ describe("每天早上天氣：健康提醒", () => {
     expect(weatherHealthTip(p({ wx: "短暫陣雨", pop: 70 }), null, [])).toContain("原地踏步");
     expect(weatherHealthTip(p(), null, [])).toContain("走走");
   });
+  it("腎臟病＋熱：不叫他多喝水（天氣那句也拿掉）", () => {
+    const msg = buildDailyWeatherPush({ county: "高雄市", today: p({ minT: 26, maxT: 33, pop: 10 }), tonight: null, conditions: ["kidney", "diabetes"] });
+    expect(msg.body).not.toContain("多喝");
+    expect(msg.body).toContain("照醫師交代");
+  });
+
   it("推播文字", () => {
     const msg = buildDailyWeatherPush({ county: "臺北市", today: p({ maxT: 31, minT: 25, pop: 20 }), tonight: null });
     expect(msg.title).toBe("🌤️ 早安！臺北市今天多雲時晴");

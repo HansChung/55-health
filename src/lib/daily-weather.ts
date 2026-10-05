@@ -41,13 +41,23 @@ export function todayAndTonight(periods: ForecastPeriod[], now: Date = new Date(
   return { today: periods[i], tonight: periods[i + 1] ?? null };
 }
 
-function has(conditions: string[], ...words: string[]): boolean {
-  return conditions.some((c) => words.some((w) => c.includes(w)));
+/**
+ * 慢性病：profiles.chronic_conditions 存的是英文 id（慢性病頁的 hypertension、diabetes…）；
+ * 中文字也認（舊資料、其他地方寫進來的）
+ */
+const CONDITION_WORDS = {
+  bloodPressure: ["hypertension", "血壓", "心臟"],
+  diabetes: ["diabetes", "糖尿", "血糖"],
+  kidney: ["kidney", "腎"],
+} as const;
+
+function has(conditions: string[], kind: keyof typeof CONDITION_WORDS): boolean {
+  return conditions.some((c) => CONDITION_WORDS[kind].some((w) => c.toLowerCase().includes(w)));
 }
 
 /**
  * 跟天氣有關的健康提醒（只講一件，跟天氣那句不重複）：
- * 冷＋血壓／心臟 > 早晚溫差大（早上涼） > 熱＋糖尿病 > 熱 > 冷 > 下雨在家動一動 > 天氣好去走走
+ * 冷＋高血壓 > 早晚溫差大（早上涼） > 熱＋腎臟病（喝水照醫師交代） > 熱＋糖尿病 > 熱 > 冷 > 下雨在家動一動 > 天氣好去走走
  */
 export function weatherHealthTip(today: ForecastPeriod, tonight: ForecastPeriod | null, conditions: string[] = []): string {
   const lows = [today.minT, tonight?.minT].filter((n): n is number => n != null);
@@ -55,10 +65,12 @@ export function weatherHealthTip(today: ForecastPeriod, tonight: ForecastPeriod 
   const high = today.maxT;
   const rainy = (today.pop ?? 0) >= 50 || /雨/.test(today.wx);
 
-  if (low != null && low <= 15 && has(conditions, "血壓", "心")) return "天冷血壓容易升高，起床慢慢來，早上記得量血壓";
+  if (low != null && low <= 15 && has(conditions, "bloodPressure")) return "天冷血壓容易升高，起床慢慢來，早上記得量血壓";
   // 溫差大但早上不冷（熱天）不叫人帶外套
   if (low != null && high != null && high - low >= 8 && low <= 20) return "早晚溫差大，穿脫方便的外套，隨時加減衣服";
-  if (high != null && high >= 30 && has(conditions, "糖尿", "血糖")) return "天熱多喝白開水，別用含糖飲料解渴";
+  // 腎臟病常要限水：熱天不叫他多喝水
+  if (high != null && high >= 30 && has(conditions, "kidney")) return "天熱流汗多，喝水量照醫師交代的就好，出門找陰涼處";
+  if (high != null && high >= 30 && has(conditions, "diabetes")) return "天熱多喝白開水，別用含糖飲料解渴";
   if (high != null && high >= 32) return "中午太陽大，少在 10 點到 2 點出門，小心中暑";
   if (high != null && high >= 30) return "出門帶瓶水，傍晚涼一點再去散步";
   if (low != null && low <= 12) return "冷天出門戴帽子、圍巾，頭頸保暖最要緊";
@@ -78,7 +90,11 @@ export function buildDailyWeatherPush(opts: {
   const facts: string[] = [];
   if (today.minT != null && today.maxT != null) facts.push(`${today.minT}～${today.maxT} 度`);
   if (today.pop != null) facts.push(`降雨機率 ${today.pop}%`);
-  const sentences = [facts.join("，"), weatherAdvice(today), weatherHealthTip(today, tonight, opts.conditions ?? [])].filter(Boolean);
+  const conditions = opts.conditions ?? [];
+  let advice = weatherAdvice(today);
+  // 腎臟病：天氣那句的「多喝水」拿掉（健康提醒會說照醫師交代的量）
+  if (advice?.includes("多喝水") && has(conditions, "kidney")) advice = "天氣熱，戴帽子、擦防曬";
+  const sentences = [facts.join("，"), advice, weatherHealthTip(today, tonight, conditions)].filter(Boolean);
   return {
     title: `${weatherEmoji(today.wx)} 早安！${county}今天${today.wx}`,
     body: sentences.join("。") + "。",
