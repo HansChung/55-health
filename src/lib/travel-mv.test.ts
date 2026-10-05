@@ -73,7 +73,7 @@ describe("MV 方案與文字", () => {
   it("分享頁標題：🎵 歌名・地點；說明用前兩句歌詞（不含分段標記）", () => {
     const meta = videoShareMeta({
       kind: "mv", place: "日月潭", narration_text: null, montage_lines: null,
-      mv: { title: "湖邊的歌", lyrics: "[Verse 1]\n湖水藍藍\n風輕輕吹\n[Chorus]\n下次再來", language: "mandarin", style: "folk" },
+      mv: { title: "湖邊的歌", lyrics: "[Verse 1]\n湖水藍藍\n風輕輕吹\n[Chorus]\n下次再來", language: "mandarin", style: "folk", is_variant: false, alt_available: true },
     });
     expect(meta.title).toBe("🎵 湖邊的歌・日月潭");
     expect(meta.description).toBe("「湖水藍藍／風輕輕吹」用暖暖做的MV");

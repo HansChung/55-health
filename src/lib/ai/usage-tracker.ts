@@ -97,6 +97,7 @@ export async function checkUserQuota(
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
       .eq("kind", "mv")
+      .is("mv->>variant_of", null) // 「另一個版本」不扣次數
       .neq("status", "failed")
       .gte("created_at", startOfMonth.toISOString());
     const used = count ?? 0;

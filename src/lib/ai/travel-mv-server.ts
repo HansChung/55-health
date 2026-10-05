@@ -117,6 +117,7 @@ async function runSong(admin: Admin, row: TravelVideoRow, state: MvState, deadli
         song_path: mvSongPath(row, 1),
         alt_song_path: second ? mvSongPath(row, 2) : null,
         song_seconds: Number(first.seconds.toFixed(2)),
+        alt_song_seconds: second ? Number(second.seconds.toFixed(2)) : null,
         segments: mvSegments(first.seconds, state.photos.length),
         attempts: 0,
       };

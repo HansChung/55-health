@@ -104,8 +104,14 @@ export async function GET(req: NextRequest) {
   const admin = createSupabaseAdmin();
   const done = rows.filter((r) => r.status === "succeeded");
   const comments = await loadCommentsViews(admin, done, user.id);
+  // 已經換過版本的 MV 不再顯示「換另一個版本」（刪掉的版本也算，跟 /mv/alt 的規則一樣）
+  const varied = await variedMvIds(admin, user.id, rows);
   return NextResponse.json({
-    videos: rows.map((r) => ({ ...toClientVideo(admin, r), ...(comments.has(r.id) ? { comments: comments.get(r.id) } : {}) })),
+    videos: rows.map((r) => {
+      const v = toClientVideo(admin, r);
+      if (v.mv && varied.has(r.id)) v.mv = { ...v.mv, alt_available: false };
+      return { ...v, ...(comments.has(r.id) ? { comments: comments.get(r.id) } : {}) };
+    }),
     quota: { used: quota.used, limit: quota.limit, tier: quota.tier },
     montage_quota: { used: montageQuota.used, limit: montageQuota.limit, tier: montageQuota.tier },
     mv_quota: { used: mvQuota.used, limit: mvQuota.limit, tier: mvQuota.tier },
@@ -335,4 +341,23 @@ async function saveTaskId(
     if (attempt < 3) await new Promise((r) => setTimeout(r, 500 * attempt));
   }
   return null;
+}
+
+/** 這些 MV 裡，哪幾支已經換過版本（只在畫面上有「可以換」的 MV 時才查） */
+async function variedMvIds(admin: ReturnType<typeof createSupabaseAdmin>, userId: string, rows: TravelVideoRow[]): Promise<Set<string>> {
+  const candidates = rows.filter((r) => r.kind === "mv" && r.mv?.alt_song_path && !r.mv.variant_of).map((r) => r.id);
+  if (candidates.length === 0) return new Set();
+  const { data, error } = await admin
+    .from("travel_videos")
+    .select("mv->>variant_of")
+    .eq("user_id", userId)
+    .eq("kind", "mv")
+    .neq("status", "failed")
+    .in("mv->>variant_of", candidates);
+  if (error) {
+    // 查不到就當作都換過了：按鈕先不顯示，比顯示了按下去才說不行好
+    console.warn("[api] mv variants lookup:", error.message);
+    return new Set(candidates);
+  }
+  return new Set(((data ?? []) as { variant_of: string | null }[]).map((r) => r.variant_of).filter((v): v is string => Boolean(v)));
 }

@@ -160,6 +160,8 @@ export function toClientVideo(admin: Admin, row: TravelVideoRow): TravelVideo {
             lyrics: row.mv.lyrics,
             language: row.mv.language,
             style: row.mv.style,
+            is_variant: Boolean(row.mv.variant_of),
+            alt_available: Boolean(row.mv.alt_song_path) && !row.mv.variant_of,
           }
         : null,
     mv_progress: row.kind === "mv" && row.mv && isTravelVideoPending(row.status) ? mvProgress(row.mv) : null,
