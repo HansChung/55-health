@@ -3,6 +3,7 @@ import {
   buildClipArgs,
   buildConcatList,
   buildMuxArgs,
+  clipBudgetNeededMs,
   kenBurns,
   montageClipSeconds,
   montageFrames,
@@ -19,6 +20,7 @@ import {
   type MontageState,
 } from "../travel-video";
 import {
+  leaseMsFor,
   montageAllPaths,
   montageContinueUrl,
   montageIntermediatePaths,
@@ -185,5 +187,17 @@ describe("遊記影片：背景接力", () => {
     expect(montageRetryDelayMs(0)).toBe(0);
     expect(montageRetryDelayMs(1)).toBe(4000);
     expect(montageRetryDelayMs(10)).toBe(12000);
+  });
+});
+
+describe("雲端比較慢：一步做幾段、租約多長", () => {
+  it("還沒做過就至少留 12 秒；做過一段就照上一段的時間再多留 3 秒", () => {
+    expect(clipBudgetNeededMs(null)).toBe(12_000);
+    expect(clipBudgetNeededMs(4_000)).toBe(12_000);
+    expect(clipBudgetNeededMs(23_000)).toBe(26_000);
+  });
+  it("租約比這一步的工作時間長：畫面輪詢 45 秒 → 70 秒；背景接力 4 分鐘 → 4 分 25 秒", () => {
+    expect(leaseMsFor(45_000)).toBe(70_000);
+    expect(leaseMsFor(240_000)).toBe(265_000);
   });
 });

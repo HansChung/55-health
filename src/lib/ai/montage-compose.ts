@@ -23,11 +23,22 @@ export const MONTAGE_FPS = 25;
 export const MONTAGE_FADE_SECONDS = 0.5;
 export const MONTAGE_MIN_CLIP_SECONDS = 3.5;
 export const MONTAGE_MAX_CLIP_SECONDS = 12;
-/** 一段片段 ffmpeg 的上限（本機 < 3 秒；雲端 CPU 較慢，保守抓） */
-const CLIP_TIMEOUT_MS = 25_000;
+/**
+ * 一段片段 ffmpeg 的上限（本機 < 3 秒；Vercel 1 vCPU 上 9 秒的 MV 片段約 20～25 秒，2026-10-05 正式站實測）。
+ * 實際上限還會再被「這一步剩下的時間」截短
+ */
+const CLIP_TIMEOUT_MS = 60_000;
 const MUX_TIMEOUT_MS = 20_000;
 /** 剩餘時間少於這個就不開始下一段（留給上傳、寫 DB） */
 export const MIN_CLIP_BUDGET_MS = 12_000;
+
+/**
+ * 下一段要開始前至少要剩多少時間：沒量過就用 MIN_CLIP_BUDGET_MS；
+ * 這一步已經做過一段，就照上一段花的時間（再多留 3 秒上傳）——雲端一段可能要 20 幾秒，開始了做不完只是白做
+ */
+export function clipBudgetNeededMs(lastClipMs: number | null): number {
+  return Math.max(MIN_CLIP_BUDGET_MS, (lastClipMs ?? 0) + 3_000);
+}
 
 export interface MontageSize {
   width: number;
@@ -233,7 +244,11 @@ export async function renderMontageClip(opts: {
       Math.min(CLIP_TIMEOUT_MS, left()),
       { ...process.env, FONTCONFIG_FILE: fontconfigFile }
     );
-    if (result.code !== 0) throw new Error(`ffmpeg clip exited ${result.code}: ${result.stderr.slice(-600)}`);
+    if (result.code !== 0) {
+      // 做到一半時間到了（被這一步的截止時間砍掉）：不算失敗，下一步重做這一段
+      if (left() <= 1_000) throw new ComposeBudgetError();
+      throw new Error(`ffmpeg clip exited ${result.code}: ${result.stderr.slice(-600)}`);
+    }
     return { clip: await readFile(outPath), seconds };
   } finally {
     await rm(dir, { recursive: true, force: true });

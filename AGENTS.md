@@ -100,7 +100,14 @@ stack works well for auth + meal/diary CRUD:
   budgeted to fit the 60 s function. Whoever actually did work (held the lease) and left it unfinished
   calls `POST /api/cron/montage-step` (Bearer `CRON_SECRET`, answers 202 and works in `after()`), so the
   montage finishes and pushes even after the elder leaves the page; without `CRON_SECRET` it only advances
-  while the screen polls. Needs
+  while the screen polls. **Cloud is much slower than a Mac** (a 9 s 720p clip ≈ 20–25 s on a Vercel vCPU,
+  2026-10-05), so steps routinely run out of time between clips. Rules learned the hard way: (1) on
+  `ComposeBudgetError` only **release the lease** (`releaseLease`) — never write the step's starting state back,
+  it erases the clips saved during that step (that bug left two production MVs at 0 clips until timeout);
+  (2) a step only starts the next clip if the time left ≥ the last clip's time + 3 s (`clipBudgetNeededMs`), and
+  ffmpeg killed at the step deadline counts as "out of time", not a failure; (3) Vercel answers a self-call
+  chain with **508 Loop Detected** after ~4 hops, so `montage-step` runs `maxDuration = 300` (Hobby + Fluid
+  max) with a 240 s budget and a matching lease (`leaseMsFor`) — an MV finishes in 2–3 hops. Needs
   `supabase/add-travel-video-montage.sql`. Separate monthly quota (`DEFAULT_MONTAGE_QUOTA`), costs only TTS
   (~0.01 算力 per line). The Linux ffmpeg has every filter used (verified in Docker amazonlinux).
 - **口音與「我的聲音」** (needs `supabase/add-narration-voices.sql`): the four AI voices take an accent

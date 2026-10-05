@@ -13,7 +13,7 @@ import { trackAiUsage } from "./usage-tracker";
 import { synthesizeNarration } from "./lk888-tts";
 import { claimOrAwaitFirstUse, markVoiceActivated, releaseFirstUse, resolveSpeaker } from "./voice-clone-server";
 import { ComposeBudgetError, fetchSubtitleFont } from "./video-compose";
-import { MIN_CLIP_BUDGET_MS, muxMontage, renderMontageClip } from "./montage-compose";
+import { MIN_CLIP_BUDGET_MS, clipBudgetNeededMs, muxMontage, renderMontageClip } from "./montage-compose";
 import { isPublicHttpsUrl } from "./travel-video-webhook";
 import {
   TRAVEL_VIDEO_BUCKET,
@@ -46,6 +46,11 @@ export const MONTAGE_MAX_ATTEMPTS = 5;
 const NO_SUBTITLE_AFTER_ATTEMPTS = 3;
 /** 租約：比一次處理的時間長一點，處理到一半當掉的話過期後別人可以接手 */
 const LEASE_MS = 70_000;
+
+/** 背景接力一棒做比較久（4 分鐘）：租約也要跟著拉長，不然做到一半畫面輪詢會搶去重做同一段 */
+export function leaseMsFor(budgetMs: number): number {
+  return Math.max(LEASE_MS, budgetMs + 25_000);
+}
 /** 一次處理的工作時間（route maxDuration 60 秒，留時間上傳、寫 DB） */
 const WORK_BUDGET_MS = 45_000;
 /** 合成＋上傳至少要留這麼多時間，不夠就下次輪詢再合成 */
@@ -134,12 +139,12 @@ function accentOf(row: TravelVideoRow): NarrationAccentId {
 class MontageFatalError extends Error {}
 
 /** 搶租約：沒人在處理（或上一個處理者逾時）才拿得到 */
-export async function acquireLease(admin: Admin, row: TravelVideoRow): Promise<TravelVideoRow | null> {
+export async function acquireLease(admin: Admin, row: TravelVideoRow, leaseMs = LEASE_MS): Promise<TravelVideoRow | null> {
   const now = new Date();
   const { data, error } = await admin
     .from("travel_videos")
     .update({
-      lease_until: new Date(now.getTime() + LEASE_MS).toISOString(),
+      lease_until: new Date(now.getTime() + leaseMs).toISOString(),
       status: "running",
       updated_at: now.toISOString(),
     })
@@ -153,6 +158,22 @@ export async function acquireLease(admin: Admin, row: TravelVideoRow): Promise<T
     return null;
   }
   return (data as TravelVideoRow | null) ?? null;
+}
+
+/**
+ * 時間不夠、這一步先停：只放掉租約。
+ * 進度（做好的片段）每做完一段就存了——這裡不能再寫一次 state，不然會用這一步開始時的舊進度蓋掉剛做好的片段
+ */
+export async function releaseLease(admin: Admin, row: TravelVideoRow): Promise<TravelVideoRow> {
+  const { data, error } = await admin
+    .from("travel_videos")
+    .update({ lease_until: null, updated_at: new Date().toISOString() })
+    .eq("id", row.id)
+    .in("status", ["queued", "running"])
+    .select("*")
+    .maybeSingle();
+  if (error) throw new Error(`release lease failed: ${error.message}`);
+  return (data as TravelVideoRow | null) ?? row;
 }
 
 async function saveState(
@@ -288,10 +309,12 @@ async function runClips(
 
   let current = row;
   let next = state;
+  let lastClipMs: number | null = null;
   for (let i = 0; i < next.photos.length; i++) {
     if (next.photos[i].clip_path) continue;
-    if (deadline - Date.now() < MIN_CLIP_BUDGET_MS) throw new ComposeBudgetError();
+    if (deadline - Date.now() < clipBudgetNeededMs(lastClipMs)) throw new ComposeBudgetError();
     const photo = next.photos[i];
+    const clipStarted = Date.now();
     const { clip, seconds } = await renderMontageClip({
       photo: await download(admin, photo.path),
       line: photo.line,
@@ -301,6 +324,7 @@ async function runClips(
       font,
       deadline,
     });
+    lastClipMs = Date.now() - clipStarted;
     const clipPath = montageClipPath(row, i);
     await upload(admin, clipPath, clip, "video/mp4");
     next = {
@@ -390,7 +414,7 @@ async function advanceMontage(
   if (Date.now() - new Date(row.created_at).getTime() > MONTAGE_STALE_MS) {
     return { row: await failMontage(admin, row, "montage timeout"), worked: false };
   }
-  const leased = await acquireLease(admin, row);
+  const leased = await acquireLease(admin, row, leaseMsFor(opts.budgetMs ?? WORK_BUDGET_MS));
   if (!leased?.montage) return { row, worked: false };
   return { row: await processLeased(admin, leased, opts), worked: true };
 }
@@ -412,10 +436,8 @@ async function processLeased(admin: Admin, leased: TravelVideoRow, opts: { budge
     }
     return await saveState(admin, current, state, { lease_until: null });
   } catch (e) {
-    // 時間不夠不算失敗：進度都存好了，下次輪詢接著做
-    if (e instanceof ComposeBudgetError) {
-      return saveState(admin, current, state, { lease_until: null }).catch(() => current);
-    }
+    // 時間不夠不算失敗：進度都存好了（只放租約，別把舊進度寫回去），下次接著做
+    if (e instanceof ComposeBudgetError) return releaseLease(admin, current).catch(() => current);
     if (e instanceof MontageFatalError) return failMontage(admin, current, e.message);
     const msg = e instanceof Error ? e.message : String(e);
     console.error("[montage] step failed:", msg);

@@ -11,11 +11,15 @@ import type { TravelVideoRow } from "@/lib/ai/travel-video-server";
 import { isTravelVideoPending } from "@/lib/travel-video";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+/**
+ * 一棒做久一點（Hobby＋Fluid compute 上限 300 秒）：Vercel 自己呼叫自己連續幾棒就會回 508（Loop Detected），
+ * 所以一棒要做 4 分鐘，MV 兩三棒就做完（2026-10-05 正式站：45 秒一棒，第 4、5 棒就被擋）
+ */
+export const maxDuration = 300;
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-/** after() 裡的工作時間（含失敗重試前的等待），留時間給上傳與寫 DB */
-const WORK_BUDGET_MS = 45_000;
+/** after() 裡的工作時間（含失敗重試前的等待），留時間給上傳、寫 DB 和叫下一棒 */
+const WORK_BUDGET_MS = 240_000;
 
 export async function POST(req: NextRequest) {
   const expected = `Bearer ${process.env.CRON_SECRET}`;
