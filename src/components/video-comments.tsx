@@ -25,6 +25,7 @@ import {
   commentsSpeechText,
   formatVoiceSeconds,
   sanitizeComment,
+  viewersLine,
   type VideoComment,
   type VideoCommentsView,
   type VideoReaction,
@@ -209,6 +210,11 @@ export function VideoComments({
       </div>
       {reactedNames.length > 0 && (
         <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-2)", lineHeight: 1.5 }}>{reactedNames.join("、")}</div>
+      )}
+      {viewer === "owner" && view.viewers && view.viewers.length > 0 && (
+        <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-2)", lineHeight: 1.5 }}>
+          <span aria-hidden="true">👀 </span>{viewersLine(view.viewers)}
+        </div>
       )}
 
       {/* 留言 */}

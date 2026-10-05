@@ -239,6 +239,8 @@ export const api = {
     apiFetch<{ comments: VideoCommentsView }>(`/api/ai/travel-video/${id}/comments/${commentId}`, { method: "DELETE" }),
   // 家人看長輩的出遊影片
   familyVideos: () => apiFetch<{ elders: FamilyElderVideos[] }>("/api/family/videos"),
+  /** 家人播放了影片（長輩那邊顯示「看過了」） */
+  markVideoViewed: (id: string) => apiFetch<{ ok: true }>(`/api/ai/travel-video/${id}/view`, { method: "POST" }),
 
   // 我的聲音（專業版）：錄一段自己的聲音，影片口白用自己的聲音念
   getMyVoice: () => apiFetch<{ status: MyVoiceStatus }>("/api/ai/voice-clone"),
