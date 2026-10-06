@@ -667,8 +667,9 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           if (d.noteContent) setNoteContent(d.noteContent);
           if (d.tagId) setNoteTagId(d.tagId);
           if (d.reflectNote) setReflectNote(d.reflectNote);
-        } else if (chapter.defaultNoteTitle) {
-          setNoteTitle(chapter.defaultNoteTitle);
+        } else {
+          if (chapter.defaultNoteTitle) setNoteTitle(chapter.defaultNoteTitle);
+          if (chapter.defaultNoteContent) setNoteContent(chapter.defaultNoteContent);
         }
       }
       if (layout === "smart-flow") {
@@ -5173,7 +5174,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                   setNoteContent(e.target.value);
                   saveDraft({ noteContent: e.target.value });
                 }}
-                placeholder="例如：路邊那朵小白花可能叫「阿拉伯婆婆納」…"
+                placeholder={chapter.defaultNoteContent ?? "例如：路邊那朵小白花可能叫「阿拉伯婆婆納」…"}
                 rows={3}
                 style={{
                   width: "100%", padding: "14px 16px", marginBottom: 12,
@@ -5218,6 +5219,15 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
               <button type="button" onClick={copyNoteTemplate} style={secondaryBtnStyle}>
                 複製便條內容（可貼到筆記 App）
               </button>
+              {chapter.id === "0101" && (
+                <button
+                  type="button"
+                  onClick={tryInNuannuan}
+                  style={{ ...secondaryBtnStyle, marginTop: 8, borderColor: "var(--primary)", color: "var(--primary-deep)", background: "var(--primary-soft)" }}
+                >
+                  在暖暖用語音說說這句話 →
+                </button>
+              )}
             </div>
           )}
 

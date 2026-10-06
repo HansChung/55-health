@@ -16,6 +16,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/smart/spark",
     "/smart/chapter3",
     "/smart/chapter/0100",
+    "/smart/chapter/0101",
     "/smart/chapter/0102",
     "/smart/chapter/0103",
     "/smart/chapter/0104",

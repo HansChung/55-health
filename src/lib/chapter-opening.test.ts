@@ -32,6 +32,17 @@ describe("chapter-opening", () => {
     expect(ch?.entries).toHaveLength(4);
   });
 
+  it("getChapterOpening 0101 note-capture 啟航句", () => {
+    const ch = getChapterOpening("0101");
+    expect(ch?.title).toBe("風起的時候，調整風帆");
+    expect(ch?.layout).toBe("note-capture");
+    expect(ch?.quote).toContain("願意開始");
+    expect(ch?.defaultNoteTitle).toBe("我的啟航句");
+    expect(ch?.defaultNoteContent).toContain("我曾經學會");
+    expect(ch?.noteTagOptions?.some((t) => t.id === "line")).toBe(true);
+    expect(ch?.noteCaptureDemos?.length).toBe(2);
+  });
+
   it("getChapterOpening 0102 ai-entry", () => {
     const ch = getChapterOpening("0102");
     expect(ch?.layout).toBe("ai-entry");
@@ -304,6 +315,7 @@ describe("chapter-opening", () => {
 
   it("isSparkSource", () => {
     expect(isSparkSource("chapter0100")).toBe(true);
+    expect(isSparkSource("chapter0101")).toBe(true);
     expect(isSparkSource("chapter0202")).toBe(true);
     expect(isSparkSource("invalid")).toBe(false);
   });
@@ -311,6 +323,7 @@ describe("chapter-opening", () => {
   it("chapterSparkSource / getChapterDeepLinkHint", () => {
     expect(chapterSparkSource("0202")).toBe("chapter0202");
     expect(chapterSparkHref("0202")).toContain("source=chapter0202");
+    expect(getChapterDeepLinkHint("chapter0101")?.label).toContain("風帆");
     expect(getChapterDeepLinkHint("chapter0202")?.label).toContain("識花");
     expect(getChapterDeepLinkHint("chapter9999")?.tips[0]).toContain("一拍");
   });
@@ -334,6 +347,7 @@ describe("chapter-opening", () => {
     expect(listChapterOpenings().length).toBe(
       sections.reduce((n, s) => n + s.chapters.length, 0)
     );
+    expect(sections[0].chapters.some((c) => c.id === "0101")).toBe(true);
     expect(sections[0].chapters.some((c) => c.id === "0102")).toBe(true);
     expect(sections[1].chapters.some((c) => c.id === "0203")).toBe(true);
     expect(sections[2].title).toBe("第三章｜優雅導航");
@@ -369,6 +383,8 @@ describe("chapter-opening", () => {
     const byAlias = filterBookGuideSections("Gemini");
     expect(byAlias.some((s) => s.chapters.some((c) => c.id === "0102"))).toBe(true);
 
+    const byLaunch = filterBookGuideSections("啟航句");
+    expect(byLaunch.some((s) => s.chapters.some((c) => c.id === "0101"))).toBe(true);
     const by0400 = filterBookGuideSections("0400");
     expect(by0400.some((s) => s.chapters.some((c) => c.id === "0400"))).toBe(true);
 

@@ -1295,6 +1295,7 @@ export interface ChapterOpening {
   photoSearchDemos?: PhotoSearchDemo[];
   /** note-capture 版型：便條標籤與示範 */
   defaultNoteTitle?: string;
+  defaultNoteContent?: string;
   noteTagOptions?: NoteTagOption[];
   noteCaptureDemos?: NoteCaptureDemo[];
   /** smart-flow 版型：三拍示範 */
@@ -1487,6 +1488,72 @@ export const CHAPTER_0100: ChapterOpening = {
       hint: "寫下一件小事，點亮 SMART 光點",
       emoji: "✨",
       href: "/smart/spark?source=chapter0100",
+    },
+  ],
+};
+
+export const CHAPTER_0101: ChapterOpening = {
+  id: "0101",
+  qrCode: "0101",
+  title: "風起的時候，調整風帆",
+  subtitle: "章節開篇",
+  layout: "note-capture",
+  headerEmoji: "🌬️",
+  accentGradient: "linear-gradient(180deg, #E8F2FA 0%, transparent 55%)",
+  quote: "風向不能決定，風帆可以調整；願意開始，就是前進。",
+  atAGlance:
+    "真正讓腳步停住的，常常不是年齡或科技，而是心裡那句「我大概學不會了」。這一頁只做一件事：想起一項自己曾經學會的新事物，寫下啟航句，證明您仍然有能力開始。",
+  tryPrompt:
+    "想起一項自己曾經不熟、如今已能自然使用的科技，寫下：「我曾經學會＿＿＿＿，AI 也可以從一步開始。」",
+  reflectPrompt: "過去的哪一次學習，最能提醒我：我仍然有能力開始？",
+  reflectPlaceholder: "例如：學會用 LINE 視訊孫子那一次，我花了兩天，後來每天都在用…",
+  continueTitle: "暖暖陪您繼續",
+  continueBody:
+    "掃碼進入暖暖，可聽章首導讀，想起一項曾經學會的新科技，留下自己的啟航句。想說出口，也可進語音。",
+  practiceWhere: "nuannuan",
+  capabilityNote:
+    "啟航句可在本頁完成；可聽導讀，或進暖暖語音把這句話說出來。",
+  printCardTitle: "啟航句卡片",
+  printCardDescription:
+    "可列印：我曾經學會的科技、啟航句、那一次學習如何提醒我仍能開始。",
+  printButtonLabel: "列印啟航句卡片",
+  guideTitle: "章首導讀",
+  guideDuration: "約 2 分鐘",
+  guideParagraphs: [
+    "人生總有一些時刻，讓人感覺世界忽然加快了速度。從黑白電視到彩色電視，從實體信件到智慧型手機，我們其實已經走過許多次科技演變。",
+    "每一次剛開始都可能有點不安，但回頭看，許多曾經陌生的事物，後來都慢慢成了生活的一部分。",
+    "現在，AI 來到面前。真正讓腳步停住的，常常不是年齡，也不是科技本身，而是心裡那一句：「我大概學不會了。」",
+    "海上的航行者都知道，沒有人能決定風往哪裡吹；有經驗的船長卻會調整風帆。走得穩，比追得快更重要；願意開始，就是智慧啟航的第一個成功。",
+  ],
+  guideFooterNote: "請先聽或讀章首導讀，再寫下自己的啟航句。",
+  footerGuideLabel: "聽／讀 2 分鐘章首導讀",
+  defaultNoteTitle: "我的啟航句",
+  defaultNoteContent: "我曾經學會＿＿＿＿，AI 也可以從一步開始。",
+  noteTagOptions: [
+    { id: "tv", label: "彩色電視" },
+    { id: "phone", label: "按鍵手機／智慧型手機" },
+    { id: "atm", label: "ATM" },
+    { id: "line", label: "LINE" },
+    { id: "map", label: "電子地圖" },
+    { id: "shop", label: "網路購物" },
+    { id: "other", label: "其他" },
+  ],
+  noteCaptureDemos: [
+    {
+      id: "tv",
+      label: "案例｜彩色電視",
+      noteTitle: "我的啟航句",
+      noteContent: "我曾經學會看彩色電視遙控器，AI 也可以從一步開始。",
+      tagId: "tv",
+      reflectNote: "那時也覺得按鈕好多；後來每天都在用。",
+    },
+    {
+      id: "line",
+      label: "案例｜LINE 視訊",
+      noteTitle: "我的啟航句",
+      noteContent: "我曾經學會用 LINE 跟孫子視訊，AI 也可以從一步開始。",
+      tagId: "line",
+      reflectNote: "學會視訊那一次最能提醒我：慢一點沒關係，開始了就會熟。",
     },
   ],
 };
@@ -1970,6 +2037,7 @@ export const CHAPTER_0108: ChapterOpening = {
 
 const CHAPTERS: Record<string, ChapterOpening> = {
   "0100": CHAPTER_0100,
+  "0101": CHAPTER_0101,
   "0102": CHAPTER_0102,
   "0103": CHAPTER_0103,
   "0104": CHAPTER_0104,
@@ -2027,6 +2095,7 @@ const BOOK_GUIDE_COLORS = [
 
 const BOOK_GUIDE_ALIASES: Record<string, string[]> = {
   "0100": ["智慧啟航", "開篇", "風帆"],
+  "0101": ["調整風帆", "啟航句", "曾經學會"],
   "0102": ["入口", "找 AI", "Gemini", "ChatGPT", "Siri"],
   "0103": ["關鍵字", "自然提問", "用人話"],
   "0104": ["第二個大腦", "整理", "繁雜"],
@@ -2230,7 +2299,7 @@ export function getBookGuideSections(extras: BookGuideExtras = {}): BookGuideSec
     {
       id: "ch1",
       title: "第一章｜智慧啟航",
-      intro: "先找得到 AI，再慢慢練提問、整理、拍照與記下。",
+      intro: "先調整風帆、找得到 AI，再慢慢練提問、整理、拍照與記下。",
       accent: "#5BA0C9",
       chapters: buckets.ch1,
     },
@@ -3293,6 +3362,7 @@ export function isSparkSource(value: string | null | undefined): value is SparkS
 export function sparkFormTitle(source: SparkSource): string {
   if (source === "chapter3") return "Chapter 3 打卡";
   if (source === "chapter0100") return "記下一句話";
+  if (source === "chapter0101") return "我的啟航句";
   if (/^chapter\d{4}$/.test(source) || source === "chapterp4-open") return "把這句話點成光點";
   return "點亮光點";
 }
@@ -3311,6 +3381,10 @@ export function getChapterDeepLinkHint(from: string | null | undefined): Chapter
   if (!from?.startsWith("chapter")) return null;
   const chapterId = from.replace(/^chapter/, "");
   const known: Record<string, { label: string; tips: string[] }> = {
+    "0101": {
+      label: "調整風帆",
+      tips: ["想起一項曾經學會的科技", "寫下自己的啟航句", "願意開始，就是前進"],
+    },
     "0105": {
       label: "萬物皆可問",
       tips: ["拍低風險物品", "請 AI 用簡單中文說明", "牽涉安全請再查證"],
