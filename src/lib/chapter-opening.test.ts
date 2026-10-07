@@ -37,8 +37,9 @@ describe("chapter-opening", () => {
     expect(ch?.layout).toBe("ai-entry");
     expect(ch?.samplePrompt).toContain("簡單中文");
     expect(ch?.phonePaths?.length).toBeGreaterThan(3);
-    expect(ch?.phonePaths?.some((p) => p.id === "gemini")).toBe(true);
-    expect(ch?.phonePaths?.some((p) => p.id === "chatgpt")).toBe(true);
+    // 書本範例全部改用暖暖：入口只教怎麼打開、打字問、用說的問暖暖，不再介紹其他 AI
+    expect(ch?.phonePaths?.every((p) => p.id.startsWith("nuannuan"))).toBe(true);
+    expect(JSON.stringify(ch)).not.toMatch(/Gemini|ChatGPT|Siri|Bixby|Google 助理|小愛|小布/);
     expect(ch?.entries).toBeUndefined();
   });
 
@@ -366,7 +367,7 @@ describe("chapter-opening", () => {
     const byKeyword = filterBookGuideSections("點菜");
     expect(byKeyword.some((s) => s.chapters.some((c) => c.id === "0203"))).toBe(true);
 
-    const byAlias = filterBookGuideSections("Gemini");
+    const byAlias = filterBookGuideSections("打字問");
     expect(byAlias.some((s) => s.chapters.some((c) => c.id === "0102"))).toBe(true);
 
     const by0400 = filterBookGuideSections("0400");

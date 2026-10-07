@@ -252,6 +252,21 @@ export const api = {
     apiFetch<{ status: MyVoiceStatus }>("/api/ai/voice-clone", { method: "POST", json: input, timeoutMs: 65000 }),
   deleteMyVoice: () => apiFetch<{ status: MyVoiceStatus }>("/api/ai/voice-clone", { method: "DELETE" }),
 
+  // 打字問暖暖：所有人都能用，每天限題數
+  askQuota: () => apiFetch<{ quota: { used: number; limit: number } }>("/api/ai/chat"),
+  ask: (input: {
+    messages: import("./ask").AskMessage[];
+    mode?: import("./ask").AskMode;
+    chapterId?: string | null;
+    chapterTitle?: string | null;
+    guide?: { label: string; text: string } | null;
+  }) =>
+    apiFetch<{ reply: string; quota: { used: number; limit: number } }>("/api/ai/chat", {
+      method: "POST",
+      json: input,
+      timeoutMs: 60000,
+    }),
+
   // 拍照問暖暖：看圖模型約 10～15 秒；和拍照記餐共用每月拍照次數
   askPhoto: (input: { imageBase64: string; mimeType?: string; question?: string; place?: string }) =>
     apiFetch<{ result: import("./photo-ask").PhotoAskResult; quota: { used: number; limit: number; tier: string } }>(

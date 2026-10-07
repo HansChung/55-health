@@ -187,6 +187,20 @@ export async function checkUserQuota(
   }
 }
 
+/** 某個時間之後，某個 endpoint 成功的次數（打字問暖暖：每天的題數；失敗的不算） */
+export async function countEndpointSuccessSince(userId: string, endpoint: string, sinceIso: string): Promise<number> {
+  const supabase = createSupabaseAdmin();
+  const { count, error } = await supabase
+    .from("ai_usage")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("endpoint", endpoint)
+    .eq("success", true)
+    .gte("created_at", sinceIso);
+  if (error) throw new Error(`count ${endpoint} usage failed: ${error.message}`);
+  return count ?? 0;
+}
+
 /** 本月某個 endpoint 的呼叫次數（成功、失敗都算）：用來限制試聽口白、AI 寫稿等附屬功能 */
 export async function countMonthlyEndpointUsage(userId: string, endpoint: string): Promise<number> {
   const supabase = createSupabaseAdmin();

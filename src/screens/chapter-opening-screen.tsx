@@ -257,10 +257,13 @@ import {
   buildDayRehearsalPrompt,
 } from "@/lib/chapter-opening";
 import {
-  type ExternalAiProvider,
-  externalAiSuccessMessage,
-  openExternalAiPractice,
-} from "@/lib/external-ai";
+  buildGuideContext,
+  clearChapterAskSummary,
+  guideInfo,
+  loadChapterAskSummary,
+  saveAskSeed,
+  type ChapterAskSummary,
+} from "@/lib/ask";
 import { trackEvent } from "@/lib/telemetry";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -2910,22 +2913,57 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
     router.push(chapterVoiceTryHref(chapter.id));
   };
 
-  const tryExternalAi = async (provider: ExternalAiProvider, prompt: string, emptyHint: string) => {
-    const result = await openExternalAiPractice(provider, prompt);
-    if (!result.ok) {
-      if (result.reason === "empty") {
-        toast.info(emptyHint);
-        return;
-      }
-      toast.info("無法自動開啟分頁，範例已盡量複製——請手動開啟 Gemini 或 ChatGPT 後貼上。");
+  /**
+   * 打字問暖暖：範例帶到暖暖的打字對話（看過再送出）；0407／0607／0707 附上自己寫的指南；
+   * guided＝主持模式（一次只問一題），做完可以整理後存回這一章
+   */
+  const tryAskNuannuan = (prompt: string, emptyHint: string, opts: { guided?: boolean } = {}) => {
+    const text = prompt.trim();
+    if (!text) {
+      toast.info(emptyHint);
       return;
     }
-    trackEvent("chapter_external_ai_try", {
-      chapter: chapter.id,
-      provider,
-      copied: result.copied,
+    const guide = buildGuideContext(chapter.id, (source) => {
+      try {
+        const raw = localStorage.getItem(chapterDraftKey(source));
+        return raw ? (JSON.parse(raw) as Record<string, unknown>) : null;
+      } catch {
+        return null;
+      }
     });
-    toast.success(externalAiSuccessMessage(provider, result.copied));
+    const needGuide = guideInfo(chapter.id);
+    if (needGuide && !guide) {
+      toast.info(`還沒寫第 ${needGuide.source} 節的「${needGuide.label}」，暖暖會先用一般的建議回答。`);
+    }
+    saveAskSeed({
+      prompt: text,
+      mode: opts.guided ? "guided" : "chat",
+      chapterId: chapter.id,
+      chapterTitle: chapter.title,
+      guide,
+    });
+    trackEvent("chapter_ask_try", { chapter: chapter.id, guided: Boolean(opts.guided), guide: Boolean(guide) });
+    router.push(`/?open=ask&from=chapter${chapter.id}`);
+  };
+
+  // 在暖暖對話後「整理並存回這一章」的內容（存在這支手機）
+  const [askSummary, setAskSummary] = useState<ChapterAskSummary | null>(null);
+  useEffect(() => {
+    setAskSummary(loadChapterAskSummary(chapter.id));
+  }, [chapter.id]);
+
+  const askSummaryToSpark = (summary: string) => {
+    const next = summary.split("\n").find((l) => l.trim().startsWith("下一步"));
+    const action = (next ? next.replace(/^\s*下一步[：:]\s*/, "") : summary).trim().slice(0, 200);
+    saveChapterSparkSeed({
+      source: chapterSparkSource(chapter.id),
+      action_text: action,
+      feeling_text: "",
+      chapterId: chapter.id,
+      chapterTitle: chapter.title,
+    });
+    trackEvent("chapter_spark_save", { chapter: chapter.id, from: "ask_summary" });
+    router.push(chapterSparkHref(chapter.id));
   };
 
   const tryCameraInNuannuan = () => {
@@ -3369,7 +3407,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
     }
     try {
       await navigator.clipboard.writeText(text);
-      toast.success("已複製自然提問，可以貼到 AI 對話或說出來。");
+      toast.success("已複製自然提問，可以貼到暖暖的打字對話，或用說的。");
     } catch {
       toast.info("請長按文字框手動複製。");
     }
@@ -3407,7 +3445,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
     }
     try {
       await navigator.clipboard.writeText(text);
-      toast.success("已複製整理提問，可以貼給 AI。");
+      toast.success("已複製整理提問，可以貼到暖暖的打字對話。");
     } catch {
       toast.info("請長按文字框手動複製。");
     }
@@ -3422,7 +3460,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           : buildVisionAskPrompt(itemLabel);
     try {
       await navigator.clipboard.writeText(text);
-      toast.success("已複製拍照提問句，拍完可貼給 AI。");
+      toast.success("已複製拍照提問句，拍完可以問暖暖。");
     } catch {
       toast.info("請長按文字框手動複製。");
     }
@@ -3493,7 +3531,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
     const text = buildSmartFlowAskPrompt(snapNote);
     try {
       await navigator.clipboard.writeText(text);
-      toast.success("已複製二問提問句，可以貼給 AI 或說出來。");
+      toast.success("已複製二問提問句，可以貼到暖暖的打字對話，或用說的。");
     } catch {
       toast.info("請長按文字框手動複製。");
     }
@@ -3517,7 +3555,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
     const text = buildMenuTranslatePrompt(dietaryNeed);
     try {
       await navigator.clipboard.writeText(text);
-      toast.success("已複製菜單翻譯提問句，拍完可貼給 AI。");
+      toast.success("已複製菜單翻譯提問句，拍完可以問暖暖。");
     } catch {
       toast.info("請長按文字框手動複製。");
     }
@@ -3543,7 +3581,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
     const text = buildProductComparePrompt(productA, productB);
     try {
       await navigator.clipboard.writeText(text);
-      toast.success("已複製商品比較提問句，拍完可貼給 AI。");
+      toast.success("已複製商品比較提問句，可以貼到暖暖的打字對話。");
     } catch {
       toast.info("請長按文字框手動複製。");
     }
@@ -3565,7 +3603,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
     const text = buildCuriosityPrompt(question);
     try {
       await navigator.clipboard.writeText(text);
-      toast.success("已複製好奇心提問句，可以貼給 AI 或說出來。");
+      toast.success("已複製好奇心提問句，可以貼到暖暖的打字對話，或用說的。");
     } catch {
       toast.info("請長按文字框手動複製。");
     }
@@ -4346,7 +4384,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
       buildDayRehearsalPrompt(fromPlace, toPlace);
     try {
       await navigator.clipboard.writeText(text);
-      toast.success("已複製一日彩排提問句，可以貼給 AI。");
+      toast.success("已複製一日彩排提問句，可以貼到暖暖的打字對話。");
     } catch {
       toast.info("請長按文字框手動複製。");
     }
@@ -4522,7 +4560,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
     if (!chapter.samplePrompt) return;
     try {
       await navigator.clipboard.writeText(chapter.samplePrompt);
-      toast.success("已複製試用語句，可以貼到 AI 對話裡。");
+      toast.success("已複製試用語句，可以貼到暖暖的打字對話裡。");
     } catch {
       toast.info("請長按下方文字框，手動複製。");
     }
@@ -4685,14 +4723,45 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
               onCopy={async (text) => {
                 try {
                   await navigator.clipboard.writeText(text);
-                  toast.success("已複製，可以貼到 AI 對話裡。");
+                  toast.success("已複製，可以貼到暖暖的打字對話裡。");
                 } catch {
                   toast.info("請長按文字，手動複製。");
                 }
               }}
-              onTryExternal={(provider, text) => tryExternalAi(provider, text, "找不到練習範例。")}
+              onTryAsk={(text) => tryAskNuannuan(text, "找不到練習範例。")}
               onTryVoice={tryInNuannuan}
             />
+          )}
+
+          {askSummary && (
+            <div style={{
+              marginBottom: 16, padding: 16, borderRadius: "var(--r-lg)",
+              background: "var(--surface-warm)", border: "1px solid var(--gold-soft)",
+            }}>
+              <div style={{ fontWeight: 800, marginBottom: 8 }}>
+                🧡 我和暖暖的對話整理
+                <span style={{ fontWeight: 500, fontSize: "var(--fs-xs)", color: "var(--ink-3)", marginLeft: 8 }}>
+                  {new Date(askSummary.savedAt).toLocaleDateString("zh-TW", { month: "numeric", day: "numeric" })}
+                </span>
+              </div>
+              <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.7, fontSize: "var(--fs-base)" }}>{askSummary.text}</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+                <button type="button" onClick={() => askSummaryToSpark(askSummary.text)} style={primaryOutlineBtnStyle}>
+                  把下一步點成光點 →
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!confirm("確定要刪掉這份整理？")) return;
+                    clearChapterAskSummary(chapter.id);
+                    setAskSummary(null);
+                  }}
+                  style={secondaryBtnStyle}
+                >
+                  刪掉
+                </button>
+              </div>
+            </div>
           )}
 
           <SectionLabel>今天的一小步</SectionLabel>
@@ -4733,17 +4802,9 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                     cursor: "pointer",
                   }}
                 >
-                  在暖暖試這句話 →
+                  🎙 用說的問暖暖 →
                 </button>
-                <ExternalAiPracticeRow
-                  onTry={(provider) =>
-                    tryExternalAi(
-                      provider,
-                      chapter.samplePrompt ?? "",
-                      "找不到試用語句。"
-                    )
-                  }
-                />
+                <AskNuannuanRow onAsk={() => tryAskNuannuan(chapter.samplePrompt ?? "", "找不到試用語句。")} />
               </div>
             </div>
           )}
@@ -4827,15 +4888,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                 >
                   在暖暖試問這句話 →
                 </button>
-                <ExternalAiPracticeRow
-                  onTry={(provider) =>
-                    tryExternalAi(
-                      provider,
-                      naturalQuestion,
-                      "請先寫好您的自然提問。"
-                    )
-                  }
-                />
+                <AskNuannuanRow onAsk={() => tryAskNuannuan(naturalQuestion, "請先寫好您的自然提問。")} />
               </div>
             </div>
           )}
@@ -4870,15 +4923,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                 <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>
                   在暖暖試問這件事 →
                 </button>
-                <ExternalAiPracticeRow
-                  onTry={(provider) =>
-                    tryExternalAi(
-                      provider,
-                      messyTask.trim() ? buildOrganizeAskPrompt(messyTask) : "",
-                      "請先寫下繁雜的事（請勿含敏感資料）。"
-                    )
-                  }
-                />
+                <AskNuannuanRow onAsk={() => tryAskNuannuan(messyTask.trim() ? buildOrganizeAskPrompt(messyTask) : "", "請先寫下繁雜的事（請勿含敏感資料）。")} />
               </div>
               <div style={{
                 fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
@@ -4994,17 +5039,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                 >
                   從相簿選照片 →
                 </button>
-                <ExternalAiPracticeRow
-                  onTry={(provider) => {
-                    const text =
-                      chapter.id === "0202"
-                        ? buildPlantAskPrompt()
-                        : chapter.id === "0206"
-                          ? buildFoodObservePrompt()
-                          : buildVisionAskPrompt(itemLabel);
-                    return tryExternalAi(provider, text, "找不到提問句。");
-                  }}
-                />
+                {/* 拍照提問：改用「拍照問暖暖」（下一步） */}
               </div>
               <div style={{
                 fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
@@ -5296,15 +5331,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                         <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>
                           在暖暖問一句 →
                         </button>
-                        <ExternalAiPracticeRow
-                          onTry={(provider) =>
-                            tryExternalAi(
-                              provider,
-                              buildSmartFlowAskPrompt(snapNote),
-                              "找不到二問提問句。"
-                            )
-                          }
-                        />
+                        {/* 拍照提問：改用「拍照問暖暖」（下一步） */}
                       </div>
                     </>
                   )}
@@ -5390,15 +5417,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                 >
                   從相簿選照片 →
                 </button>
-                <ExternalAiPracticeRow
-                  onTry={(provider) =>
-                    tryExternalAi(
-                      provider,
-                      buildMenuTranslatePrompt(dietaryNeed),
-                      "找不到菜單翻譯提問句。"
-                    )
-                  }
-                />
+                {/* 拍照提問：改用「拍照問暖暖」（下一步） */}
               </div>
               <div style={{
                 fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
@@ -5493,15 +5512,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                 <button type="button" onClick={tryCameraInNuannuan} style={primaryOutlineBtnStyle}>
                   在暖暖拍一下 →
                 </button>
-                <ExternalAiPracticeRow
-                  onTry={(provider) =>
-                    tryExternalAi(
-                      provider,
-                      buildProductComparePrompt(productA, productB),
-                      "請先填寫要比較的商品。"
-                    )
-                  }
-                />
+                <AskNuannuanRow onAsk={() => tryAskNuannuan(buildProductComparePrompt(productA, productB), "請先填寫要比較的商品。")} />
               </div>
               <div style={{
                 fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
@@ -5580,15 +5591,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                 <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>
                   在暖暖問一句 →
                 </button>
-                <ExternalAiPracticeRow
-                  onTry={(provider) =>
-                    tryExternalAi(
-                      provider,
-                      buildCuriosityPrompt(question),
-                      "請先寫下今天想問的問題。"
-                    )
-                  }
-                />
+                <AskNuannuanRow onAsk={() => tryAskNuannuan(question.trim() ? buildCuriosityPrompt(question) : "", "請先寫下今天想問的問題。")} />
               </div>
               <div style={{
                 fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
@@ -5962,15 +5965,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <button type="button" onClick={copyDecisionSeatAsk} style={secondaryBtnStyle}>複製問題改寫提問句</button>
                 <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>在暖暖一次一題 →</button>
-                <ExternalAiPracticeRow
-                  onTry={(provider) =>
-                    tryExternalAi(
-                      provider,
-                      chapter.samplePrompt?.trim() || buildDecisionSeatPrompt(),
-                      "找不到問題改寫提問句。"
-                    )
-                  }
-                />
+                <AskNuannuanRow onAsk={() => tryAskNuannuan(chapter.samplePrompt?.trim() || buildDecisionSeatPrompt(), "找不到問題改寫提問句。", { guided: true })} />
               </div>
             </div>
           )}
@@ -6048,15 +6043,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <button type="button" onClick={copySixHatsAsk} style={secondaryBtnStyle}>複製一人董事會提問句</button>
                 <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>在暖暖召開會議 →</button>
-                <ExternalAiPracticeRow
-                  onTry={(provider) =>
-                    tryExternalAi(
-                      provider,
-                      chapter.samplePrompt?.trim() || buildSixHatsPrompt(),
-                      "找不到一人董事會提問句。"
-                    )
-                  }
-                />
+                <AskNuannuanRow onAsk={() => tryAskNuannuan(chapter.samplePrompt?.trim() || buildSixHatsPrompt(), "找不到一人董事會提問句。", { guided: true })} />
               </div>
             </div>
           )}
@@ -8492,7 +8479,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                 fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
                 marginBottom: 10,
               }}>
-                常見入口（點一下標記您的手機）
+                打開暖暖的方法（點一下標記您用的）
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {chapter.phonePaths.map((path) => (
@@ -13718,67 +13705,41 @@ const primaryOutlineBtnStyle: React.CSSProperties = {
   cursor: "pointer",
 };
 
-/** 一點開 Gemini／ChatGPT，方便用書本範例在外部 AI 練習 */
-function ExternalAiPracticeRow({
-  onTry,
-}: {
-  onTry: (provider: ExternalAiProvider) => void;
-}) {
+/** 打字問暖暖：範例帶到暖暖的打字對話（看過再按送出） */
+function AskNuannuanRow({ onAsk }: { onAsk: () => void }) {
   return (
     <div style={{
       marginTop: 4,
       padding: "12px 14px",
       borderRadius: 12,
-      background: "linear-gradient(135deg, #EEF6FF 0%, #FFF8F0 100%)",
+      background: "linear-gradient(135deg, #FFF4E8 0%, #FFFFFF 100%)",
       border: "1px solid var(--line)",
     }}>
-      <div style={{
-        fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-2)",
-        marginBottom: 8, lineHeight: 1.45,
-      }}>
-        一點開外部 AI 練習同一句
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-        <button
-          type="button"
-          onClick={() => onTry("gemini")}
-          style={{
-            padding: "12px 10px",
-            background: "var(--surface)",
-            border: "2px solid #5B8DEF",
-            borderRadius: 12,
-            fontWeight: 800,
-            fontSize: "var(--fs-sm)",
-            color: "#3D6BC7",
-            cursor: "pointer",
-          }}
-        >
-          用 Gemini 試
-        </button>
-        <button
-          type="button"
-          onClick={() => onTry("chatgpt")}
-          style={{
-            padding: "12px 10px",
-            background: "var(--surface)",
-            border: "2px solid #10A37F",
-            borderRadius: 12,
-            fontWeight: 800,
-            fontSize: "var(--fs-sm)",
-            color: "#0D8A6A",
-            cursor: "pointer",
-          }}
-        >
-          用 ChatGPT 試
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={onAsk}
+        style={{
+          width: "100%",
+          padding: "14px 12px",
+          minHeight: 56,
+          background: "var(--surface)",
+          border: "2px solid var(--primary)",
+          borderRadius: 12,
+          fontWeight: 800,
+          fontSize: "var(--fs-base)",
+          color: "var(--primary-deep)",
+          cursor: "pointer",
+        }}
+      >
+        ✍️ 打字問暖暖 →
+      </button>
       <p style={{
         margin: "8px 0 0",
         fontSize: "var(--fs-xs)",
         color: "var(--ink-3)",
         lineHeight: 1.45,
       }}>
-        ChatGPT 通常會帶入文字；Gemini 請貼上後送出。兩者都會先幫您複製範例。
+        範例會帶到暖暖的打字對話，看過再按「送出」；也可以改成自己的話。
       </p>
     </div>
   );

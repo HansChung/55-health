@@ -46,6 +46,8 @@ interface HomeScreenProps {
   onTravelVideo?: () => void;
   onStudyTours?: () => void;
   onPhotoAsk?: () => void;
+  /** 打字問暖暖 */
+  onAsk?: () => void;
   caregiver?: { count: number; needsAttention: boolean } | null;
   onCaregiver?: () => void;
   /** 每天早上天氣：還沒設定過就在首頁問縣市 */
@@ -67,7 +69,7 @@ function getDateLabel(): string {
   return `${d.getMonth() + 1}月${d.getDate()}日　星期${WEEKDAYS[d.getDay()]}`;
 }
 
-export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart, onBlueprint, onBookPractice, onIot, onTravelVideo, onStudyTours, onPhotoAsk, caregiver = null, onCaregiver, notificationSettings, onProfileUpdated }: HomeScreenProps) {
+export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart, onBlueprint, onBookPractice, onIot, onTravelVideo, onStudyTours, onPhotoAsk, onAsk, caregiver = null, onCaregiver, notificationSettings, onProfileUpdated }: HomeScreenProps) {
   // 從餐點計算今日營養
   const totals = meals.reduce(
     (s, m) => {
@@ -202,6 +204,18 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
           background="linear-gradient(135deg, #EAF3E7 0%, #FFFFFF 100%)"
           borderColor="#C3DDBB"
           iconBg="#D5E8CE"
+        />
+      )}
+
+      {onAsk && (
+        <NavCard
+          onClick={onAsk}
+          emoji="✍️"
+          title="問暖暖"
+          subtitle="打字或用說的，什麼都可以問"
+          background="linear-gradient(135deg, #FFF4E8 0%, #FFFFFF 100%)"
+          borderColor="#F3D2B0"
+          iconBg="#FCE3C8"
         />
       )}
 

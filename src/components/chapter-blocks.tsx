@@ -6,12 +6,12 @@
 // ────────────────────────────────────────────────
 import Link from "next/link";
 import { youtubeEmbedUrl, type ChapterBlock } from "@/lib/chapter-content";
-import type { ExternalAiProvider } from "@/lib/external-ai";
 
 interface Props {
   blocks: ChapterBlock[];
   onCopy: (text: string) => void;
-  onTryExternal: (provider: ExternalAiProvider, text: string) => void;
+  /** 打字問暖暖（範例帶到暖暖的打字對話） */
+  onTryAsk: (text: string) => void;
   onTryVoice: () => void;
 }
 
@@ -33,7 +33,7 @@ const captionStyle: React.CSSProperties = {
   margin: "8px 2px 0", fontSize: "var(--fs-xs)", color: "var(--ink-3)", lineHeight: 1.5,
 };
 
-export function ChapterBlocks({ blocks, onCopy, onTryExternal, onTryVoice }: Props) {
+export function ChapterBlocks({ blocks, onCopy, onTryAsk, onTryVoice }: Props) {
   if (!blocks.length) return null;
   return (
     <div style={{ marginBottom: 24 }}>
@@ -101,22 +101,13 @@ export function ChapterBlocks({ blocks, onCopy, onTryExternal, onTryVoice }: Pro
                 {b.note && <p style={{ ...captionStyle, margin: "0 2px 10px" }}>{b.note}</p>}
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   <button type="button" style={bigBtn} onClick={() => onCopy(b.prompt)}>複製這句話</button>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    <button
-                      type="button"
-                      onClick={() => onTryExternal("gemini", b.prompt)}
-                      style={{ ...bigBtn, borderRadius: 12, border: "2px solid #5B8DEF", color: "#3D6BC7", fontWeight: 800 }}
-                    >
-                      用 Gemini 試
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onTryExternal("chatgpt", b.prompt)}
-                      style={{ ...bigBtn, borderRadius: 12, border: "2px solid #10A37F", color: "#0D8A6A", fontWeight: 800 }}
-                    >
-                      用 ChatGPT 試
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onTryAsk(b.prompt)}
+                    style={{ ...bigBtn, borderRadius: 12, border: "2px solid var(--primary)", color: "var(--primary-deep)", fontWeight: 800 }}
+                  >
+                    ✍️ 打字問暖暖 →
+                  </button>
                   <button
                     type="button"
                     onClick={onTryVoice}

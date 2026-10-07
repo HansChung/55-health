@@ -252,3 +252,21 @@ stack works well for auth + meal/diary CRUD:
 - Optional save: 「把這句話點成光點」→ `/smart/spark?source=chapterXXXX` (sessionStorage seed).
 - Home 「書本練習」→ `/smart/guide`. Deep links `/?open=voice|camera&from=chapterXXXX` show intent tips.
 - Production DB may need `supabase/add-chapter-opening-sources.sql` if the old source check is still in place.
+- **No external AI in the book** (owner's decision, 2026-10-07): examples never send people to Gemini／ChatGPT／Siri;
+  `external-ai.ts` is gone. Text examples use 「✍️ 打字問暖暖」 (`AskNuannuanRow` / the `example` block's
+  `onTryAsk`) → `saveAskSeed` (sessionStorage, survives login) → `/?open=ask&from=chapterXXXX`. Photo examples
+  are being moved to 拍照問暖暖. 0102 teaches only how to open 暖暖.
+
+### 打字問暖暖（text chat, `subpage "ask"`）
+- Home 「問暖暖」, the voice screen's 「改用打字問暖暖」 and book examples open `AskScreen`. Typed or dictated
+  (`DictationButton`), follow-ups allowed, answers read aloud with speechSynthesis. **Everyone can use it**
+  (free tier too) with a daily limit per Taipei day (`ASK_DAILY_LIMITS`: free 20 / basic 50 / pro 100 messages;
+  counted from successful `ai_usage` rows with endpoint `/api/ai/chat`).
+- `POST /api/ai/chat` is stateless: the client sends the recent history (`trimAskHistory`, ≤40 messages) and the
+  server adds 暖暖's instructions (`buildAskSystemPrompt`: Traditional Chinese, short, no Markdown, no diagnosis,
+  no invented live info, anti-fraud, never recommends other AI products, describes 暖暖's real features) via
+  Gemini `systemInstruction`; text model = `gem-3.5-flash-lite` through lk888 (~0.004 算力 per reply).
+- Book context: `chapterTitle`, plus the user's own guide from browser storage (`buildGuideContext`: 0407←0406
+  日常飲食指南, 0607←0606 動能指南, 0707←0706 活動參與指南). `mode: "guided"` (0801, 0805) makes 暖暖 ask one
+  question at a time; `mode: "summary"` summarises the thread, which is saved to
+  `localStorage nuannuan_chapter{id}_ask_summary` and shown on the chapter page (can become a 光點).

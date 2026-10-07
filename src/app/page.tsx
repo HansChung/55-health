@@ -34,6 +34,8 @@ import { CaregiverScreen } from "@/screens/caregiver-screen";
 import { TravelVideoScreen } from "@/screens/travel-video-screen";
 import { StudyToursScreen } from "@/screens/study-tours-screen";
 import { PhotoAskScreen } from "@/screens/photo-ask-screen";
+import { AskScreen } from "@/screens/ask-screen";
+import { takeAskSeed, type AskSeed } from "@/lib/ask";
 import { StampResultSheet, type StampSheetState } from "@/components/stamp-result-sheet";
 import { MealDetailSheet } from "@/screens/meal-detail-sheet";
 import { PhotoSourceSheet } from "@/components/photo-source-sheet";
@@ -111,13 +113,15 @@ export default function Page() {
     returnTo: null,
     tourId: null,
   });
+  // 打字問暖暖：書本範例帶來的那一句（讀一次就用掉）
+  const [askSeed, setAskSeed] = useState<AskSeed | null>(null);
 
   // 章節開篇 QR 深連結：/?open=voice|camera|photo&from=chapter0100
   useEffect(() => {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     const open = url.searchParams.get("open");
-    if (open && ["voice", "camera", "photo", "travel-video", "study-tours", "photo-ask", "caregiver"].includes(open)) {
+    if (open && ["voice", "camera", "photo", "travel-video", "study-tours", "photo-ask", "caregiver", "ask"].includes(open)) {
       pendingOpenRef.current = open;
     }
     // 研學團站點 QR：/?stamp=代碼 → 先記下來（還沒登入的話登入後再蓋），網址上的代碼馬上拿掉
@@ -171,6 +175,11 @@ export default function Page() {
     }
     // 家人收到「長輩已抵達」通知點進來 → 家人狀況
     else if (open === "caregiver") setSubpage("caregiver");
+    // 打字問暖暖（書本練習的「打字問暖暖」：範例放在 sessionStorage，登入畫面也帶得過去）
+    else if (open === "ask") {
+      setAskSeed(takeAskSeed());
+      setSubpage("ask");
+    }
     else if (open === "photo-ask") {
       // 方案資料已載入就先擋；還沒載入就先打開，由 API 擋（回「升級」提示）
       const openPhotoAsk = () => {
@@ -731,6 +740,10 @@ export default function Page() {
               setPhotoAsk({ place: null, returnTo: null, tourId: null });
               setSubpage("photo-ask");
             })}
+            onAsk={() => {
+              setAskSeed(null);
+              setSubpage("ask");
+            }}
             caregiver={careElderCount > 0 ? { count: careElderCount, needsAttention: careNeedsAttention } : null}
             onCaregiver={() => setSubpage("caregiver")}
           />
@@ -837,6 +850,7 @@ export default function Page() {
           }}
         />
       )}
+      {subpage === "ask" && <AskScreen seed={askSeed} onBack={() => setSubpage(null)} />}
       {subpage === "caregiver" && (
         <CaregiverScreen
           onBack={() => setSubpage(null)}
@@ -887,6 +901,11 @@ export default function Page() {
           onClose={() => setModal(null)}
           voiceTone={profile?.voice_tone ?? "warm"}
           chapterIntent={chapterIntent}
+          onTypeInstead={() => {
+            setModal(null);
+            setAskSeed(null);
+            setSubpage("ask");
+          }}
         />
       )}
       {modal === "suggestion" && (
