@@ -3,7 +3,13 @@ import { z } from "zod";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { resolveGeminiConfig } from "@/lib/ai/gemini";
 import { askAboutPhoto } from "@/lib/ai/photo-ask";
-import { trackAiUsage, checkUserQuota, countEndpointSuccessSince } from "@/lib/ai/usage-tracker";
+import {
+  checkUserQuota,
+  finishReservedUsage,
+  releaseReservedUsage,
+  reserveDailySlot,
+  trackAiUsage,
+} from "@/lib/ai/usage-tracker";
 import { taipeiDayStartIso } from "@/lib/ask";
 import {
   DEFAULT_PHOTO_QUESTION,
@@ -34,28 +40,41 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "未登入" }, { status: 401 });
 
+  let body: z.infer<typeof RequestSchema>;
+  try {
+    body = RequestSchema.parse(await req.json());
+  } catch {
+    return NextResponse.json({ error: "請求格式錯誤" }, { status: 400 });
+  }
+
   const quota = await checkUserQuota(user.id, "photo");
-  // 免費會員：每天幾次（伺服器把關，深連結、直接呼叫 API 都一樣）
-  let freeToday: number | null = null;
+  // 免費會員：只看「每天幾次」（不看每月拍照次數），先佔一格再問：同時送出、開好幾個分頁也不會超過
+  let slot: { id: string | null; used: number } | null = null;
   if (quota.tier === "free") {
     try {
-      freeToday = await countEndpointSuccessSince(user.id, ENDPOINT, taipeiDayStartIso());
+      slot = await reserveDailySlot({
+        userId: user.id,
+        service: "gemini_vision",
+        endpoint: ENDPOINT,
+        sinceIso: taipeiDayStartIso(),
+        limit: PHOTO_ASK_FREE_DAILY,
+      });
     } catch (e) {
-      console.error("[api] photo-ask daily count:", e);
+      console.error("[api] photo-ask daily slot:", e);
       return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
     }
-    if (freeToday >= PHOTO_ASK_FREE_DAILY) {
+    if (!slot.id) {
       return NextResponse.json(
         {
           error: `免費會員每天可以拍照問 ${PHOTO_ASK_FREE_DAILY} 次，今天問完了，明天再來`,
-          quota: { used: freeToday, limit: PHOTO_ASK_FREE_DAILY, tier: quota.tier, period: "day" },
+          quota: { used: PHOTO_ASK_FREE_DAILY, limit: PHOTO_ASK_FREE_DAILY, tier: quota.tier, period: "day" },
           upgradeUrl: "/pricing",
         },
         { status: 429 }
       );
     }
-  }
-  if (!quota.allowed) {
+  } else if (!quota.allowed) {
+    // 標準版以上：和拍照記餐共用每月拍照次數
     return NextResponse.json(
       {
         error: "本月拍照次數已用完",
@@ -66,36 +85,35 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: z.infer<typeof RequestSchema>;
-  try {
-    body = RequestSchema.parse(await req.json());
-  } catch {
-    return NextResponse.json({ error: "請求格式錯誤" }, { status: 400 });
-  }
   const question = sanitizeAskText(body.question, PHOTO_ASK_QUESTION_MAX) || DEFAULT_PHOTO_QUESTION;
   const place = sanitizeAskText(body.place, PHOTO_ASK_PLACE_MAX) || undefined;
 
   try {
     const { result, usage } = await askAboutPhoto(body.imageBase64, body.mimeType ?? "image/jpeg", { question, place });
-    await trackAiUsage({
-      userId: user.id,
-      service: "gemini_vision",
-      model: usage.model,
-      inputTokens: usage.inputTokens,
-      outputTokens: usage.outputTokens,
-      endpoint: ENDPOINT,
-      success: true,
-      metadata: { provider: usage.provider, category: result.category, text_lines: result.text_lines.length },
-    });
+    const metadata = { provider: usage.provider, category: result.category, text_lines: result.text_lines.length };
+    if (slot?.id) {
+      await finishReservedUsage(slot.id, { model: usage.model, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, metadata });
+    } else {
+      await trackAiUsage({
+        userId: user.id,
+        service: "gemini_vision",
+        model: usage.model,
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        endpoint: ENDPOINT,
+        success: true,
+        metadata,
+      });
+    }
     return NextResponse.json({
       result,
-      quota:
-        freeToday !== null
-          ? { used: freeToday + 1, limit: PHOTO_ASK_FREE_DAILY, tier: quota.tier, period: "day" }
-          : { used: quota.used + 1, limit: quota.limit, tier: quota.tier, period: "month" },
+      quota: slot
+        ? { used: slot.used, limit: PHOTO_ASK_FREE_DAILY, tier: quota.tier, period: "day" }
+        : { used: quota.used + 1, limit: quota.limit, tier: quota.tier, period: "month" },
     });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
+    if (slot?.id) await releaseReservedUsage(slot.id); // 沒問成功不算次數
     const vision = resolveGeminiConfig();
     await trackAiUsage({
       userId: user.id,
