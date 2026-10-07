@@ -3,6 +3,7 @@
 // GET  → 列出我的影片（進行中的會順便向平台同步）+ 本月配額
 // POST → 上傳一張照片，建立 10 秒影片任務
 // ────────────────────────────────────────────────
+import { readUserImage, UserUploadError } from "@/lib/ai/user-uploads-server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
@@ -49,7 +50,9 @@ const MAX_IMAGE_CHARS = 4_000_000;
 const PENDING_MESSAGE = "上一支影片還在做，做好再做下一支喔";
 
 const PostSchema = z.object({
-  image: z.string().max(MAX_IMAGE_CHARS).regex(IMAGE_DATA_URL),
+  // 新方式：photoPath（照片已直傳 Supabase 暫存區）；舊方式：image（data URL 經過 API）
+  photoPath: z.string().max(200).optional(),
+  image: z.string().max(MAX_IMAGE_CHARS).regex(IMAGE_DATA_URL).optional(),
   style: z.enum(TRAVEL_VIDEO_STYLE_IDS),
   place: z.string().max(100).optional(),
   // 選了口白：先試聽過（/narration 存好音檔），這裡用 id 取回
@@ -204,8 +207,25 @@ export async function POST(req: NextRequest) {
   }
 
   // 5. 照片存 Storage（影片清單顯示封面用）
+  //    照片直傳過來的：從暫存區讀（邁笙要 base64，所以還是得拿到內容）；舊方式：請求裡的 data URL
+  let mime: string;
+  let b64: string;
+  if (body.photoPath) {
+    try {
+      const img = await readUserImage(admin, user.id, body.photoPath);
+      mime = img.mimeType.replace("image/", "");
+      b64 = img.base64;
+    } catch (e) {
+      if (e instanceof UserUploadError) return NextResponse.json({ error: e.message }, { status: 400 });
+      throw e;
+    }
+  } else if (body.image) {
+    [, mime, b64] = body.image.match(IMAGE_DATA_URL)!;
+  } else {
+    return NextResponse.json({ error: "照片格式不對，請換一張再試" }, { status: 400 });
+  }
+  const imageDataUrl = `data:image/${mime};base64,${b64}`;
   const id = crypto.randomUUID();
-  const [, mime, b64] = body.image.match(IMAGE_DATA_URL)!;
   const photoPath = `${user.id}/${id}/photo.${mime === "jpeg" ? "jpg" : mime}`;
   const { error: upErr } = await admin.storage
     .from(TRAVEL_VIDEO_BUCKET)
@@ -266,7 +286,7 @@ export async function POST(req: NextRequest) {
     // 有設回呼 → 做好時平台主動通知，伺服器同步後推播給長輩（沒設就靠畫面輪詢）
     // 回呼網址帶 video_id：萬一下面 task_id 沒寫進 DB，webhook 還能用它補回來
     ({ taskId } = await createImageToVideoTask({
-      imageUrl: body.image,
+      imageUrl: imageDataUrl,
       prompt,
       notifyUrl: travelVideoNotifyUrl(process.env, id),
       durationSeconds: narration?.videoSeconds,

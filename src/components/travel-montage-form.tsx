@@ -6,6 +6,7 @@
 // ────────────────────────────────────────────────
 
 import { useEffect, useRef, useState } from "react";
+import { stagePhotos } from "@/lib/direct-upload";
 import { api, ApiError } from "@/lib/api-client";
 import { compressImage } from "@/lib/image-utils";
 import { useToast } from "@/hooks/use-toast";
@@ -207,11 +208,13 @@ export function TravelMontageForm({
     if (!enoughPhotos || writing) return;
     setWriting(true);
     try {
-      const sent = await fitPhotosToBudget(photos);
+      // 照片直傳 Supabase（不經過 Vercel、送出時不用再傳一次）；有一張傳不上去就整包用舊方式
+      const paths = await stagePhotos(photos.map((p) => p.dataUrl));
+      const sent = paths ? photos : await fitPhotosToBudget(photos);
       if (sent !== photos) setPhotos(sent);
       const keys = photoKeys(sent);
       const res = await api.writeTravelMontageScript({
-        images: sent.map((p) => p.dataUrl),
+        ...(paths ? { photoPaths: paths } : { images: sent.map((p) => p.dataUrl) }),
         place: place.trim() || undefined,
       });
       if (photoKeys(photosRef.current) !== keys || res.lines.length !== sent.length) {
@@ -233,9 +236,10 @@ export function TravelMontageForm({
     setSubmitting(true);
     stopPreview();
     try {
-      const sent = await fitPhotosToBudget(photos);
+      const paths = await stagePhotos(photos.map((p) => p.dataUrl));
+      const sent = paths ? photos : await fitPhotosToBudget(photos);
       const res = await api.createTravelMontage({
-        images: sent.map((p) => p.dataUrl),
+        ...(paths ? { photoPaths: paths } : { images: sent.map((p) => p.dataUrl) }),
         sizes: sent.map(({ width, height }) => ({ width, height })),
         lines: cleanLines,
         voice,

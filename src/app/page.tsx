@@ -35,6 +35,7 @@ import { TravelVideoScreen } from "@/screens/travel-video-screen";
 import { StudyToursScreen } from "@/screens/study-tours-screen";
 import { PhotoAskScreen } from "@/screens/photo-ask-screen";
 import { AskScreen } from "@/screens/ask-screen";
+import { photoPayload } from "@/lib/direct-upload";
 import { takeAskSeed, type AskSeed } from "@/lib/ask";
 import { takePhotoAskSeed } from "@/lib/photo-ask";
 import { StampResultSheet, type StampSheetState } from "@/components/stamp-result-sheet";
@@ -573,8 +574,8 @@ export default function Page() {
       const dataUrl = await compressImage(file, { maxSide: 1280, quality: 0.85 });
       console.log("[upload] compressed size:", Math.round(dataUrl.length / 1024), "KB");
 
-      const base64 = dataUrl.split(",")[1];
-      const { result } = await api.analyzeFood(base64, "image/jpeg");
+      // 照片直傳 Supabase（不經過 Vercel），API 只帶路徑；直傳失敗才用舊方式
+      const { result } = await api.analyzeFood(await photoPayload(dataUrl));
       trackEvent("photo_analyze", { items: result.items?.length ?? 0 });
       // 先關掉 analyzing overlay 再開 result 視窗
       setAnalyzing(false);

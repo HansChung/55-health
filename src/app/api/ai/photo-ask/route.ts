@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createSupabaseServer } from "@/lib/supabase/server";
+import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
+import { imageFromRequest, UserUploadError } from "@/lib/ai/user-uploads-server";
 import { resolveGeminiConfig } from "@/lib/ai/gemini";
 import { askAboutPhoto } from "@/lib/ai/photo-ask";
 import {
@@ -25,7 +26,9 @@ export const maxDuration = 60;
 const ENDPOINT = "/api/ai/photo-ask";
 
 const RequestSchema = z.object({
-  imageBase64: z.string().min(100).max(8_000_000),
+  // 新方式：photoPath（照片已直傳到 Supabase 暫存區，追問時同一個路徑）；舊方式：imageBase64
+  photoPath: z.string().max(200).optional(),
+  imageBase64: z.string().min(100).max(8_000_000).optional(),
   mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]).optional(),
   question: z.string().max(200).optional(),
   place: z.string().max(200).optional(),
@@ -45,6 +48,15 @@ export async function POST(req: NextRequest) {
     body = RequestSchema.parse(await req.json());
   } catch {
     return NextResponse.json({ error: "請求格式錯誤" }, { status: 400 });
+  }
+
+  // 先拿到照片（路徑不對、找不到就 400，不佔次數）
+  let image: { base64: string; mimeType: string; via: string };
+  try {
+    image = await imageFromRequest(createSupabaseAdmin(), user.id, body);
+  } catch (e) {
+    if (e instanceof UserUploadError) return NextResponse.json({ error: e.message }, { status: 400 });
+    throw e;
   }
 
   const quota = await checkUserQuota(user.id, "photo");
@@ -89,8 +101,8 @@ export async function POST(req: NextRequest) {
   const place = sanitizeAskText(body.place, PHOTO_ASK_PLACE_MAX) || undefined;
 
   try {
-    const { result, usage } = await askAboutPhoto(body.imageBase64, body.mimeType ?? "image/jpeg", { question, place });
-    const metadata = { provider: usage.provider, category: result.category, text_lines: result.text_lines.length };
+    const { result, usage } = await askAboutPhoto(image.base64, image.mimeType, { question, place });
+    const metadata = { provider: usage.provider, category: result.category, text_lines: result.text_lines.length, via: image.via };
     if (slot?.id) {
       await finishReservedUsage(slot.id, { model: usage.model, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, metadata });
     } else {

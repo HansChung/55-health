@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGeminiModel, isGeminiConfigured, parseModelJson, resolveGeminiConfig } from "@/lib/ai/gemini";
-import { createSupabaseServer } from "@/lib/supabase/server";
+import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
+import { imageFromRequest, UserUploadError } from "@/lib/ai/user-uploads-server";
 import { trackAiUsage, checkUserQuota } from "@/lib/ai/usage-tracker";
 import { z } from "zod";
 
@@ -65,9 +66,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const body = await req.json().catch(() => null);
-  if (!body?.imageBase64) {
+  // 新方式：photoPath（手機已把照片直傳到 Supabase 暫存區）；舊方式：imageBase64
+  const body = (await req.json().catch(() => null)) as { photoPath?: unknown; imageBase64?: unknown; mimeType?: unknown } | null;
+  if (!body || (!body.photoPath && !body.imageBase64)) {
     return NextResponse.json({ error: "缺少圖片" }, { status: 400 });
+  }
+  let image: { base64: string; mimeType: string };
+  try {
+    image = await imageFromRequest(createSupabaseAdmin(), user.id, body);
+  } catch (e) {
+    if (e instanceof UserUploadError) return NextResponse.json({ error: e.message }, { status: 400 });
+    throw e;
   }
 
   if (!isGeminiConfigured()) {
@@ -90,7 +99,7 @@ export async function POST(req: NextRequest) {
 
     const result = await generativeModel.generateContent([
       { text: PROMPT },
-      { inlineData: { data: body.imageBase64, mimeType: body.mimeType || "image/jpeg" } },
+      { inlineData: { data: image.base64, mimeType: image.mimeType } },
     ]);
 
     const text = result.response.text();

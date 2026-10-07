@@ -6,6 +6,7 @@
 // ────────────────────────────────────────────────
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { videoPhotoPayload } from "@/lib/direct-upload";
 import { SubPage } from "@/components/sub-page";
 import { Mascot } from "@/components/mascot";
 import { api, ApiError } from "@/lib/api-client";
@@ -293,7 +294,8 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
     if (!photo || writing) return;
     setWriting(true);
     try {
-      const res = await api.writeTravelNarration({ image: photo, style, place: place.trim() || undefined });
+      // 照片直傳 Supabase 一次，寫口白、送出做影片都用同一個路徑
+      const res = await api.writeTravelNarration({ ...(await videoPhotoPayload(photo)), style, place: place.trim() || undefined });
       setScript(res.text);
       trackEvent("travel_video_script_ai");
     } catch (e) {
@@ -336,7 +338,7 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
       }
       setSubmitPhase("video");
       const res = await api.createTravelVideo({
-        image: photo,
+        ...(await videoPhotoPayload(photo)),
         style,
         place: place.trim() || undefined,
         narration: narration
