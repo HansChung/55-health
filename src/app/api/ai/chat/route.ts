@@ -9,7 +9,13 @@ import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
 import { isGeminiConfigured } from "@/lib/ai/gemini";
 import { askNuannuan } from "@/lib/ai/ask-chat";
-import { countEndpointSuccessSince, trackAiUsage } from "@/lib/ai/usage-tracker";
+import {
+  countEndpointSuccessSince,
+  finishReservedUsage,
+  releaseReservedUsage,
+  reserveDailySlot,
+  trackAiUsage,
+} from "@/lib/ai/usage-tracker";
 import {
   ASK_CHAPTER_TITLE_MAX,
   ASK_GUIDE_MAX,
@@ -25,10 +31,11 @@ export const maxDuration = 60;
 const ENDPOINT = "/api/ai/chat";
 
 const Schema = z.object({
+  // 前端只帶最近 ASK_HISTORY_MAX 則；舊版前端可能帶整段，放寬一點再由 trimAskHistory 截
   messages: z
     .array(z.object({ role: z.enum(["user", "assistant"]), text: z.string().max(ASK_MESSAGE_MAX * 2) }))
     .min(1)
-    .max(ASK_HISTORY_MAX * 2),
+    .max(ASK_HISTORY_MAX * 5),
   mode: z.enum(["chat", "guided", "summary"]).default("chat"),
   chapterId: z.string().regex(/^\d{4}$/).nullish(),
   chapterTitle: z.string().max(ASK_CHAPTER_TITLE_MAX * 2).nullish(),
@@ -94,22 +101,26 @@ export async function POST(req: NextRequest) {
   }
 
   const { profile, tier } = await loadAsker(user.id, user.email);
-  let quota: { used: number; limit: number };
-  try {
-    quota = await quotaFor(user.id, tier);
-  } catch (e) {
-    console.error("[api] ask quota:", e);
-    return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
-  }
-  if (quota.used >= quota.limit) {
-    return NextResponse.json(
-      {
-        error: `今天的 ${quota.limit} 題問完了，明天再來問暖暖吧`,
-        quota,
-        ...(tier === "free" || tier === "basic" ? { upgradeUrl: "/pricing" } : {}),
-      },
-      { status: 429 }
-    );
+  const limit = askDailyLimit(tier);
+  // 先佔一格（同時送出好幾則也不會超過每天的題數）；管理員不限，不用佔
+  let slot: { id: string | null; used: number } = { id: null, used: 0 };
+  if (tier !== "admin") {
+    try {
+      slot = await reserveDailySlot({ userId: user.id, service: "gemini_text", endpoint: ENDPOINT, sinceIso: taipeiDayStartIso(), limit });
+    } catch (e) {
+      console.error("[api] ask quota:", e);
+      return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
+    }
+    if (!slot.id) {
+      return NextResponse.json(
+        {
+          error: `今天的 ${limit} 題問完了，明天再來問暖暖吧`,
+          quota: { used: limit, limit },
+          ...(tier === "free" || tier === "basic" ? { upgradeUrl: "/pricing" } : {}),
+        },
+        { status: 429 }
+      );
+    }
   }
 
   const chapterTitle = body.chapterTitle ? [...body.chapterTitle.trim()].slice(0, ASK_CHAPTER_TITLE_MAX).join("") : null;
@@ -126,20 +137,26 @@ export async function POST(req: NextRequest) {
       chapterTitle,
       guide,
     });
-    await trackAiUsage({
-      userId: user.id,
-      service: "gemini_text",
-      model: usage.model,
-      inputTokens: usage.inputTokens,
-      outputTokens: usage.outputTokens,
-      endpoint: ENDPOINT,
-      success: true,
-      metadata: { provider: usage.provider, mode: body.mode, chapter: body.chapterId ?? null, turns: messages.length },
-    });
-    return NextResponse.json({ reply, quota: { used: quota.used + 1, limit: quota.limit } });
+    const metadata = { provider: usage.provider, mode: body.mode, chapter: body.chapterId ?? null, turns: messages.length };
+    if (slot.id) {
+      await finishReservedUsage(slot.id, { model: usage.model, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, metadata });
+    } else {
+      await trackAiUsage({
+        userId: user.id,
+        service: "gemini_text",
+        model: usage.model,
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        endpoint: ENDPOINT,
+        success: true,
+        metadata,
+      });
+    }
+    return NextResponse.json({ reply, quota: { used: slot.id ? slot.used : 0, limit } });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("[api] 問暖暖失敗:", msg);
+    if (slot.id) await releaseReservedUsage(slot.id); // 沒問成功不算題數
     await trackAiUsage({
       userId: user.id,
       service: "gemini_text",

@@ -132,6 +132,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase, fetchProfile]);
 
   const signOut = async () => {
+    // 打字問暖暖的對話、書本帶來的問題只放在這個分頁：登出就清掉（同一支手機換人用時看不到）
+    try {
+      Object.keys(sessionStorage)
+        .filter((k) => k.startsWith("nuannuan_ask") || k.startsWith("nuannuan_photo_ask"))
+        .forEach((k) => sessionStorage.removeItem(k));
+    } catch { /* ignore */ }
     await supabase.auth.signOut();
     setUser(null);
     setProfile(null);
