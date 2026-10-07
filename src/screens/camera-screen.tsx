@@ -288,7 +288,7 @@ export function CameraScreen({ onClose, onCapture, chapterIntent }: CameraScreen
               AI 正在看您吃了什麼…
             </div>
             <div style={{ fontSize: "var(--fs-sm)", color: "rgba(255,255,255,0.8)", textAlign: "center" }}>
-              Gemini Pro 分析中，請稍候 5-10 秒
+              暖暖正在看，請稍候 5-10 秒
             </div>
           </div>
         )}

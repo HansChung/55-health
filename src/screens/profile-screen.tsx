@@ -160,7 +160,7 @@ export function ProfileScreen({ onSubpage, onOnboarding }: ProfileScreenProps) {
       </div>
 
       <div style={{ padding: "16px 24px 0", fontSize: "var(--fs-xs)", color: "var(--ink-3)", textAlign: "center" }}>
-        暖暖 v1.0　·　由 Gemini Pro + GPT realtime 提供
+        暖暖 v1.0
       </div>
     </div>
   );

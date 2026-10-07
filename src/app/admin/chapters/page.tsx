@@ -397,7 +397,7 @@ function BlockFields({ block: b, onChange }: { block: ChapterBlock; onChange: (p
       return (
         <>
           <input style={{ ...input, marginBottom: 6 }} placeholder="範例名稱（選填，例如：請 AI 幫忙規劃）" value={b.title ?? ""} onChange={(e) => onChange({ title: e.target.value })} />
-          <textarea style={{ ...area, marginBottom: 6 }} placeholder="練習語句（長輩可一鍵複製，或直接用 Gemini／ChatGPT／暖暖語音試）" value={b.prompt} onChange={(e) => onChange({ prompt: e.target.value })} />
+          <textarea style={{ ...area, marginBottom: 6 }} placeholder="練習語句（長輩可一鍵複製，或直接打字問暖暖／用語音問暖暖）" value={b.prompt} onChange={(e) => onChange({ prompt: e.target.value })} />
           <input style={input} placeholder="小提醒（選填）" value={b.note ?? ""} onChange={(e) => onChange({ note: e.target.value })} />
         </>
       );

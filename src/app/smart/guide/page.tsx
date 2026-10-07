@@ -76,7 +76,7 @@ export default function SmartGuidePage() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="例如：0203、點菜、Gemini、決策…"
+            placeholder="例如：0203、點菜、暖暖、決策…"
             enterKeyHint="search"
             autoComplete="off"
             style={{

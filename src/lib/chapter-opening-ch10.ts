@@ -195,7 +195,7 @@ export const CHAPTER_1003: ChapterOpening = {
     CH10_DISCLAIMER,
   practiceWhere: "mixed",
   capabilityNote:
-    "來源卡可在本頁完成；Google Notebook 請在手機或電腦使用。動態資訊出發前必須重查最新官方頁面。",
+    "來源卡可在本頁完成；也可以把來源內容貼到「打字問暖暖」，請暖暖整理名稱、日期與重查點。動態資訊出發前必須重查最新官方頁面。",
   printCardTitle: "我的來源地圖卡",
   printCardDescription: "可列印：官方、文化與經驗三張來源卡。",
   printButtonLabel: "列印來源卡",
@@ -422,7 +422,7 @@ export const CHAPTER_1008: ChapterOpening = {
     CH10_DISCLAIMER,
   practiceWhere: "mixed",
   capabilityNote:
-    "閱讀線可在本頁完成；Google Notebook 請在手機或電腦使用。不把搜尋摘要冒充原文。",
+    "閱讀線可在本頁完成；也可以把核准的來源貼到「打字問暖暖」，請暖暖排成三至五站。不把搜尋摘要冒充原文。",
   printCardTitle: "我的地方閱讀線",
   printCardDescription: "可列印：問題、各站來源、觀察與回看。",
   printButtonLabel: "列印閱讀線",

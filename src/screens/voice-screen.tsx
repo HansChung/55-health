@@ -13,6 +13,8 @@ interface VoiceScreenProps {
   onClose: () => void;
   voiceTone?: VoiceTone;
   chapterIntent?: ChapterIntentHint | null;
+  /** 改用打字問暖暖 */
+  onTypeInstead?: () => void;
 }
 
 function generateUuid(): string {
@@ -39,7 +41,7 @@ function WaveformDots() {
   );
 }
 
-export function VoiceScreen({ onClose, voiceTone = "warm", chapterIntent }: VoiceScreenProps) {
+export function VoiceScreen({ onClose, voiceTone = "warm", chapterIntent, onTypeInstead }: VoiceScreenProps) {
   const [state, setState] = useState<"connecting" | "idle" | "listening" | "thinking" | "speaking" | "error">("idle");
   const [transcript, setTranscript] = useState<TranscriptMessage[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
@@ -240,6 +242,20 @@ export function VoiceScreen({ onClose, voiceTone = "warm", chapterIntent }: Voic
             二問：{chapterIntent.tips.join(" · ")}
           </div>
         </div>
+      )}
+
+      {onTypeInstead && !isActive && (
+        <button
+          type="button"
+          onClick={onTypeInstead}
+          style={{
+            alignSelf: "center", margin: "0 20px 4px", padding: "8px 16px", minHeight: 44,
+            background: "var(--surface)", border: "1px solid var(--line-strong)", borderRadius: 999,
+            fontSize: "var(--fs-sm)", color: "var(--ink-2)", cursor: "pointer",
+          }}
+        >
+          ✍️ 想用打字？改用打字問暖暖 →
+        </button>
       )}
 
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "12px 24px 8px" }}>
