@@ -216,7 +216,7 @@ export const CHAPTER_0604: ChapterOpening = {
   reflectPlaceholder: "例如：AI 提醒我下次先維持同樣時間，不急著加強度…",
   continueTitle: "暖暖陪您繼續",
   continueBody:
-    "可複製安全提問句，把照片給 AI 翻譯成生活提醒。最後決定的人，仍然是您。",
+    "可以把數據畫面拍給暖暖（拍照問暖暖），請暖暖翻譯成生活提醒。最後決定的人，仍然是您。",
   practiceWhere: "mixed",
   capabilityNote:
     "提問可在暖暖語音／相機完成；這不是醫療診斷或運動處方。牽涉不適請尋求專業建議。",
@@ -369,7 +369,7 @@ export const CHAPTER_0607: ChapterOpening = {
     "可複製啟動句重複使用。工具不順時，用照片、截圖或一週身體提醒，把 AI 拉回自己的節奏。",
   practiceWhere: "mixed",
   capabilityNote:
-    "啟動句可在暖暖語音試用。暖暖沒有自動讀取穿戴資料的健身教練；需您貼上照片或一週提醒。",
+    "啟動句可以打字問暖暖（會一起帶上您在 0606 寫的動能指南），或用語音試用。暖暖不會自動讀取穿戴裝置的資料；請把一週提醒貼到打字對話，或把畫面拍給暖暖。",
   printCardTitle: "我的 AI Coach 啟動句",
   printCardDescription: "可列印：可重複使用的啟動句與 Plan B 提醒。",
   printButtonLabel: "列印啟動句卡",

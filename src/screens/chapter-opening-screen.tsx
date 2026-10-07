@@ -256,6 +256,7 @@ import {
   type ChapterCityLightsDraft,
   buildDayRehearsalPrompt,
 } from "@/lib/chapter-opening";
+import { savePhotoAskSeed } from "@/lib/photo-ask";
 import {
   buildGuideContext,
   clearChapterAskSummary,
@@ -2946,6 +2947,18 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
     router.push(`/?open=ask&from=chapter${chapter.id}`);
   };
 
+  /** 拍照問暖暖：問題先帶好（花草、菜單、標示、商品、數據畫面…；拍餐點的章節仍用記餐相機） */
+  const tryPhotoAskNuannuan = (question: string) => {
+    const text = question.trim();
+    if (!text) {
+      toast.info("找不到提問句。");
+      return;
+    }
+    savePhotoAskSeed({ question: text, chapterId: chapter.id, chapterTitle: chapter.title });
+    trackEvent("chapter_photo_ask_try", { chapter: chapter.id });
+    router.push(`/?open=photo-ask&from=chapter${chapter.id}`);
+  };
+
   // 在暖暖對話後「整理並存回這一章」的內容（存在這支手機）
   const [askSummary, setAskSummary] = useState<ChapterAskSummary | null>(null);
   useEffect(() => {
@@ -5023,23 +5036,33 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
               />
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
                 <button type="button" onClick={copyVisionAsk} style={secondaryBtnStyle}>
-                  複製「拍照後請 AI 說明」提問句
+                  複製「拍照後請暖暖說明」提問句
                 </button>
-                <button type="button" onClick={tryCameraInNuannuan} style={primaryOutlineBtnStyle}>
-                  在暖暖拍一下 →
-                </button>
-                <button
-                  type="button"
-                  onClick={tryPhotoInNuannuan}
-                  style={{
-                    ...secondaryBtnStyle,
-                    border: "2px solid var(--primary)",
-                    color: "var(--primary-deep)",
-                  }}
-                >
-                  從相簿選照片 →
-                </button>
-                {/* 拍照提問：改用「拍照問暖暖」（下一步） */}
+                {chapter.id === "0206" ? (
+                  <>
+                    {/* 美食篇拍的是餐點：用記餐相機（會算營養、可以記到日記） */}
+                    <button type="button" onClick={tryCameraInNuannuan} style={primaryOutlineBtnStyle}>
+                      在暖暖拍一下 →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={tryPhotoInNuannuan}
+                      style={{
+                        ...secondaryBtnStyle,
+                        border: "2px solid var(--primary)",
+                        color: "var(--primary-deep)",
+                      }}
+                    >
+                      從相簿選照片 →
+                    </button>
+                  </>
+                ) : (
+                  <PhotoAskRow
+                    onAsk={() =>
+                      tryPhotoAskNuannuan(chapter.id === "0202" ? buildPlantAskPrompt() : buildVisionAskPrompt(itemLabel))
+                    }
+                  />
+                )}
               </div>
               <div style={{
                 fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
@@ -5288,9 +5311,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                           fontFamily: "inherit", boxSizing: "border-box",
                         }}
                       />
-                      <button type="button" onClick={tryCameraInNuannuan} style={primaryOutlineBtnStyle}>
-                        在暖暖拍一下 →
-                      </button>
+                      <PhotoAskRow onAsk={() => tryPhotoAskNuannuan(buildSmartFlowAskPrompt(snapNote))} />
                     </>
                   )}
                   {idx === 1 && (
@@ -5331,7 +5352,6 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                         <button type="button" onClick={tryInNuannuan} style={primaryOutlineBtnStyle}>
                           在暖暖問一句 →
                         </button>
-                        {/* 拍照提問：改用「拍照問暖暖」（下一步） */}
                       </div>
                     </>
                   )}
@@ -5401,23 +5421,9 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
               />
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
                 <button type="button" onClick={copyMenuAsk} style={secondaryBtnStyle}>
-                  複製「請 AI 翻譯菜單」提問句
+                  複製「請暖暖翻譯菜單」提問句
                 </button>
-                <button type="button" onClick={tryCameraInNuannuan} style={primaryOutlineBtnStyle}>
-                  在暖暖拍一下 →
-                </button>
-                <button
-                  type="button"
-                  onClick={tryPhotoInNuannuan}
-                  style={{
-                    ...secondaryBtnStyle,
-                    border: "2px solid var(--primary)",
-                    color: "var(--primary-deep)",
-                  }}
-                >
-                  從相簿選照片 →
-                </button>
-                {/* 拍照提問：改用「拍照問暖暖」（下一步） */}
+                <PhotoAskRow onAsk={() => tryPhotoAskNuannuan(buildMenuTranslatePrompt(dietaryNeed))} />
               </div>
               <div style={{
                 fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
@@ -5507,11 +5513,12 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
               />
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
                 <button type="button" onClick={copyProductAsk} style={secondaryBtnStyle}>
-                  複製「請 AI 比較商品」提問句
+                  複製「請暖暖比較商品」提問句
                 </button>
-                <button type="button" onClick={tryCameraInNuannuan} style={primaryOutlineBtnStyle}>
-                  在暖暖拍一下 →
-                </button>
+                <PhotoAskRow
+                  label="📷 拍標示問暖暖 →"
+                  onAsk={() => tryPhotoAskNuannuan(`請看照片裡的商品標示。${buildProductComparePrompt(productA, productB)}`)}
+                />
                 <AskNuannuanRow onAsk={() => tryAskNuannuan(buildProductComparePrompt(productA, productB), "請先填寫要比較的商品。")} />
               </div>
               <div style={{
@@ -8162,12 +8169,14 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                 style={{ width: "100%", padding: "12px 14px", marginBottom: 10, borderRadius: 10, border: "2px solid var(--line-strong)", background: "var(--surface)", fontSize: "var(--fs-sm)", fontFamily: "inherit", boxSizing: "border-box" }}
               />
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
-                <button type="button" onClick={tryCameraInNuannuan} style={primaryOutlineBtnStyle}>
-                  在暖暖拍一下 →
-                </button>
-                <button type="button" onClick={tryPhotoInNuannuan} style={secondaryBtnStyle}>
-                  從相簿選畫面 →
-                </button>
+                <PhotoAskRow
+                  label="📷 拍畫面問暖暖 →"
+                  onAsk={() =>
+                    tryPhotoAskNuannuan(
+                      "請用簡單中文幫我看懂這個畫面上的數字代表什麼，給我一個安全、溫和、可執行的生活提醒。不要做醫療診斷，也不要用分數評價我。"
+                    )
+                  }
+                />
               </div>
               <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)", marginBottom: 8 }}>
                 一句低敏感提醒
@@ -13704,6 +13713,35 @@ const primaryOutlineBtnStyle: React.CSSProperties = {
   fontSize: "var(--fs-sm)", color: "var(--primary-deep)",
   cursor: "pointer",
 };
+
+/** 拍照問暖暖：問題先帶好（拍照或從相簿選，都在拍照問暖暖裡） */
+function PhotoAskRow({ onAsk, label = "📷 拍照問暖暖 →" }: { onAsk: () => void; label?: string }) {
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={onAsk}
+        style={{
+          width: "100%",
+          padding: "14px 12px",
+          minHeight: 56,
+          background: "var(--primary-soft)",
+          border: "2px solid var(--primary)",
+          borderRadius: "var(--r-pill)",
+          fontWeight: 800,
+          fontSize: "var(--fs-base)",
+          color: "var(--primary-deep)",
+          cursor: "pointer",
+        }}
+      >
+        {label}
+      </button>
+      <p style={{ margin: "6px 4px 0", fontSize: "var(--fs-xs)", color: "var(--ink-3)", lineHeight: 1.45 }}>
+        問題已經帶好；可以現場拍，也可以從相簿選照片。
+      </p>
+    </div>
+  );
+}
 
 /** 打字問暖暖：範例帶到暖暖的打字對話（看過再按送出） */
 function AskNuannuanRow({ onAsk }: { onAsk: () => void }) {

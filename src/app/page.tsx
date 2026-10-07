@@ -36,6 +36,7 @@ import { StudyToursScreen } from "@/screens/study-tours-screen";
 import { PhotoAskScreen } from "@/screens/photo-ask-screen";
 import { AskScreen } from "@/screens/ask-screen";
 import { takeAskSeed, type AskSeed } from "@/lib/ask";
+import { takePhotoAskSeed } from "@/lib/photo-ask";
 import { StampResultSheet, type StampSheetState } from "@/components/stamp-result-sheet";
 import { MealDetailSheet } from "@/screens/meal-detail-sheet";
 import { PhotoSourceSheet } from "@/components/photo-source-sheet";
@@ -108,7 +109,14 @@ export default function Page() {
   const [studyToursKey, setStudyToursKey] = useState(0);
   const [stampSheet, setStampSheet] = useState<StampSheetState | null>(null);
   // 拍照問暖暖：從研學團打開時帶活動名稱，返回時回研學團
-  const [photoAsk, setPhotoAsk] = useState<{ place: string | null; returnTo: Subpage; tourId: string | null }>({
+  // 從書本練習打開：問題先帶好（question、chapter）
+  const [photoAsk, setPhotoAsk] = useState<{
+    place: string | null;
+    returnTo: Subpage;
+    tourId: string | null;
+    question?: string | null;
+    chapter?: { id: string; title: string } | null;
+  }>({
     place: null,
     returnTo: null,
     tourId: null,
@@ -181,13 +189,16 @@ export default function Page() {
       setSubpage("ask");
     }
     else if (open === "photo-ask") {
-      // 方案資料已載入就先擋；還沒載入就先打開，由 API 擋（回「升級」提示）
-      const openPhotoAsk = () => {
-        setPhotoAsk({ place: null, returnTo: null, tourId: null });
-        setSubpage("photo-ask");
-      };
-      if (profile) requireFeature("ai_photo", openPhotoAsk);
-      else openPhotoAsk();
+      // 所有人都能用（免費會員每天幾次，由伺服器把關）；書本練習帶來的問題先放好
+      const seed = takePhotoAskSeed();
+      setPhotoAsk({
+        place: null,
+        returnTo: null,
+        tourId: null,
+        question: seed?.question ?? null,
+        chapter: seed ? { id: seed.chapterId, title: seed.chapterTitle } : null,
+      });
+      setSubpage("photo-ask");
     }
 
     url.searchParams.delete("open");
@@ -736,10 +747,10 @@ export default function Page() {
               setStudyToursKey((k) => k + 1);
               setSubpage("study-tours");
             }}
-            onPhotoAsk={() => requireFeature("ai_photo", () => {
+            onPhotoAsk={() => {
               setPhotoAsk({ place: null, returnTo: null, tourId: null });
               setSubpage("photo-ask");
-            })}
+            }}
             onAsk={() => {
               setAskSeed(null);
               setSubpage("ask");
@@ -831,15 +842,17 @@ export default function Page() {
           initialTourId={subpage === "study-tours" ? studyTourId : null}
           initialView={subpage === "study-passport" ? "passport" : "list"}
           displayName={profile?.display_name}
-          onPhotoAsk={(place, tourId) => requireFeature("ai_photo", () => {
+          onPhotoAsk={(place, tourId) => {
             setPhotoAsk({ place: place ?? null, returnTo: subpage, tourId: tourId ?? null });
             setSubpage("photo-ask");
-          })}
+          }}
         />
       )}
       {subpage === "photo-ask" && (
         <PhotoAskScreen
           initialPlace={photoAsk.place}
+          initialQuestion={photoAsk.question}
+          chapter={photoAsk.chapter}
           onBack={() => {
             if (photoAsk.returnTo) {
               // 從某一團的介紹頁打開 → 回到那一團（不是回到列表）

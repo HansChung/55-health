@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { normalizePhotoAskResult, photoAskSpeech, sanitizeAskText } from "./photo-ask";
+import {
+  PHOTO_ASK_FREE_DAILY,
+  PHOTO_ASK_QUESTION_MAX,
+  normalizePhotoAskResult,
+  photoAskSpeech,
+  sanitizeAskText,
+} from "./photo-ask";
 import { buildPhotoAskPrompt } from "./ai/photo-ask";
 
 describe("拍照問暖暖：整理模型回覆", () => {
@@ -26,7 +32,25 @@ describe("拍照問暖暖：整理模型回覆", () => {
     const r = normalizePhotoAskResult({ title: "a".repeat(100), explanation: "第一行\n第二行 " + "字".repeat(500) });
     expect(r.title).toHaveLength(40);
     expect(r.explanation.startsWith("第一行 第二行")).toBe(true);
-    expect(r.explanation.length).toBeLessThanOrEqual(300);
+    expect(r.explanation.length).toBeLessThanOrEqual(400);
+  });
+
+  it("照片裡的文字（菜單翻譯、成分表）：一行一項、最多 10 行；沒有就空陣列；念給我聽會一起念", () => {
+    const r = normalizePhotoAskResult({
+      title: "日式定食菜單",
+      explanation: "這是居酒屋的定食菜單。",
+      text_lines: ["焼き鳥定食 → 烤雞肉串套餐", "", 3, ...Array.from({ length: 12 }, (_, i) => `第${i}項`)],
+    });
+    expect(r.text_lines[0]).toBe("焼き鳥定食 → 烤雞肉串套餐");
+    expect(r.text_lines).toHaveLength(10);
+    expect(photoAskSpeech(r)).toContain("焼き鳥定食 → 烤雞肉串套餐");
+    expect(normalizePhotoAskResult({ title: "花", explanation: "白花" }).text_lines).toEqual([]);
+  });
+
+  it("書本帶來的長問題（菜單翻譯＋飲食需要約 80 字）不會被截斷", () => {
+    const q = "請翻譯照片裡這段菜單的菜名與主要食材，用簡單中文。如果不確定，請說明不確定的部分。 我的飲食需要：少油、不要太辣";
+    expect(sanitizeAskText(q, PHOTO_ASK_QUESTION_MAX)).toBe(q);
+    expect(PHOTO_ASK_FREE_DAILY).toBe(5);
   });
 
   it("什麼都沒有 → 當作失敗（不要顯示空白卡片）", () => {
@@ -54,6 +78,14 @@ describe("拍照問暖暖：提示詞", () => {
     expect(p).toContain("不要摘、不要吃、不要摸");
     expect(p).toContain("不要猜是誰");
     expect(p).toContain("不要硬猜具體名稱");
+  });
+
+  it("看懂文字：翻成「原文 → 中文」、成分表標過敏原、數據不診斷；JSON 有 text_lines", () => {
+    const p = buildPhotoAskPrompt({ question: "請翻譯菜單" });
+    expect(p).toContain("原文 → 中文");
+    expect(p).toContain("過敏原");
+    expect(p).toContain("不做醫療診斷");
+    expect(p).toContain('"text_lines"');
   });
 
   it("沒給地點就不提地點", () => {

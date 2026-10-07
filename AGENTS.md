@@ -238,8 +238,14 @@ stack works well for auth + meal/diary CRUD:
     write with the service role filtered by `owner_id = user.id`.
 
 ### 拍照問暖暖（photo ask）
-- Home 「拍照問暖暖」, and a button on 研學團 pages (prefills the tour title as the place) → subpage
-  `photo-ask` (gated by `ai_photo`, i.e. basic+). Deep link `/?open=photo-ask`.
+- Home 「拍照問暖暖」, a button on 研學團 pages (prefills the tour title as the place) and the book's photo chapters
+  → subpage `photo-ask`. Deep link `/?open=photo-ask`; book chapters put the question in sessionStorage
+  (`savePhotoAskSeed`) and the screen shows a 書本練習 banner. **Open to every tier**: free = `PHOTO_ASK_FREE_DAILY`
+  (5) per Taipei day (counted from successful `/api/ai/photo-ask` rows), basic+ = the monthly photo quota.
+- Questions up to 200 characters (book prompts are ~80). For text photos (menus, ingredient labels, handouts,
+  data screens) the model fills `text_lines` (「原文 → 中文」, allergens, 3–5 key points) and the screen shows
+  「📜 照片裡的文字」. Book photo chapters 0105／0108／0201／0202／0203／0204／0403／0404／0603 use 拍照問暖暖;
+  0206 (meal) keeps the meal camera.
 - `POST /api/ai/photo-ask` → `askAboutPhoto` (`src/lib/ai/photo-ask.ts`, vision model via
   `getGeminiModel`) → JSON normalised by `normalizePhotoAskResult`. Tracked as `gemini_vision`, so it
   shares the monthly photo quota with meal photos. Photos are not stored.
@@ -255,7 +261,7 @@ stack works well for auth + meal/diary CRUD:
 - **No external AI in the book** (owner's decision, 2026-10-07): examples never send people to Gemini／ChatGPT／Siri;
   `external-ai.ts` is gone. Text examples use 「✍️ 打字問暖暖」 (`AskNuannuanRow` / the `example` block's
   `onTryAsk`) → `saveAskSeed` (sessionStorage, survives login) → `/?open=ask&from=chapterXXXX`. Photo examples
-  are being moved to 拍照問暖暖. 0102 teaches only how to open 暖暖.
+  use 「📷 拍照問暖暖」 (`PhotoAskRow` → `savePhotoAskSeed` → `/?open=photo-ask`). 0102 teaches only how to open 暖暖.
 
 ### 打字問暖暖（text chat, `subpage "ask"`）
 - Home 「問暖暖」, the voice screen's 「改用打字問暖暖」 and book examples open `AskScreen`. Typed or dictated
