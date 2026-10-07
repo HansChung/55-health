@@ -46,16 +46,23 @@ export async function copyUserUpload(
   }
 }
 
-/** 超過一天的暫存照片清掉（每天的 cron 叫） */
-export async function cleanupStaleUserUploads(admin: Admin, maxRows = 1000): Promise<number> {
-  const { data, error } = await admin.rpc("stale_user_uploads", { max_rows: maxRows });
-  if (error) throw new Error(`list stale uploads failed: ${error.message}`);
-  const names = ((data ?? []) as unknown[]).filter((n): n is string => typeof n === "string");
-  for (let i = 0; i < names.length; i += 100) {
-    const { error: rmErr } = await admin.storage.from(USER_UPLOAD_BUCKET).remove(names.slice(i, i + 100));
-    if (rmErr) throw new Error(`remove stale uploads failed: ${rmErr.message}`);
+/** 超過一天的暫存照片清掉（每天的 cron 叫）：一批一批清，清完或時間快到就停 */
+export async function cleanupStaleUserUploads(admin: Admin, opts: { batch?: number; budgetMs?: number } = {}): Promise<number> {
+  const batch = opts.batch ?? 1000;
+  const deadline = Date.now() + (opts.budgetMs ?? 45_000);
+  let removed = 0;
+  while (Date.now() < deadline) {
+    const { data, error } = await admin.rpc("stale_user_uploads", { max_rows: batch });
+    if (error) throw new Error(`list stale uploads failed: ${error.message}`);
+    const names = ((data ?? []) as unknown[]).filter((n): n is string => typeof n === "string");
+    for (let i = 0; i < names.length; i += 100) {
+      const { error: rmErr } = await admin.storage.from(USER_UPLOAD_BUCKET).remove(names.slice(i, i + 100));
+      if (rmErr) throw new Error(`remove stale uploads failed: ${rmErr.message}`);
+    }
+    removed += names.length;
+    if (names.length < batch) break;
   }
-  return names.length;
+  return removed;
 }
 
 /** 舊方式（base64 經過 API）最多收多大：Vercel 本來就擋 4.5 MB 以上的請求 */

@@ -12,11 +12,32 @@ on conflict (id) do update set
   file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
 
--- 只准登入的人傳到自己的資料夾（不給讀、不給刪：照片只給伺服器看）
+-- 這個人過去一天傳了幾張（直傳不經過 API 的流量限制，所以在這裡限量；只算自己的）
+create or replace function public.user_uploads_today()
+returns int
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select count(*)::int from storage.objects
+  where bucket_id = 'user-uploads'
+    and name like auth.uid()::text || '/%'
+    and created_at > now() - interval '1 day';
+$$;
+
+revoke all on function public.user_uploads_today() from public, anon;
+grant execute on function public.user_uploads_today() to authenticated, service_role;
+
+-- 只准登入的人傳到自己的資料夾、每天最多 300 張（不給讀、不給刪：照片只給伺服器看）
 drop policy if exists "user uploads: insert own folder" on storage.objects;
 create policy "user uploads: insert own folder"
   on storage.objects for insert to authenticated
-  with check (bucket_id = 'user-uploads' and (storage.foldername(name))[1] = auth.uid()::text);
+  with check (
+    bucket_id = 'user-uploads'
+    and (storage.foldername(name))[1] = auth.uid()::text
+    and public.user_uploads_today() < 300
+  );
 
 -- 列出超過一天的暫存照片（給清理用；只有 service role 能呼叫）
 create or replace function public.stale_user_uploads(max_rows int default 1000)

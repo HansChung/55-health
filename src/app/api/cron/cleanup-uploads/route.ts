@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
-    const removed = await cleanupStaleUserUploads(createSupabaseAdmin(), 3000);
+    const removed = await cleanupStaleUserUploads(createSupabaseAdmin());
     return NextResponse.json({ ok: true, removed });
   } catch (e) {
     // 還沒跑 add-user-uploads.sql 時 stale_user_uploads 不存在：記錄就好

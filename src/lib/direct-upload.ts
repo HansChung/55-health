@@ -7,7 +7,9 @@ import { createSupabaseBrowser } from "@/lib/supabase/client";
 import { USER_UPLOAD_BUCKET, USER_UPLOAD_MAX_BYTES, userUploadPath } from "@/lib/user-uploads";
 
 const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
-const cache = new Map<string, Promise<string | null>>();
+/** 暫存區每天清掉超過一天的檔案：記住的路徑 6 小時後就重新上傳，不會拿到已經被清掉的 */
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const cache = new Map<string, { at: number; task: Promise<string | null> }>();
 const CACHE_MAX = 20;
 
 async function upload(dataUrl: string): Promise<string | null> {
@@ -36,12 +38,13 @@ async function upload(dataUrl: string): Promise<string | null> {
 /** 把照片（data URL）傳到暫存區，回路徑；失敗回 null */
 export function stagePhoto(dataUrl: string): Promise<string | null> {
   const hit = cache.get(dataUrl);
-  if (hit) return hit;
+  if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.task;
   const task = upload(dataUrl).then((path) => {
     if (!path) cache.delete(dataUrl); // 失敗不要記住，下次再試
     return path;
   });
-  cache.set(dataUrl, task);
+  cache.delete(dataUrl);
+  cache.set(dataUrl, { at: Date.now(), task });
   if (cache.size > CACHE_MAX) cache.delete(cache.keys().next().value as string);
   return task;
 }

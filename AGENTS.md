@@ -37,7 +37,9 @@ and Stripe. Capacitor/Android is only a packaging target and is not needed for w
   travel-video/script, montage, montage/script) accept `photoPath(s)` and read with the service role
   (`readUserImage`, owner-prefix + magic-byte checks) or copy inside Supabase (`copyUserUpload`, montage). They still
   accept the old base64 fields: if the direct upload fails (SQL not run, network) the client falls back
-  automatically. Clients may only INSERT into their own folder; no client read/delete. Cron
+  automatically. Clients may only INSERT into their own folder, at most 300 per day (`user_uploads_today()` in the
+  policy, since direct uploads skip the API rate limiter); no client read/delete. The client re-uploads a cached
+  photo after 6 h so it never sends a path the cleanup already removed. Cron
   `/api/cron/cleanup-uploads` (daily) deletes staged files older than a day via the `stale_user_uploads()` RPC.
   Meal/prescription photos kept in the diary still go browser→`meal-photos` as before (also not via Vercel).
 - **Web Push + alert thresholds**: VAPID keys (`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`);
