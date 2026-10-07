@@ -12,6 +12,7 @@ import { Mascot } from "@/components/mascot";
 import { DictationButton } from "@/components/dictation-button";
 import { api, ApiError } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { trackEvent } from "@/lib/telemetry";
 import { appendDictation } from "@/lib/dictation";
 import { canSpeakGuide, speakGuideParagraphs, stopGuideSpeech } from "@/lib/speak-guide";
@@ -19,6 +20,7 @@ import {
   ASK_MESSAGE_MAX,
   ASK_STARTERS,
   saveChapterAskSummary,
+  trimAskHistory,
   type AskMessage,
   type AskSeed,
 } from "@/lib/ask";
@@ -35,22 +37,31 @@ interface Thread {
   chapterId: string | null;
   chapterTitle: string | null;
   guide: { label: string; text: string } | null;
+  /** 還沒送出的那一句（書本範例帶來、看過再送出；離開再回來還在） */
+  draft?: string;
 }
 
-const THREAD_KEY = "nuannuan_ask_thread";
 const EMPTY_THREAD: Thread = { messages: [], mode: "chat", chapterId: null, chapterTitle: null, guide: null };
 
-function loadThread(): Thread {
+/** 對話存在這個分頁，key 帶帳號：換人登入看不到上一個人的對話（登出也會清掉，見 use-auth） */
+function threadKey(userId: string | null | undefined): string | null {
+  return userId ? `nuannuan_ask_thread:${userId}` : null;
+}
+
+function loadThread(userId: string | null | undefined): Thread {
+  const key = threadKey(userId);
   try {
-    const raw = sessionStorage.getItem(THREAD_KEY);
+    const raw = key ? sessionStorage.getItem(key) : null;
     if (raw) return { ...EMPTY_THREAD, ...(JSON.parse(raw) as Thread) };
   } catch { /* ignore */ }
   return EMPTY_THREAD;
 }
 
-function saveThread(t: Thread) {
+function saveThread(userId: string | null | undefined, t: Thread) {
+  const key = threadKey(userId);
+  if (!key) return;
   try {
-    sessionStorage.setItem(THREAD_KEY, JSON.stringify(t));
+    sessionStorage.setItem(key, JSON.stringify(t));
   } catch { /* ignore */ }
 }
 
@@ -71,6 +82,8 @@ const smallBtn: React.CSSProperties = {
 
 export function AskScreen({ onBack, seed }: AskScreenProps) {
   const toast = useToast();
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
   const [thread, setThread] = useState<Thread>(EMPTY_THREAD);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -83,23 +96,28 @@ export function AskScreen({ onBack, seed }: AskScreenProps) {
 
   // 書本範例：換成新的一段對話，範例放進輸入框（看過再送出）；沒有就接著上次的對話
   useEffect(() => {
+    if (!userId) return;
     if (seed) {
+      const prompt = [...seed.prompt].slice(0, ASK_MESSAGE_MAX).join("");
       const next: Thread = {
         messages: [],
         mode: seed.mode,
         chapterId: seed.chapterId ?? null,
         chapterTitle: seed.chapterTitle ?? null,
         guide: seed.guide ?? null,
+        draft: prompt,
       };
       setThread(next);
-      saveThread(next);
-      setInput([...seed.prompt].slice(0, ASK_MESSAGE_MAX).join(""));
+      saveThread(userId, next);
+      setInput(prompt);
       trackEvent("ask_from_chapter", { chapter: seed.chapterId ?? "", mode: seed.mode });
     } else {
-      setThread(loadThread());
+      const saved = loadThread(userId);
+      setThread(saved);
+      setInput(saved.draft ?? "");
     }
     api.askQuota().then((r) => setQuota(r.quota)).catch(() => undefined);
-  }, [seed]);
+  }, [seed, userId]);
 
   useEffect(() => () => stopGuideSpeech(), []);
 
@@ -109,7 +127,14 @@ export function AskScreen({ onBack, seed }: AskScreenProps) {
 
   const update = (t: Thread) => {
     setThread(t);
-    saveThread(t);
+    saveThread(userId, t);
+  };
+
+  /** 打字時順便記下草稿（離開再回來還在） */
+  const changeInput = (value: string) => {
+    const v = [...value].slice(0, ASK_MESSAGE_MAX).join("");
+    setInput(v);
+    saveThread(userId, { ...thread, draft: v });
   };
 
   const send = async (text?: string) => {
@@ -120,13 +145,14 @@ export function AskScreen({ onBack, seed }: AskScreenProps) {
     setError(null);
     setSummary(null);
     const messages: AskMessage[] = [...thread.messages, { role: "user", text: q }];
-    const pending = { ...thread, messages };
+    const pending = { ...thread, messages, draft: "" };
     update(pending);
     setInput("");
     setBusy(true);
     try {
       const res = await api.ask({
-        messages,
+        // 只帶最近的對話（太長的對話伺服器也只看最近 40 則）
+        messages: trimAskHistory(messages),
         mode: thread.mode,
         chapterId: thread.chapterId,
         chapterTitle: thread.chapterTitle,
@@ -137,7 +163,7 @@ export function AskScreen({ onBack, seed }: AskScreenProps) {
       trackEvent("ask_sent", { chapter: thread.chapterId ?? "", mode: thread.mode, turns: messages.length });
     } catch (e) {
       // 沒問成功：把問題放回輸入框，不留在對話裡
-      update(thread);
+      update({ ...thread, draft: q });
       setInput(q);
       const data = e instanceof ApiError ? (e.data as { upgradeUrl?: string; quota?: { used: number; limit: number } } | null) : null;
       if (data?.quota) setQuota(data.quota);
@@ -158,7 +184,7 @@ export function AskScreen({ onBack, seed }: AskScreenProps) {
     setBusy(true);
     try {
       const res = await api.ask({
-        messages: thread.messages,
+        messages: trimAskHistory(thread.messages),
         mode: "summary",
         chapterId: thread.chapterId,
         chapterTitle: thread.chapterTitle,
@@ -324,7 +350,7 @@ export function AskScreen({ onBack, seed }: AskScreenProps) {
             <button
               key={s}
               type="button"
-              onClick={() => { setInput(s); inputRef.current?.focus(); }}
+              onClick={() => { changeInput(s); inputRef.current?.focus(); }}
               style={{ ...smallBtn, textAlign: "left", borderRadius: 12, padding: "10px 14px", color: "var(--ink-1)" }}
             >
               {s}
@@ -338,7 +364,7 @@ export function AskScreen({ onBack, seed }: AskScreenProps) {
         <textarea
           ref={inputRef}
           value={input}
-          onChange={(e) => setInput([...e.target.value].slice(0, ASK_MESSAGE_MAX).join(""))}
+          onChange={(e) => changeInput(e.target.value)}
           placeholder={thread.messages.length ? "接著問，或回答暖暖的問題…" : "想問暖暖什麼？"}
           rows={thread.chapterTitle && !thread.messages.length ? 6 : 3}
           disabled={busy}
@@ -350,7 +376,7 @@ export function AskScreen({ onBack, seed }: AskScreenProps) {
           }}
         />
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <DictationButton where="ask" disabled={busy} onText={(t) => setInput((prev) => appendDictation(prev, t, ASK_MESSAGE_MAX))} />
+          <DictationButton where="ask" disabled={busy} onText={(t) => changeInput(appendDictation(input, t, ASK_MESSAGE_MAX))} />
           <button
             type="button"
             onClick={() => send()}
@@ -368,7 +394,7 @@ export function AskScreen({ onBack, seed }: AskScreenProps) {
         )}
       </div>
 
-      {(answered || thread.messages.length > 0) && (
+      {(thread.messages.length > 0 || thread.chapterTitle) && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 18 }}>
           {thread.chapterId && answered && (
             <button type="button" onClick={summarize} disabled={busy} className="btn-ghost" style={{ width: "100%" }}>

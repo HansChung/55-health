@@ -187,6 +187,80 @@ export async function checkUserQuota(
   }
 }
 
+/**
+ * 每天限次數的功能：先佔一格再呼叫 AI（同時送出好幾則、開好幾個分頁也不會超過上限）。
+ * 先寫一筆 ai_usage（success=true、metadata.reserved），再把今天這個 endpoint 成功的紀錄照時間排：
+ * 自己排在上限內才算佔到；否則刪掉、回 id=null。成功後 finishReservedUsage 補上模型與用量；
+ * 失敗 releaseReservedUsage 刪掉（失敗不算次數）
+ */
+export async function reserveDailySlot(opts: {
+  userId: string;
+  service: TrackUsageParams["service"];
+  endpoint: string;
+  sinceIso: string;
+  limit: number;
+}): Promise<{ id: string | null; used: number }> {
+  const supabase = createSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("ai_usage")
+    .insert({
+      user_id: opts.userId,
+      service: opts.service,
+      model: "reserved",
+      endpoint: opts.endpoint,
+      success: true,
+      metadata: { reserved: true },
+    })
+    .select("id")
+    .single();
+  if (error || !data) throw new Error(`reserve ${opts.endpoint} slot failed: ${error?.message ?? "no row"}`);
+  const id = (data as { id: string }).id;
+  const { data: rows, error: listErr } = await supabase
+    .from("ai_usage")
+    .select("id")
+    .eq("user_id", opts.userId)
+    .eq("endpoint", opts.endpoint)
+    .eq("success", true)
+    .gte("created_at", opts.sinceIso)
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true })
+    .limit(opts.limit);
+  if (listErr) {
+    await supabase.from("ai_usage").delete().eq("id", id);
+    throw new Error(`count ${opts.endpoint} slots failed: ${listErr.message}`);
+  }
+  const ids = ((rows ?? []) as { id: string }[]).map((r) => r.id);
+  if (ids.includes(id)) return { id, used: ids.length };
+  await supabase.from("ai_usage").delete().eq("id", id);
+  return { id: null, used: opts.limit };
+}
+
+/** 佔到的那一格：AI 回來了，補上模型、token 與費用 */
+export async function finishReservedUsage(
+  id: string,
+  usage: { model: string; inputTokens?: number; outputTokens?: number; metadata?: Record<string, unknown> }
+): Promise<void> {
+  const supabase = createSupabaseAdmin();
+  const { error } = await supabase
+    .from("ai_usage")
+    .update({
+      model: usage.model,
+      input_tokens: usage.inputTokens ?? 0,
+      output_tokens: usage.outputTokens ?? 0,
+      cost_usd: calculateCost({ model: usage.model, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens }),
+      metadata: usage.metadata ?? {},
+    })
+    .eq("id", id);
+  if (error) console.error("[ai-usage] finish reserved usage failed:", error);
+}
+
+/** 佔到的那一格：AI 沒成功，把格子還回去 */
+export async function releaseReservedUsage(id: string): Promise<void> {
+  const supabase = createSupabaseAdmin();
+  const { error } = await supabase.from("ai_usage").delete().eq("id", id);
+  if (error) console.error("[ai-usage] release reserved usage failed:", error);
+}
+
 /** 某個時間之後，某個 endpoint 成功的次數（打字問暖暖：每天的題數；失敗的不算） */
 export async function countEndpointSuccessSince(userId: string, endpoint: string, sinceIso: string): Promise<number> {
   const supabase = createSupabaseAdmin();
