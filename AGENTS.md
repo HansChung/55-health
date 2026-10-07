@@ -30,6 +30,16 @@ and Stripe. Capacitor/Android is only a packaging target and is not needed for w
   Production should set `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`; without them a
   process-local memory fallback is used (fine for `npm run dev`, not reliable across Vercel instances).
   Set `RATE_LIMIT_DISABLED=1` only for local tests that must bypass limits.
+- **Photos go straight to Supabase, not through Vercel** (needs `supabase/add-user-uploads.sql`; saves Fast
+  Origin Transfer): the browser uploads each photo once to the private bucket `user-uploads/{uid}/{uuid}.jpg`
+  (`stagePhoto` / `photoPayload` / `stagePhotos` in `src/lib/direct-upload.ts`, cached per photo so follow-up
+  questions and script→create reuse it). APIs (analyze-food, analyze-prescription, photo-ask, travel-video,
+  travel-video/script, montage, montage/script) accept `photoPath(s)` and read with the service role
+  (`readUserImage`, owner-prefix + magic-byte checks) or copy inside Supabase (`copyUserUpload`, montage). They still
+  accept the old base64 fields: if the direct upload fails (SQL not run, network) the client falls back
+  automatically. Clients may only INSERT into their own folder; no client read/delete. Cron
+  `/api/cron/cleanup-uploads` (daily) deletes staged files older than a day via the `stale_user_uploads()` RPC.
+  Meal/prescription photos kept in the diary still go browser→`meal-photos` as before (also not via Vercel).
 - **Web Push + alert thresholds**: VAPID keys (`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`);
   SQL `add-push-subscriptions.sql` + `add-alert-thresholds.sql`. Family enables push under 提醒通知;
   elder thresholds under 健康狀況. Cron `check-anomalies` emails and pushes.

@@ -118,11 +118,12 @@ async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T>
 export const api = {
   // AI
   // 看圖模型會先「思考」，實測約 10～15 秒 → 逾時放寬，避免還在辨識就被判逾時
-  analyzeFood: (imageBase64: string, mimeType?: string) =>
+  /** 照片：photoPayload() 給的 { photoPath }（直傳 Supabase）或 { imageBase64, mimeType }（舊方式） */
+  analyzeFood: (photo: PhotoInput) =>
     apiFetch<{
       result: import("./ai/gemini").FoodAnalysisResult;
       quota: { used: number; limit: number; tier: string };
-    }>("/api/ai/analyze-food", { method: "POST", json: { imageBase64, mimeType }, timeoutMs: 45000 }),
+    }>("/api/ai/analyze-food", { method: "POST", json: photo, timeoutMs: 45000 }),
 
   createRealtimeSession: () =>
     apiFetch<{
@@ -154,7 +155,8 @@ export const api = {
     ),
 
   // 多張照片遊記：AI 一次看全部照片、每張寫一句（看圖約 10～20 秒）
-  writeTravelMontageScript: (input: { images: string[]; place?: string }) =>
+  /** 照片：photoPaths（直傳 Supabase）或 images（data URL，直傳失敗時） */
+  writeTravelMontageScript: (input: ({ photoPaths: string[] } | { images: string[] }) & { place?: string }) =>
     apiFetch<{ lines: string[] }>("/api/ai/travel-video/montage/script", {
       method: "POST",
       json: input,
@@ -162,8 +164,7 @@ export const api = {
     }),
 
   // 建立遊記（照片上傳＋開始配音）；逾時要比伺服器 maxDuration 長
-  createTravelMontage: (input: {
-    images: string[];
+  createTravelMontage: (input: ({ photoPaths: string[] } | { images: string[] }) & {
     sizes: { width: number; height: number }[];
     lines: string[];
     voice: NarrationVoiceChoice;
@@ -180,7 +181,8 @@ export const api = {
 
   // 逾時要比伺服器 maxDuration（60 秒）長：前端先放棄時，伺服器可能已經建好付費任務
   // AI 看照片寫一句口白（看圖模型約 10～15 秒）
-  writeTravelNarration: (input: { image: string; style: TravelVideoStyleId; place?: string }) =>
+  /** 照片：photoPath（直傳 Supabase）或 image（data URL，直傳失敗時） */
+  writeTravelNarration: (input: ({ photoPath: string } | { image: string }) & { style: TravelVideoStyleId; place?: string }) =>
     apiFetch<{ text: string }>("/api/ai/travel-video/script", { method: "POST", json: input, timeoutMs: 45000 }),
 
   // 試聽口白：AI 配音約 10～20 秒
@@ -191,8 +193,7 @@ export const api = {
       timeoutMs: 60000,
     }),
 
-  createTravelVideo: (input: {
-    image: string;
+  createTravelVideo: (input: ({ photoPath: string } | { image: string }) & {
     style: TravelVideoStyleId;
     place?: string;
     narration?: { id: string; voice: NarrationVoiceChoice; accent?: NarrationAccentId; text: string };
@@ -268,7 +269,7 @@ export const api = {
     }),
 
   // 拍照問暖暖：看圖模型約 10～15 秒；和拍照記餐共用每月拍照次數
-  askPhoto: (input: { imageBase64: string; mimeType?: string; question?: string; place?: string }) =>
+  askPhoto: (input: PhotoInput & { question?: string; place?: string }) =>
     apiFetch<{ result: import("./photo-ask").PhotoAskResult; quota: { used: number; limit: number; tier: string; period?: "day" | "month" } }>(
       "/api/ai/photo-ask",
       { method: "POST", json: input, timeoutMs: 45000 }
@@ -417,10 +418,10 @@ export const api = {
   getWeeklyReport: () =>
     apiFetch<{ report: WeeklyReport }>("/api/reports/weekly"),
 
-  analyzePrescription: (imageBase64: string, mimeType?: string) =>
+  analyzePrescription: (photo: PhotoInput) =>
     apiFetch<{ result: PrescriptionResult }>("/api/ai/analyze-prescription", {
       method: "POST",
-      json: { imageBase64, mimeType },
+      json: photo,
       timeoutMs: 45000,
     }),
 
@@ -675,6 +676,9 @@ export interface ProfileMedication {
   taken_today?: boolean;
   last_taken_at?: string;
 }
+
+/** 給看圖 API 的照片：直傳 Supabase 後只帶路徑；直傳失敗才帶 base64（見 lib/direct-upload.ts） */
+export type PhotoInput = { photoPath: string } | { imageBase64: string; mimeType?: string };
 
 export interface NotificationSettings {
   meal_breakfast?: { on: boolean; time: string };

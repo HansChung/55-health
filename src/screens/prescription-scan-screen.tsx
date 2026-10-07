@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { photoPayload } from "@/lib/direct-upload";
 import { Icon } from "@/components/icons";
 import { Mascot } from "@/components/mascot";
 import { SubPage } from "@/components/sub-page";
@@ -33,8 +34,8 @@ export function PrescriptionScanScreen({ onBack }: PrescriptionScanScreenProps) 
     try {
       const dataUrl = await compressImage(file, { maxSide: 1280, quality: 0.85 });
       setPhotoDataUrl(dataUrl);
-      const base64 = dataUrl.split(",")[1];
-      const { result } = await api.analyzePrescription(base64, "image/jpeg");
+      // 照片直傳 Supabase（不經過 Vercel），API 只帶路徑；直傳失敗才用舊方式
+      const { result } = await api.analyzePrescription(await photoPayload(dataUrl));
       setAnalysis(result);
       setStage("result");
     } catch (err: unknown) {
@@ -339,8 +340,7 @@ function PrescriptionCamera({ onClose, onCapture }: {
     setStage("analyzing");
     streamRef.current?.getTracks().forEach((t) => t.stop());
     try {
-      const base64 = dataUrl.split(",")[1];
-      const { result } = await api.analyzePrescription(base64, "image/jpeg");
+      const { result } = await api.analyzePrescription(await photoPayload(dataUrl));
       onCapture(result, dataUrl);
     } catch (err: unknown) {
       const status = (err as { status?: number })?.status;

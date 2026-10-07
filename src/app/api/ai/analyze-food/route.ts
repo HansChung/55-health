@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServer } from "@/lib/supabase/server";
+import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
+import { imageFromRequest, UserUploadError } from "@/lib/ai/user-uploads-server";
 import { analyzeFoodImage, resolveGeminiConfig } from "@/lib/ai/gemini";
 import { trackAiUsage, checkUserQuota } from "@/lib/ai/usage-tracker";
 import { z } from "zod";
@@ -7,8 +8,10 @@ import { z } from "zod";
 // 看圖模型實測約 10～15 秒，預留空間
 export const maxDuration = 60;
 
+// 新方式：photoPath（手機已把照片直傳到 Supabase 暫存區）；舊方式：imageBase64（經過 API）
 const RequestSchema = z.object({
-  imageBase64: z.string().min(100),
+  photoPath: z.string().max(200).optional(),
+  imageBase64: z.string().min(100).optional(),
   mimeType: z.string().optional(),
 });
 
@@ -42,12 +45,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "請求格式錯誤" }, { status: 400 });
   }
 
+  let image: { base64: string; mimeType: string; via: string };
+  try {
+    image = await imageFromRequest(createSupabaseAdmin(), user.id, body);
+  } catch (e) {
+    if (e instanceof UserUploadError) return NextResponse.json({ error: e.message }, { status: 400 });
+    throw e;
+  }
+
   // 4. 呼叫 Gemini
   try {
-    const { result, usage } = await analyzeFoodImage(
-      body.imageBase64,
-      body.mimeType ?? "image/jpeg"
-    );
+    const { result, usage } = await analyzeFoodImage(image.base64, image.mimeType);
 
     // 5. 記錄用量
     await trackAiUsage({
@@ -58,7 +66,7 @@ export async function POST(req: NextRequest) {
       outputTokens: usage.outputTokens,
       endpoint: "/api/ai/analyze-food",
       success: true,
-      metadata: { provider: usage.provider },
+      metadata: { provider: usage.provider, via: image.via },
     });
 
     return NextResponse.json({

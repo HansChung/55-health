@@ -4,7 +4,8 @@
 // ────────────────────────────────────────────────
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createSupabaseServer } from "@/lib/supabase/server";
+import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
+import { readUserImage, UserUploadError } from "@/lib/ai/user-uploads-server";
 import { checkUserQuota, countMonthlyEndpointUsage, trackAiUsage } from "@/lib/ai/usage-tracker";
 import { getGeminiModel, isGeminiConfigured, parseModelJson, resolveGeminiConfig } from "@/lib/ai/gemini";
 import {
@@ -22,11 +23,15 @@ export const maxDuration = 60;
 
 const IMAGE_DATA_URL = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/]+={0,2})$/;
 
-const PostSchema = z.object({
-  image: z.string().max(4_000_000).regex(IMAGE_DATA_URL),
-  place: z.string().max(100).optional(),
-  style: z.enum(TRAVEL_VIDEO_STYLE_IDS),
-});
+// 新方式：photoPath（照片已直傳 Supabase 暫存區）；舊方式：image（data URL 經過 API）
+const PostSchema = z
+  .object({
+    photoPath: z.string().max(200).optional(),
+    image: z.string().max(4_000_000).regex(IMAGE_DATA_URL).optional(),
+    place: z.string().max(100).optional(),
+    style: z.enum(TRAVEL_VIDEO_STYLE_IDS),
+  })
+  .refine((b) => Boolean(b.photoPath || b.image), "photo required");
 
 function buildScriptPrompt(place: string, styleLabel: string) {
   return (
@@ -62,7 +67,20 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "照片格式不對，請換一張再試" }, { status: 400 });
   }
-  const [, mime, b64] = body.image.match(IMAGE_DATA_URL)!;
+  let mime: string;
+  let b64: string;
+  if (body.photoPath) {
+    try {
+      const img = await readUserImage(createSupabaseAdmin(), user.id, body.photoPath);
+      mime = img.mimeType.replace("image/", "");
+      b64 = img.base64;
+    } catch (e) {
+      if (e instanceof UserUploadError) return NextResponse.json({ error: e.message }, { status: 400 });
+      throw e;
+    }
+  } else {
+    [, mime, b64] = body.image!.match(IMAGE_DATA_URL)!;
+  }
   const styleLabel = TRAVEL_VIDEO_STYLES.find((s) => s.id === body.style)?.label ?? "";
 
   const config = resolveGeminiConfig();

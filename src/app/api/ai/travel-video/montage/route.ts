@@ -3,6 +3,8 @@
 // POST { images: dataURL[], sizes: {width,height}[], lines: string[], voice, accent?, music?, place? }
 // 建立後在背景先開始配音，之後由背景接力（/api/cron/montage-step）與畫面輪詢接著做
 // ────────────────────────────────────────────────
+import { copyUserUpload, UserUploadError } from "@/lib/ai/user-uploads-server";
+import { isOwnUploadPath } from "@/lib/user-uploads";
 import { NextRequest, NextResponse, after } from "next/server";
 import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
@@ -36,7 +38,9 @@ const PENDING_MESSAGE = "上一支遊記還在做，做好再做下一支喔";
 
 const PostSchema = z
   .object({
-    images: z.array(z.string().max(MAX_IMAGE_CHARS).regex(IMAGE_DATA_URL)).min(MONTAGE_MIN_PHOTOS).max(MONTAGE_MAX_PHOTOS),
+    // 新方式：photoPaths（照片已直傳 Supabase 暫存區，伺服器在 Supabase 裡複製）；舊方式：images（data URL）
+    photoPaths: z.array(z.string().max(200)).min(MONTAGE_MIN_PHOTOS).max(MONTAGE_MAX_PHOTOS).optional(),
+    images: z.array(z.string().max(MAX_IMAGE_CHARS).regex(IMAGE_DATA_URL)).min(MONTAGE_MIN_PHOTOS).max(MONTAGE_MAX_PHOTOS).optional(),
     sizes: z.array(z.object({ width: z.number().int().min(1).max(20000), height: z.number().int().min(1).max(20000) })),
     lines: z.array(z.string().max(200)),
     voice: z.enum(NARRATION_VOICE_CHOICES),
@@ -45,8 +49,12 @@ const PostSchema = z
     music: z.enum(MONTAGE_MUSIC_IDS).nullable().optional(),
     place: z.string().max(100).optional(),
   })
-  .refine((b) => b.sizes.length === b.images.length && b.lines.length === b.images.length, "length mismatch")
-  .refine((b) => b.images.reduce((n, s) => n + s.length, 0) <= MONTAGE_MAX_TOTAL_CHARS, "too large");
+  .refine((b) => Boolean(b.photoPaths || b.images), "photos required")
+  .refine((b) => {
+    const n = (b.photoPaths ?? b.images ?? []).length;
+    return b.sizes.length === n && b.lines.length === n;
+  }, "length mismatch")
+  .refine((b) => (b.images ?? []).reduce((n, s) => n + s.length, 0) <= MONTAGE_MAX_TOTAL_CHARS, "too large");
 
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseServer();
@@ -101,19 +109,37 @@ export async function POST(req: NextRequest) {
   const accent = body.voice === MY_VOICE ? null : body.accent ?? DEFAULT_NARRATION_ACCENT;
 
   const id = crypto.randomUUID();
-  const photoPaths = body.images.map((_, i) => montagePhotoPath(user.id, id, i));
-  const uploads = await Promise.all(
-    body.images.map((img, i) =>
-      admin.storage.from(TRAVEL_VIDEO_BUCKET).upload(photoPaths[i], Buffer.from(img.match(IMAGE_DATA_URL)![1], "base64"), {
-        contentType: "image/jpeg",
-        cacheControl: "31536000",
-      })
-    )
-  );
-  if (uploads.some((u) => u.error)) {
-    console.error("[api] montage photo upload:", uploads.find((u) => u.error)?.error);
-    await admin.storage.from(TRAVEL_VIDEO_BUCKET).remove(photoPaths);
-    return NextResponse.json({ error: "照片上傳失敗，請再試一次" }, { status: 500 });
+  const sources = body.photoPaths ?? body.images!;
+  const photoPaths = sources.map((_, i) => montagePhotoPath(user.id, id, i));
+  if (body.photoPaths) {
+    // 照片已經在 Supabase 暫存區：在 Supabase 裡複製過去（照片不經過伺服器）；遊記的照片一律是 JPG
+    if (body.photoPaths.some((p) => !isOwnUploadPath(p, user.id) || !p.toLowerCase().endsWith(".jpg"))) {
+      return NextResponse.json({ error: "照片位置不對，請重新選一次照片" }, { status: 400 });
+    }
+    const copies = await Promise.allSettled(
+      body.photoPaths.map((p, i) => copyUserUpload(admin, user.id, p, TRAVEL_VIDEO_BUCKET, photoPaths[i]))
+    );
+    const failed = copies.find((c): c is PromiseRejectedResult => c.status === "rejected");
+    if (failed) {
+      await admin.storage.from(TRAVEL_VIDEO_BUCKET).remove(photoPaths);
+      if (failed.reason instanceof UserUploadError) return NextResponse.json({ error: failed.reason.message }, { status: 400 });
+      console.error("[api] montage photo copy:", failed.reason);
+      return NextResponse.json({ error: "照片上傳失敗，請再試一次" }, { status: 500 });
+    }
+  } else {
+    const uploads = await Promise.all(
+      body.images!.map((img, i) =>
+        admin.storage.from(TRAVEL_VIDEO_BUCKET).upload(photoPaths[i], Buffer.from(img.match(IMAGE_DATA_URL)![1], "base64"), {
+          contentType: "image/jpeg",
+          cacheControl: "31536000",
+        })
+      )
+    );
+    if (uploads.some((u) => u.error)) {
+      console.error("[api] montage photo upload:", uploads.find((u) => u.error)?.error);
+      await admin.storage.from(TRAVEL_VIDEO_BUCKET).remove(photoPaths);
+      return NextResponse.json({ error: "照片上傳失敗，請再試一次" }, { status: 500 });
+    }
   }
 
   const state: MontageState = {

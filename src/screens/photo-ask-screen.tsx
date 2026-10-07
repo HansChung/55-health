@@ -6,6 +6,7 @@
 // ────────────────────────────────────────────────
 
 import { useEffect, useRef, useState } from "react";
+import { photoPayload } from "@/lib/direct-upload";
 import { SubPage } from "@/components/sub-page";
 import { Mascot } from "@/components/mascot";
 import { api, ApiError } from "@/lib/api-client";
@@ -69,10 +70,6 @@ function chip(active: boolean): React.CSSProperties {
 }
 
 /** data:image/jpeg;base64,xxx → { mimeType, base64 } */
-function splitDataUrl(dataUrl: string): { mimeType: string; base64: string } {
-  const m = /^data:([^;]+);base64,(.*)$/.exec(dataUrl);
-  return m ? { mimeType: m[1], base64: m[2] } : { mimeType: "image/jpeg", base64: dataUrl };
-}
 
 export function PhotoAskScreen({ onBack, initialPlace, initialQuestion, chapter }: PhotoAskScreenProps) {
   const toast = useToast();
@@ -127,10 +124,9 @@ export function PhotoAskScreen({ onBack, initialPlace, initialQuestion, chapter 
     setAsking(true);
     const version = photoVersion.current;
     try {
-      const { mimeType, base64 } = splitDataUrl(photo);
+      // 照片直傳 Supabase 一次，追問時用同一個路徑（不用每問一次就再傳整張照片）
       const res = await api.askPhoto({
-        imageBase64: base64,
-        mimeType,
+        ...(await photoPayload(photo)),
         question: finalQuestion,
         place: place.trim() || undefined,
       });

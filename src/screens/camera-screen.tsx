@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { compressImage } from "@/lib/image-utils";
+import { photoPayload } from "@/lib/direct-upload";
 import { Icon } from "@/components/icons";
 import { Mascot } from "@/components/mascot";
 import { api } from "@/lib/api-client";
@@ -116,7 +118,8 @@ export function CameraScreen({ onClose, onCapture, chapterIntent }: CameraScreen
   const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const dataUrl = await fileToDataUrl(file);
+    // 相簿的照片可能很大（好幾 MB、HEIC）：先壓成 1280px JPEG
+    const dataUrl = await compressImage(file, { maxSide: 1280, quality: 0.85 }).catch(() => fileToDataUrl(file));
     await analyzePhoto(dataUrl);
   };
 
@@ -126,8 +129,8 @@ export function CameraScreen({ onClose, onCapture, chapterIntent }: CameraScreen
     streamRef.current?.getTracks().forEach((t) => t.stop()); // 停 stream 省電
 
     try {
-      const base64 = dataUrl.split(",")[1];
-      const { result } = await api.analyzeFood(base64, "image/jpeg");
+      // 照片直傳 Supabase（不經過 Vercel），API 只帶路徑；直傳失敗才用舊方式
+      const { result } = await api.analyzeFood(await photoPayload(dataUrl));
       onCapture(result, dataUrl);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "辨識失敗";
