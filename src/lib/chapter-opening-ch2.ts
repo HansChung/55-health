@@ -163,7 +163,7 @@ export const CHAPTER_0203: ChapterOpening = {
   reflectPlaceholder: "例如：是否含堅果、能否做少辣…",
   continueTitle: "暖暖陪您繼續",
   continueBody:
-    "掃碼進入暖暖，可拍照或語音請 AI 協助翻譯。暖暖沒有專用翻譯功能；點餐前請務必向店家確認。",
+    "掃碼進入暖暖，用「拍照問暖暖」拍菜單，暖暖會把菜名翻成中文、點出哪些符合您的飲食需要。翻譯僅供參考，點餐前請務必向店家確認。",
   practiceWhere: "mixed",
   capabilityNote:
     "暖暖可陪您翻譯與整理選項；過敏與實際菜色請向現場人員確認。",
@@ -207,7 +207,7 @@ export const CHAPTER_0204: ChapterOpening = {
   reflectPlaceholder: "例如：使用頻率、收納空間、保固…",
   continueTitle: "暖暖陪您繼續",
   continueBody:
-    "掃碼進入暖暖，可拍照或語音請 AI 協助整理差異。購買決定請您自己做；本頁也可先填完三問卡。",
+    "掃碼進入暖暖，可以拍商品標示問暖暖，或打字問暖暖整理差異。購買決定請您自己做；本頁也可先填完三問卡。",
   practiceWhere: "mixed",
   capabilityNote:
     "暖暖可整理差異與待確認事項；需要、適合、值得，仍由您判斷。",

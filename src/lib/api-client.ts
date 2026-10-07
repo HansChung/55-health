@@ -269,7 +269,7 @@ export const api = {
 
   // 拍照問暖暖：看圖模型約 10～15 秒；和拍照記餐共用每月拍照次數
   askPhoto: (input: { imageBase64: string; mimeType?: string; question?: string; place?: string }) =>
-    apiFetch<{ result: import("./photo-ask").PhotoAskResult; quota: { used: number; limit: number; tier: string } }>(
+    apiFetch<{ result: import("./photo-ask").PhotoAskResult; quota: { used: number; limit: number; tier: string; period?: "day" | "month" } }>(
       "/api/ai/photo-ask",
       { method: "POST", json: input, timeoutMs: 45000 }
     ),

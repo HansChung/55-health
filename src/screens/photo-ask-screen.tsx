@@ -27,6 +27,9 @@ interface PhotoAskScreenProps {
   onBack: () => void;
   /** 從研學團打開時帶入活動名稱，幫暖暖認得更準 */
   initialPlace?: string | null;
+  /** 從書本練習打開：問題先帶好 */
+  initialQuestion?: string | null;
+  chapter?: { id: string; title: string } | null;
 }
 
 interface Answer {
@@ -71,17 +74,17 @@ function splitDataUrl(dataUrl: string): { mimeType: string; base64: string } {
   return m ? { mimeType: m[1], base64: m[2] } : { mimeType: "image/jpeg", base64: dataUrl };
 }
 
-export function PhotoAskScreen({ onBack, initialPlace }: PhotoAskScreenProps) {
+export function PhotoAskScreen({ onBack, initialPlace, initialQuestion, chapter }: PhotoAskScreenProps) {
   const toast = useToast();
   const [photo, setPhoto] = useState<string | null>(null);
   const [preparing, setPreparing] = useState(false);
   const [question, setQuestion] = useState<string>(DEFAULT_PHOTO_QUESTION);
-  const [customQuestion, setCustomQuestion] = useState("");
+  const [customQuestion, setCustomQuestion] = useState(initialQuestion?.slice(0, PHOTO_ASK_QUESTION_MAX) ?? "");
   const [place, setPlace] = useState(initialPlace?.slice(0, PHOTO_ASK_PLACE_MAX) ?? "");
   const [asking, setAsking] = useState(false);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [error, setError] = useState<{ message: string; upgrade?: boolean } | null>(null);
-  const [quota, setQuota] = useState<{ used: number; limit: number } | null>(null);
+  const [quota, setQuota] = useState<{ used: number; limit: number; period?: "day" | "month" } | null>(null);
   const [speakingIndex, setSpeakingIndex] = useState<number | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   // 每換一張照片就 +1：還在問的舊問題回來時，照片已經換了就丟掉
@@ -133,12 +136,14 @@ export function PhotoAskScreen({ onBack, initialPlace }: PhotoAskScreenProps) {
       });
       if (version !== photoVersion.current) return; // 問的時候換了照片：這個回答是舊照片的
       setAnswers((prev) => [...prev, { question: finalQuestion, result: res.result }]);
-      setQuota({ used: res.quota.used, limit: res.quota.limit });
+      setQuota({ used: res.quota.used, limit: res.quota.limit, period: res.quota.period });
       trackEvent("photo_ask", { category: res.result.category, follow_up: answers.length > 0 });
     } catch (e) {
       if (version !== photoVersion.current) return;
       // 只有伺服器說「次數用完／要升級」（帶 upgradeUrl）才請長輩升級；AI 服務忙線的 429 只請他等一下
-      const upgrade = e instanceof ApiError && Boolean((e.data as { upgradeUrl?: string } | null)?.upgradeUrl);
+      const data = e instanceof ApiError ? (e.data as { upgradeUrl?: string; quota?: { used: number; limit: number; period?: "day" | "month" } } | null) : null;
+      const upgrade = Boolean(data?.upgradeUrl);
+      if (data?.quota) setQuota(data.quota);
       setError({
         message: e instanceof ApiError && !e.isNetwork ? e.message : "網路不太穩，等一下再問一次",
         upgrade,
@@ -174,9 +179,24 @@ export function PhotoAskScreen({ onBack, initialPlace }: PhotoAskScreenProps) {
       }}>
         <Mascot size={60} mood="happy" />
         <div style={{ flex: 1, fontSize: "var(--fs-sm)", lineHeight: 1.5 }}>
-          看到不認識的<strong>花草、建築、古物、招牌</strong>，拍給暖暖看，暖暖講給你聽！
+          看到不認識的<strong>花草、建築、古物、招牌</strong>，或看不懂的<strong>菜單、標示</strong>，拍給暖暖看，暖暖講給你聽！
         </div>
       </div>
+
+      {chapter && (
+        <div style={{
+          marginTop: 12, padding: 14, borderRadius: "var(--r-lg)", background: "var(--primary-soft)",
+          border: "1px solid var(--primary)", display: "flex", flexDirection: "column", gap: 6,
+        }}>
+          <div style={{ fontWeight: 800 }}>📖 書本練習｜{chapter.title}</div>
+          <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.6 }}>
+            問題已經幫你帶好了，拍好照片按「問暖暖」就可以。
+          </div>
+          <a href={`/smart/chapter/${chapter.id}`} style={{ fontSize: "var(--fs-sm)", color: "var(--primary-deep)", fontWeight: 700 }}>
+            回到書本這一章 →
+          </a>
+        </div>
+      )}
 
       {/* ① 照片 */}
       <div style={sectionTitle}>① 拍一張照片</div>
@@ -222,12 +242,13 @@ export function PhotoAskScreen({ onBack, initialPlace }: PhotoAskScreenProps) {
           );
         })}
       </div>
-      <input
+      <textarea
         value={customQuestion}
         onChange={(e) => setCustomQuestion(e.target.value.slice(0, PHOTO_ASK_QUESTION_MAX))}
-        placeholder="也可以自己打字問，例如：這棵樹幾歲了？"
+        placeholder="也可以自己打字問，例如：這棵樹幾歲了？菜單上哪些不辣？"
         aria-label="自己打字問暖暖"
-        style={{ ...inputStyle, marginTop: 10 }}
+        rows={customQuestion.length > 30 ? 4 : 2}
+        style={{ ...inputStyle, marginTop: 10, lineHeight: 1.6, resize: "vertical" }}
       />
       <input
         value={place}
@@ -250,7 +271,9 @@ export function PhotoAskScreen({ onBack, initialPlace }: PhotoAskScreenProps) {
       )}
       {showQuota && (
         <div style={{ textAlign: "center", fontSize: "var(--fs-xs)", color: "var(--ink-2)", marginTop: 8 }}>
-          本月拍照次數：已用 {quota.used}／{quota.limit} 次（和拍照記餐共用）
+          {quota.period === "day"
+            ? `今天還可以拍照問 ${Math.max(0, quota.limit - quota.used)} 次`
+            : `本月拍照次數：已用 ${quota.used}／${quota.limit} 次（和拍照記餐共用）`}
         </div>
       )}
 
@@ -319,6 +342,16 @@ function AnswerCard({
       )}
       {r.explanation && (
         <div style={{ fontSize: "var(--fs-base)", lineHeight: 1.7, marginTop: 10 }}>{r.explanation}</div>
+      )}
+      {r.text_lines.length > 0 && (
+        <div style={{ marginTop: 12, padding: 14, borderRadius: "var(--r-md)", background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
+          <div style={{ fontSize: "var(--fs-sm)", fontWeight: 800, color: "var(--primary-deep)" }}>📜 照片裡的文字</div>
+          <ul style={{ margin: "6px 0 0", paddingLeft: 20, display: "flex", flexDirection: "column", gap: 4 }}>
+            {r.text_lines.map((line, i) => (
+              <li key={i} style={{ fontSize: "var(--fs-base)", lineHeight: 1.6 }}>{line}</li>
+            ))}
+          </ul>
+        </div>
       )}
       {r.fun_fact && (
         <div style={{ marginTop: 12, padding: 14, borderRadius: "var(--r-md)", background: "var(--surface-warm)" }}>

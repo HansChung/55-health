@@ -3,8 +3,11 @@
 // （前後端共用的型別與純函式；辨識算進原本的拍照次數）
 // ────────────────────────────────────────────────
 
-export const PHOTO_ASK_QUESTION_MAX = 60;
+/** 問題最多幾個字（書本範例最長約 80 字：菜單翻譯＋飲食需要、商品比較） */
+export const PHOTO_ASK_QUESTION_MAX = 200;
 export const PHOTO_ASK_PLACE_MAX = 40;
+/** 免費會員每天可以拍照問幾次（標準版以上照每月拍照次數） */
+export const PHOTO_ASK_FREE_DAILY = 5;
 
 /** 一鍵提問（長輩不用打字） */
 export const PHOTO_ASK_PRESETS = ["這是什麼？", "有什麼故事？", "要注意什麼？"] as const;
@@ -44,6 +47,8 @@ export interface PhotoAskResult {
   confidence: "high" | "medium" | "low";
   /** 可以接著問的問題（最多 3 個） */
   follow_ups: string[];
+  /** 照片裡的文字：菜單翻成中文、成分表、衛教單重點…（一行一項；不是文字照片就空陣列） */
+  text_lines: string[];
 }
 
 /** 長輩輸入的問題／地點：去掉換行與多餘空白、截長 */
@@ -64,10 +69,13 @@ export function normalizePhotoAskResult(raw: unknown): PhotoAskResult {
   const category = CATEGORIES.includes(r.category as PhotoAskCategory) ? (r.category as PhotoAskCategory) : "other";
   const confidence = r.confidence === "high" || r.confidence === "low" ? r.confidence : "medium";
   const followUps = Array.isArray(r.follow_ups)
-    ? r.follow_ups.map((q) => cleanString(q, PHOTO_ASK_QUESTION_MAX)).filter(Boolean)
+    ? r.follow_ups.map((q) => cleanString(q, 40)).filter(Boolean)
+    : [];
+  const textLines = Array.isArray(r.text_lines)
+    ? r.text_lines.map((l) => cleanString(l, 80)).filter(Boolean).slice(0, 10)
     : [];
   const title = cleanString(r.title, 40);
-  const explanation = cleanString(r.explanation, 300);
+  const explanation = cleanString(r.explanation, 400);
   if (!title && !explanation) throw new Error("empty photo-ask result");
   return {
     title: title || "暖暖看到的東西",
@@ -77,6 +85,7 @@ export function normalizePhotoAskResult(raw: unknown): PhotoAskResult {
     caution: cleanString(r.caution, 150),
     confidence,
     follow_ups: [...new Set(followUps)].slice(0, 3),
+    text_lines: textLines,
   };
 }
 
@@ -85,7 +94,40 @@ export function photoAskSpeech(result: PhotoAskResult): string[] {
   return [
     result.title,
     result.explanation,
+    ...result.text_lines,
     result.fun_fact ? `小知識：${result.fun_fact}` : "",
     result.caution ? `提醒你：${result.caution}` : "",
   ].filter(Boolean);
+}
+
+// ── 書本練習 → 拍照問暖暖（問題先帶好；sessionStorage，登入畫面也帶得過去） ──
+
+export const PHOTO_ASK_SEED_KEY = "nuannuan_photo_ask_seed";
+const PHOTO_ASK_SEED_TTL_MS = 30 * 60 * 1000;
+
+export interface PhotoAskSeed {
+  question: string;
+  chapterId: string;
+  chapterTitle: string;
+  at: number;
+}
+
+export function savePhotoAskSeed(seed: Omit<PhotoAskSeed, "at">): void {
+  try {
+    sessionStorage.setItem(PHOTO_ASK_SEED_KEY, JSON.stringify({ ...seed, at: Date.now() }));
+  } catch { /* 無痕模式之類：就不帶問題 */ }
+}
+
+/** 讀一次就清掉 */
+export function takePhotoAskSeed(now = Date.now()): PhotoAskSeed | null {
+  try {
+    const raw = sessionStorage.getItem(PHOTO_ASK_SEED_KEY);
+    sessionStorage.removeItem(PHOTO_ASK_SEED_KEY);
+    if (!raw) return null;
+    const seed = JSON.parse(raw) as PhotoAskSeed;
+    if (!seed?.question || typeof seed.at !== "number" || now - seed.at > PHOTO_ASK_SEED_TTL_MS) return null;
+    return { ...seed, question: sanitizeAskText(seed.question, PHOTO_ASK_QUESTION_MAX) };
+  } catch {
+    return null;
+  }
 }

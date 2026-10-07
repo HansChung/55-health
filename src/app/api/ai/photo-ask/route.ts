@@ -3,10 +3,11 @@ import { z } from "zod";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { resolveGeminiConfig } from "@/lib/ai/gemini";
 import { askAboutPhoto } from "@/lib/ai/photo-ask";
-import { trackAiUsage, checkUserQuota } from "@/lib/ai/usage-tracker";
-import { hasFeature, requiredTierLabel, type SubscriptionTier } from "@/lib/feature-gates";
+import { trackAiUsage, checkUserQuota, countEndpointSuccessSince } from "@/lib/ai/usage-tracker";
+import { taipeiDayStartIso } from "@/lib/ask";
 import {
   DEFAULT_PHOTO_QUESTION,
+  PHOTO_ASK_FREE_DAILY,
   PHOTO_ASK_PLACE_MAX,
   PHOTO_ASK_QUESTION_MAX,
   sanitizeAskText,
@@ -24,26 +25,42 @@ const RequestSchema = z.object({
   place: z.string().max(200).optional(),
 });
 
-/** 拍照問暖暖：看照片回答長輩的問題（和拍照記餐共用每月拍照次數） */
+/**
+ * 拍照問暖暖：看照片回答長輩的問題。所有人都能用（書本練習的拍照範例也用這個）：
+ * 免費會員每天 PHOTO_ASK_FREE_DAILY 次；標準版以上和拍照記餐共用每月拍照次數
+ */
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "未登入" }, { status: 401 });
 
   const quota = await checkUserQuota(user.id, "photo");
-  // 方案把關：不只靠前端（深連結、直接呼叫 API 都繞得過前端檢查）；管理員不限
-  if (quota.tier !== "admin" && !hasFeature(quota.tier as SubscriptionTier, "ai_photo")) {
-    return NextResponse.json(
-      { error: `拍照問暖暖是${requiredTierLabel("ai_photo")}功能，升級後就可以使用`, upgradeUrl: "/pricing" },
-      { status: 403 }
-    );
+  // 免費會員：每天幾次（伺服器把關，深連結、直接呼叫 API 都一樣）
+  let freeToday: number | null = null;
+  if (quota.tier === "free") {
+    try {
+      freeToday = await countEndpointSuccessSince(user.id, ENDPOINT, taipeiDayStartIso());
+    } catch (e) {
+      console.error("[api] photo-ask daily count:", e);
+      return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
+    }
+    if (freeToday >= PHOTO_ASK_FREE_DAILY) {
+      return NextResponse.json(
+        {
+          error: `免費會員每天可以拍照問 ${PHOTO_ASK_FREE_DAILY} 次，今天問完了，明天再來`,
+          quota: { used: freeToday, limit: PHOTO_ASK_FREE_DAILY, tier: quota.tier, period: "day" },
+          upgradeUrl: "/pricing",
+        },
+        { status: 429 }
+      );
+    }
   }
   if (!quota.allowed) {
     return NextResponse.json(
       {
         error: "本月拍照次數已用完",
-        quota: { used: quota.used, limit: quota.limit, tier: quota.tier },
-        upgradeUrl: "/upgrade",
+        quota: { used: quota.used, limit: quota.limit, tier: quota.tier, period: "month" },
+        upgradeUrl: "/pricing",
       },
       { status: 429 }
     );
@@ -68,11 +85,14 @@ export async function POST(req: NextRequest) {
       outputTokens: usage.outputTokens,
       endpoint: ENDPOINT,
       success: true,
-      metadata: { provider: usage.provider, category: result.category },
+      metadata: { provider: usage.provider, category: result.category, text_lines: result.text_lines.length },
     });
     return NextResponse.json({
       result,
-      quota: { used: quota.used + 1, limit: quota.limit, tier: quota.tier },
+      quota:
+        freeToday !== null
+          ? { used: freeToday + 1, limit: PHOTO_ASK_FREE_DAILY, tier: quota.tier, period: "day" }
+          : { used: quota.used + 1, limit: quota.limit, tier: quota.tier, period: "month" },
     });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
