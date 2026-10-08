@@ -4,7 +4,7 @@
 // ────────────────────────────────────────────────
 import { createSupabaseAdmin } from "../supabase/server";
 import { sniffImageType } from "../admin-media";
-import { USER_UPLOAD_BUCKET, USER_UPLOAD_MAX_BYTES, isOwnUploadPath } from "../user-uploads";
+import { AUDIO_UPLOAD_MAX_BYTES, USER_UPLOAD_BUCKET, USER_UPLOAD_MAX_BYTES, isOwnUploadPath } from "../user-uploads";
 
 type Admin = ReturnType<typeof createSupabaseAdmin>;
 
@@ -88,4 +88,19 @@ export async function imageFromRequest(
     return { base64: body.imageBase64, mimeType: mime, via: "body" };
   }
   throw new UserUploadError("缺少照片，請重新選一次");
+}
+
+/**
+ * 錄音（語音留言、我的聲音）：從暫存區拿，**拿到就刪**——原始錄音不保留
+ * （我的聲音承諾不存原始錄音；語音留言會另外轉成 m4a 存在影片底下）
+ */
+export async function takeUserAudio(admin: Admin, userId: string, path: unknown): Promise<Buffer> {
+  if (!isOwnUploadPath(path, userId, "audio")) throw new UserUploadError("錄音位置不對，請再錄一次");
+  const bucket = admin.storage.from(USER_UPLOAD_BUCKET);
+  const { data, error } = await bucket.download(path);
+  await bucket.remove([path]).catch(() => undefined);
+  if (error || !data) throw new UserUploadError("找不到剛剛的錄音，請再錄一次");
+  const buffer = Buffer.from(await data.arrayBuffer());
+  if (buffer.length === 0 || buffer.length > AUDIO_UPLOAD_MAX_BYTES) throw new UserUploadError("錄音太長了，請錄短一點");
+  return buffer;
 }

@@ -5,6 +5,7 @@
 // DELETE → 不再使用（軟刪除；平台端沒有刪除 API）
 // 錄音只轉成 WAV 送去平台，我們不保存原始錄音
 // ────────────────────────────────────────────────
+import { takeUserAudio, UserUploadError } from "@/lib/ai/user-uploads-server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
@@ -58,10 +59,14 @@ async function keepDemo(admin: ReturnType<typeof createSupabaseAdmin>, userId: s
 
 export const maxDuration = 60;
 
-const PostSchema = z.object({
-  audio: z.string().max(MAX_AUDIO_CHARS).regex(AUDIO_DATA_URL),
-  consent: z.literal(true),
-});
+// 新方式：audioPath（錄音已直傳 Supabase 暫存區，伺服器拿到就刪——原始錄音不保留）；舊方式：audio（data URL）
+const PostSchema = z
+  .object({
+    audioPath: z.string().max(200).optional(),
+    audio: z.string().max(MAX_AUDIO_CHARS).regex(AUDIO_DATA_URL).optional(),
+    consent: z.literal(true),
+  })
+  .refine((b) => Boolean(b.audioPath || b.audio), "audio required");
 
 async function currentUser() {
   const supabase = await createSupabaseServer();
@@ -115,6 +120,18 @@ export async function POST(req: NextRequest) {
   }
 
   const admin = createSupabaseAdmin();
+  // 先把直傳的錄音拿回來（拿到就從暫存區刪掉；就算後面被擋也不會留下原始錄音）
+  let raw: Buffer;
+  if (body.audioPath) {
+    try {
+      raw = await takeUserAudio(admin, user.id, body.audioPath);
+    } catch (e) {
+      if (e instanceof UserUploadError) return NextResponse.json({ error: e.message }, { status: 400 });
+      throw e;
+    }
+  } else {
+    raw = Buffer.from(body.audio!.match(AUDIO_DATA_URL)![1], "base64");
+  }
   if (tier !== "admin" && (await remainingClones(admin, user.id)) <= 0) {
     return NextResponse.json({ error: "這個月重錄的次數用完了，下個月再來錄喔" }, { status: 429 });
   }
@@ -123,8 +140,7 @@ export async function POST(req: NextRequest) {
   let wav: Buffer;
   let seconds: number;
   try {
-    const [, b64] = body.audio.match(AUDIO_DATA_URL)!;
-    wav = await toWav(Buffer.from(b64, "base64"), { maxSeconds: VOICE_SAMPLE_MAX_SECONDS });
+    wav = await toWav(raw, { maxSeconds: VOICE_SAMPLE_MAX_SECONDS });
     seconds = wavDurationSeconds(wav);
   } catch (e) {
     console.warn("[api] voice sample convert failed:", e instanceof Error ? e.message : e);

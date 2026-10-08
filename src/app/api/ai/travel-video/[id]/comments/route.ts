@@ -8,6 +8,7 @@ import { NextRequest, NextResponse, after } from "next/server";
 import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
 import { toWav, wavRms, wavToM4a } from "@/lib/ai/audio-convert";
+import { takeUserAudio, UserUploadError } from "@/lib/ai/user-uploads-server";
 import { wavDurationSeconds } from "@/lib/ai/lk888-tts";
 import {
   addComment,
@@ -39,15 +40,16 @@ const MIN_RMS = 0.003;
 const PostSchema = z.union([
   z.object({ emoji: z.enum(VIDEO_REACTIONS) }),
   z.object({ body: z.string().max(500) }),
+  // 新方式：錄音已直傳 Supabase 暫存區（伺服器拿到就刪）；舊方式：data URL 經過 API
+  z.object({ audioPath: z.string().max(200) }),
   z.object({ audio: z.string().max(MAX_AUDIO_CHARS).regex(AUDIO_DATA_URL) }),
 ]);
 
 /** 錄音 → 檢查長度、音量 → m4a；不合格回 error 文字 */
-async function prepareVoice(dataUrl: string): Promise<{ m4a: Buffer; seconds: number } | { error: string }> {
+async function prepareVoice(raw: Buffer): Promise<{ m4a: Buffer; seconds: number } | { error: string }> {
   let wav: Buffer;
   try {
-    const [, b64] = dataUrl.match(AUDIO_DATA_URL)!;
-    wav = await toWav(Buffer.from(b64, "base64"), { maxSeconds: VOICE_COMMENT_MAX_SECONDS });
+    wav = await toWav(raw, { maxSeconds: VOICE_COMMENT_MAX_SECONDS });
   } catch (e) {
     console.warn("[api] voice comment convert failed:", e instanceof Error ? e.message : e);
     return { error: "錄音讀不出來，請再錄一次" };
@@ -91,8 +93,19 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
       const emoji = parsed.data.emoji;
       const added = await toggleReaction(admin, found.video.id, user.id, emoji);
       if (added) after(() => notifyVideoComment(admin, found, user.id, { emoji }));
-    } else if ("audio" in parsed.data) {
-      const voice = await prepareVoice(parsed.data.audio);
+    } else if ("audio" in parsed.data || "audioPath" in parsed.data) {
+      let raw: Buffer;
+      if ("audioPath" in parsed.data) {
+        try {
+          raw = await takeUserAudio(admin, user.id, parsed.data.audioPath);
+        } catch (e) {
+          if (e instanceof UserUploadError) return NextResponse.json({ error: e.message }, { status: 400 });
+          throw e;
+        }
+      } else {
+        raw = Buffer.from(parsed.data.audio.match(AUDIO_DATA_URL)![1], "base64");
+      }
+      const voice = await prepareVoice(raw);
       if ("error" in voice) return NextResponse.json({ error: voice.error }, { status: 400 });
       // 轉檔要幾秒：這段時間影片可能被刪了，存之前再確認一次
       if (!(await isVideoActive(admin, found.video.id))) {
