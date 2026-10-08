@@ -12,6 +12,10 @@ export const STORY_BODY_MAX = 3000;
 export const STORY_PHOTOS_MAX = 3;
 /** 回答幾題之後才能整理成文章 */
 export const STORY_MIN_ANSWERS = 3;
+/** 整理成文章、存檔時帶的訪談最多幾則（第一則題目＋最後的部分）；API 收 2 倍以內再整理 */
+export const STORY_INTERVIEW_MAX = 120;
+/** 一則話最長幾個字（和問暖暖的 ASK_MESSAGE_MAX 一樣） */
+const STORY_MESSAGE_MAX = 1500;
 
 /** 不知道講什麼時的題目 */
 export const STORY_TOPICS = [
@@ -80,6 +84,19 @@ export function sanitizeStoryBody(v: unknown): string {
 /** 念給我聽：一段一段念 */
 export function storySpeech(story: Pick<LifeStory, "title" | "era" | "body">): string[] {
   return [story.title, story.era ?? "", ...story.body.split(/\n+/)].map((s) => s.trim()).filter(Boolean);
+}
+
+/**
+ * 整理訪談：去空白、截長度；太長時留第一則（講什麼故事）和最後的部分。
+ * 問暖暖平常只帶最後 40 則，但寫文章要看整段故事，所以這裡留比較多
+ */
+export function trimStoryInterview(messages: AskMessage[]): AskMessage[] {
+  const cleaned = messages
+    .map((m) => ({ role: m.role, text: [...(m.text ?? "").trim()].slice(0, STORY_MESSAGE_MAX).join("") }))
+    .filter((m) => m.text && (m.role === "user" || m.role === "assistant"));
+  while (cleaned.length && cleaned[0].role !== "user") cleaned.shift();
+  if (cleaned.length <= STORY_INTERVIEW_MAX) return cleaned;
+  return [cleaned[0], ...cleaned.slice(-(STORY_INTERVIEW_MAX - 1))];
 }
 
 /** 長輩回答了幾題（暖暖問、長輩答；第一則是題目，不算） */

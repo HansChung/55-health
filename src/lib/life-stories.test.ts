@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   STORY_BODY_MAX,
+  STORY_INTERVIEW_MAX,
   buildStoryWritePrompt,
   newStoryPushForFamily,
   normalizeStoryDraft,
@@ -9,6 +10,7 @@ import {
   storyAnswerCount,
   storyCommentPushForOwner,
   storySpeech,
+  trimStoryInterview,
 } from "./life-stories";
 import { buildAskSystemPrompt } from "./ask";
 
@@ -30,6 +32,22 @@ describe("我的故事集：文字整理", () => {
     expect(storyAnswerCount([{ role: "user", text: "題目" }, { role: "assistant", text: "問" }, { role: "user", text: "答" }])).toBe(1);
     expect(storyAnswerCount([])).toBe(0);
     expect(storySpeech({ title: "第一份工作", era: null, body: "第一段\n\n第二段" })).toEqual(["第一份工作", "第一段", "第二段"]);
+  });
+  it("訪談太長時留第一則題目和最後的部分（存檔、整理都收得下）", () => {
+    const long = [
+      { role: "assistant" as const, text: "開場" },
+      { role: "user" as const, text: "我想講的故事：第一份工作" },
+      ...Array.from({ length: 150 }, (_, i) => [
+        { role: "assistant" as const, text: `問 ${i}` },
+        { role: "user" as const, text: `答 ${i}` },
+      ]).flat(),
+    ];
+    const t = trimStoryInterview(long);
+    expect(t).toHaveLength(STORY_INTERVIEW_MAX);
+    expect(t[0]).toEqual({ role: "user", text: "我想講的故事：第一份工作" });
+    expect(t[t.length - 1]).toEqual({ role: "user", text: "答 149" });
+    const short = [{ role: "user" as const, text: "  題目 " }, { role: "assistant" as const, text: "" }];
+    expect(trimStoryInterview(short)).toEqual([{ role: "user", text: "題目" }]);
   });
 });
 

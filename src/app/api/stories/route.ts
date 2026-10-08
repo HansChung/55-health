@@ -9,13 +9,14 @@ import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
 import { copyUserUpload, UserUploadError } from "@/lib/ai/user-uploads-server";
 import { isOwnUploadPath } from "@/lib/user-uploads";
-import { trimAskHistory } from "@/lib/ask";
 import {
   STORY_BODY_MAX,
+  STORY_INTERVIEW_MAX,
   STORY_PHOTOS_MAX,
   sanitizeStoryBody,
   sanitizeStoryEra,
   sanitizeStoryTitle,
+  trimStoryInterview,
 } from "@/lib/life-stories";
 import {
   STORY_BUCKET,
@@ -34,7 +35,7 @@ const PostSchema = z.object({
   shareWithFamily: z.boolean(),
   photoPaths: z.array(z.string().max(200)).max(STORY_PHOTOS_MAX).optional(),
   photoSizes: z.array(z.object({ width: z.number().int().min(0).max(20000), height: z.number().int().min(0).max(20000) })).optional(),
-  interview: z.array(z.object({ role: z.enum(["user", "assistant"]), text: z.string().max(3000) })).max(80).optional(),
+  interview: z.array(z.object({ role: z.enum(["user", "assistant"]), text: z.string().max(3000) })).max(STORY_INTERVIEW_MAX * 2).optional(),
 });
 
 export async function GET() {
@@ -102,7 +103,7 @@ export async function POST(req: NextRequest) {
       era: sanitizeStoryEra(b.era) || null,
       body,
       photos,
-      interview: trimAskHistory(b.interview ?? []),
+      interview: trimStoryInterview(b.interview ?? []),
       share_with_family: b.shareWithFamily,
     })
     .select("*")

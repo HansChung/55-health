@@ -9,13 +9,20 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { getGeminiModel, isGeminiConfigured, parseModelJson } from "@/lib/ai/gemini";
 import { ASK_ENDPOINT, loadAsker } from "@/lib/ai/ask-quota-server";
 import { finishReservedUsage, releaseReservedUsage, reserveDailySlot, trackAiUsage } from "@/lib/ai/usage-tracker";
-import { askDailyLimit, taipeiDayStartIso, trimAskHistory } from "@/lib/ask";
-import { STORY_MIN_ANSWERS, buildStoryWritePrompt, normalizeStoryDraft, storyAnswerCount } from "@/lib/life-stories";
+import { askDailyLimit, taipeiDayStartIso } from "@/lib/ask";
+import {
+  STORY_INTERVIEW_MAX,
+  STORY_MIN_ANSWERS,
+  buildStoryWritePrompt,
+  normalizeStoryDraft,
+  storyAnswerCount,
+  trimStoryInterview,
+} from "@/lib/life-stories";
 
 export const maxDuration = 60;
 
 const Schema = z.object({
-  messages: z.array(z.object({ role: z.enum(["user", "assistant"]), text: z.string().max(3000) })).min(1).max(200),
+  messages: z.array(z.object({ role: z.enum(["user", "assistant"]), text: z.string().max(3000) })).min(1).max(STORY_INTERVIEW_MAX * 2),
 });
 
 export async function POST(req: NextRequest) {
@@ -24,7 +31,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "未登入" }, { status: 401 });
   const parsed = Schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "送出的內容格式有誤" }, { status: 400 });
-  const messages = trimAskHistory(parsed.data.messages);
+  const messages = trimStoryInterview(parsed.data.messages);
   if (storyAnswerCount(messages) < STORY_MIN_ANSWERS) {
     return NextResponse.json({ error: `再多回答暖暖幾題（至少 ${STORY_MIN_ANSWERS} 題），故事才寫得完整` }, { status: 400 });
   }

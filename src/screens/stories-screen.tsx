@@ -18,7 +18,7 @@ import { appendDictation } from "@/lib/dictation";
 import { compressImage } from "@/lib/image-utils";
 import { stagePhoto } from "@/lib/direct-upload";
 import { canSpeakGuide, speakGuideParagraphs, stopGuideSpeech } from "@/lib/speak-guide";
-import { ASK_MESSAGE_MAX, type AskMessage } from "@/lib/ask";
+import { ASK_MESSAGE_MAX, trimAskHistory, type AskMessage } from "@/lib/ask";
 import {
   STORY_BODY_MAX,
   STORY_ERA_MAX,
@@ -28,6 +28,7 @@ import {
   STORY_TOPICS,
   storyAnswerCount,
   storySpeech,
+  trimStoryInterview,
   type LifeStory,
   type StoryDraft,
 } from "@/lib/life-stories";
@@ -113,6 +114,13 @@ export function StoriesScreen({ onBack }: { onBack: () => void }) {
   const [speaking, setSpeaking] = useState(false);
   const [edit, setEdit] = useState<StoryDraft | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
+  // 等暖暖回覆時長輩可能按返回、重新開始：回來的結果要寫進「最新的」草稿，且草稿被丟掉後就不寫
+  const workRef = useRef<Work>(EMPTY_WORK);
+  const workGen = useRef(0);
+  const viewRef = useRef<View>("list");
+  useEffect(() => {
+    viewRef.current = view;
+  }, [view]);
 
   const load = () =>
     api.listStories()
@@ -123,6 +131,8 @@ export function StoriesScreen({ onBack }: { onBack: () => void }) {
     if (!uid) return;
     load();
     const w = loadWork(uid);
+    workGen.current++;
+    workRef.current = w;
     setWork(w);
     api.askQuota().then((r) => setQuota(r.quota)).catch(() => undefined);
   }, [uid]);
@@ -133,8 +143,17 @@ export function StoriesScreen({ onBack }: { onBack: () => void }) {
   }, [work.messages.length, busy, view]);
 
   const updateWork = (w: Work) => {
+    workRef.current = w;
     setWork(w);
     saveWork(uid, w);
+  };
+
+  /** 丟掉進行中的故事；還在等的回覆回來也不會再寫回去 */
+  const resetWork = () => {
+    workGen.current++;
+    updateWork(EMPTY_WORK);
+    setPhotos([]);
+    setBusy(false);
   };
 
   const fail = (e: unknown, fallback: string) =>
@@ -144,20 +163,24 @@ export function StoriesScreen({ onBack }: { onBack: () => void }) {
   const send = async (text: string, base: AskMessage[] = work.messages) => {
     const q = [...text.trim()].slice(0, ASK_MESSAGE_MAX).join("");
     if (!q || busy) return;
+    const gen = workGen.current;
     const messages: AskMessage[] = [...base, { role: "user", text: q }];
-    updateWork({ ...work, messages });
+    updateWork({ ...workRef.current, messages });
     setInput("");
     setBusy(true);
     try {
-      const res = await api.ask({ messages, mode: "story" });
-      updateWork({ ...work, messages: [...messages, { role: "assistant", text: res.reply }] });
+      const res = await api.ask({ messages: trimAskHistory(messages), mode: "story" });
       setQuota(res.quota);
+      if (gen !== workGen.current) return;
+      updateWork({ ...workRef.current, messages: [...messages, { role: "assistant", text: res.reply }] });
     } catch (e) {
-      updateWork({ ...work, messages: base });
+      if (gen !== workGen.current) return;
+      updateWork({ ...workRef.current, messages: base });
       setInput(q);
       fail(e, "網路不太穩，等一下再說一次");
+    } finally {
+      if (gen === workGen.current) setBusy(false);
     }
-    setBusy(false);
   };
 
   const startTopic = (topic: string) => {
@@ -169,17 +192,24 @@ export function StoriesScreen({ onBack }: { onBack: () => void }) {
 
   const writeArticle = async () => {
     if (busy) return;
+    const gen = workGen.current;
+    const messages = workRef.current.messages;
     setBusy(true);
     try {
-      const res = await api.writeStory(work.messages);
+      const res = await api.writeStory(trimStoryInterview(messages));
       setQuota(res.quota);
-      updateWork({ ...work, draft: res.draft });
-      setView("draft");
-      trackEvent("story_written", { answers: storyAnswerCount(work.messages) });
+      if (gen !== workGen.current) return;
+      updateWork({ ...workRef.current, draft: res.draft });
+      trackEvent("story_written", { answers: storyAnswerCount(messages) });
+      // 等的時候回到清單了就不硬跳過去，清單上「繼續剛剛的故事」會打開草稿
+      if (viewRef.current === "interview") setView("draft");
+      else toast.success("暖暖把故事整理好了，按「繼續剛剛的故事」看看");
     } catch (e) {
+      if (gen !== workGen.current) return;
       fail(e, "暖暖這次沒整理好，請再按一次");
+    } finally {
+      if (gen === workGen.current) setBusy(false);
     }
-    setBusy(false);
   };
 
   // ── 照片（直傳 Supabase 暫存區；存檔時在 Supabase 裡複製過去） ──
@@ -213,11 +243,10 @@ export function StoriesScreen({ onBack }: { onBack: () => void }) {
         shareWithFamily: work.share,
         photoPaths: photos.map((p) => p.path),
         photoSizes: photos.map(({ width, height }) => ({ width, height })),
-        interview: work.messages,
+        interview: trimStoryInterview(work.messages),
       });
       trackEvent("story_saved", { photos: photos.length, share: work.share });
-      updateWork(EMPTY_WORK);
-      setPhotos([]);
+      resetWork();
       setCurrent(res.story);
       setStories((s) => [res.story, ...(s ?? [])]);
       setView("detail");
@@ -315,7 +344,7 @@ export function StoriesScreen({ onBack }: { onBack: () => void }) {
             {inProgress ? "✍️ 繼續剛剛的故事" : "🎙 說一個新故事"}
           </button>
           {inProgress && (
-            <button type="button" onClick={() => { updateWork(EMPTY_WORK); setPhotos([]); setView("interview"); }} style={{ ...smallBtn, display: "block", margin: "10px auto 0" }}>
+            <button type="button" onClick={() => { resetWork(); setView("interview"); }} style={{ ...smallBtn, display: "block", margin: "10px auto 0" }}>
               不要了，重新開始
             </button>
           )}

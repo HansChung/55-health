@@ -63,21 +63,20 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const found = await ownStory((await ctx.params).id);
   if ("error" in found) return found.error;
-  const paths = (found.row.photos ?? []).map((p) => p.path);
-  if (paths.length) {
-    const { error: rmErr } = await found.admin.storage.from(STORY_BUCKET).remove(paths);
-    if (rmErr) {
-      console.error("[api] story photo remove:", rmErr);
-      return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
-    }
-  }
+  // 先軟刪除（失敗就整篇原封不動），再刪照片；照片刪不掉時路徑留在已刪除的那一列，找得到再補刪
   const { error } = await found.admin
     .from("life_stories")
-    .update({ deleted_at: new Date().toISOString(), photos: [] })
+    .update({ deleted_at: new Date().toISOString() })
     .eq("id", found.row.id);
   if (error) {
     console.error("[api] story delete:", error);
     return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
+  }
+  const paths = (found.row.photos ?? []).map((p) => p.path);
+  if (paths.length) {
+    const { error: rmErr } = await found.admin.storage.from(STORY_BUCKET).remove(paths);
+    if (rmErr) console.warn("[api] story photo remove (story already deleted):", found.row.id, rmErr.message);
+    else await found.admin.from("life_stories").update({ photos: [] }).eq("id", found.row.id);
   }
   return NextResponse.json({ ok: true });
 }
