@@ -1,7 +1,7 @@
 "use client";
 
 // ────────────────────────────────────────────────
-// 出遊影片底下的按讚＋留言（長輩自己的影片清單、家人看板、分享頁共用）
+// 出遊影片、我的故事集底下的按讚＋留言（長輩自己的清單、家人看板、分享頁共用）
 // 文字留言可以「念給我聽」（手機內建語音）；也可以錄一段話當語音留言
 // ────────────────────────────────────────────────
 
@@ -18,6 +18,8 @@ import {
   EMPTY_COMMENTS,
   QUICK_REPLIES_FOR_ELDER,
   QUICK_REPLIES_FOR_FAMILY,
+  STORY_QUICK_REPLIES_FOR_ELDER,
+  STORY_QUICK_REPLIES_FOR_FAMILY,
   VIDEO_COMMENT_MAX,
   VIDEO_REACTIONS,
   VOICE_COMMENT_MAX_SECONDS,
@@ -45,13 +47,21 @@ export function VideoComments({
   videoId,
   initial,
   viewer,
+  kind = "video",
 }: {
+  /** 出遊影片的 id；kind="story" 時是故事的 id */
   videoId: string;
   initial?: VideoCommentsView;
   /** owner＝長輩看自己的影片；family＝家人看長輩的影片 */
   viewer: "owner" | "family";
+  /** 我的故事集也用同一套按讚、留言（故事沒有語音留言） */
+  kind?: "video" | "story";
 }) {
   const toast = useToast();
+  const calls =
+    kind === "story"
+      ? { react: api.reactToStory, comment: api.commentOnStory, remove: api.deleteStoryComment }
+      : { react: api.reactToVideo, comment: api.commentOnVideo, remove: api.deleteVideoComment };
   const [view, setView] = useState<VideoCommentsView>(initial ?? EMPTY_COMMENTS);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -139,7 +149,7 @@ export function VideoComments({
     if (busy) return;
     setBusy(true);
     try {
-      const res = await api.reactToVideo(videoId, emoji);
+      const res = await calls.react(videoId, emoji);
       setView(res.comments);
       trackEvent("video_reaction", { viewer, emoji });
     } catch (e) {
@@ -154,7 +164,7 @@ export function VideoComments({
     if (!body || busy) return;
     setBusy(true);
     try {
-      const res = await api.commentOnVideo(videoId, body);
+      const res = await calls.comment(videoId, body);
       setView(res.comments);
       setText("");
       trackEvent("video_comment", { viewer });
@@ -169,7 +179,7 @@ export function VideoComments({
     if (busy || !window.confirm("要刪掉這則留言嗎？")) return;
     setBusy(true);
     try {
-      const res = await api.deleteVideoComment(videoId, commentId);
+      const res = await calls.remove(videoId, commentId);
       setView(res.comments);
     } catch (e) {
       fail(e);
@@ -179,7 +189,14 @@ export function VideoComments({
   };
 
   const counts = new Map(view.reactions.map((r) => [r.emoji, r]));
-  const quick = viewer === "owner" ? QUICK_REPLIES_FOR_ELDER : QUICK_REPLIES_FOR_FAMILY;
+  const quick =
+    kind === "story"
+      ? viewer === "owner"
+        ? STORY_QUICK_REPLIES_FOR_ELDER
+        : STORY_QUICK_REPLIES_FOR_FAMILY
+      : viewer === "owner"
+        ? QUICK_REPLIES_FOR_ELDER
+        : QUICK_REPLIES_FOR_FAMILY;
   const reactedNames = view.reactions.flatMap((r) => r.names.map((n) => `${n} ${r.emoji}`));
   const textComments = view.comments.filter((c) => c.body);
   const canSpeak = canSpeakGuide();
@@ -299,8 +316,8 @@ export function VideoComments({
             ))}
           </div>
 
-          {/* 語音留言：錄音中 → 聽聽看 → 送出 */}
-          {recorder.recording ? (
+          {/* 語音留言：錄音中 → 聽聽看 → 送出（故事沒有語音留言） */}
+          {kind === "story" ? null : recorder.recording ? (
             <button
               onClick={recorder.stop}
               className="btn-primary"

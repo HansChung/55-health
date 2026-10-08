@@ -227,6 +227,35 @@ export const api = {
   deleteTravelVideo: (id: string) =>
     apiFetch<{ ok: true }>(`/api/ai/travel-video/${id}`, { method: "DELETE" }),
 
+  // 我的故事集（暖暖一題一題問 → 整理成文章 → 存下來；家人看得到的可以按讚留言）
+  listStories: () => apiFetch<{ stories: import("./life-stories").LifeStory[] }>("/api/stories"),
+  writeStory: (messages: import("./ask").AskMessage[]) =>
+    apiFetch<{ draft: import("./life-stories").StoryDraft; quota: { used: number; limit: number } }>("/api/stories/write", {
+      method: "POST",
+      json: { messages },
+      timeoutMs: 60000,
+    }),
+  createStory: (input: {
+    title: string;
+    era?: string;
+    body: string;
+    shareWithFamily: boolean;
+    photoPaths?: string[];
+    photoSizes?: { width: number; height: number }[];
+    interview?: import("./ask").AskMessage[];
+  }) => apiFetch<{ story: import("./life-stories").LifeStory }>("/api/stories", { method: "POST", json: input, timeoutMs: 30000 }),
+  updateStory: (id: string, patch: { title?: string; era?: string; body?: string; shareWithFamily?: boolean }) =>
+    apiFetch<{ story: import("./life-stories").LifeStory }>(`/api/stories/${id}`, { method: "PATCH", json: patch }),
+  deleteStory: (id: string) => apiFetch<{ ok: true }>(`/api/stories/${id}`, { method: "DELETE" }),
+  reactToStory: (id: string, emoji: VideoReaction) =>
+    apiFetch<{ comments: VideoCommentsView }>(`/api/stories/${id}/comments`, { method: "POST", json: { emoji } }),
+  commentOnStory: (id: string, body: string) =>
+    apiFetch<{ comments: VideoCommentsView }>(`/api/stories/${id}/comments`, { method: "POST", json: { body } }),
+  deleteStoryComment: (id: string, commentId: string) =>
+    apiFetch<{ comments: VideoCommentsView }>(`/api/stories/${id}/comments/${commentId}`, { method: "DELETE" }),
+  familyStories: () =>
+    apiFetch<{ elders: { elder_id: string; name: string; stories: import("./life-stories").LifeStory[] }[] }>("/api/family/stories"),
+
   // 出遊影片的按讚、留言（影片本人或看得到影片的家人）
   reactToVideo: (id: string, emoji: VideoReaction) =>
     apiFetch<{ comments: VideoCommentsView }>(`/api/ai/travel-video/${id}/comments`, { method: "POST", json: { emoji } }),

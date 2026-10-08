@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { SubPage } from "@/components/sub-page";
 import { api, type ElderOverview } from "@/lib/api-client";
 import { FamilyVideos } from "@/components/family-videos";
+import { FamilyStories } from "@/components/family-stories";
 
 interface CaregiverScreenProps {
   onBack: () => void;
@@ -67,6 +68,7 @@ export function CaregiverScreen({ onBack, onOpenAlerts }: CaregiverScreenProps) 
       )}
       {/* 長輩做的出遊影片：按讚、留言（沒有影片就不顯示） */}
       <FamilyVideos />
+      <FamilyStories />
     </SubPage>
   );
 }
