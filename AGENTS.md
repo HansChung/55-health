@@ -288,3 +288,20 @@ stack works well for auth + meal/diary CRUD:
   日常飲食指南, 0607←0606 動能指南, 0707←0706 活動參與指南). `mode: "guided"` (0801, 0805) makes 暖暖 ask one
   question at a time; `mode: "summary"` summarises the thread, which is saved to
   `localStorage nuannuan_chapter{id}_ask_summary` and shown on the chapter page (can become a 光點).
+
+### 我的故事集（life stories, `subpage "stories"`）
+- Home 「我的故事集」 → `StoriesScreen`; deep link `/?open=stories`. Free for every tier; uses the shared 問暖暖
+  daily limit (`ASK_DAILY_LIMITS`): every interview reply is a normal `POST /api/ai/chat` with `mode: "story"`
+  (`STORY_INTERVIEW_RULES`: one question at a time, never invent), and 「整理成文章」 (`POST /api/stories/write`,
+  needs ≥3 answers) reserves one more slot (`reserveDailySlot` on endpoint `/api/ai/chat`) and asks Gemini for
+  JSON `{title, era, body}` (first person, only what the elder said, 300–800 字, `normalizeStoryDraft`).
+- The elder edits the draft, adds ≤3 photos (direct upload to `user-uploads`, then `copyUserUpload` into the
+  private `life-stories` bucket at `{user}/{story}/photo-N.ext`; read back through 1-hour signed URLs) and picks
+  「給家人看」 (default on). The interview thread + draft live in sessionStorage per user until saved.
+- Tables `life_stories` / `life_story_comments` (server-only RLS; needs `supabase/add-life-stories.sql`).
+  Family = accepted `family_links` and the story's `share_with_family`; 家人狀況 shows 「📖 長輩的故事」
+  (`GET /api/family/stories`). Reactions/comments reuse `VideoComments` with `kind="story"` (no voice comments,
+  story quick replies) and the same per-author limit; pushes: new shared story → family, family activity → elder
+  (`/?open=stories`), elder reply → family who commented. Delete = soft delete + photos removed.
+- 「念給我聽」 uses speechSynthesis (`storySpeech`). `/stories/book` (server page, noindex) is the printable
+  回憶錄: cover, 目錄, one story per page with photos; 「列印／存成 PDF」 = `window.print()`.

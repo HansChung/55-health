@@ -3,6 +3,8 @@
 // 書本練習原本用 Gemini／ChatGPT，全部改成問暖暖
 // ────────────────────────────────────────────────
 
+import { STORY_INTERVIEW_RULES } from "./life-stories";
+
 export type AskRole = "user" | "assistant";
 
 export interface AskMessage {
@@ -12,9 +14,9 @@ export interface AskMessage {
 
 /**
  * chat＝一般問答；guided＝主持模式（一次只問一題，書本 0801 決策、0805 一人董事會）；
- * summary＝把這段對話整理成摘要（存回書本那一章）
+ * summary＝把這段對話整理成摘要（存回書本那一章）；story＝我的故事集（暖暖像記者一題一題問）
  */
-export type AskMode = "chat" | "guided" | "summary";
+export type AskMode = "chat" | "guided" | "summary" | "story";
 
 /** 一則訊息最多幾個字（書本最長的範例約 150 字；貼上衛教單重點也夠用） */
 export const ASK_MESSAGE_MAX = 1500;
@@ -64,7 +66,7 @@ const TONE_LINES: Record<string, string> = {
 const NUANNUAN_FEATURES =
   "打字或用說的問暖暖；拍照記錄三餐、算熱量；拍照問暖暖（花草、古蹟、招牌、看懂菜單與標示）；" +
   "提醒吃藥、喝水、量血壓；安心保鑣防詐練習；圓夢藍圖記下生活目標；研學團報名與集章；" +
-  "出遊照片做成影片、遊記、MV；家人共享，讓家人關心你；每天早上報天氣。";
+  "出遊照片做成影片、遊記、MV；我的故事集（把人生故事說給暖暖聽，整理成回憶錄）；家人共享，讓家人關心你；每天早上報天氣。";
 
 export interface AskPromptContext {
   displayName?: string | null;
@@ -116,6 +118,9 @@ export function buildAskSystemPrompt(ctx: AskPromptContext): string {
       "・每次回覆：先用一句話接住他剛剛的回答，再問下一題；不要一次列出所有問題。",
       "・不替他下結論、不推薦商品、不打分數。流程走完時，用他的話整理重點，並問他要不要存下來。"
     );
+  }
+  if (ctx.mode === "story") {
+    lines.push("", STORY_INTERVIEW_RULES);
   }
   if (ctx.mode === "summary") {
     lines.push(

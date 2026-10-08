@@ -9,6 +9,7 @@ import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
 import { isGeminiConfigured } from "@/lib/ai/gemini";
 import { askNuannuan } from "@/lib/ai/ask-chat";
+import { loadAsker } from "@/lib/ai/ask-quota-server";
 import {
   countEndpointSuccessSince,
   finishReservedUsage,
@@ -36,33 +37,11 @@ const Schema = z.object({
     .array(z.object({ role: z.enum(["user", "assistant"]), text: z.string().max(ASK_MESSAGE_MAX * 2) }))
     .min(1)
     .max(ASK_HISTORY_MAX * 5),
-  mode: z.enum(["chat", "guided", "summary"]).default("chat"),
+  mode: z.enum(["chat", "guided", "summary", "story"]).default("chat"),
   chapterId: z.string().regex(/^\d{4}$/).nullish(),
   chapterTitle: z.string().max(ASK_CHAPTER_TITLE_MAX * 2).nullish(),
   guide: z.object({ label: z.string().max(40), text: z.string().max(ASK_GUIDE_MAX * 2) }).nullish(),
 });
-
-interface Profile {
-  display_name: string | null;
-  age: number | null;
-  chronic_conditions: string[] | null;
-  voice_tone: string | null;
-  subscription_tier: string | null;
-  is_admin: boolean | null;
-}
-
-async function loadAsker(userId: string, email: string | undefined) {
-  const admin = createSupabaseAdmin();
-  const { data } = await admin
-    .from("profiles")
-    .select("display_name, age, chronic_conditions, voice_tone, subscription_tier, is_admin")
-    .eq("id", userId)
-    .maybeSingle();
-  const profile = data as Profile | null;
-  const adminEmails = (process.env.ADMIN_EMAILS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-  const tier = profile?.is_admin || (email && adminEmails.includes(email)) ? "admin" : profile?.subscription_tier ?? "free";
-  return { profile, tier };
-}
 
 async function quotaFor(userId: string, tier: string) {
   const used = await countEndpointSuccessSince(userId, ENDPOINT, taipeiDayStartIso());

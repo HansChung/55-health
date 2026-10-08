@@ -48,6 +48,8 @@ interface HomeScreenProps {
   onPhotoAsk?: () => void;
   /** 打字問暖暖 */
   onAsk?: () => void;
+  /** 我的故事集 */
+  onStories?: () => void;
   caregiver?: { count: number; needsAttention: boolean } | null;
   onCaregiver?: () => void;
   /** 每天早上天氣：還沒設定過就在首頁問縣市 */
@@ -69,7 +71,7 @@ function getDateLabel(): string {
   return `${d.getMonth() + 1}月${d.getDate()}日　星期${WEEKDAYS[d.getDay()]}`;
 }
 
-export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart, onBlueprint, onBookPractice, onIot, onTravelVideo, onStudyTours, onPhotoAsk, onAsk, caregiver = null, onCaregiver, notificationSettings, onProfileUpdated }: HomeScreenProps) {
+export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart, onBlueprint, onBookPractice, onIot, onTravelVideo, onStudyTours, onPhotoAsk, onAsk, onStories, caregiver = null, onCaregiver, notificationSettings, onProfileUpdated }: HomeScreenProps) {
   // 從餐點計算今日營養
   const totals = meals.reduce(
     (s, m) => {
@@ -216,6 +218,18 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
           background="linear-gradient(135deg, #FFF4E8 0%, #FFFFFF 100%)"
           borderColor="#F3D2B0"
           iconBg="#FCE3C8"
+        />
+      )}
+
+      {onStories && (
+        <NavCard
+          onClick={onStories}
+          emoji="📖"
+          title="我的故事集"
+          subtitle="把人生故事說給暖暖聽，整理成回憶錄"
+          background="linear-gradient(135deg, #F6EEE4 0%, #FFFFFF 100%)"
+          borderColor="#E3CFB6"
+          iconBg="#EEDFCB"
         />
       )}
 

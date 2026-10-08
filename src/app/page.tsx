@@ -35,6 +35,7 @@ import { TravelVideoScreen } from "@/screens/travel-video-screen";
 import { StudyToursScreen } from "@/screens/study-tours-screen";
 import { PhotoAskScreen } from "@/screens/photo-ask-screen";
 import { AskScreen } from "@/screens/ask-screen";
+import { StoriesScreen } from "@/screens/stories-screen";
 import { photoPayload } from "@/lib/direct-upload";
 import { takeAskSeed, type AskSeed } from "@/lib/ask";
 import { takePhotoAskSeed } from "@/lib/photo-ask";
@@ -130,7 +131,7 @@ export default function Page() {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     const open = url.searchParams.get("open");
-    if (open && ["voice", "camera", "photo", "travel-video", "study-tours", "photo-ask", "caregiver", "ask"].includes(open)) {
+    if (open && ["voice", "camera", "photo", "travel-video", "study-tours", "photo-ask", "caregiver", "ask", "stories"].includes(open)) {
       pendingOpenRef.current = open;
     }
     // 研學團站點 QR：/?stamp=代碼 → 先記下來（還沒登入的話登入後再蓋），網址上的代碼馬上拿掉
@@ -185,6 +186,8 @@ export default function Page() {
     // 家人收到「長輩已抵達」通知點進來 → 家人狀況
     else if (open === "caregiver") setSubpage("caregiver");
     // 打字問暖暖（書本練習的「打字問暖暖」：範例放在 sessionStorage，登入畫面也帶得過去）
+    // 我的故事集（家人留言、按讚的推播點進來）
+    else if (open === "stories") setSubpage("stories");
     else if (open === "ask") {
       setAskSeed(takeAskSeed());
       setSubpage("ask");
@@ -756,6 +759,7 @@ export default function Page() {
               setAskSeed(null);
               setSubpage("ask");
             }}
+            onStories={() => setSubpage("stories")}
             caregiver={careElderCount > 0 ? { count: careElderCount, needsAttention: careNeedsAttention } : null}
             onCaregiver={() => setSubpage("caregiver")}
           />
@@ -865,6 +869,7 @@ export default function Page() {
         />
       )}
       {subpage === "ask" && <AskScreen seed={askSeed} onBack={() => setSubpage(null)} />}
+      {subpage === "stories" && <StoriesScreen onBack={() => setSubpage(null)} />}
       {subpage === "caregiver" && (
         <CaregiverScreen
           onBack={() => setSubpage(null)}

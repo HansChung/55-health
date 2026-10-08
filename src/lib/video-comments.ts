@@ -15,6 +15,9 @@ export const VIDEO_COMMENTS_PER_AUTHOR = 30;
 /** 快速留言：長輩打字比較慢，點一下就送出 */
 export const QUICK_REPLIES_FOR_ELDER = ["謝謝你 🥰", "下次一起去！", "有空回來吃飯喔"] as const;
 export const QUICK_REPLIES_FOR_FAMILY = ["好美喔！", "玩得開心嗎？", "下次帶我一起去 😆"] as const;
+/** 我的故事集用的快速留言 */
+export const STORY_QUICK_REPLIES_FOR_ELDER = ["謝謝你看 🥰", "下次講給你聽", "有空回來聊天喔"] as const;
+export const STORY_QUICK_REPLIES_FOR_FAMILY = ["好感動 🥹", "第一次聽到這件事！", "下次再多講一點"] as const;
 
 export interface CommentAuthor {
   name: string;
