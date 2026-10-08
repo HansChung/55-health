@@ -90,6 +90,18 @@ export async function imageFromRequest(
   throw new UserUploadError("缺少照片，請重新選一次");
 }
 
+/** 刪掉暫存區的原始錄音：Storage 失敗時回 { error } 不會丟錯，所以要看回傳值；再試一次，還是失敗就記下來（每天的清理排程會補刪） */
+async function removeStagedAudio(admin: Admin, path: string): Promise<void> {
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const { error } = await admin.storage
+      .from(USER_UPLOAD_BUCKET)
+      .remove([path])
+      .catch((e: unknown) => ({ error: e instanceof Error ? e : new Error(String(e)) }));
+    if (!error) return;
+    if (attempt === 2) console.warn("[user-uploads] staged audio not removed, cleanup cron will retry:", path, error.message);
+  }
+}
+
 /**
  * 錄音（語音留言、我的聲音）：從暫存區拿，**拿到就刪**——原始錄音不保留
  * （我的聲音承諾不存原始錄音；語音留言會另外轉成 m4a 存在影片底下）
@@ -98,7 +110,7 @@ export async function takeUserAudio(admin: Admin, userId: string, path: unknown)
   if (!isOwnUploadPath(path, userId, "audio")) throw new UserUploadError("錄音位置不對，請再錄一次");
   const bucket = admin.storage.from(USER_UPLOAD_BUCKET);
   const { data, error } = await bucket.download(path);
-  await bucket.remove([path]).catch(() => undefined);
+  await removeStagedAudio(admin, path);
   if (error || !data) throw new UserUploadError("找不到剛剛的錄音，請再錄一次");
   const buffer = Buffer.from(await data.arrayBuffer());
   if (buffer.length === 0 || buffer.length > AUDIO_UPLOAD_MAX_BYTES) throw new UserUploadError("錄音太長了，請錄短一點");
