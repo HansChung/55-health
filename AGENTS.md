@@ -42,6 +42,9 @@ and Stripe. Capacitor/Android is only a packaging target and is not needed for w
   photo after 6 h so it never sends a path the cleanup already removed. Cron
   `/api/cron/cleanup-uploads` (daily) deletes staged files older than a day via the `stale_user_uploads()` RPC.
   Meal/prescription photos kept in the diary still go browser→`meal-photos` as before (also not via Vercel).
+  **Recordings too** (voice comments, 「我的聲音」): `audioPayload(blob)` uploads to the same bucket
+  (`{uid}/{uuid}.webm|m4a|ogg…`, MediaRecorder `;codecs=` stripped by `audioUploadType`), APIs take `audioPath` and
+  `takeUserAudio` downloads **and deletes it immediately** (the raw voice-clone sample is never kept).
 - **Web Push + alert thresholds**: VAPID keys (`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`);
   SQL `add-push-subscriptions.sql` + `add-alert-thresholds.sql`. Family enables push under 提醒通知;
   elder thresholds under 健康狀況. Cron `check-anomalies` emails and pushes.

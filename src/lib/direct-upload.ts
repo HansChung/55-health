@@ -4,7 +4,7 @@
 // 直傳失敗（例如還沒跑 add-user-uploads.sql、網路問題）就回 null，呼叫端改用舊方式（base64 經過 API）
 // ────────────────────────────────────────────────
 import { createSupabaseBrowser } from "@/lib/supabase/client";
-import { USER_UPLOAD_BUCKET, USER_UPLOAD_MAX_BYTES, userUploadPath } from "@/lib/user-uploads";
+import { AUDIO_UPLOAD_MAX_BYTES, USER_UPLOAD_BUCKET, USER_UPLOAD_MAX_BYTES, audioUploadType, userUploadPath } from "@/lib/user-uploads";
 
 const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
 /** 暫存區每天清掉超過一天的檔案：記住的路徑 6 小時後就重新上傳，不會拿到已經被清掉的 */
@@ -68,4 +68,42 @@ export async function videoPhotoPayload(dataUrl: string): Promise<{ photoPath: s
 export async function stagePhotos(dataUrls: string[]): Promise<string[] | null> {
   const paths = await Promise.all(dataUrls.map((d) => stagePhoto(d)));
   return paths.every((p): p is string => Boolean(p)) ? (paths as string[]) : null;
+}
+
+/** 錄音直傳暫存區，回路徑；失敗回 null（伺服器拿到就會刪掉，所以不快取） */
+export async function stageAudio(blob: Blob): Promise<string | null> {
+  try {
+    const type = audioUploadType(blob.type);
+    if (!type || blob.size === 0 || blob.size > AUDIO_UPLOAD_MAX_BYTES) return null;
+    const supabase = createSupabaseBrowser();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const path = `${user.id}/${crypto.randomUUID()}.${type.ext}`;
+    const { error } = await supabase.storage
+      .from(USER_UPLOAD_BUCKET)
+      .upload(path, blob, { contentType: type.contentType, upsert: false, cacheControl: "60" });
+    if (error) {
+      console.warn("[upload] direct audio upload failed, falling back:", error.message);
+      return null;
+    }
+    return path;
+  } catch (e) {
+    console.warn("[upload] direct audio upload failed, falling back:", e);
+    return null;
+  }
+}
+
+function blobToDataUrlLocal(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+/** 給 API 的錄音欄位：傳得上去就只帶路徑，不然帶 data URL（舊方式） */
+export async function audioPayload(blob: Blob): Promise<{ audioPath: string } | { audio: string }> {
+  const path = await stageAudio(blob);
+  return path ? { audioPath: path } : { audio: await blobToDataUrlLocal(blob) };
 }

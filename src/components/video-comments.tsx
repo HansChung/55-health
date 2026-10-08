@@ -10,7 +10,8 @@ import { api, ApiError } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import { DictationButton } from "@/components/dictation-button";
 import { appendDictation } from "@/lib/dictation";
-import { blobToDataUrl, useVoiceRecorder } from "@/hooks/use-voice-recorder";
+import { useVoiceRecorder } from "@/hooks/use-voice-recorder";
+import { audioPayload } from "@/lib/direct-upload";
 import { trackEvent } from "@/lib/telemetry";
 import { canSpeakGuide, speakGuideParagraphs, stopGuideSpeech } from "@/lib/speak-guide";
 import {
@@ -122,7 +123,8 @@ export function VideoComments({
     }
     setBusy(true);
     try {
-      const res = await api.voiceCommentOnVideo(videoId, await blobToDataUrl(rec.blob));
+      // 錄音直傳 Supabase（不經過 Vercel）；傳不上去才用舊方式
+      const res = await api.voiceCommentOnVideo(videoId, await audioPayload(rec.blob));
       setView(res.comments);
       recorder.clear();
       trackEvent("video_voice_comment", { viewer, seconds: Math.round(rec.seconds) });

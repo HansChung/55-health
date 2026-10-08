@@ -6,6 +6,7 @@
 // ────────────────────────────────────────────────
 
 import { useEffect, useRef, useState } from "react";
+import { audioPayload } from "@/lib/direct-upload";
 import { createPortal } from "react-dom";
 import { api, ApiError } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
@@ -27,14 +28,6 @@ function pickMimeType(): string {
   return types.find((t) => MediaRecorder.isTypeSupported?.(t)) ?? "";
 }
 
-function blobToDataUrl(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(blob);
-  });
-}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("zh-TW", { month: "numeric", day: "numeric" });
@@ -127,8 +120,8 @@ export function MyVoiceSheet({
     if (!recording || !consent || phase === "uploading") return;
     setPhase("uploading");
     try {
-      const audio = await blobToDataUrl(recording.blob);
-      const res = await api.createMyVoice({ audio, consent: true });
+      // 錄音直傳 Supabase（不經過 Vercel；伺服器拿到就刪）；傳不上去才用舊方式
+      const res = await api.createMyVoice({ ...(await audioPayload(recording.blob)), consent: true });
       trackEvent("my_voice_created", { seconds: Math.round(recording.seconds) });
       toast.success("好了！之後選「我的聲音」，口白就用你的聲音念");
       setRecording(null);

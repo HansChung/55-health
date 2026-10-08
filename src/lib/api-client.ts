@@ -232,11 +232,11 @@ export const api = {
     apiFetch<{ comments: VideoCommentsView }>(`/api/ai/travel-video/${id}/comments`, { method: "POST", json: { emoji } }),
   commentOnVideo: (id: string, body: string) =>
     apiFetch<{ comments: VideoCommentsView }>(`/api/ai/travel-video/${id}/comments`, { method: "POST", json: { body } }),
-  // 語音留言：錄音 dataURL（轉檔約幾秒）
-  voiceCommentOnVideo: (id: string, audio: string) =>
+  // 語音留言：audioPayload() 給的 { audioPath }（直傳 Supabase）或 { audio: dataURL }（轉檔約幾秒）
+  voiceCommentOnVideo: (id: string, audio: { audioPath: string } | { audio: string }) =>
     apiFetch<{ comments: VideoCommentsView }>(`/api/ai/travel-video/${id}/comments`, {
       method: "POST",
-      json: { audio },
+      json: audio,
       timeoutMs: 65000,
     }),
   deleteVideoComment: (id: string, commentId: string) =>
@@ -249,7 +249,7 @@ export const api = {
   // 我的聲音（專業版）：錄一段自己的聲音，影片口白用自己的聲音念
   getMyVoice: () => apiFetch<{ status: MyVoiceStatus }>("/api/ai/voice-clone"),
   // 轉檔＋送去平台複製約 10～30 秒
-  createMyVoice: (input: { audio: string; consent: true }) =>
+  createMyVoice: (input: ({ audioPath: string } | { audio: string }) & { consent: true }) =>
     apiFetch<{ status: MyVoiceStatus }>("/api/ai/voice-clone", { method: "POST", json: input, timeoutMs: 65000 }),
   deleteMyVoice: () => apiFetch<{ status: MyVoiceStatus }>("/api/ai/voice-clone", { method: "DELETE" }),
 
