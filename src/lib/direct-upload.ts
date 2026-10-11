@@ -116,9 +116,11 @@ export async function audioPayload(blob: Blob): Promise<{ audioPath: string } | 
  */
 export async function uploadStoryAudio(file: Blob, fileName: string): Promise<string> {
   const slot = await api.storyAudioUpload({ fileName, size: file.size, type: file.type });
+  // 用統一的類型重新包一次：錄音是 audio/webm;codecs=opus、手機檔可能是 audio/x-m4a 或空字串，bucket 會拒收
+  const body = new Blob([file], { type: slot.contentType });
   const { error } = await createSupabaseBrowser()
     .storage.from(STORY_AUDIO_BUCKET)
-    .uploadToSignedUrl(slot.path, slot.token, file, { contentType: slot.contentType });
+    .uploadToSignedUrl(slot.path, slot.token, body, { contentType: slot.contentType });
   if (error) throw new Error(`story audio upload failed: ${error.message}`);
   return slot.path;
 }
