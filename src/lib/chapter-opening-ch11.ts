@@ -386,6 +386,7 @@ export const CHAPTER_1105: ChapterOpening = {
       reflectNote: "轉寫稿保留了我的用字；沒有他人聲音需另同意。",
     },
   ],
+  appDeepLink: { href: "/?open=stories&audio=1&from=chapter1105", label: "到「我的故事集」錄一段聲音故事 →" },
 };
 
 export const CHAPTER_1106: ChapterOpening = {

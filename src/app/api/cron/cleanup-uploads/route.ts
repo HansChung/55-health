@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/server";
 import { cleanupStaleUserUploads } from "@/lib/ai/user-uploads-server";
+import { cleanupStaleStoryAudio } from "@/lib/story-audio-server";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -14,9 +15,14 @@ export async function GET(req: NextRequest) {
   if (!process.env.CRON_SECRET || req.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  // 聲音故事沒存成故事的暫存錄音（還沒跑 add-story-audio.sql 時記錄就好，不影響清照片）
+  const storyAudio = await cleanupStaleStoryAudio(createSupabaseAdmin()).catch((e) => {
+    console.warn("[cron] cleanup story audio:", e instanceof Error ? e.message : e);
+    return 0;
+  });
   try {
     const removed = await cleanupStaleUserUploads(createSupabaseAdmin());
-    return NextResponse.json({ ok: true, removed });
+    return NextResponse.json({ ok: true, removed, storyAudio });
   } catch (e) {
     // 還沒跑 add-user-uploads.sql 時 stale_user_uploads 不存在：記錄就好
     console.error("[cron] cleanup uploads:", e);

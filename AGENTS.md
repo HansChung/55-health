@@ -308,3 +308,14 @@ stack works well for auth + meal/diary CRUD:
   (`/?open=stories`), elder reply → family who commented. Delete = soft delete + photos removed.
 - 「念給我聽」 uses speechSynthesis (`storySpeech`). `/stories/book` (server page, noindex) is the printable
   回憶錄: cover, 目錄, one story per page with photos; 「列印／存成 PDF」 = `window.print()`.
+- **聲音故事** (needs `supabase/add-story-audio.sql`: `life_stories.audio` jsonb, body may be empty when there is
+  audio, private bucket `story-audio` 50 MB, RPCs `stale_story_audio` / `story_audio_uploads_today`): 「🎧 用自己的聲音說」
+  (`AudioStoryForm`) records in-app (`useVoiceRecorder`, ≤15 min) or takes an mp3/m4a/aac/wav file. The browser gets a
+  signed upload URL (`POST /api/stories/audio-upload`, ≤10 uploads/day) and uploads straight to
+  `story-audio/{user}/pending/{uuid}.ext` — never through Vercel. `POST /api/stories {audioPath, audioSeconds}`
+  (`finalizeStoryAudio`) moves it to `{user}/{story}/audio.ext`; in-app **webm/ogg recordings are converted to m4a**
+  with ffmpeg (iPhone can't play webm; length from ffmpeg's last `time=`), so `/api/stories` traces ffmpeg and has
+  `maxDuration = 120`. Uploaded files keep their format and the browser-measured length. Playback = 1-hour signed
+  URLs (`signStoryMedia` signs photos + audio); family hear it in 長輩的故事; the printed book notes 「有聲音版」.
+  Deleting a story removes the audio; the daily `cleanup-uploads` cron removes pending files older than a day.
+  Book 1105 「讓聲音留下來」 links to `/?open=stories&audio=1` (opens the recorder).

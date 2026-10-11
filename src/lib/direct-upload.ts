@@ -4,6 +4,8 @@
 // 直傳失敗（例如還沒跑 add-user-uploads.sql、網路問題）就回 null，呼叫端改用舊方式（base64 經過 API）
 // ────────────────────────────────────────────────
 import { createSupabaseBrowser } from "@/lib/supabase/client";
+import { api } from "@/lib/api-client";
+import { STORY_AUDIO_BUCKET } from "@/lib/story-audio";
 import { AUDIO_UPLOAD_MAX_BYTES, USER_UPLOAD_BUCKET, USER_UPLOAD_MAX_BYTES, audioUploadType, userUploadPath } from "@/lib/user-uploads";
 
 const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
@@ -107,3 +109,17 @@ export async function audioPayload(blob: Blob): Promise<{ audioPath: string } | 
   const path = await stageAudio(blob);
   return path ? { audioPath: path } : { audio: await blobToDataUrlLocal(blob) };
 }
+
+/**
+ * 聲音故事的錄音（可能幾十 MB）：伺服器給簽名網址，直接傳到 Supabase 的 story-audio 暫存位置，回傳路徑。
+ * 不走 base64 備案（太大，Vercel 也收不下）；失敗就丟錯給畫面顯示
+ */
+export async function uploadStoryAudio(file: Blob, fileName: string): Promise<string> {
+  const slot = await api.storyAudioUpload({ fileName, size: file.size, type: file.type });
+  const { error } = await createSupabaseBrowser()
+    .storage.from(STORY_AUDIO_BUCKET)
+    .uploadToSignedUrl(slot.path, slot.token, file, { contentType: slot.contentType });
+  if (error) throw new Error(`story audio upload failed: ${error.message}`);
+  return slot.path;
+}
+

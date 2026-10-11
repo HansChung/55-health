@@ -243,7 +243,17 @@ export const api = {
     photoPaths?: string[];
     photoSizes?: { width: number; height: number }[];
     interview?: import("./ask").AskMessage[];
-  }) => apiFetch<{ story: import("./life-stories").LifeStory }>("/api/stories", { method: "POST", json: input, timeoutMs: 30000 }),
+    /** 聲音故事：已經用 storyAudioUpload 傳好的暫存路徑（App 裡錄的要轉檔，等久一點） */
+    audioPath?: string;
+    audioSeconds?: number;
+  }) =>
+    apiFetch<{ story: import("./life-stories").LifeStory }>("/api/stories", {
+      method: "POST",
+      json: input,
+      timeoutMs: input.audioPath ? 120000 : 30000,
+    }),
+  storyAudioUpload: (input: { fileName: string; size: number; type: string }) =>
+    apiFetch<{ path: string; token: string; contentType: string }>("/api/stories/audio-upload", { method: "POST", json: input }),
   updateStory: (id: string, patch: { title?: string; era?: string; body?: string; shareWithFamily?: boolean }) =>
     apiFetch<{ story: import("./life-stories").LifeStory }>(`/api/stories/${id}`, { method: "PATCH", json: patch }),
   deleteStory: (id: string) => apiFetch<{ ok: true }>(`/api/stories/${id}`, { method: "DELETE" }),

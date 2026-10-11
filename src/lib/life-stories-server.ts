@@ -5,6 +5,7 @@
 
 import { createSupabaseAdmin } from "@/lib/supabase/server";
 import { sendPushToUser } from "@/lib/push/send";
+import { signStoryAudio, type StoredStoryAudio } from "@/lib/story-audio-server";
 import { authorDirectory } from "@/lib/video-comments-server";
 import {
   VIDEO_COMMENTS_PER_AUTHOR,
@@ -35,6 +36,8 @@ export interface StoryRow {
   era: string | null;
   body: string;
   photos: { path: string; width: number; height: number }[] | null;
+  /** 聲音故事（add-story-audio.sql 之前的資料沒有這欄） */
+  audio?: StoredStoryAudio | null;
   interview: unknown;
   share_with_family: boolean;
   created_at: string;
@@ -47,17 +50,18 @@ export function storyPhotoPath(userId: string, storyId: string, index: number, s
   return `${userId}/${storyId}/photo-${index}.${ext}`;
 }
 
-/** 好幾篇故事的照片一次簽網址 */
-export async function signStoryPhotos(admin: Admin, rows: StoryRow[]): Promise<Map<string, string>> {
+/** 好幾篇故事的照片和錄音一次簽網址（路徑 → 網址；照片和錄音在不同 bucket，檔名不會重複） */
+export async function signStoryMedia(admin: Admin, rows: StoryRow[]): Promise<Map<string, string>> {
   const paths = rows.flatMap((r) => (r.photos ?? []).map((p) => p.path));
+  const audioPaths = rows.map((r) => r.audio?.path).filter((p): p is string => Boolean(p));
   const urls = new Map<string, string>();
-  if (paths.length === 0) return urls;
-  const { data, error } = await admin.storage.from(STORY_BUCKET).createSignedUrls(paths, SIGNED_URL_SECONDS);
-  if (error) {
-    console.warn("[stories] sign photos failed:", error.message);
-    return urls;
-  }
-  for (const d of data ?? []) if (d.path && d.signedUrl) urls.set(d.path, d.signedUrl);
+  const [photos, audio] = await Promise.all([
+    paths.length ? admin.storage.from(STORY_BUCKET).createSignedUrls(paths, SIGNED_URL_SECONDS) : null,
+    signStoryAudio(admin, audioPaths),
+  ]);
+  if (photos?.error) console.warn("[stories] sign photos failed:", photos.error.message);
+  for (const d of photos?.data ?? []) if (d.path && d.signedUrl) urls.set(d.path, d.signedUrl);
+  for (const [p, u] of audio) urls.set(p, u);
   return urls;
 }
 
@@ -70,6 +74,7 @@ export function toClientStory(row: StoryRow, urls: Map<string, string>): LifeSto
     photos: (row.photos ?? [])
       .map((p) => ({ url: urls.get(p.path) ?? "", width: p.width, height: p.height }))
       .filter((p) => p.url),
+    audio: row.audio?.path && urls.get(row.audio.path) ? { url: urls.get(row.audio.path)!, seconds: row.audio.seconds } : null,
     share_with_family: row.share_with_family,
     created_at: row.created_at,
     updated_at: row.updated_at,
