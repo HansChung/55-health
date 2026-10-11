@@ -273,6 +273,12 @@ stack works well for auth + meal/diary CRUD:
 - Optional save: 「把這句話點成光點」→ `/smart/spark?source=chapterXXXX` (sessionStorage seed).
 - Home 「書本練習」→ `/smart/guide`. Deep links `/?open=voice|camera&from=chapterXXXX` show intent tips.
 - Production DB may need `supabase/add-chapter-opening-sources.sql` if the old source check is still in place.
+- **章節 Podcast** (block type `audio`, 「🎧 Podcast／音檔」 in /admin/chapters → 新增內容區塊): the admin picks an mp3/m4a/
+  aac/wav (≤ `CHAPTER_AUDIO_MAX_BYTES` 50 MB = Supabase free-plan file limit); `POST /api/admin/chapter-audio` (admin
+  only) returns a signed upload URL and the **browser uploads straight to the public `chapter-audio` bucket**
+  (`uploadToSignedUrl`; big files never touch Vercel). The bucket is created on first use (no SQL). Paths never contain
+  the file name (`buildChapterAudioPath`). External audio URLs can be pasted instead. Readers get `<audio preload="none">`
+  with 慢一點／正常／快一點 (`ChapterBlocks` → `AudioBlock`); hidden when printing. Playback egress is Supabase's.
 - **No external AI in the book** (owner's decision, 2026-10-07): examples never send people to Gemini／ChatGPT／Siri;
   `external-ai.ts` is gone. Text examples use 「✍️ 打字問暖暖」 (`AskNuannuanRow` / the `example` block's
   `onTryAsk`) → `saveAskSeed` (sessionStorage, survives login) → `/?open=ask&from=chapterXXXX`. Photo examples

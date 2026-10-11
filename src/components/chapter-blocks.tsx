@@ -1,9 +1,10 @@
 "use client";
 
 // ────────────────────────────────────────────────
-// 章節頁：後台新增的內容區塊（文字／圖片／影片／練習範例／連結）
+// 章節頁：後台新增的內容區塊（文字／圖片／影片／練習範例／連結／Podcast 音檔）
 // 字級、按鈕大小沿用章節頁的長輩友善設計
 // ────────────────────────────────────────────────
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { youtubeEmbedUrl, type ChapterBlock } from "@/lib/chapter-content";
 
@@ -119,6 +120,9 @@ export function ChapterBlocks({ blocks, onCopy, onTryAsk, onTryVoice }: Props) {
               </div>
             );
 
+          case "audio":
+            return <AudioBlock key={b.id} url={b.url} title={b.title} caption={b.caption} />;
+
           case "link": {
             const style: React.CSSProperties = {
               ...bigBtn, display: "block", textAlign: "center", textDecoration: "none",
@@ -135,6 +139,54 @@ export function ChapterBlocks({ blocks, onCopy, onTryAsk, onTryVoice }: Props) {
           }
         }
       })}
+    </div>
+  );
+}
+
+/** 聽起來太快可以放慢一點（長輩常用 0.8 倍） */
+const SPEEDS = [0.8, 1, 1.25] as const;
+
+function AudioBlock({ url, title, caption }: { url: string; title?: string; caption?: string }) {
+  const ref = useRef<HTMLAudioElement>(null);
+  const [speed, setSpeed] = useState<number>(1);
+  const pick = (v: number) => {
+    setSpeed(v);
+    if (ref.current) ref.current.playbackRate = v;
+  };
+  return (
+    <div style={{ ...cardStyle, background: "var(--surface-warm, #FFF8EE)" }}>
+      <div style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--primary-deep)", marginBottom: 6 }}>🎧 Podcast</div>
+      {title && <div style={{ fontWeight: 800, fontSize: "var(--fs-base)", marginBottom: 10 }}>{title}</div>}
+      <audio
+        ref={ref}
+        className="no-print"
+        controls
+        preload="none"
+        src={url}
+        onPlay={(e) => { e.currentTarget.playbackRate = speed; }}
+        style={{ width: "100%", display: "block" }}
+      >
+        這支手機不能播放，請換一個瀏覽器試試。
+      </audio>
+      <div className="no-print" style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <span style={{ fontSize: "var(--fs-xs)", color: "var(--ink-2)" }}>播放速度</span>
+        {SPEEDS.map((v) => (
+          <button
+            key={v}
+            type="button"
+            onClick={() => pick(v)}
+            aria-pressed={speed === v}
+            style={{
+              padding: "8px 14px", minHeight: 44, borderRadius: 999, fontWeight: 700, fontSize: "var(--fs-sm)",
+              background: speed === v ? "var(--primary-soft)" : "var(--surface)",
+              border: `2px solid ${speed === v ? "var(--primary)" : "var(--line)"}`, color: "var(--ink-1)", cursor: "pointer",
+            }}
+          >
+            {v === 1 ? "正常" : v < 1 ? "慢一點" : "快一點"}
+          </button>
+        ))}
+      </div>
+      {caption && <p style={{ ...captionStyle, whiteSpace: "pre-wrap" }}>{caption}</p>}
     </div>
   );
 }
