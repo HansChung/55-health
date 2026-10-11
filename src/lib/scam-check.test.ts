@@ -44,6 +44,10 @@ describe("這則訊息可疑嗎：整理暖暖的判斷", () => {
     expect(maskSensitive("請打 0912-345-678")).toBe("請打 09＊＊＊＊");
     expect(maskSensitive("身分證 F223456789")).toBe("身分證 ＊＊＊＊");
     expect(maskSensitive("驗證碼：5821")).toBe("驗證碼：＊＊＊＊");
+    expect(maskSensitive("驗證碼 123 456 請勿告訴他人")).toBe("驗證碼 ＊＊＊＊ 請勿告訴他人");
+    expect(maskSensitive("代碼 482913")).toBe("代碼 ＊＊＊＊");
+    expect(maskSensitive("OTP:1234-5678")).toBe("OTP:＊＊＊＊");
+    expect(maskSensitive("回撥 0912.345.678")).toBe("回撥 09＊＊＊＊");
     expect(maskSensitive("打 165，罰款 1,200 元")).toBe("打 165，罰款 1,200 元");
   });
   it("分享文字拿掉連結（含短網址）", () => {
@@ -51,6 +55,12 @@ describe("這則訊息可疑嗎：整理暖暖的判斷", () => {
     expect(stripLinks("點 bit.ly/3xYz 領取")).toBe("點 （連結已拿掉） 領取");
     expect(stripLinks("加 line.me/ti/p/abc 好友")).toBe("加 （連結已拿掉） 好友");
     expect(stripLinks("銀行說帳戶凍結")).toBe("銀行說帳戶凍結");
+    // 不靠字尾清單：沒見過的字尾也拿掉；網址後面緊接的中文留著
+    expect(stripLinks("到 fakebank.live/login 登入")).toBe("到 （連結已拿掉） 登入");
+    expect(stripLinks("點fakebank.online/pay繳費")).toBe("點（連結已拿掉）繳費");
+    expect(stripLinks("https://bit.ly/3abc要你登入")).toBe("（連結已拿掉）要你登入");
+    expect(stripLinks("連到 203.0.113.9/x")).toBe("連到 （連結已拿掉）");
+    expect(stripLinks("ATM 不能解除分期，罰款 1.5 萬")).toBe("ATM 不能解除分期，罰款 1.5 萬");
   });
   it("貼上的訊息保留分行、去掉多餘空白、截長", () => {
     expect(sanitizeScamText("  第一行  \r\n\r\n\r\n 第二行 ", 100)).toBe("第一行\n\n第二行");

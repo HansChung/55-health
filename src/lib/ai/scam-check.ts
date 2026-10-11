@@ -62,7 +62,8 @@ export async function checkScamMessage(input: {
   try {
     result = normalizeScamCheckResult(parseModelJson<unknown>(text));
   } catch {
-    throw new Error("scam-check 回傳格式錯誤：" + text.substring(0, 200));
+    // 不把模型原文寫進錯誤（可能有帳號、驗證碼），只記長度
+    throw new Error(`scam-check 回傳格式錯誤（${text.length} 字）`);
   }
   const meta = response.response.usageMetadata;
   return {

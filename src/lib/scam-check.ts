@@ -99,19 +99,28 @@ export function normalizeScamCheckResult(raw: unknown): ScamCheckResult {
   };
 }
 
-/** 保險起見再遮一次：長串數字（帳號、卡號、電話）、身分證字號、6 位數驗證碼 */
+/**
+ * 保險起見再遮一次（不靠模型照做）：身分證字號；驗證碼、密碼這類標籤後面的數字（可能被空格、點、橫線隔開）；
+ * 9 碼以上的長串數字（帳號、卡號、電話，含 0912.345.678 這種寫法）
+ */
 export function maskSensitive(text: string): string {
   return text
     .replace(/[A-Z][12]\d{8}/g, "＊＊＊＊")
-    .replace(/\d[\d -]{7,}\d/g, (m) => `${m.slice(0, 2)}＊＊＊＊`)
-    .replace(/(驗證碼|認證碼|OTP|密碼)[^0-9]{0,6}\d{4,8}/gi, (m) => m.replace(/\d/g, "＊"));
+    .replace(/(驗證碼|認證碼|確認碼|安全碼|動態密碼|交易密碼|代碼|密碼|OTP|PIN)([^0-9]{0,6})\d[\d .\-]{2,10}\d/gi, (_m, label: string, mid: string) => `${label}${mid}＊＊＊＊`)
+    .replace(/\d[\d .\-]{7,}\d/g, (m) => `${m.slice(0, 2)}＊＊＊＊`);
 }
 
-/** 分享給家人的文字不放連結（免得家人誤點） */
+const LINK_GONE = "（連結已拿掉）";
+
+/**
+ * 拿掉所有連結（免得長輩、家人誤點）：http(s)／www 開頭的、任何「名字.英文字尾」的網域（不靠字尾清單，
+ * fakebank.live、xxx.click 都算）、IP 位址。網址後面只吃 ASCII，緊接的中文留著
+ */
 export function stripLinks(text: string): string {
   return text
-    .replace(/\b(?:https?:\/\/|www\.)\S+/gi, "（連結已拿掉）")
-    .replace(/\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|net|org|tw|cc|xyz|top|info|io|me|app|link|site|shop|vip|co|ly|gl|cn|hk)(?:\/\S*)?/gi, "（連結已拿掉）");
+    .replace(/(?:https?:\/\/|www\.)[!-~]+/gi, LINK_GONE)
+    .replace(/\b(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z][a-z0-9-]*[a-z](?::\d+)?(?:\/[!-~]*)?/gi, LINK_GONE)
+    .replace(/\b\d{1,3}(?:\.\d{1,3}){3}(?::\d+)?(?:\/[!-~]*)?/g, LINK_GONE);
 }
 
 /** 念給我聽 */
