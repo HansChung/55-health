@@ -266,6 +266,21 @@ export const api = {
   familyStories: () =>
     apiFetch<{ elders: { elder_id: string; name: string; stories: import("./life-stories").LifeStory[] }[] }>("/api/family/stories"),
 
+  // 這則訊息可疑嗎？（截圖或文字給暖暖看；所有方案每天幾次）
+  listScamChecks: () =>
+    apiFetch<{ checks: import("./scam-check").ScamCheck[]; quota: { used: number; limit: number } }>("/api/scam-check"),
+  checkScam: (input: Partial<{ photoPath: string; imageBase64: string; mimeType: string }> & { text?: string; source?: string }) =>
+    apiFetch<{ check: import("./scam-check").ScamCheck; quota: { used: number; limit: number } }>("/api/scam-check", {
+      method: "POST",
+      json: input,
+      timeoutMs: 45000,
+    }),
+  shareScamCheck: (id: string) =>
+    apiFetch<{ family: number; pushed: number; already?: boolean }>(`/api/scam-check/${id}/share`, { method: "POST" }),
+  deleteScamCheck: (id: string) => apiFetch<{ ok: true }>(`/api/scam-check/${id}`, { method: "DELETE" }),
+  familyScamChecks: () =>
+    apiFetch<{ elders: { elder_id: string; name: string; checks: import("./scam-check").ScamCheck[] }[] }>("/api/family/scam-checks"),
+
   // 出遊影片的按讚、留言（影片本人或看得到影片的家人）
   reactToVideo: (id: string, emoji: VideoReaction) =>
     apiFetch<{ comments: VideoCommentsView }>(`/api/ai/travel-video/${id}/comments`, { method: "POST", json: { emoji } }),
@@ -540,6 +555,13 @@ export const api = {
   // 書本目錄（公開）：已發布的新章節＋改過的標題
   chapterCatalog: () =>
     apiFetch<{ custom: { id: string; title: string }[]; titles: Record<string, string> }>("/api/chapters/catalog"),
+
+  // 書本章節的 Podcast：拿簽名上傳網址，瀏覽器直接傳到 Supabase
+  adminChapterAudioUpload: (input: { chapterId: string; fileName: string; size: number; type: string }) =>
+    apiFetch<{ path: string; token: string; publicUrl: string; contentType: string }>("/api/admin/chapter-audio", {
+      method: "POST",
+      json: input,
+    }),
 
   adminListUsers: () =>
     apiFetch<{ users: AdminUserRow[] }>("/api/admin/users"),

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { api, type AdminChapterListItem, type AdminChapterDetail } from "@/lib/api-client";
+import { api, ApiError, type AdminChapterListItem, type AdminChapterDetail } from "@/lib/api-client";
+import { createSupabaseBrowser } from "@/lib/supabase/client";
+import { CHAPTER_AUDIO_BUCKET, CHAPTER_AUDIO_MAX_BYTES, chapterAudioType, formatMegabytes, titleFromFileName } from "@/lib/chapter-audio";
 import {
   BLOCK_TYPE_LABELS,
   CUSTOM_CHAPTER_ID_RE,
@@ -42,6 +44,7 @@ function emptyBlock(type: ChapterBlockType): ChapterBlock {
     case "video": return { id, type, url: "", caption: "" };
     case "example": return { id, type, title: "", prompt: "", note: "" };
     case "link": return { id, type, label: "", url: "" };
+    case "audio": return { id, type, url: "", title: "", caption: "" };
   }
 }
 
@@ -157,6 +160,9 @@ export default function ChaptersAdminPage() {
   const blocks: ChapterBlock[] = form.blocks ?? [];
   const setBlock = (i: number, patch: Partial<ChapterBlock>) =>
     set("blocks", blocks.map((b, j) => (j === i ? ({ ...b, ...patch } as ChapterBlock) : b)));
+  /** 上傳要等一陣子：用區塊 id 對「最新的」內容更新；這段時間換了章節或刪了區塊就不會改到別的東西 */
+  const updateBlockById = (id: string, update: (b: ChapterBlock) => ChapterBlock) =>
+    setForm((f) => ({ ...f, blocks: (f.blocks ?? []).map((b) => (b.id === id ? update(b) : b)) }));
   const moveBlock = (i: number, dir: -1 | 1) => {
     const j = i + dir;
     if (j < 0 || j >= blocks.length) return;
@@ -171,7 +177,7 @@ export default function ChaptersAdminPage() {
     <div>
       <h1 style={{ fontSize: 28, fontWeight: 700, color: "#fff", margin: "0 0 6px" }}>書本練習內容</h1>
       <p style={{ color: "#94a3b8", fontSize: 14, margin: "0 0 20px", lineHeight: 1.6 }}>
-        編輯章節文字、<b style={{ color: "#e2e8f0" }}>新增內容區塊</b>（文字／圖片／YouTube 影片／練習範例／連結），或<b style={{ color: "#e2e8f0" }}>新增整個章節</b>。
+        編輯章節文字、<b style={{ color: "#e2e8f0" }}>新增內容區塊</b>（文字／圖片／YouTube 影片／練習範例／連結／Podcast 音檔），或<b style={{ color: "#e2e8f0" }}>新增整個章節</b>。
         欄位留空＝使用預設（灰字）。儲存後不用重新部署，立即生效。
       </p>
 
@@ -273,7 +279,7 @@ export default function ChaptersAdminPage() {
                     </button>
                   ))}
                 </div>
-                {blocks.length === 0 && <div style={{ color: "#64748b", fontSize: 13 }}>尚未新增。點上方按鈕加入文字、圖片、影片、練習範例或連結。</div>}
+                {blocks.length === 0 && <div style={{ color: "#64748b", fontSize: 13 }}>尚未新增。點上方按鈕加入文字、圖片、影片、練習範例、連結或 Podcast 音檔。</div>}
                 {blocks.map((b, i) => (
                   <div key={b.id} style={{ border: "1px solid #334155", borderRadius: 8, padding: 12, marginTop: 10, background: "#111c30" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
@@ -284,7 +290,14 @@ export default function ChaptersAdminPage() {
                       <button style={smallBtn} disabled={i === blocks.length - 1} onClick={() => moveBlock(i, 1)} title="下移">↓</button>
                       <button style={{ ...smallBtn, background: "transparent", color: "#f87171" }} onClick={() => set("blocks", blocks.filter((_, j) => j !== i))} title="刪除">✕</button>
                     </div>
-                    <BlockFields block={b} onChange={(patch) => setBlock(i, patch)} />
+                    <BlockFields
+                      block={b}
+                      chapterId={selectedId ?? ""}
+                      onChange={(patch) => setBlock(i, patch)}
+                      onAudioUploaded={(url, title) =>
+                        updateBlockById(b.id, (cur) => (cur.type === "audio" ? { ...cur, url, title: cur.title || title } : cur))
+                      }
+                    />
                   </div>
                 ))}
               </div>
@@ -362,7 +375,17 @@ function VideoPreview({ src }: { src: string }) {
 }
 
 /** 各類內容區塊的輸入欄位 */
-function BlockFields({ block: b, onChange }: { block: ChapterBlock; onChange: (patch: Partial<ChapterBlock>) => void }) {
+function BlockFields({
+  block: b,
+  chapterId,
+  onChange,
+  onAudioUploaded,
+}: {
+  block: ChapterBlock;
+  chapterId: string;
+  onChange: (patch: Partial<ChapterBlock>) => void;
+  onAudioUploaded: (url: string, defaultTitle: string) => void;
+}) {
   switch (b.type) {
     case "text":
       return (
@@ -401,6 +424,8 @@ function BlockFields({ block: b, onChange }: { block: ChapterBlock; onChange: (p
           <input style={input} placeholder="小提醒（選填）" value={b.note ?? ""} onChange={(e) => onChange({ note: e.target.value })} />
         </>
       );
+    case "audio":
+      return <AudioBlockFields block={b} chapterId={chapterId} onChange={onChange} onUploaded={onAudioUploaded} />;
     case "link":
       return (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 6 }}>
@@ -410,3 +435,72 @@ function BlockFields({ block: b, onChange }: { block: ChapterBlock; onChange: (p
       );
   }
 }
+
+/** Podcast／音檔：選檔案直接傳到 Supabase（不經過 Vercel），或貼外部 mp3／m4a 網址 */
+function AudioBlockFields({
+  block: b,
+  chapterId,
+  onChange,
+  onUploaded,
+}: {
+  block: Extract<ChapterBlock, { type: "audio" }>;
+  chapterId: string;
+  onChange: (patch: Partial<ChapterBlock>) => void;
+  onUploaded: (url: string, defaultTitle: string) => void;
+}) {
+  const [status, setStatus] = useState<{ kind: "busy" | "ok" | "error"; text: string } | null>(null);
+
+  const upload = async (file: File | undefined) => {
+    if (!file) return;
+    if (!chapterAudioType(file.name, file.type)) {
+      setStatus({ kind: "error", text: "只支援 mp3、m4a、aac、wav 音檔" });
+      return;
+    }
+    if (file.size > CHAPTER_AUDIO_MAX_BYTES) {
+      setStatus({ kind: "error", text: `音檔 ${formatMegabytes(file.size)}，超過 50MB。可以先轉成 64kbps 的 mp3 再上傳` });
+      return;
+    }
+    setStatus({ kind: "busy", text: `上傳中…（${formatMegabytes(file.size)}，大檔案要等一兩分鐘，請不要關掉這頁）` });
+    try {
+      const slot = await api.adminChapterAudioUpload({ chapterId, fileName: file.name, size: file.size, type: file.type });
+      // 用統一的類型重新包一次：瀏覽器給的 audio/x-m4a、audio/mp3 或空字串，bucket 會拒收
+      const body = new Blob([file], { type: slot.contentType });
+      const { error } = await createSupabaseBrowser()
+        .storage.from(CHAPTER_AUDIO_BUCKET)
+        .uploadToSignedUrl(slot.path, slot.token, body, { contentType: slot.contentType, cacheControl: "31536000" });
+      if (error) throw new Error(error.message);
+      onUploaded(slot.publicUrl, titleFromFileName(file.name));
+      setStatus({ kind: "ok", text: "✓ 上傳好了，記得按下面的「儲存」" });
+    } catch (e) {
+      console.warn("[admin] chapter audio upload:", e);
+      setStatus({ kind: "error", text: e instanceof ApiError ? e.message : "上傳失敗，請再試一次（網路不穩時建議用電腦上傳）" });
+    }
+  };
+
+  return (
+    <>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6, flexWrap: "wrap" }}>
+        <label style={{ ...smallBtn, display: "inline-block" }}>
+          ⬆️ 上傳音檔（mp3、m4a，50MB 內）
+          <input
+            type="file"
+            accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/aac,audio/wav,.mp3,.m4a,.aac,.wav"
+            style={{ display: "none" }}
+            disabled={status?.kind === "busy"}
+            onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; upload(f); }}
+          />
+        </label>
+        {status && (
+          <span style={{ fontSize: 12, color: status.kind === "error" ? "#f87171" : status.kind === "ok" ? "#4ade80" : "#94a3b8" }}>
+            {status.text}
+          </span>
+        )}
+      </div>
+      <input style={{ ...input, marginBottom: 6 }} placeholder="或貼上音檔網址 https://…/episode.mp3" value={b.url} onChange={(e) => onChange({ url: e.target.value })} />
+      <input style={{ ...input, marginBottom: 6 }} placeholder="這一集的標題（選填，例如：第一章導讀）" value={b.title ?? ""} onChange={(e) => onChange({ title: e.target.value })} />
+      <textarea style={area} placeholder="簡介（選填，可換行）" value={b.caption ?? ""} onChange={(e) => onChange({ caption: e.target.value })} />
+      {b.url && <audio controls preload="none" src={b.url} style={{ width: "100%", marginTop: 8 }} />}
+    </>
+  );
+}
+

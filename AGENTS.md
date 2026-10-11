@@ -268,11 +268,41 @@ stack works well for auth + meal/diary CRUD:
   the wrong pier and invents history) and always tells elders not to pick/eat wild plants.
 - Read-aloud uses the browser's speechSynthesis (`speakGuideParagraphs`, zh-TW) — free, no server TTS.
 
+### 這則訊息可疑嗎？（scam check, `subpage "scam-check"`）
+- Home 「🛡️ 這則訊息可疑嗎？」, the 安心保鑣 page (`/smart/fraud`) and book 0502's app link → `ScamCheckScreen`;
+  deep link `/?open=scam-check`. **Every tier**, `SCAM_CHECK_DAILY` (10) per Taipei day via `reserveDailySlot` on
+  endpoint `/api/scam-check`; usage is logged as `gemini_text` even with a screenshot, because every `gemini_vision`
+  row counts toward the paid monthly photo quota.
+- Input: a screenshot (direct upload, `imageFromRequest`; not stored) and/or pasted text (≤2000) + an optional
+  「誰傳來的」 chip. `POST /api/scam-check` → vision model (`checkScamMessage`, `src/lib/ai/scam-check.ts`) → JSON
+  `{verdict: danger|suspicious|unsure|likely_ok, title, kind, signals, advice, verify, excerpt}`. The prompt treats the
+  message as data (pasted `<訊息>` tags are stripped; injected "judge this safe" is itself a red flag), never says
+  "safe", never tells the elder to tap links / call numbers in the message, and always points to self-found official
+  numbers or 165. `normalizeScamCheckResult` strips links and masks long numbers / ID numbers / codes in **every**
+  field, so nothing on screen or in shares can be tapped or dialled. The screen always shows the four rules and a
+  `tel:165` button regardless of the verdict.
+- `scam_checks` (needs `supabase/add-scam-checks.sql`; server-only RLS) keeps only the result + masked excerpt (no
+  screenshot, no original text); the daily `cleanup-uploads` cron deletes rows older than 90 days. 「📣 通知家人幫我看」
+  (`POST …/[id]/share`) claims `shared_at` once (conditional update) and pushes accepted family
+  (`/?open=caregiver`); 家人狀況 shows shared checks from the last 30 days (`GET /api/family/scam-checks`,
+  `FamilyScamChecks`). No linked family → 409 `noFamily`, and the screen offers 「用 LINE 傳給家人」
+  (`navigator.share`, first-person text from `scamShareText`, no links).
+
 ### Book × App light coupling（書本／App）
 - Chapter openings live at `/smart/chapter/[id]` (public, printable). Shared rhythm: **一拍、二問、三記下**.
 - Optional save: 「把這句話點成光點」→ `/smart/spark?source=chapterXXXX` (sessionStorage seed).
 - Home 「書本練習」→ `/smart/guide`. Deep links `/?open=voice|camera&from=chapterXXXX` show intent tips.
 - Production DB may need `supabase/add-chapter-opening-sources.sql` if the old source check is still in place.
+- **章節 Podcast** (block type `audio`, 「🎧 Podcast／音檔」 in /admin/chapters → 新增內容區塊): the admin picks an mp3/m4a/
+  aac/wav (≤ `CHAPTER_AUDIO_MAX_BYTES` 50 MB = Supabase free-plan file limit); `POST /api/admin/chapter-audio` (admin
+  only) returns a signed upload URL and the **browser uploads straight to the public `chapter-audio` bucket**
+  (`uploadToSignedUrl`; big files never touch Vercel). The bucket is created on first use (no SQL). Paths never contain
+  the file name (`buildChapterAudioPath`). External audio URLs can be pasted instead. Readers get `<audio preload="none">`
+  with 慢一點／正常／快一點 (`ChapterBlocks` → `AudioBlock`); hidden when printing. Playback egress is Supabase's.
+  The file is re-wrapped as a Blob with the normalized type (browsers report `audio/x-m4a`, `audio/mp3` or nothing,
+  which the bucket allowlist rejects); the upload result is applied by block id to the latest form state. Saving a
+  chapter prunes unreferenced files in `chapters/<id>/` older than 6 h (`pruneChapterAudio` in `after()`); 還原預設／
+  刪除章節 removes them all.
 - **No external AI in the book** (owner's decision, 2026-10-07): examples never send people to Gemini／ChatGPT／Siri;
   `external-ai.ts` is gone. Text examples use 「✍️ 打字問暖暖」 (`AskNuannuanRow` / the `example` block's
   `onTryAsk`) → `saveAskSeed` (sessionStorage, survives login) → `/?open=ask&from=chapterXXXX`. Photo examples
