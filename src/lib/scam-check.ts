@@ -106,8 +106,11 @@ export function normalizeScamCheckResult(raw: unknown): ScamCheckResult {
 export function maskSensitive(text: string): string {
   return text
     .replace(/[A-Z][12]\d{8}/g, "＊＊＊＊")
-    // 標籤後面的整串數字（不限長度，免得 16 碼的帳號只遮前半）
-    .replace(/(驗證碼|認證碼|確認碼|安全碼|動態密碼|交易密碼|代碼|密碼|OTP|PIN)([^0-9]{0,6})\d(?:[\d .\-]*\d)?/gi, (_m, label: string, mid: string) => `${label}${mid}＊＊＊＊`)
+    // 標籤「緊接著」的整串數字（中間只能有空格、冒號、是／為）；至少 4 碼才算，免得把「…打 165」遮掉。
+    // 不限長度，免得 16 碼的帳號只遮前半
+    .replace(/(驗證碼|認證碼|確認碼|安全碼|動態密碼|交易密碼|代碼|密碼|OTP|PIN)([\s:：是為]{0,3})(\d(?:[\d .\-]*\d)?)/gi, (m, label: string, mid: string, num: string) =>
+      num.replace(/\D/g, "").length >= 4 ? `${label}${mid}＊＊＊＊` : m
+    )
     .replace(/\d[\d .\-]{7,}\d/g, (m) => `${m.slice(0, 2)}＊＊＊＊`);
 }
 

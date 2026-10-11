@@ -50,6 +50,10 @@ describe("這則訊息可疑嗎：整理暖暖的判斷", () => {
     expect(maskSensitive("回撥 0912.345.678")).toBe("回撥 09＊＊＊＊");
     expect(maskSensitive("代碼 1234567890123456 請轉帳")).toBe("代碼 ＊＊＊＊ 請轉帳");
     expect(maskSensitive("代碼 1234-5678-9012-3456")).toBe("代碼 ＊＊＊＊");
+    expect(maskSensitive("您的驗證碼為 482913")).toBe("您的驗證碼為 ＊＊＊＊");
+    // 165 不能被當成驗證碼遮掉
+    expect(maskSensitive("不要給驗證碼，有疑問打 165")).toBe("不要給驗證碼，有疑問打 165");
+    expect(maskSensitive("密碼 165")).toBe("密碼 165");
     expect(maskSensitive("打 165，罰款 1,200 元")).toBe("打 165，罰款 1,200 元");
   });
   it("分享文字拿掉連結（含短網址）", () => {
