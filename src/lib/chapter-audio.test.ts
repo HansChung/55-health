@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { buildChapterAudioPath, chapterAudioType, formatMegabytes } from "./chapter-audio";
+import { buildChapterAudioPath, chapterAudioFolder, chapterAudioType, formatMegabytes, titleFromFileName } from "./chapter-audio";
+import { referencedAudioUrls } from "./chapter-audio-server";
 import { chapterOverridesSchema, isBlockFilled, normalizeOverrides, BLOCK_TYPE_LABELS } from "./chapter-content";
 
 describe("書本章節 Podcast：音檔格式與路徑", () => {
@@ -15,6 +16,22 @@ describe("書本章節 Podcast：音檔格式與路徑", () => {
     const now = Date.UTC(2026, 9, 12, 3, 0, 0);
     expect(buildChapterAudioPath("0105", "mp3", now, "abc123")).toBe(`chapters/0105/2026-10/${now}-abc123.mp3`);
     expect(buildChapterAudioPath("../x/0105", "m4a", now, "a/b")).toBe(`chapters/x0105/2026-10/${now}-ab.m4a`);
+  });
+  it("預設標題：拿掉副檔名、截到 120 字", () => {
+    expect(titleFromFileName("第一章導讀.m4a")).toBe("第一章導讀");
+    expect([...titleFromFileName("長".repeat(300) + ".mp3")]).toHaveLength(120);
+    expect(chapterAudioFolder("0105")).toBe("chapters/0105");
+  });
+  it("找出章節現在用到的音檔（其他的存檔時清掉）", () => {
+    const urls = referencedAudioUrls({
+      blocks: [
+        { id: "a", type: "audio", url: "https://x/ep1.mp3" },
+        { id: "b", type: "text", body: "hi" },
+        { id: "c", type: "audio", url: "https://x/ep2.mp3" },
+      ],
+    });
+    expect([...urls]).toEqual(["https://x/ep1.mp3", "https://x/ep2.mp3"]);
+    expect(referencedAudioUrls(null).size).toBe(0);
   });
   it("檔案大小顯示", () => {
     expect(formatMegabytes(5.5 * 1024 * 1024)).toBe("5.5MB");

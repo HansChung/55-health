@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, ApiError, type AdminChapterListItem, type AdminChapterDetail } from "@/lib/api-client";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
-import { CHAPTER_AUDIO_BUCKET, CHAPTER_AUDIO_MAX_BYTES, chapterAudioType, formatMegabytes } from "@/lib/chapter-audio";
+import { CHAPTER_AUDIO_BUCKET, CHAPTER_AUDIO_MAX_BYTES, chapterAudioType, formatMegabytes, titleFromFileName } from "@/lib/chapter-audio";
 import {
   BLOCK_TYPE_LABELS,
   CUSTOM_CHAPTER_ID_RE,
@@ -160,6 +160,9 @@ export default function ChaptersAdminPage() {
   const blocks: ChapterBlock[] = form.blocks ?? [];
   const setBlock = (i: number, patch: Partial<ChapterBlock>) =>
     set("blocks", blocks.map((b, j) => (j === i ? ({ ...b, ...patch } as ChapterBlock) : b)));
+  /** 上傳要等一陣子：用區塊 id 對「最新的」內容更新；這段時間換了章節或刪了區塊就不會改到別的東西 */
+  const updateBlockById = (id: string, update: (b: ChapterBlock) => ChapterBlock) =>
+    setForm((f) => ({ ...f, blocks: (f.blocks ?? []).map((b) => (b.id === id ? update(b) : b)) }));
   const moveBlock = (i: number, dir: -1 | 1) => {
     const j = i + dir;
     if (j < 0 || j >= blocks.length) return;
@@ -287,7 +290,14 @@ export default function ChaptersAdminPage() {
                       <button style={smallBtn} disabled={i === blocks.length - 1} onClick={() => moveBlock(i, 1)} title="下移">↓</button>
                       <button style={{ ...smallBtn, background: "transparent", color: "#f87171" }} onClick={() => set("blocks", blocks.filter((_, j) => j !== i))} title="刪除">✕</button>
                     </div>
-                    <BlockFields block={b} chapterId={selectedId ?? ""} onChange={(patch) => setBlock(i, patch)} />
+                    <BlockFields
+                      block={b}
+                      chapterId={selectedId ?? ""}
+                      onChange={(patch) => setBlock(i, patch)}
+                      onAudioUploaded={(url, title) =>
+                        updateBlockById(b.id, (cur) => (cur.type === "audio" ? { ...cur, url, title: cur.title || title } : cur))
+                      }
+                    />
                   </div>
                 ))}
               </div>
@@ -365,7 +375,17 @@ function VideoPreview({ src }: { src: string }) {
 }
 
 /** 各類內容區塊的輸入欄位 */
-function BlockFields({ block: b, chapterId, onChange }: { block: ChapterBlock; chapterId: string; onChange: (patch: Partial<ChapterBlock>) => void }) {
+function BlockFields({
+  block: b,
+  chapterId,
+  onChange,
+  onAudioUploaded,
+}: {
+  block: ChapterBlock;
+  chapterId: string;
+  onChange: (patch: Partial<ChapterBlock>) => void;
+  onAudioUploaded: (url: string, defaultTitle: string) => void;
+}) {
   switch (b.type) {
     case "text":
       return (
@@ -405,7 +425,7 @@ function BlockFields({ block: b, chapterId, onChange }: { block: ChapterBlock; c
         </>
       );
     case "audio":
-      return <AudioBlockFields block={b} chapterId={chapterId} onChange={onChange} />;
+      return <AudioBlockFields block={b} chapterId={chapterId} onChange={onChange} onUploaded={onAudioUploaded} />;
     case "link":
       return (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 6 }}>
@@ -421,10 +441,12 @@ function AudioBlockFields({
   block: b,
   chapterId,
   onChange,
+  onUploaded,
 }: {
   block: Extract<ChapterBlock, { type: "audio" }>;
   chapterId: string;
   onChange: (patch: Partial<ChapterBlock>) => void;
+  onUploaded: (url: string, defaultTitle: string) => void;
 }) {
   const [status, setStatus] = useState<{ kind: "busy" | "ok" | "error"; text: string } | null>(null);
 
@@ -441,11 +463,13 @@ function AudioBlockFields({
     setStatus({ kind: "busy", text: `上傳中…（${formatMegabytes(file.size)}，大檔案要等一兩分鐘，請不要關掉這頁）` });
     try {
       const slot = await api.adminChapterAudioUpload({ chapterId, fileName: file.name, size: file.size, type: file.type });
+      // 用統一的類型重新包一次：瀏覽器給的 audio/x-m4a、audio/mp3 或空字串，bucket 會拒收
+      const body = new Blob([file], { type: slot.contentType });
       const { error } = await createSupabaseBrowser()
         .storage.from(CHAPTER_AUDIO_BUCKET)
-        .uploadToSignedUrl(slot.path, slot.token, file, { contentType: slot.contentType, cacheControl: "31536000" });
+        .uploadToSignedUrl(slot.path, slot.token, body, { contentType: slot.contentType, cacheControl: "31536000" });
       if (error) throw new Error(error.message);
-      onChange({ url: slot.publicUrl, ...(b.title ? {} : { title: file.name.replace(/\.[a-z0-9]+$/i, "") }) });
+      onUploaded(slot.publicUrl, titleFromFileName(file.name));
       setStatus({ kind: "ok", text: "✓ 上傳好了，記得按下面的「儲存」" });
     } catch (e) {
       console.warn("[admin] chapter audio upload:", e);

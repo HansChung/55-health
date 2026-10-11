@@ -279,6 +279,10 @@ stack works well for auth + meal/diary CRUD:
   (`uploadToSignedUrl`; big files never touch Vercel). The bucket is created on first use (no SQL). Paths never contain
   the file name (`buildChapterAudioPath`). External audio URLs can be pasted instead. Readers get `<audio preload="none">`
   with 慢一點／正常／快一點 (`ChapterBlocks` → `AudioBlock`); hidden when printing. Playback egress is Supabase's.
+  The file is re-wrapped as a Blob with the normalized type (browsers report `audio/x-m4a`, `audio/mp3` or nothing,
+  which the bucket allowlist rejects); the upload result is applied by block id to the latest form state. Saving a
+  chapter prunes unreferenced files in `chapters/<id>/` older than 6 h (`pruneChapterAudio` in `after()`); 還原預設／
+  刪除章節 removes them all.
 - **No external AI in the book** (owner's decision, 2026-10-07): examples never send people to Gemini／ChatGPT／Siri;
   `external-ai.ts` is gone. Text examples use 「✍️ 打字問暖暖」 (`AskNuannuanRow` / the `example` block's
   `onTryAsk`) → `saveAskSeed` (sessionStorage, survives login) → `/?open=ask&from=chapterXXXX`. Photo examples

@@ -33,6 +33,11 @@ export function chapterAudioType(fileName: string, browserType: string): { conte
   return contentType ? { contentType, ext } : null;
 }
 
+/** 一章的音檔都放在這個資料夾底下（換掉、刪掉的舊音檔靠它找出來清掉） */
+export function chapterAudioFolder(chapterId: string): string {
+  return `chapters/${chapterId.replace(/[^a-z0-9-]/gi, "").slice(0, 40) || "misc"}`;
+}
+
 /** chapters/0105/2026-10/1760000000000-a1b2c3.mp3（檔名不含使用者輸入） */
 export function buildChapterAudioPath(
   chapterId: string,
@@ -42,8 +47,12 @@ export function buildChapterAudioPath(
 ): string {
   const d = new Date(now);
   const month = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
-  const safeId = chapterId.replace(/[^a-z0-9-]/gi, "").slice(0, 40) || "misc";
-  return `chapters/${safeId}/${month}/${now}-${rand.replace(/[^a-z0-9]/gi, "")}.${ext}`;
+  return `${chapterAudioFolder(chapterId)}/${month}/${now}-${rand.replace(/[^a-z0-9]/gi, "")}.${ext}`;
+}
+
+/** 上傳檔名當預設標題：拿掉副檔名、截到區塊標題的上限 */
+export function titleFromFileName(name: string, max = 120): string {
+  return [...name.replace(/\.[a-z0-9]+$/i, "").trim()].slice(0, max).join("");
 }
 
 export function formatMegabytes(bytes: number): string {
