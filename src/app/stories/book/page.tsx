@@ -5,7 +5,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
-import { signStoryPhotos, type StoryRow } from "@/lib/life-stories-server";
+import { signStoryMedia, type StoryRow } from "@/lib/life-stories-server";
+import { formatAudioDuration } from "@/lib/story-audio";
 import { PrintButton } from "./print-button";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +28,7 @@ export default async function StoryBookPage() {
   ]);
   const name = (profile as { display_name: string | null } | null)?.display_name?.trim() || "我";
   const stories = (data ?? []) as StoryRow[];
-  const urls = await signStoryPhotos(admin, stories);
+  const urls = await signStoryMedia(admin, stories);
 
   return (
     <main className="story-book" style={{ background: "#fff", color: "#2b2118", minHeight: "100dvh" }}>
@@ -83,6 +84,9 @@ export default async function StoryBookPage() {
                 {s.era ? `${s.era}・` : ""}記於 {day(s.created_at)}
               </div>
               {(s.photos ?? []).map((p) => (urls.get(p.path) ? <img key={p.path} src={urls.get(p.path)} alt="" /> : null))}
+              {s.audio ? (
+                <p style={{ color: "#8a6d4a", fontSize: 18 }}>🎧 這篇有 {formatAudioDuration(s.audio.seconds)} 的聲音版，在暖暖 App 的「我的故事集」裡聽。</p>
+              ) : null}
               {s.body.split(/\n+/).filter(Boolean).map((para, j) => (
                 <p key={j}>{para}</p>
               ))}

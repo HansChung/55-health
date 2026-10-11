@@ -4,7 +4,7 @@
 // ────────────────────────────────────────────────
 import { NextResponse } from "next/server";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
-import { loadStoryCommentsViews, signStoryPhotos, toClientStory, type StoryRow } from "@/lib/life-stories-server";
+import { loadStoryCommentsViews, signStoryMedia, toClientStory, type StoryRow } from "@/lib/life-stories-server";
 
 export async function GET() {
   const supabase = await createSupabaseServer();
@@ -35,7 +35,7 @@ export async function GET() {
     return NextResponse.json({ elders: [] });
   }
   const stories = (rows ?? []) as StoryRow[];
-  const [urls, comments] = await Promise.all([signStoryPhotos(admin, stories), loadStoryCommentsViews(admin, stories, user.id)]);
+  const [urls, comments] = await Promise.all([signStoryMedia(admin, stories), loadStoryCommentsViews(admin, stories, user.id)]);
   const names = new Map(((profiles ?? []) as { id: string; display_name: string | null }[]).map((p) => [p.id, p.display_name?.trim() || "長輩"]));
   const elders = owners
     .map((id) => ({

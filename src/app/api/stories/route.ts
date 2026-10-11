@@ -1,13 +1,16 @@
 // ────────────────────────────────────────────────
 // 我的故事集
 // GET  → { stories }（自己的，新的在前；含家人的按讚留言）
-// POST { title, era?, body, shareWithFamily, photoPaths?, photoSizes?, interview? } → { story }
+// POST { title, era?, body, shareWithFamily, photoPaths?, photoSizes?, interview?, audioPath?, audioSeconds? } → { story }
 //   照片已直傳 Supabase 暫存區，這裡在 Supabase 裡複製到私人 bucket life-stories
+//   聲音故事：錄音已用簽名網址傳到 story-audio 的暫存位置，這裡搬好（App 裡錄的 webm 轉 m4a）；有聲音就可以不寫內容
 // ────────────────────────────────────────────────
 import { NextRequest, NextResponse, after } from "next/server";
 import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
 import { copyUserUpload, UserUploadError } from "@/lib/ai/user-uploads-server";
+import { StoryAudioError, finalizeStoryAudio, removeStoryAudio, type StoredStoryAudio } from "@/lib/story-audio-server";
+import { isOwnPendingStoryAudio } from "@/lib/story-audio";
 import { isOwnUploadPath } from "@/lib/user-uploads";
 import {
   STORY_BODY_MAX,
@@ -22,7 +25,7 @@ import {
   STORY_BUCKET,
   loadStoryCommentsViews,
   notifyFamilyNewStory,
-  signStoryPhotos,
+  signStoryMedia,
   storyPhotoPath,
   toClientStory,
   type StoryRow,
@@ -36,7 +39,12 @@ const PostSchema = z.object({
   photoPaths: z.array(z.string().max(200)).max(STORY_PHOTOS_MAX).optional(),
   photoSizes: z.array(z.object({ width: z.number().int().min(0).max(20000), height: z.number().int().min(0).max(20000) })).optional(),
   interview: z.array(z.object({ role: z.enum(["user", "assistant"]), text: z.string().max(3000) })).max(STORY_INTERVIEW_MAX * 2).optional(),
+  audioPath: z.string().max(200).optional(),
+  audioSeconds: z.number().min(0).max(24 * 3600).optional(),
 });
+
+// App 裡錄的 webm 要轉 m4a（15 分鐘的錄音實測幾秒）
+export const maxDuration = 120;
 
 export async function GET() {
   const supabase = await createSupabaseServer();
@@ -55,7 +63,7 @@ export async function GET() {
     return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
   }
   const rows = (data ?? []) as StoryRow[];
-  const [urls, comments] = await Promise.all([signStoryPhotos(admin, rows), loadStoryCommentsViews(admin, rows, user.id)]);
+  const [urls, comments] = await Promise.all([signStoryMedia(admin, rows), loadStoryCommentsViews(admin, rows, user.id)]);
   return NextResponse.json({
     stories: rows.map((r) => ({ ...toClientStory(r, urls), ...(comments.has(r.id) ? { comments: comments.get(r.id) } : {}) })),
   });
@@ -71,7 +79,11 @@ export async function POST(req: NextRequest) {
   const b = parsed.data;
   const title = sanitizeStoryTitle(b.title);
   const body = sanitizeStoryBody(b.body);
-  if (!title || !body) return NextResponse.json({ error: "標題和內容都要寫喔" }, { status: 400 });
+  if (b.audioPath !== undefined && !isOwnPendingStoryAudio(b.audioPath, user.id)) {
+    return NextResponse.json({ error: "錄音位置不對，請再傳一次" }, { status: 400 });
+  }
+  if (!title) return NextResponse.json({ error: "標題要寫喔" }, { status: 400 });
+  if (!body && !b.audioPath) return NextResponse.json({ error: "標題和內容都要寫喔" }, { status: 400 });
   const photoPaths = b.photoPaths ?? [];
   if (photoPaths.some((p) => !isOwnUploadPath(p, user.id))) {
     return NextResponse.json({ error: "照片位置不對，請重新選一次照片" }, { status: 400 });
@@ -89,6 +101,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "照片存不進去，請再試一次" }, { status: 500 });
   }
 
+  let audio: StoredStoryAudio | null = null;
+  if (b.audioPath) {
+    try {
+      audio = await finalizeStoryAudio(admin, user.id, id, b.audioPath, b.audioSeconds ?? 0);
+    } catch (e) {
+      if (targets.length) await admin.storage.from(STORY_BUCKET).remove(targets);
+      if (e instanceof StoryAudioError) return NextResponse.json({ error: e.message }, { status: e.status });
+      console.error("[api] story audio:", e);
+      return NextResponse.json({ error: "錄音存不進去，請再試一次" }, { status: 500 });
+    }
+  }
+
   const photos = targets.map((path, i) => ({
     path,
     width: b.photoSizes?.[i]?.width ?? 0,
@@ -103,6 +127,7 @@ export async function POST(req: NextRequest) {
       era: sanitizeStoryEra(b.era) || null,
       body,
       photos,
+      ...(audio ? { audio } : {}),
       interview: trimStoryInterview(b.interview ?? []),
       share_with_family: b.shareWithFamily,
     })
@@ -110,11 +135,12 @@ export async function POST(req: NextRequest) {
     .single();
   if (error || !data) {
     if (targets.length) await admin.storage.from(STORY_BUCKET).remove(targets);
+    if (audio) await removeStoryAudio(admin, [audio.path]);
     console.error("[api] story insert:", error);
     return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
   }
   const row = data as StoryRow;
   after(() => notifyFamilyNewStory(admin, row));
-  const urls = await signStoryPhotos(admin, [row]);
+  const urls = await signStoryMedia(admin, [row]);
   return NextResponse.json({ story: toClientStory(row, urls) });
 }

@@ -1,12 +1,13 @@
 // ────────────────────────────────────────────────
-// 我的故事集：改一篇（標題、年代、內容、給不給家人看）、刪一篇（照片一起刪）
+// 我的故事集：改一篇（標題、年代、內容、給不給家人看）、刪一篇（照片、錄音一起刪）
 // PATCH { title?, era?, body?, shareWithFamily? } → { story }；DELETE → { ok }
 // ────────────────────────────────────────────────
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
 import { STORY_BODY_MAX, sanitizeStoryBody, sanitizeStoryEra, sanitizeStoryTitle } from "@/lib/life-stories";
-import { STORY_BUCKET, signStoryPhotos, toClientStory, type StoryRow } from "@/lib/life-stories-server";
+import { STORY_BUCKET, signStoryMedia, toClientStory, type StoryRow } from "@/lib/life-stories-server";
+import { removeStoryAudio } from "@/lib/story-audio-server";
 
 const PatchSchema = z.object({
   title: z.string().max(100).optional(),
@@ -46,7 +47,8 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   }
   if (b.body !== undefined) {
     const body = sanitizeStoryBody(b.body);
-    if (!body) return NextResponse.json({ error: "內容要寫喔" }, { status: 400 });
+    // 聲音故事可以不寫文字
+    if (!body && !found.row.audio) return NextResponse.json({ error: "內容要寫喔" }, { status: 400 });
     patch.body = body;
   }
   if (b.era !== undefined) patch.era = sanitizeStoryEra(b.era) || null;
@@ -57,7 +59,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
   }
   const row = data as StoryRow;
-  return NextResponse.json({ story: toClientStory(row, await signStoryPhotos(found.admin, [row])) });
+  return NextResponse.json({ story: toClientStory(row, await signStoryMedia(found.admin, [row])) });
 }
 
 export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
@@ -78,5 +80,6 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     if (rmErr) console.warn("[api] story photo remove (story already deleted):", found.row.id, rmErr.message);
     else await found.admin.from("life_stories").update({ photos: [] }).eq("id", found.row.id);
   }
+  if (found.row.audio?.path) await removeStoryAudio(found.admin, [found.row.audio.path]);
   return NextResponse.json({ ok: true });
 }

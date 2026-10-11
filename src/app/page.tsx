@@ -126,6 +126,8 @@ export default function Page() {
   });
   // 打字問暖暖：書本範例帶來的那一句（讀一次就用掉）
   const [askSeed, setAskSeed] = useState<AskSeed | null>(null);
+  // 我的故事集：書本 1105「讓聲音留下來」帶 &audio=1，直接打開錄音
+  const [storiesAudio, setStoriesAudio] = useState(false);
 
   // 章節開篇 QR 深連結：/?open=voice|camera|photo&from=chapter0100
   useEffect(() => {
@@ -188,7 +190,10 @@ export default function Page() {
     else if (open === "caregiver") setSubpage("caregiver");
     // 打字問暖暖（書本練習的「打字問暖暖」：範例放在 sessionStorage，登入畫面也帶得過去）
     // 我的故事集（家人留言、按讚的推播點進來）
-    else if (open === "stories") setSubpage("stories");
+    else if (open === "stories") {
+      setStoriesAudio(url.searchParams.get("audio") === "1");
+      setSubpage("stories");
+    }
     // 這則訊息可疑嗎？（書本第五章、安心保鑣的按鈕）
     else if (open === "scam-check") setSubpage("scam-check");
     else if (open === "ask") {
@@ -211,6 +216,7 @@ export default function Page() {
     url.searchParams.delete("open");
     url.searchParams.delete("from");
     url.searchParams.delete("tour");
+    url.searchParams.delete("audio");
     const qs = url.searchParams.toString();
     window.history.replaceState({}, "", url.pathname + (qs ? `?${qs}` : ""));
   }, [loading, user]);
@@ -762,7 +768,7 @@ export default function Page() {
               setAskSeed(null);
               setSubpage("ask");
             }}
-            onStories={() => setSubpage("stories")}
+            onStories={() => { setStoriesAudio(false); setSubpage("stories"); }}
             onScamCheck={() => setSubpage("scam-check")}
             caregiver={careElderCount > 0 ? { count: careElderCount, needsAttention: careNeedsAttention } : null}
             onCaregiver={() => setSubpage("caregiver")}
@@ -873,7 +879,9 @@ export default function Page() {
         />
       )}
       {subpage === "ask" && <AskScreen seed={askSeed} onBack={() => setSubpage(null)} />}
-      {subpage === "stories" && <StoriesScreen onBack={() => setSubpage(null)} />}
+      {subpage === "stories" && (
+        <StoriesScreen key={storiesAudio ? "audio" : "list"} initialAudio={storiesAudio} onBack={() => setSubpage(null)} />
+      )}
       {subpage === "scam-check" && <ScamCheckScreen onBack={() => setSubpage(null)} />}
       {subpage === "caregiver" && (
         <CaregiverScreen
