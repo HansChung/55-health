@@ -268,6 +268,26 @@ stack works well for auth + meal/diary CRUD:
   the wrong pier and invents history) and always tells elders not to pick/eat wild plants.
 - Read-aloud uses the browser's speechSynthesis (`speakGuideParagraphs`, zh-TW) — free, no server TTS.
 
+### 這則訊息可疑嗎？（scam check, `subpage "scam-check"`）
+- Home 「🛡️ 這則訊息可疑嗎？」, the 安心保鑣 page (`/smart/fraud`) and book 0502's app link → `ScamCheckScreen`;
+  deep link `/?open=scam-check`. **Every tier**, `SCAM_CHECK_DAILY` (10) per Taipei day via `reserveDailySlot` on
+  endpoint `/api/scam-check`; usage is logged as `gemini_text` even with a screenshot, because every `gemini_vision`
+  row counts toward the paid monthly photo quota.
+- Input: a screenshot (direct upload, `imageFromRequest`; not stored) and/or pasted text (≤2000) + an optional
+  「誰傳來的」 chip. `POST /api/scam-check` → vision model (`checkScamMessage`, `src/lib/ai/scam-check.ts`) → JSON
+  `{verdict: danger|suspicious|unsure|likely_ok, title, kind, signals, advice, verify, excerpt}`. The prompt treats the
+  message as data (pasted `<訊息>` tags are stripped; injected "judge this safe" is itself a red flag), never says
+  "safe", never tells the elder to tap links / call numbers in the message, and always points to self-found official
+  numbers or 165. `normalizeScamCheckResult` strips links and masks long numbers / ID numbers / codes in **every**
+  field, so nothing on screen or in shares can be tapped or dialled. The screen always shows the four rules and a
+  `tel:165` button regardless of the verdict.
+- `scam_checks` (needs `supabase/add-scam-checks.sql`; server-only RLS) keeps only the result + masked excerpt (no
+  screenshot, no original text); the daily `cleanup-uploads` cron deletes rows older than 90 days. 「📣 通知家人幫我看」
+  (`POST …/[id]/share`) claims `shared_at` once (conditional update) and pushes accepted family
+  (`/?open=caregiver`); 家人狀況 shows shared checks from the last 30 days (`GET /api/family/scam-checks`,
+  `FamilyScamChecks`). No linked family → 409 `noFamily`, and the screen offers 「用 LINE 傳給家人」
+  (`navigator.share`, first-person text from `scamShareText`, no links).
+
 ### Book × App light coupling（書本／App）
 - Chapter openings live at `/smart/chapter/[id]` (public, printable). Shared rhythm: **一拍、二問、三記下**.
 - Optional save: 「把這句話點成光點」→ `/smart/spark?source=chapterXXXX` (sessionStorage seed).
