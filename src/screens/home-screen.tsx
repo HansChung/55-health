@@ -50,6 +50,7 @@ interface HomeScreenProps {
   onAsk?: () => void;
   /** 我的故事集 */
   onStories?: () => void;
+  onScamCheck?: () => void;
   caregiver?: { count: number; needsAttention: boolean } | null;
   onCaregiver?: () => void;
   /** 每天早上天氣：還沒設定過就在首頁問縣市 */
@@ -71,7 +72,7 @@ function getDateLabel(): string {
   return `${d.getMonth() + 1}月${d.getDate()}日　星期${WEEKDAYS[d.getDay()]}`;
 }
 
-export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart, onBlueprint, onBookPractice, onIot, onTravelVideo, onStudyTours, onPhotoAsk, onAsk, onStories, caregiver = null, onCaregiver, notificationSettings, onProfileUpdated }: HomeScreenProps) {
+export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart, onBlueprint, onBookPractice, onIot, onTravelVideo, onStudyTours, onPhotoAsk, onAsk, onStories, onScamCheck, caregiver = null, onCaregiver, notificationSettings, onProfileUpdated }: HomeScreenProps) {
   // 從餐點計算今日營養
   const totals = meals.reduce(
     (s, m) => {
@@ -206,6 +207,18 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
           background="linear-gradient(135deg, #EAF3E7 0%, #FFFFFF 100%)"
           borderColor="#C3DDBB"
           iconBg="#D5E8CE"
+        />
+      )}
+
+      {onScamCheck && (
+        <NavCard
+          onClick={onScamCheck}
+          emoji="🛡️"
+          title="這則訊息可疑嗎？"
+          subtitle="收到奇怪的簡訊、LINE，截圖給暖暖看"
+          background="linear-gradient(135deg, #FBECEE 0%, #FFFFFF 100%)"
+          borderColor="#EBC3CB"
+          iconBg="#F6DCE1"
         />
       )}
 

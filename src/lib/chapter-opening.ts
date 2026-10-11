@@ -3279,6 +3279,10 @@ export function getChapterDeepLinkHint(from: string | null | undefined): Chapter
       label: "一拍、二問、三記下",
       tips: ["一拍：先拍下來", "二問：用自然的話問一句", "三記下：留下最有用的一句"],
     },
+    "0502": {
+      label: "先暫停，後查證",
+      tips: ["先截圖，不點連結", "交給暖暖列出疑點", "不確定就打 165"],
+    },
     "0201": {
       label: "數位華爾滋",
       tips: ["一拍：先拍下來", "二問：用自然的話問一句", "三記下：留下最有用的一句"],

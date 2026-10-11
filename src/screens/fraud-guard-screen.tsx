@@ -130,6 +130,19 @@ export function FraudGuardScreen() {
           資料預設只存在您的裝置瀏覽器。{FRAUD_SENSITIVE_REMINDER}
         </div>
 
+        <a
+          href="/?open=scam-check"
+          style={{
+            display: "block", padding: "14px 16px", marginBottom: 18, borderRadius: 12, textDecoration: "none",
+            background: "#FBECEE", border: "2px solid #EBC3CB", color: "var(--ink-1)",
+          }}
+        >
+          <strong style={{ fontSize: "var(--fs-base)" }}>🛡️ 收到真的可疑訊息？</strong>
+          <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", marginTop: 4, lineHeight: 1.55 }}>
+            截圖給暖暖看，幫你列出疑點、教你怎麼查證，也能一鍵通知家人 →
+          </div>
+        </a>
+
         <Section title="① 先暫停">
           <p style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.55, margin: "0 0 12px" }}>
             可疑訊息出現時，先慢一秒：
