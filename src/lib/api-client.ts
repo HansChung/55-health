@@ -546,6 +546,13 @@ export const api = {
   chapterCatalog: () =>
     apiFetch<{ custom: { id: string; title: string }[]; titles: Record<string, string> }>("/api/chapters/catalog"),
 
+  // 書本章節的 Podcast：拿簽名上傳網址，瀏覽器直接傳到 Supabase
+  adminChapterAudioUpload: (input: { chapterId: string; fileName: string; size: number; type: string }) =>
+    apiFetch<{ path: string; token: string; publicUrl: string; contentType: string }>("/api/admin/chapter-audio", {
+      method: "POST",
+      json: input,
+    }),
+
   adminListUsers: () =>
     apiFetch<{ users: AdminUserRow[] }>("/api/admin/users"),
 
