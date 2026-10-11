@@ -46,7 +46,39 @@ as $$
   limit max_rows;
 $$;
 
--- 今天已經拿過幾次上傳網址（防止一直上傳大檔案塞滿空間）
+-- 拿上傳網址就先記一筆（同一個人同時要很多個網址也會照順序排隊，超過每天上限就不給）
+create table if not exists story_audio_upload_claims (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users on delete cascade,
+  created_at timestamptz not null default now()
+);
+create index if not exists story_audio_upload_claims_user on story_audio_upload_claims (user_id, created_at);
+alter table story_audio_upload_claims enable row level security;
+grant all on story_audio_upload_claims to service_role;
+
+create or replace function public.claim_story_audio_upload(p_user uuid, p_limit int)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  used int;
+begin
+  -- 同一個人一次只處理一個（交易結束自動放開）
+  perform pg_advisory_xact_lock(hashtext('story_audio_upload:' || p_user::text));
+  select count(*) into used from story_audio_upload_claims
+  where user_id = p_user and created_at > now() - interval '1 day';
+  if used >= p_limit then
+    return false;
+  end if;
+  insert into story_audio_upload_claims (user_id) values (p_user);
+  delete from story_audio_upload_claims where user_id = p_user and created_at < now() - interval '2 days';
+  return true;
+end;
+$$;
+
+-- 舊版用的：今天上傳了幾個檔案（還沒跑上面那段時的備案）
 create or replace function public.story_audio_uploads_today(p_user uuid)
 returns int
 language sql
@@ -59,6 +91,8 @@ as $$
     and created_at > now() - interval '1 day';
 $$;
 
+revoke all on function public.claim_story_audio_upload(uuid, int) from public, anon, authenticated;
+grant execute on function public.claim_story_audio_upload(uuid, int) to service_role;
 revoke all on function public.stale_story_audio(int) from public, anon, authenticated;
 revoke all on function public.story_audio_uploads_today(uuid) from public, anon, authenticated;
 grant execute on function public.stale_story_audio(int) to service_role;

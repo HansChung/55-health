@@ -89,6 +89,12 @@ export function formatRecordClock(seconds: number): string {
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 }
 
+/** ffmpeg 讀檔頭印的「Duration: 00:03:12.34」→ 秒數；N/A 或沒有就 null */
+export function durationFromProbe(stderr: string): number | null {
+  const m = /Duration:\s*(\d+):(\d{2}):(\d{2}(?:\.\d+)?)/.exec(stderr);
+  return m ? Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]) : null;
+}
+
 /** ffmpeg 最後一行進度「time=00:03:12.34」→ 秒數（webm 錄音常常沒有 Duration） */
 export function ffmpegOutputSeconds(stderr: string): number | null {
   const all = [...stderr.matchAll(/time=(\d+):(\d{2}):(\d{2}(?:\.\d+)?)/g)];

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  durationFromProbe,
   ffmpegOutputSeconds,
   formatAudioDuration,
   formatRecordClock,
@@ -56,5 +57,7 @@ describe("聲音故事：長度", () => {
     const stderr = "Duration: N/A\nsize=  12kB time=00:00:05.12 bitrate=\nsize=  40kB time=00:03:12.48 bitrate= 64.0kbits/s";
     expect(ffmpegOutputSeconds(stderr)).toBeCloseTo(192.48);
     expect(ffmpegOutputSeconds("no progress")).toBeNull();
+    expect(durationFromProbe("Input #0, mp3\n  Duration: 00:12:05.33, start: 0.000000, bitrate: 64 kb/s")).toBeCloseTo(725.33);
+    expect(durationFromProbe("  Duration: N/A, start: 0")).toBeNull();
   });
 });

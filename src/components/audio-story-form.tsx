@@ -6,7 +6,7 @@
 // 錄音直接傳到 Supabase（簽名網址），不經過 Vercel
 // ────────────────────────────────────────────────
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, ApiError } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import { useVoiceRecorder } from "@/hooks/use-voice-recorder";
@@ -87,6 +87,8 @@ export function AudioStoryForm({ onSaved, onCancel }: { onSaved: (story: LifeSto
   const [photos, setPhotos] = useState<DraftPhoto[]>([]);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
+  // 已經傳上去的錄音：存檔失敗再按一次就沿用，不用重傳（也不會多用掉每天的次數）
+  const uploaded = useRef<{ picked: Picked; path: string } | null>(null);
 
   // 錄好了 → 變成要存的錄音
   useEffect(() => {
@@ -149,7 +151,9 @@ export function AudioStoryForm({ onSaved, onCancel }: { onSaved: (story: LifeSto
     }
     setSaving("上傳錄音中…");
     try {
-      const audioPath = await uploadStoryAudio(picked.blob, picked.fileName);
+      const audioPath =
+        uploaded.current?.picked === picked ? uploaded.current.path : await uploadStoryAudio(picked.blob, picked.fileName);
+      uploaded.current = { picked, path: audioPath };
       setSaving(picked.source === "record" ? "整理錄音中，大約半分鐘…" : "存檔中…");
       const res = await api.createStory({
         title,
@@ -165,6 +169,8 @@ export function AudioStoryForm({ onSaved, onCancel }: { onSaved: (story: LifeSto
       toast.success(share ? "存好了！家人也聽得到這段故事" : "存好了！這段只有你聽得到");
       onSaved(res.story);
     } catch (e) {
+      // 伺服器已經找不到那個暫存檔（搬走了或過期）：下次重新上傳
+      if (e instanceof ApiError && /找不到剛剛的錄音/.test(e.message)) uploaded.current = null;
       toast.error(e instanceof ApiError && !e.isNetwork ? e.message : "沒有存成功，請再試一次（錄音還在，不用重錄）");
     }
     setSaving(null);

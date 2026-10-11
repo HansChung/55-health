@@ -1,7 +1,7 @@
 // ────────────────────────────────────────────────
 // 每天清掉照片暫存區（user-uploads）超過一天的檔案
 // 照片直傳 Supabase 後，分析完、做完影片就用不到了（影片要留的已經複製到 travel-videos）
-// 順便刪掉超過 SCAM_CHECK_KEEP_DAYS 天的「這則訊息可疑嗎？」紀錄
+// 順便刪掉超過 SCAM_CHECK_KEEP_DAYS 天的「這則訊息可疑嗎？」紀錄，和沒存成故事的聲音故事暫存錄音
 // 由 Vercel Cron 觸發（見 vercel.json），CRON_SECRET 保護
 // ────────────────────────────────────────────────
 import { NextRequest, NextResponse } from "next/server";

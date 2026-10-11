@@ -16,6 +16,7 @@ import {
   STORY_AUDIO_MAX_BYTES,
   STORY_AUDIO_MIN_SECONDS,
   STORY_AUDIO_RECORD_MAX_SECONDS,
+  durationFromProbe,
   ffmpegOutputSeconds,
   pendingStoryAudioPath,
   storyAudioPath,
@@ -42,6 +43,19 @@ export interface StoredStoryAudio {
   bytes: number;
 }
 
+/**
+ * 每天上傳上限：拿網址時就先記一筆（claim_story_audio_upload 用鎖排隊，同時要很多個網址也不會超過）。
+ * 還沒跑新版 SQL 時退回「數今天上傳了幾個檔案」（同時送出可能多給幾個）
+ */
+async function claimUploadSlot(admin: Admin, userId: string): Promise<boolean> {
+  const { data, error } = await admin.rpc("claim_story_audio_upload", { p_user: userId, p_limit: STORY_AUDIO_DAILY_UPLOADS });
+  if (!error) return data === true;
+  if (!/claim_story_audio_upload/.test(error.message)) throw new Error(`claim story audio upload failed: ${error.message}`);
+  const { data: today, error: countErr } = await admin.rpc("story_audio_uploads_today", { p_user: userId });
+  if (countErr) throw new Error(`count story audio uploads failed: ${countErr.message}`);
+  return Number(today ?? 0) < STORY_AUDIO_DAILY_UPLOADS;
+}
+
 /** 給瀏覽器一個簽名上傳網址（直接傳到 Supabase，大檔案不經過 Vercel） */
 export async function createStoryAudioUpload(
   admin: Admin,
@@ -53,15 +67,27 @@ export async function createStoryAudioUpload(
   if (file.size > STORY_AUDIO_MAX_BYTES) {
     throw new StoryAudioError("錄音檔超過 50MB，請錄短一點，或分成幾段故事", 413);
   }
-  const { data: today, error: countErr } = await admin.rpc("story_audio_uploads_today", { p_user: userId });
-  if (countErr) throw new Error(`count story audio uploads failed: ${countErr.message}`);
-  if (Number(today ?? 0) >= STORY_AUDIO_DAILY_UPLOADS) {
+  if (!(await claimUploadSlot(admin, userId))) {
     throw new StoryAudioError(`今天已經上傳 ${STORY_AUDIO_DAILY_UPLOADS} 段錄音了，明天再來`, 429);
   }
   const p = pendingStoryAudioPath(userId, t.ext);
   const { data, error } = await admin.storage.from(STORY_AUDIO_BUCKET).createSignedUploadUrl(p);
   if (error || !data) throw new Error(`signed upload url failed: ${error?.message ?? "no data"}`);
   return { path: p, token: data.token, contentType: t.contentType };
+}
+
+/** 上傳的錄音檔有多長：ffmpeg 讀檔頭的「Duration:」（不解碼，很快）；讀不出來回 null */
+async function probeSeconds(input: Buffer): Promise<number | null> {
+  const dir = await mkdtemp(path.join(tmpdir(), "story-audio-"));
+  try {
+    const inPath = path.join(dir, "in.bin");
+    await writeFile(inPath, input);
+    // 沒有輸出檔，ffmpeg 會回非 0；只看它印出來的檔頭
+    const { stderr } = await runFfmpeg(["-hide_banner", "-nostdin", ...SAFE_AUDIO_INPUT, "-i", inPath], 20_000);
+    return durationFromProbe(stderr);
+  } finally {
+    await rm(dir, { recursive: true, force: true }).catch(() => {});
+  }
 }
 
 /** App 裡錄的 webm／ogg → m4a（AAC 單聲道 64k），順便從 ffmpeg 的進度拿到長度 */
@@ -124,7 +150,15 @@ export async function finalizeStoryAudio(
     return { path: finalPath, seconds: Math.round(seconds), mime: "audio/mp4", bytes: converted.m4a.length };
   }
 
-  const seconds = Math.min(Math.max(0, clientSeconds || 0), 6 * 3600);
+  // 瀏覽器常常讀不到長度（Safari 回 Infinity、讀取逾時）：那就在伺服器讀檔頭量一次；量不出來代表檔案壞了
+  let seconds = Number.isFinite(clientSeconds) ? Math.min(Math.max(0, clientSeconds), 6 * 3600) : 0;
+  if (seconds < STORY_AUDIO_MIN_SECONDS) {
+    const { data: blob, error } = await bucket.download(pendingPath);
+    if (error || !blob) throw new StoryAudioError("找不到剛剛的錄音，請再傳一次");
+    const probed = await probeSeconds(Buffer.from(await blob.arrayBuffer())).catch(() => null);
+    if (probed === null) throw new StoryAudioError("這個錄音檔讀不出來，請換一個檔案", 422);
+    seconds = probed;
+  }
   if (!(seconds >= STORY_AUDIO_MIN_SECONDS)) throw new StoryAudioError("錄音太短了，請多說一點");
   const finalPath = storyAudioPath(userId, storyId, t.ext);
   const { error: mvErr } = await bucket.move(pendingPath, finalPath);
