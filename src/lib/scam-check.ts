@@ -106,19 +106,23 @@ export function normalizeScamCheckResult(raw: unknown): ScamCheckResult {
 export function maskSensitive(text: string): string {
   return text
     .replace(/[A-Z][12]\d{8}/g, "＊＊＊＊")
-    .replace(/(驗證碼|認證碼|確認碼|安全碼|動態密碼|交易密碼|代碼|密碼|OTP|PIN)([^0-9]{0,6})\d[\d .\-]{2,10}\d/gi, (_m, label: string, mid: string) => `${label}${mid}＊＊＊＊`)
+    // 標籤後面的整串數字（不限長度，免得 16 碼的帳號只遮前半）
+    .replace(/(驗證碼|認證碼|確認碼|安全碼|動態密碼|交易密碼|代碼|密碼|OTP|PIN)([^0-9]{0,6})\d(?:[\d .\-]*\d)?/gi, (_m, label: string, mid: string) => `${label}${mid}＊＊＊＊`)
     .replace(/\d[\d .\-]{7,}\d/g, (m) => `${m.slice(0, 2)}＊＊＊＊`);
 }
 
 const LINK_GONE = "（連結已拿掉）";
 
 /**
- * 拿掉所有連結（免得長輩、家人誤點）：http(s)／www 開頭的、任何「名字.英文字尾」的網域（不靠字尾清單，
+ * 拿掉所有連結（免得長輩、家人誤點）：http(s)／www 開頭的、line://、tg:// 這類自訂開頭的、
+ * 任何「名字.英文字尾」的網域（不靠字尾清單，
  * fakebank.live、xxx.click 都算）、IP 位址。網址後面只吃 ASCII，緊接的中文留著
  */
 export function stripLinks(text: string): string {
   return text
     .replace(/(?:https?:\/\/|www\.)[!-~]+/gi, LINK_GONE)
+    // 自訂開頭的連結（line://、tg://、intent://…）：詐騙常用來直接加好友、開 App
+    .replace(/\b[a-z][a-z0-9+.\-]{1,30}:\/\/[!-~]*/gi, LINK_GONE)
     .replace(/\b(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z][a-z0-9-]*[a-z](?::\d+)?(?:\/[!-~]*)?/gi, LINK_GONE)
     .replace(/\b\d{1,3}(?:\.\d{1,3}){3}(?::\d+)?(?:\/[!-~]*)?/g, LINK_GONE);
 }

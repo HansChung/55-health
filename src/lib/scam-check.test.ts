@@ -48,6 +48,8 @@ describe("這則訊息可疑嗎：整理暖暖的判斷", () => {
     expect(maskSensitive("代碼 482913")).toBe("代碼 ＊＊＊＊");
     expect(maskSensitive("OTP:1234-5678")).toBe("OTP:＊＊＊＊");
     expect(maskSensitive("回撥 0912.345.678")).toBe("回撥 09＊＊＊＊");
+    expect(maskSensitive("代碼 1234567890123456 請轉帳")).toBe("代碼 ＊＊＊＊ 請轉帳");
+    expect(maskSensitive("代碼 1234-5678-9012-3456")).toBe("代碼 ＊＊＊＊");
     expect(maskSensitive("打 165，罰款 1,200 元")).toBe("打 165，罰款 1,200 元");
   });
   it("分享文字拿掉連結（含短網址）", () => {
@@ -60,6 +62,8 @@ describe("這則訊息可疑嗎：整理暖暖的判斷", () => {
     expect(stripLinks("點fakebank.online/pay繳費")).toBe("點（連結已拿掉）繳費");
     expect(stripLinks("https://bit.ly/3abc要你登入")).toBe("（連結已拿掉）要你登入");
     expect(stripLinks("連到 203.0.113.9/x")).toBe("連到 （連結已拿掉）");
+    expect(stripLinks("按 line://ti/p/@abc 加好友")).toBe("按 （連結已拿掉） 加好友");
+    expect(stripLinks("開 intent://scan/#Intent;end 再操作")).toBe("開 （連結已拿掉） 再操作");
     expect(stripLinks("ATM 不能解除分期，罰款 1.5 萬")).toBe("ATM 不能解除分期，罰款 1.5 萬");
   });
   it("貼上的訊息保留分行、去掉多餘空白、截長", () => {
