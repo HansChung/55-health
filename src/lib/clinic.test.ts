@@ -31,6 +31,12 @@ describe("看診小幫手：看診小卡", () => {
     const card = normalizeClinicCard({ chief: "膝蓋痛", own_questions: ["可以爬山嗎？"], questions: ["我還可以去爬山嗎？", "藥要吃多久？"] }, input);
     expect(card.questions).toEqual(["可以爬山嗎？", "要不要拍X光？", "藥要吃多久？"]);
   });
+  it("長輩寫了很多題也全部保留，只限制暖暖加的題數", () => {
+    const many = Array.from({ length: 12 }, (_, i) => `問題${i + 1}`).join("\n");
+    const card = normalizeClinicCard({ chief: "x", extra_questions: ["藥要吃多久？", "要注意什麼？"] }, { ...input, questions: many });
+    expect(card.questions).toHaveLength(14);
+    expect(card.questions[11]).toBe("問題12？");
+  });
   it("拆問題、判斷是不是同一題", () => {
     expect(splitQuestions("可以爬山嗎？要吃多久\n\n副作用")).toEqual(["可以爬山嗎？", "要吃多久？", "副作用？"]);
     expect(sameQuestion("可以爬山嗎？", "我還可以去爬山嗎？")).toBe(true);
@@ -65,6 +71,8 @@ describe("看診小幫手：最近量的數值", () => {
     expect(m.weight).toEqual({ latestKg: 58.5, latest: "10/06" });
     expect(metricsLines(m)[0]).toBe("血壓：最近 30 天量了 2 次，平均 135/85 mmHg");
     expect(metricsLines(summarizeMetrics([]))).toEqual([]);
+    // 台灣早上 7 點量的（UTC 前一天 23 點）算當天
+    expect(summarizeMetrics([{ metric_type: "blood_pressure", measured_at: "2026-10-04T23:00:00Z", systolic: 120, diastolic: 80 }]).bp?.latest).toBe("10/05");
   });
 });
 
@@ -87,6 +95,9 @@ describe("看診小幫手：檢驗報告", () => {
     expect(c.get("GOT")?.trend).toBe("same");
     expect(c.get("備註")?.trend).toBeNull();
     expect(c.has("新項目")).toBe(false);
+    // 只知道範圍的數值（<5、>200）不比高低
+    const bounded = compareLab(report([["CRP", "<0.5", "normal"]]), { report: report([["CRP", "0.3", "normal"]]), date: "x" });
+    expect(bounded.get("CRP")).toEqual({ prevValue: "0.3", prevDate: "x", trend: null });
     expect(compareLab(cur, null).size).toBe(0);
   });
   it("找上一份報告：這次之前、最近的那一份", () => {

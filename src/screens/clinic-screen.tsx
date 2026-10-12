@@ -128,10 +128,13 @@ export function ClinicScreen({ onBack }: { onBack: () => void }) {
     try {
       // 報告字小：長邊留大一點
       const dataUrl = await compressImage(file, { maxSide: 2000, quality: 0.85 });
+      // 「醫生交代的話」打好了還沒按記下來：拍完報告不要把它清掉
+      const unsaved = visitId !== "new" && current?.id === visitId && notes !== (current.doctor_notes ?? "") ? notes : null;
       const res = await api.readClinicReport(visitId, await photoPayload(dataUrl));
       trackEvent("clinic_report", { items: res.visit.report?.items.length ?? 0 });
       upsert(res.visit);
       open(res.visit);
+      if (unsaved !== null) setNotes(unsaved);
     } catch (e) {
       fail(e, "暖暖這次沒看清楚，請再拍一次");
     }

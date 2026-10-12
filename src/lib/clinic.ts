@@ -141,10 +141,16 @@ export function normalizeClinicCard(raw: unknown, input: ClinicPrepInput): Clini
   const own = rewritten.length === original.length ? rewritten : original;
   const questions = [...own];
   // 暖暖建議補問的（舊格式只有 questions 也接受），和已經有的重複就不加
+  // 只限制暖暖加的題數（最多 4 題）；長輩自己的問題全部保留
+  let extras = 0;
   for (const q of [...cleanList(r.extra_questions, 4, 80), ...cleanList(r.questions, 8, 80)]) {
-    if (!questions.some((x) => sameQuestion(x, q))) questions.push(q);
+    if (extras >= 4) break;
+    if (!questions.some((x) => sameQuestion(x, q))) {
+      questions.push(q);
+      extras += 1;
+    }
   }
-  return { chief: chief || points[0], points, questions: questions.slice(0, 10) };
+  return { chief: chief || points[0], points, questions };
 }
 
 const FLAGS: LabFlag[] = ["high", "low", "normal", "unknown"];
@@ -187,7 +193,9 @@ export function labKey(name: string): string {
     .replace(/[\s()（）\[\]【】:：\-_.]/g, "");
 }
 
+/** 確切的數字才算；「<5」「>200」「≦0.5」這種只知道範圍的不能比高低 */
 function toNumber(v: string): number | null {
+  if (/[<>≦≧≤≥＜＞]/.test(v)) return null;
   const m = /-?\d+(?:\.\d+)?/.exec(v.replace(/,/g, ""));
   return m ? Number(m[0]) : null;
 }
@@ -244,7 +252,8 @@ export function previousReport(visits: ClinicVisit[], current: ClinicVisit): { r
 export function summarizeMetrics(
   rows: { metric_type: string; measured_at: string; systolic?: number | null; diastolic?: number | null; glucose_mg_dl?: number | null; glucose_context?: string | null; weight_kg?: number | string | null }[]
 ): ClinicMetrics {
-  const day = (iso: string) => iso.slice(5, 10).replace("-", "/");
+  // 台灣時間的日期（早上量的血壓不會變成前一天）
+  const day = (iso: string) => new Date(Date.parse(iso) + 8 * 3600 * 1000).toISOString().slice(5, 10).replace("-", "/");
   const bpRows = rows.filter((r) => r.metric_type === "blood_pressure" && r.systolic && r.diastolic);
   const gRows = rows.filter((r) => r.metric_type === "blood_glucose" && r.glucose_mg_dl);
   const wRows = rows.filter((r) => r.metric_type === "weight" && r.weight_kg);

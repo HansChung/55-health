@@ -66,9 +66,6 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
 
   try {
     const { report, usage } = await readLabReport(image);
-    const meta = { provider: usage.provider, items: report.items.length };
-    if (slot?.id) await finishReservedUsage(slot.id, { model: usage.model, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, metadata: meta });
-    else await trackAiUsage({ userId: user.id, service: "gemini_vision", model: usage.model, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, endpoint: ENDPOINT, success: true, metadata: meta });
 
     const now = new Date().toISOString();
     const write = existing
@@ -76,9 +73,14 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
       : admin.from("clinic_visits").insert({ user_id: user.id, visit_date: taipeiToday(), report }).select("*").single();
     const { data, error } = await write;
     if (error || !data) {
+      // 沒存成功不算次數（付費的還沒記，免費的把佔的格子還回去）
+      if (slot?.id) await releaseReservedUsage(slot.id);
       console.error("[api] clinic report save:", error);
       return NextResponse.json({ error: "存不進去，請再試一次" }, { status: 500 });
     }
+    const meta = { provider: usage.provider, items: report.items.length };
+    if (slot?.id) await finishReservedUsage(slot.id, { model: usage.model, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, metadata: meta });
+    else await trackAiUsage({ userId: user.id, service: "gemini_vision", model: usage.model, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, endpoint: ENDPOINT, success: true, metadata: meta });
     return NextResponse.json({ visit: toClientVisit(data as ClinicVisitRow) });
   } catch (e) {
     if (slot?.id) await releaseReservedUsage(slot.id);

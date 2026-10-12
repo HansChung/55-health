@@ -82,10 +82,6 @@ export async function POST(req: NextRequest) {
 
   try {
     const { card, usage } = await writeClinicCard(input, { age: profile?.age, conditions: conditionLabels(profile?.chronic_conditions) });
-    const meta = { provider: usage.provider, feature: "clinic_card" };
-    if (slot.id) await finishReservedUsage(slot.id, { model: usage.model, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, metadata: meta });
-    else await trackAiUsage({ userId: user.id, service: "gemini_text", model: usage.model, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, endpoint: ASK_ENDPOINT, success: true, metadata: meta });
-
     const { data, error } = await admin
       .from("clinic_visits")
       .insert({
@@ -97,9 +93,14 @@ export async function POST(req: NextRequest) {
       .select("*")
       .single();
     if (error || !data) {
+      // 沒存成功不算次數
+      if (slot.id) await releaseReservedUsage(slot.id);
       console.error("[api] clinic prepare save:", error);
       return NextResponse.json({ error: "存不進去，請再試一次" }, { status: 500 });
     }
+    const meta = { provider: usage.provider, feature: "clinic_card" };
+    if (slot.id) await finishReservedUsage(slot.id, { model: usage.model, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, metadata: meta });
+    else await trackAiUsage({ userId: user.id, service: "gemini_text", model: usage.model, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, endpoint: ASK_ENDPOINT, success: true, metadata: meta });
     return NextResponse.json({ visit: toClientVisit(data as ClinicVisitRow), quota: { used: slot.used, limit } });
   } catch (e) {
     if (slot.id) await releaseReservedUsage(slot.id);
