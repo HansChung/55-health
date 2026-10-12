@@ -3404,9 +3404,10 @@ export function getChapterDeepLinkHint(from: string | null | undefined): Chapter
       tips: ["一件作品、一項成長、一個希望", "備好 Plan B", "不以人數評分"],
     },
   };
+  // 沒有專屬提示的章：標題用章名（不要顯示成「書本練習｜書本練習」），提示不提拍照（多半是進語音對話）
   const hit = known[chapterId] ?? {
-    label: "書本練習",
-    tips: ["一拍：先拍下來", "二問：用自然的話問一句", "三記下：留下有用的一句"],
+    label: getChapterOpening(chapterId)?.title ?? "書本練習",
+    tips: ["用自然的話說一句", "一次問一件事", "記下最有用的一句"],
   };
   return { from, chapterId, ...hit };
 }
