@@ -99,6 +99,8 @@ export function LoginScreen({ onDone }: LoginScreenProps) {
       position: "absolute", inset: 0, zIndex: 70,
       background: "linear-gradient(180deg, #FFF3DF 0%, var(--bg) 70%)",
       display: "flex", flexDirection: "column", paddingTop: 16,
+      // 矮的手機或字放大時，下面的 Email 登入要捲得到
+      overflowY: "auto", WebkitOverflowScrolling: "touch",
     }}>
       {step === "email" && (
         <>
@@ -151,7 +153,7 @@ export function LoginScreen({ onDone }: LoginScreenProps) {
             )}
             {lineEnabled && (
               <p style={{ fontSize: "var(--fs-xs)", color: "var(--ink-3)", textAlign: "center", margin: "-4px 0 0", lineHeight: 1.5 }}>
-                用 LINE 登入時，經你同意後會取得 LINE 名稱、大頭貼和 Email，只用來建立帳號、寄健康報告與安全通知，不會寄廣告。
+                用 LINE 登入時，經你同意後會取得 LINE 名稱和大頭貼（有提供 Email 的話也會取得），只用來建立帳號、寄健康報告與安全通知，不會寄廣告。
                 <a href="/privacy#line-login" style={{ color: "var(--primary-deep)", marginLeft: 4 }}>隱私權政策</a>
               </p>
             )}
