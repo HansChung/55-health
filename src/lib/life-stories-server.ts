@@ -55,10 +55,10 @@ export function storyPhotoPath(userId: string, storyId: string, index: number, s
 }
 
 /** 好幾篇故事的照片和錄音一次簽網址（路徑 → 網址；照片和錄音在不同 bucket，檔名不會重複） */
-export async function signStoryMedia(admin: Admin, rows: StoryRow[]): Promise<Map<string, string>> {
+export async function signStoryMedia(admin: Admin, rows: StoryRow[], opts: { forFamily?: boolean } = {}): Promise<Map<string, string>> {
   const paths = rows.flatMap((r) => (r.photos ?? []).map((p) => p.path));
   const audioPaths = rows
-    .flatMap((r) => [r.audio?.path, r.voice_reading?.path])
+    .flatMap((r) => [r.audio?.path, opts.forFamily && !isVoiceReadingCurrent(r) ? undefined : r.voice_reading?.path])
     .filter((p): p is string => Boolean(p));
   const urls = new Map<string, string>();
   const [photos, audio] = await Promise.all([
@@ -76,8 +76,10 @@ export function isVoiceReadingCurrent(row: Pick<StoryRow, "title" | "era" | "bod
   return Boolean(row.voice_reading) && row.voice_reading!.text_hash === storyVoiceHash(storyVoiceText(row));
 }
 
-export function toClientStory(row: StoryRow, urls: Map<string, string>): LifeStory {
-  const voiceUrl = row.voice_reading?.path ? urls.get(row.voice_reading.path) : undefined;
+/** forFamily：給家人的不帶過期的錄音（文字改過＝長輩可能刪掉了某些內容，舊錄音不能再給家人） */
+export function toClientStory(row: StoryRow, urls: Map<string, string>, opts: { forFamily?: boolean } = {}): LifeStory {
+  const current = isVoiceReadingCurrent(row);
+  const voiceUrl = row.voice_reading?.path && (current || !opts.forFamily) ? urls.get(row.voice_reading.path) : undefined;
   return {
     id: row.id,
     title: row.title,
@@ -89,7 +91,7 @@ export function toClientStory(row: StoryRow, urls: Map<string, string>): LifeSto
     audio: row.audio?.path && urls.get(row.audio.path) ? { url: urls.get(row.audio.path)!, seconds: row.audio.seconds } : null,
     voice_reading:
       row.voice_reading && voiceUrl
-        ? { url: voiceUrl, seconds: row.voice_reading.seconds, outdated: !isVoiceReadingCurrent(row) }
+        ? { url: voiceUrl, seconds: row.voice_reading.seconds, outdated: !current }
         : null,
     share_with_family: row.share_with_family,
     created_at: row.created_at,

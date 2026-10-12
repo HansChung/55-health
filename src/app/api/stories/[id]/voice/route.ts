@@ -154,9 +154,19 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
 
   // 還沒啟用的聲音：第一次合成同時只讓一個請求做（平台會收一次啟用費）
   const firstUse = !resolved.activated;
-  if (firstUse && !(await claimFirstUse(admin, cloneId))) {
-    await giveBack();
-    return NextResponse.json({ error: FIRST_USE_BUSY_MESSAGE }, { status: 409 });
+  if (firstUse) {
+    let claimed = false;
+    try {
+      claimed = await claimFirstUse(admin, cloneId);
+    } catch (e) {
+      console.error("[api] story voice first use:", e);
+      await giveBack();
+      return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
+    }
+    if (!claimed) {
+      await giveBack();
+      return NextResponse.json({ error: FIRST_USE_BUSY_MESSAGE }, { status: 409 });
+    }
   }
   let activated = !firstUse;
 

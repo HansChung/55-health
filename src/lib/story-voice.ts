@@ -26,8 +26,12 @@ export function storyVoiceText(story: Pick<LifeStory, "title" | "era" | "body">)
  * 每段 ≤ max 個字（以字元算，emoji 等也不會被切壞）
  */
 export function splitForVoice(text: string, max = STORY_VOICE_CHUNK_MAX): string[] {
+  // 標題、年代、沒有句號的段落：補一個句號，合併成一段時才會停頓，不會念成一串
   const sentences = text
     .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => (/[。！？!?；;」』）)…]$/.test(line) ? line : `${line}。`))
     .flatMap((line) => line.match(/[^。！？!?；;]+[。！？!?；;」』）)]*|[^。！？!?；;]+$/g) ?? [])
     .map((s) => s.trim())
     .filter(Boolean);

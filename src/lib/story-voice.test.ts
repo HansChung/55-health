@@ -12,11 +12,12 @@ describe("storyVoiceText", () => {
 
 describe("splitForVoice", () => {
   it("短文一段就好", () => {
-    expect(splitForVoice("標題\n今天天氣很好。我們去散步。")).toEqual(["標題今天天氣很好。我們去散步。"]);
+    expect(splitForVoice("標題\n民國 50 年\n今天天氣很好。我們去散步")).toEqual(["標題。民國 50 年。今天天氣很好。我們去散步。"]);
   });
 
   it("每段都不超過上限、字一個都沒少", () => {
     const body = Array.from({ length: 80 }, (_, i) => `這是第${i + 1}句，我記得那一年的夏天特別熱，大家都在廟口乘涼。`).join("");
+    // 有句號結尾的不會多補
     const chunks = splitForVoice(body);
     expect(chunks.length).toBeGreaterThan(5);
     for (const c of chunks) expect([...c].length).toBeLessThanOrEqual(STORY_VOICE_CHUNK_MAX);
@@ -27,7 +28,7 @@ describe("splitForVoice", () => {
     const long = "啊".repeat(STORY_VOICE_CHUNK_MAX * 2 + 10);
     const chunks = splitForVoice(long);
     expect(chunks.length).toBe(3);
-    expect(chunks.join("")).toBe(long);
+    expect(chunks.join("")).toBe(`${long}。`);
   });
 
   it("在句號斷，不把一句話切成兩半", () => {
