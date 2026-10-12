@@ -150,7 +150,7 @@ export default function Page() {
       window.history.replaceState({}, "", url.pathname + (qs ? `?${qs}` : ""));
     }
     const from = url.searchParams.get("from");
-    const hint = getChapterDeepLinkHint(from);
+    const hint = getChapterDeepLinkHint(from, url.searchParams.get("open"));
     if (hint) {
       try {
         sessionStorage.setItem(CHAPTER_INTENT_KEY, JSON.stringify(hint));
@@ -169,7 +169,7 @@ export default function Page() {
     if (from) trackEvent("chapter_entry_open", { from, open });
 
     // 若首屏 effect 尚未寫入，再補一次意圖
-    const hint = getChapterDeepLinkHint(from) ?? chapterIntent;
+    const hint = getChapterDeepLinkHint(from, open) ?? chapterIntent;
     if (hint) {
       try {
         sessionStorage.setItem(CHAPTER_INTENT_KEY, JSON.stringify(hint));

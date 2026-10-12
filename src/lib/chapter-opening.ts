@@ -3267,7 +3267,10 @@ export interface ChapterIntentHint {
   tips: string[];
 }
 
-export function getChapterDeepLinkHint(from: string | null | undefined): ChapterIntentHint | null {
+/**
+ * 從書本進到暖暖時，語音／相機畫面上方的提示。open＝要打開什麼（camera、photo 給拍照的提示，其他給說話的提示）
+ */
+export function getChapterDeepLinkHint(from: string | null | undefined, open?: string | null): ChapterIntentHint | null {
   if (!from?.startsWith("chapter")) return null;
   const chapterId = from.replace(/^chapter/, "");
   const known: Record<string, { label: string; tips: string[] }> = {
@@ -3404,9 +3407,13 @@ export function getChapterDeepLinkHint(from: string | null | undefined): Chapter
       tips: ["一件作品、一項成長、一個希望", "備好 Plan B", "不以人數評分"],
     },
   };
+  // 沒有專屬提示的章：標題用章名（不要顯示成「書本練習｜書本練習」）；進相機／相簿給拍照的提示，進語音給說話的提示
+  const photo = open === "camera" || open === "photo";
   const hit = known[chapterId] ?? {
-    label: "書本練習",
-    tips: ["一拍：先拍下來", "二問：用自然的話問一句", "三記下：留下有用的一句"],
+    label: getChapterOpening(chapterId)?.title ?? "書本練習",
+    tips: photo
+      ? ["拍清楚一點、光線亮一點", "用自然的話問一句", "記下最有用的一句"]
+      : ["用自然的話說一句", "一次問一件事", "記下最有用的一句"],
   };
   return { from, chapterId, ...hit };
 }
