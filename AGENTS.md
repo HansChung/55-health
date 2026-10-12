@@ -68,8 +68,12 @@ and Stripe. Capacitor/Android is only a packaging target and is not needed for w
   only callback registered at LINE). `/api/auth/line/callback` checks state, exchanges the code, verifies the ID token
   with LINE's `/oauth2/v2.1/verify` (+ aud/nonce), then: **login** = account linked in `line_accounts` → sign in;
   otherwise create a user (LINE's email if granted and unused; if that email already has an account → `email_exists`,
-  never auto-merge; no email → `line-<sub>@line-login.invalid`). Sign-in = admin `generateLink(magiclink)` →
-  `verifyOtp(token_hash)` on the server client, which writes the session cookies (no email is sent). **link** = must be
+  never auto-merge; no email → `line-<sub>@line-login.invalid`). A `createUser` collision first waits for a
+  concurrent login to finish linking (GoTrue then often says only "Database error creating new user"); a collision on
+  the placeholder address re-links that account (`adoptPlaceholderUser` — it can only belong to this LINE id).
+  Sign-in = admin `generateLink(magiclink)` → `verifyOtp(token_hash)` on the server client, which writes the session
+  cookies (no email is sent). Each new link invalidates the previous one, so simultaneous logins of one account retry
+  with jitter. **link** = must be
   logged in; one LINE ↔ one account (`taken` / `already_linked`). Errors come back as `?line_error=<code>`
   (`LINE_ERRORS`, shown by the login screen or as a toast); success of linking as `?line=linked`. LINE-only accounts
   can't unlink and `sendEmail` skips their placeholder address. `LINE_LOGIN_REQUEST_EMAIL=1` only after LINE approves

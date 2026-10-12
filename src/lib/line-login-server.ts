@@ -117,29 +117,69 @@ export async function createLineUser(admin: Admin, profile: LineProfile): Promis
     user_metadata: { display_name: profile.name ?? undefined, avatar_url: profile.picture ?? undefined, signup_provider: "line" },
   });
   if (error || !data?.user) {
-    if (/already (been )?registered|email_exists|already exists/i.test(`${error?.message ?? ""} ${(error as { code?: string } | null)?.code ?? ""}`)) {
-      throw new LineLoginError("email_exists");
-    }
+    const exists = /already (been )?registered|email_exists|already exists/i.test(
+      `${error?.message ?? ""} ${(error as { code?: string } | null)?.code ?? ""}`
+    );
+    // 同一個 LINE 同時登入兩次：另一邊可能剛建好（GoTrue 這時常常只回「Database error creating new user」），
+    // 等一下再看是不是已經連好了
+    const winner = (await linkedUserId(admin, profile.sub)) ?? (await waitForLink(admin, profile.sub));
+    if (winner) return winner;
+    // 假地址是從這個 LINE 的 user id 算出來的，撞到一定是這個 LINE 自己的帳號（上次建到一半、沒連成功）：
+    // 接回去，不然他永遠登不進來（假地址收不到 Email 驗證碼）
+    if (!profile.email) return adoptPlaceholderUser(admin, profile, email);
+    // 真的 Email 已經有帳號：不自動合併，請他先用 Email 登入再連結
+    if (exists) throw new LineLoginError("email_exists");
     throw new Error(`create line user failed: ${error?.message ?? "no user"}`);
   }
   const userId = data.user.id as string;
-  const { error: linkErr } = await admin.from("line_accounts").insert({
+  const { error: linkErr } = await insertLineAccount(admin, userId, profile);
+  if (linkErr) {
+    if (linkErr.code === "23505") {
+      const winner = await linkedUserId(admin, profile.sub);
+      // 另一邊把「這個剛建好的帳號」接上了（假地址同時登入）：就是它，不要刪
+      if (winner === userId) return userId;
+      if (winner) {
+        await admin.auth.admin.deleteUser(userId).catch(() => undefined);
+        return winner;
+      }
+    }
+    await admin.auth.admin.deleteUser(userId).catch(() => undefined);
+    throw new Error(`link new line user failed: ${linkErr.message}`);
+  }
+  return userId;
+}
+
+/** 另一個同時進行的登入正在建帳號：最多等 1.5 秒看它連好沒有 */
+async function waitForLink(admin: Admin, lineUserId: string): Promise<string | null> {
+  for (let i = 0; i < 3; i++) {
+    await new Promise((r) => setTimeout(r, 500));
+    const id = await linkedUserId(admin, lineUserId);
+    if (id) return id;
+  }
+  return null;
+}
+
+function insertLineAccount(admin: Admin, userId: string, profile: LineProfile) {
+  return admin.from("line_accounts").insert({
     line_user_id: profile.sub,
     user_id: userId,
     display_name: profile.name,
     picture_url: profile.picture,
     last_login_at: new Date().toISOString(),
   });
-  if (linkErr) {
-    // 同一個 LINE 同時登入兩次：另一邊先建好了，刪掉這邊剛建的帳號，改登入那一個
-    await admin.auth.admin.deleteUser(userId).catch(() => undefined);
-    if (linkErr.code === "23505") {
-      const winner = await linkedUserId(admin, profile.sub);
-      if (winner) return winner;
-    }
-    throw new Error(`link new line user failed: ${linkErr.message}`);
-  }
-  return userId;
+}
+
+/** 已經有這個 LINE 的假地址帳號、但沒有連結紀錄：補上連結（同時補的話以先寫進去的為準） */
+async function adoptPlaceholderUser(admin: Admin, profile: LineProfile, email: string): Promise<string> {
+  // 用 Email 找帳號：產生登入連結會回傳那個帳號（不寄信）
+  const { data, error } = await admin.auth.admin.generateLink({ type: "magiclink", email });
+  const userId = data?.user?.id as string | undefined;
+  if (error || !userId) throw new Error(`find placeholder line user failed: ${error?.message ?? "no user"}`);
+  const { error: linkErr } = await insertLineAccount(admin, userId, profile);
+  if (linkErr && linkErr.code !== "23505") throw new Error(`relink line user failed: ${linkErr.message}`);
+  const owner = await linkedUserId(admin, profile.sub);
+  if (!owner) throw new Error("relink line user failed: no link");
+  return owner;
 }
 
 /** 讓瀏覽器以這個帳號登入：產生一次性登入連結，在伺服器上換成 session（寫進 cookie），不寄信 */
@@ -147,10 +187,15 @@ export async function signInAsUser(admin: Admin, server: ServerClient, userId: s
   const { data: u, error: getErr } = await admin.auth.admin.getUserById(userId);
   const email = u?.user?.email as string | undefined;
   if (getErr || !email) throw new Error(`load user for line login failed: ${getErr?.message ?? "no email"}`);
-  const { data: link, error: linkErr } = await admin.auth.admin.generateLink({ type: "magiclink", email });
-  const tokenHash = link?.properties?.hashed_token as string | undefined;
-  if (linkErr || !tokenHash) throw new Error(`generate login link failed: ${linkErr?.message ?? "no token"}`);
-  const { error } = await server.auth.verifyOtp({ type: "magiclink", token_hash: tokenHash });
-  if (error) throw new Error(`line session failed: ${error.message}`);
+  // 同一個帳號同時登入（長輩連點兩下、兩支手機）：新產生的登入碼會讓舊的失效，失效的那邊稍等再產生一次
+  for (let attempt = 0; ; attempt++) {
+    const { data: link, error: linkErr } = await admin.auth.admin.generateLink({ type: "magiclink", email });
+    const tokenHash = link?.properties?.hashed_token as string | undefined;
+    if (linkErr || !tokenHash) throw new Error(`generate login link failed: ${linkErr?.message ?? "no token"}`);
+    const { error } = await server.auth.verifyOtp({ type: "magiclink", token_hash: tokenHash });
+    if (!error) break;
+    if (attempt >= 4 || !/invalid|expired/i.test(error.message)) throw new Error(`line session failed: ${error.message}`);
+    await new Promise((r) => setTimeout(r, 150 + Math.random() * 450));
+  }
   await touchLineAccount(admin, profile);
 }
