@@ -51,6 +51,7 @@ interface HomeScreenProps {
   /** 我的故事集 */
   onStories?: () => void;
   onScamCheck?: () => void;
+  onClinic?: () => void;
   caregiver?: { count: number; needsAttention: boolean } | null;
   onCaregiver?: () => void;
   /** 每天早上天氣：還沒設定過就在首頁問縣市 */
@@ -72,7 +73,7 @@ function getDateLabel(): string {
   return `${d.getMonth() + 1}月${d.getDate()}日　星期${WEEKDAYS[d.getDay()]}`;
 }
 
-export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart, onBlueprint, onBookPractice, onIot, onTravelVideo, onStudyTours, onPhotoAsk, onAsk, onStories, onScamCheck, caregiver = null, onCaregiver, notificationSettings, onProfileUpdated }: HomeScreenProps) {
+export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart, onBlueprint, onBookPractice, onIot, onTravelVideo, onStudyTours, onPhotoAsk, onAsk, onStories, onScamCheck, onClinic, caregiver = null, onCaregiver, notificationSettings, onProfileUpdated }: HomeScreenProps) {
   // 從餐點計算今日營養
   const totals = meals.reduce(
     (s, m) => {
@@ -219,6 +220,18 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
           background="linear-gradient(135deg, #FBECEE 0%, #FFFFFF 100%)"
           borderColor="#EBC3CB"
           iconBg="#F6DCE1"
+        />
+      )}
+
+      {onClinic && (
+        <NavCard
+          onClick={onClinic}
+          emoji="🩺"
+          title="看診小幫手"
+          subtitle="回診前整理要問的話、看懂檢驗報告"
+          background="linear-gradient(135deg, #EAF4F1 0%, #FFFFFF 100%)"
+          borderColor="#BFDCD3"
+          iconBg="#D3EAE3"
         />
       )}
 

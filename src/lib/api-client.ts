@@ -556,6 +556,20 @@ export const api = {
   chapterCatalog: () =>
     apiFetch<{ custom: { id: string; title: string }[]; titles: Record<string, string> }>("/api/chapters/catalog"),
 
+  // 看診小幫手（回診前整理看診小卡、看懂檢驗報告）
+  listClinicVisits: () => apiFetch<{ visits: import("./clinic").ClinicVisit[] }>("/api/clinic"),
+  prepareClinicVisit: (input: { department?: string; symptoms: string; since?: string; questions?: string }) =>
+    apiFetch<{ visit: import("./clinic").ClinicVisit; quota: { used: number; limit: number } }>("/api/clinic/prepare", {
+      method: "POST",
+      json: input,
+      timeoutMs: 60000,
+    }),
+  readClinicReport: (visitId: string | "new", input: Partial<{ photoPath: string; imageBase64: string; mimeType: string }>) =>
+    apiFetch<{ visit: import("./clinic").ClinicVisit }>(`/api/clinic/${visitId}/report`, { method: "POST", json: input, timeoutMs: 60000 }),
+  updateClinicVisit: (id: string, patch: { doctorNotes?: string; visitDate?: string; department?: string }) =>
+    apiFetch<{ visit: import("./clinic").ClinicVisit }>(`/api/clinic/${id}`, { method: "PATCH", json: patch }),
+  deleteClinicVisit: (id: string) => apiFetch<{ ok: true }>(`/api/clinic/${id}`, { method: "DELETE" }),
+
   // 書本章節的 Podcast：拿簽名上傳網址，瀏覽器直接傳到 Supabase
   adminChapterAudioUpload: (input: { chapterId: string; fileName: string; size: number; type: string }) =>
     apiFetch<{ path: string; token: string; publicUrl: string; contentType: string }>("/api/admin/chapter-audio", {
