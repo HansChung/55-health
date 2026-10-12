@@ -125,19 +125,6 @@ export const api = {
       quota: { used: number; limit: number; tier: string };
     }>("/api/ai/analyze-food", { method: "POST", json: photo, timeoutMs: 45000 }),
 
-  createRealtimeSession: () =>
-    apiFetch<{
-      session: { client_secret: { value: string }; id: string; model?: string };
-      quota: { used: number; limit: number; tier: string };
-      max_seconds: number;
-    }>("/api/ai/realtime-session", { method: "POST" }),
-
-  trackRealtimeUsage: (input: { seconds: number; model?: string; session_id?: string; reason?: "manual" | "time_limit" | "close" | "unload" | "error" }) =>
-    apiFetch<{ ok: true; id: string; seconds: number; cost_usd: number }>("/api/ai/realtime-usage", {
-      method: "POST",
-      json: input,
-    }),
-
   getSuggestion: () =>
     apiFetch<{ suggestion: AiSuggestion }>("/api/ai/suggest"),
 
@@ -320,6 +307,17 @@ export const api = {
       method: "POST",
       json: input,
       timeoutMs: 60000,
+    }),
+
+  // 跟暖暖聊聊（語音）：錄音 → 暖暖聽懂並回答；和問暖暖共用每天的題數
+  voiceTurn: (input: ({ audioPath: string } | { audio: string }) & {
+    history: import("./ask").AskMessage[];
+    chapterTitle?: string | null;
+  }) =>
+    apiFetch<{ heard: string; reply: string; quota: { used: number; limit: number } }>("/api/ai/voice-turn", {
+      method: "POST",
+      json: input,
+      timeoutMs: 65000,
     }),
 
   // 拍照問暖暖：看圖模型約 10～15 秒；和拍照記餐共用每月拍照次數

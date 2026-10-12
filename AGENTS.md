@@ -5,7 +5,7 @@
 ### What this repo is
 Single **Next.js 15 (App Router) + React 19 + TypeScript** web app ("暖暖 55+", a Traditional-Chinese
 diet-tracking app for seniors). There is no separate backend service in this repo — the "backend" is
-**Supabase** (Postgres + Auth + Storage) plus external AI providers (Google Gemini, OpenAI Realtime)
+**Supabase** (Postgres + Auth + Storage) plus external AI providers (Google Gemini — mostly via the lk888 aggregator)
 and Stripe. Capacitor/Android is only a packaging target and is not needed for web development.
 
 ### Standard commands (see `package.json` scripts and `.github/workflows/ci.yml`)
@@ -20,7 +20,7 @@ and Stripe. Capacitor/Android is only a packaging target and is not needed for w
 - Copy `.env.example` → `.env.local` (gitignored). The dev server reads env **only at startup**, so
   **restart `npm run dev` after editing `.env.local`**.
 - Full product features need real credentials (add them as Cursor Secrets if you have them):
-  `GEMINI_API_KEY` (photo food analysis), `OPENAI_API_KEY` (voice), `STRIPE_SECRET_KEY` (subscriptions),
+  `GEMINI_API_KEY` (photo food analysis), `STRIPE_SECRET_KEY` (subscriptions),
   `LK888_API_KEY` (邁笙 lk888 aggregator: 出遊回憶影片 `minimax-h3`, and — when set — every Gemini call
   goes through its Gemini-compatible endpoint: food/prescription photos `gem-3.8-flash`, AI 建議
   `gem-3.5-flash-lite`; `GEMINI_PROVIDER=google` forces Google direct with `GEMINI_API_KEY`), and a real
@@ -388,3 +388,17 @@ stack works well for auth + meal/diary CRUD:
   URLs (`signStoryMedia` signs photos + audio); family hear it in 長輩的故事; the printed book notes 「有聲音版」.
   Deleting a story removes the audio; the daily `cleanup-uploads` cron removes pending files older than a day.
   Book 1105 「讓聲音留下來」 links to `/?open=stories&audio=1` (opens the recorder).
+
+### 跟暖暖聊聊（語音對話, `modal "voice"`）
+- **No more OpenAI Realtime** (removed 2026-10-12; `OPENAI_API_KEY` / `OPENAI_REALTIME_MODEL` are unused). lk888 has
+  no realtime voice API, so it's push-to-talk: tap to record (`useVoiceRecorder`, ≤60 s), tap again → `audioPayload`
+  (direct upload, data-URL fallback) → `POST /api/ai/voice-turn` → ffmpeg `toWav` (length ≥0.8 s, RMS silence check)
+  → `wavToMp3` → one Gemini call (`answerVoiceTurn`, text model `gem-3.5-flash-lite`, audio as `inlineData`) that both
+  transcribes and answers as two lines 「聽到：…／回答：…」 (`parseVoiceReply`). The reply is read aloud with the
+  browser's speechSynthesis (free); tapping the mic while it speaks interrupts it.
+- Tested 2026-10-11 against lk888: **webm sent as-is was misheard, mp3/ogg were heard correctly** (~1.5–1.9 s,
+  ~0.001 算力 per turn) — keep the mp3 conversion. The route needs ffmpeg in `outputFileTracingIncludes`.
+- Shares the daily ask quota with 打字問暖暖 (`ENDPOINT = "/api/ai/chat"`, `ASK_DAILY_LIMITS`), reserved with
+  `reserveDailySlot` and released on failure. The client sends the last `VOICE_HISTORY_MAX` turns as text; the
+  recording is never stored (direct-upload staging is taken + deleted by `takeUserAudio`). Turns are still logged
+  to `conversations` via `api.logConversation`.

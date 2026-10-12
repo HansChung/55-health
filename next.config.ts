@@ -20,6 +20,7 @@ const nextConfig: NextConfig = {
     "/api/ai/travel-video/[id]/comments": ["./node_modules/ffmpeg-static/ffmpeg"],
     // 聲音故事：App 裡錄的 webm → m4a
     "/api/stories": ["./node_modules/ffmpeg-static/ffmpeg"],
+    "/api/ai/voice-turn": ["./node_modules/ffmpeg-static/ffmpeg"],
   },
   // Capacitor build 時透過 BUILD_TARGET=mobile 切換成 static export
   ...(process.env.BUILD_TARGET === "mobile" && {
