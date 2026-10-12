@@ -4,6 +4,8 @@
 // 拿 key: https://resend.com/api-keys
 // ────────────────────────────────────────────────
 
+import { isPlaceholderEmail } from "@/lib/line-login";
+
 interface SendEmailParams {
   to: string;
   subject: string;
@@ -22,6 +24,8 @@ export async function sendEmail({
   subject,
   html,
 }: SendEmailParams): Promise<SendEmailResult> {
+  // 只用 LINE 登入、沒有真的 Email 的帳號：不寄（那是 line-login.invalid 的假地址）
+  if (isPlaceholderEmail(to)) return { ok: false, skipped: true };
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.warn("[email] RESEND_API_KEY 未設定，跳過寄信");

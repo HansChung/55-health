@@ -61,6 +61,20 @@ and Stripe. Capacitor/Android is only a packaging target and is not needed for w
   (fluid limits), …; Chinese words are matched too).
   Local test: `CWA_API_BASE` pointed at a fake F-C0032-001 server.
 
+- **LINE 登入** (needs `supabase/add-line-login.sql` + `LINE_LOGIN_CHANNEL_ID` / `LINE_LOGIN_CHANNEL_SECRET`; without
+  them the button and the 我的 row are hidden): Supabase has no LINE provider and LINE's web-login ID token is HS256
+  with the channel secret (no JWKS), so we run the flow ourselves. `/api/auth/line/start?mode=login|link` stores
+  state + nonce in an httpOnly cookie (path `/api/auth/line`, 10 min) and always runs on `NEXT_PUBLIC_APP_URL` (the
+  only callback registered at LINE). `/api/auth/line/callback` checks state, exchanges the code, verifies the ID token
+  with LINE's `/oauth2/v2.1/verify` (+ aud/nonce), then: **login** = account linked in `line_accounts` → sign in;
+  otherwise create a user (LINE's email if granted and unused; if that email already has an account → `email_exists`,
+  never auto-merge; no email → `line-<sub>@line-login.invalid`). Sign-in = admin `generateLink(magiclink)` →
+  `verifyOtp(token_hash)` on the server client, which writes the session cookies (no email is sent). **link** = must be
+  logged in; one LINE ↔ one account (`taken` / `already_linked`). Errors come back as `?line_error=<code>`
+  (`LINE_ERRORS`, shown by the login screen or as a toast); success of linking as `?line=linked`. LINE-only accounts
+  can't unlink and `sendEmail` skips their placeholder address. `LINE_LOGIN_REQUEST_EMAIL=1` only after LINE approves
+  the email permission. Local test: `LINE_ACCESS_BASE` / `LINE_API_BASE` point at a fake LINE server.
+
 ### Running a real backend locally (no cloud Supabase needed)
 The app requires a live Supabase API to do anything past the login screen (auth is forced). A local
 stack works well for auth + meal/diary CRUD:

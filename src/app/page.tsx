@@ -40,6 +40,7 @@ import { ScamCheckScreen } from "@/screens/scam-check-screen";
 import { photoPayload } from "@/lib/direct-upload";
 import { takeAskSeed, type AskSeed } from "@/lib/ask";
 import { takePhotoAskSeed } from "@/lib/photo-ask";
+import { lineErrorMessage } from "@/lib/line-login";
 import { StampResultSheet, type StampSheetState } from "@/components/stamp-result-sheet";
 import { MealDetailSheet } from "@/screens/meal-detail-sheet";
 import { PhotoSourceSheet } from "@/components/photo-source-sheet";
@@ -562,6 +563,22 @@ export default function Page() {
     if (!user) return;
     loadSuggestion();
   }, [user]);
+
+  // 「我的」按連結 LINE 回來：成功或失敗都提示，切到「我的」（沒登入時由登入畫面顯示原因）
+  useEffect(() => {
+    if (loading || !user) return;
+    const url = new URL(window.location.href);
+    const linked = url.searchParams.get("line") === "linked";
+    const err = lineErrorMessage(url.searchParams.get("line_error"));
+    if (!linked && !err) return;
+    if (linked) toast.success("已經連結 LINE，下次可以直接用 LINE 登入");
+    else if (err) toast.error(err);
+    setTab("profile");
+    url.searchParams.delete("line");
+    url.searchParams.delete("line_error");
+    const qs = url.searchParams.toString();
+    window.history.replaceState({}, "", url.pathname + (qs ? `?${qs}` : ""));
+  }, [loading, user]);
 
   // 強制登入
   useEffect(() => {
