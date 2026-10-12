@@ -26,9 +26,10 @@ export const VOICE_RULES = [
 /** 模型回的「聽到／回答」兩行 → 分開；格式不對時整段當回答 */
 export function parseVoiceReply(text: string): { heard: string; reply: string } {
   const t = text.replace(/\r/g, "").trim();
-  const heard = /(?:^|\n)\s*聽到[:：]\s*([^\n]*)/.exec(t)?.[1]?.trim() ?? "";
-  const replyMatch = /(?:^|\n)\s*回答[:：]\s*([\s\S]*)$/.exec(t);
-  let reply = (replyMatch ? replyMatch[1] : t.replace(/(?:^|\n)\s*聽到[:：][^\n]*/, "")).trim();
+  // 模型有時把兩行寫在同一行：「聽到」到「回答」或換行為止，「回答」不一定在行首
+  const heard = /聽到[:：]\s*([\s\S]*?)(?=\s*回答[:：]|\n|$)/.exec(t)?.[1]?.trim() ?? "";
+  const replyMatch = /回答[:：]\s*([\s\S]*)$/.exec(t);
+  let reply = (replyMatch ? replyMatch[1] : t.replace(/聽到[:：][^\n]*/, "")).trim();
   // 念出來的話：拿掉 Markdown 符號與多餘空白
   reply = reply.replace(/[*#`>_]+/g, "").replace(/\n{2,}/g, "\n").trim();
   return { heard: [...heard].slice(0, 300).join(""), reply: [...reply].slice(0, 600).join("") };

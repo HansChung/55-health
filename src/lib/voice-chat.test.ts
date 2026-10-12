@@ -24,6 +24,14 @@ describe("parseVoiceReply", () => {
     expect(parseVoiceReply("聽到：你好\n很高興聽到您的聲音")).toEqual({ heard: "你好", reply: "很高興聽到您的聲音" });
   });
 
+  it("兩行寫在同一行也分得開", () => {
+    expect(parseVoiceReply("聽到：今天天氣好嗎 回答：今天出太陽，記得戴帽子。")).toEqual({
+      heard: "今天天氣好嗎",
+      reply: "今天出太陽，記得戴帽子。",
+    });
+    expect(parseVoiceReply("聽到：你好。回答：您好呀！")).toEqual({ heard: "你好。", reply: "您好呀！" });
+  });
+
   it("拿掉 Markdown 符號（要念出來）", () => {
     expect(parseVoiceReply("聽到：哈囉\n回答：**記得**多喝水 #健康").reply).toBe("記得多喝水 健康");
   });

@@ -46,12 +46,7 @@ export async function POST(req: NextRequest) {
   const parsed = Schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "送出的內容格式有誤" }, { status: 400 });
   const body = parsed.data;
-  if (!isGeminiConfigured()) {
-    console.error("[api] 語音對話：LK888_API_KEY / GEMINI_API_KEY 未設定");
-    return NextResponse.json({ error: "暖暖暫時休息中，請稍後再試" }, { status: 503 });
-  }
-
-  // 先拿錄音（直傳的拿到就刪），檢查長度、音量，轉成 mp3
+  // 先拿錄音（直傳的拿到就刪；之後不管怎麼回，暫存區都不會留著錄音）
   let raw: Buffer;
   if ("audioPath" in body) {
     try {
@@ -64,17 +59,9 @@ export async function POST(req: NextRequest) {
   } else {
     raw = Buffer.from(body.audio.match(AUDIO_DATA_URL)![1], "base64");
   }
-  let mp3: Buffer;
-  try {
-    const wav = await toWav(raw, { maxSeconds: VOICE_TURN_MAX_SECONDS });
-    if (wavDurationSeconds(wav) < VOICE_TURN_MIN_SECONDS) {
-      return NextResponse.json({ error: "太短了，按一下說完一句話，再按一下送出" }, { status: 400 });
-    }
-    if (wavRms(wav) < MIN_RMS) return NextResponse.json({ error: "沒聽到聲音，請靠近手機再說一次" }, { status: 400 });
-    mp3 = await wavToMp3(wav);
-  } catch (e) {
-    console.warn("[api] voice turn convert failed:", e instanceof Error ? e.message : e);
-    return NextResponse.json({ error: "錄音讀不出來，請再說一次" }, { status: 400 });
+  if (!isGeminiConfigured()) {
+    console.error("[api] 語音對話：LK888_API_KEY / GEMINI_API_KEY 未設定");
+    return NextResponse.json({ error: "暖暖暫時休息中，請稍後再試" }, { status: 503 });
   }
 
   const { profile, tier } = await loadAsker(user.id, user.email);
@@ -98,6 +85,24 @@ export async function POST(req: NextRequest) {
         { status: 429 }
       );
     }
+  }
+
+  // 佔到題數才轉檔（題數用完的人不會一直耗伺服器轉檔）；錄音不合格就把題數退回
+  let mp3: Buffer;
+  try {
+    const wav = await toWav(raw, { maxSeconds: VOICE_TURN_MAX_SECONDS });
+    let problem = "";
+    if (wavDurationSeconds(wav) < VOICE_TURN_MIN_SECONDS) problem = "太短了，按一下說完一句話，再按一下送出";
+    else if (wavRms(wav) < MIN_RMS) problem = "沒聽到聲音，請靠近手機再說一次";
+    if (problem) {
+      if (slot.id) await releaseReservedUsage(slot.id);
+      return NextResponse.json({ error: problem }, { status: 400 });
+    }
+    mp3 = await wavToMp3(wav);
+  } catch (e) {
+    console.warn("[api] voice turn convert failed:", e instanceof Error ? e.message : e);
+    if (slot.id) await releaseReservedUsage(slot.id);
+    return NextResponse.json({ error: "錄音讀不出來，請再說一次" }, { status: 400 });
   }
 
   const chapterTitle = body.chapterTitle ? [...body.chapterTitle.trim()].slice(0, ASK_CHAPTER_TITLE_MAX).join("") : null;
