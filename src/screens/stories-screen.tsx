@@ -4,6 +4,7 @@
 // 我的故事集：說一段人生故事給暖暖聽（暖暖一題一題問）→ 整理成文章 → 改好、配照片、存下來
 // 每篇自己決定給不給家人看（預設給）；家人可以按讚留言；可以念給我聽、印成一本小書（/stories/book）
 // 也可以用自己的聲音說（聲音故事：在 App 裡錄或上傳錄音檔，見 AudioStoryForm）
+// 專業版：寫好的故事可以讓 AI 用「我的聲音」念成錄音（StoryVoiceCard）
 // ────────────────────────────────────────────────
 
 import { useEffect, useRef, useState } from "react";
@@ -12,6 +13,7 @@ import { Mascot } from "@/components/mascot";
 import { DictationButton } from "@/components/dictation-button";
 import { VideoComments } from "@/components/video-comments";
 import { AudioStoryForm } from "@/components/audio-story-form";
+import { StoryVoiceCard } from "@/components/story-voice-card";
 import { formatAudioDuration } from "@/lib/story-audio";
 import { api, ApiError } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
@@ -595,6 +597,16 @@ export function StoriesScreen({ onBack, initialAudio = false }: { onBack: () => 
             </div>
           )}
           {current.body && <div style={{ fontSize: "var(--fs-base)", lineHeight: 1.9, whiteSpace: "pre-wrap" }}>{current.body}</div>}
+
+          <StoryVoiceCard
+            key={current.id}
+            story={current}
+            onStory={(s) => {
+              const merged = { ...s, comments: current.comments };
+              setCurrent(merged);
+              setStories((list) => (list ?? []).map((x) => (x.id === merged.id ? merged : x)));
+            }}
+          />
 
           <div style={{ display: "grid", gridTemplateColumns: canSpeakGuide() && current.body ? "1fr 1fr" : "1fr", gap: 10 }}>
             {canSpeakGuide() && current.body && (

@@ -49,7 +49,7 @@ export function FamilyStories() {
                     {s.audio ? `🎧 ${formatAudioDuration(s.audio.seconds)}・` : ""}{s.era ? `${s.era}・` : ""}{new Date(s.created_at).toLocaleDateString("zh-TW", { month: "numeric", day: "numeric" })}
                   </span>
                 </span>
-                <span style={{ color: "var(--ink-3)" }}>{open ? "收起" : s.audio ? "收聽" : "閱讀"}</span>
+                <span style={{ color: "var(--ink-3)" }}>{open ? "收起" : s.audio || (s.voice_reading && !s.voice_reading.outdated) ? "收聽" : "閱讀"}</span>
               </button>
               {open && (
                 <>
@@ -57,6 +57,14 @@ export function FamilyStories() {
                     <img key={i} src={p.url} alt="" style={{ width: "100%", maxHeight: 320, objectFit: "contain", borderRadius: "var(--r-md)", background: "var(--bg-deep)" }} />
                   ))}
                   {s.audio && <audio controls preload="metadata" src={s.audio.url} style={{ width: "100%" }} />}
+                  {s.voice_reading && !s.voice_reading.outdated && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)" }}>
+                        🎙️ 用{e.name}的聲音念（AI 合成・{formatAudioDuration(s.voice_reading.seconds)}）
+                      </div>
+                      <audio controls preload="metadata" src={s.voice_reading.url} style={{ width: "100%" }} />
+                    </div>
+                  )}
                   {s.body && <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.85 }}>{s.body}</div>}
                 </>
               )}

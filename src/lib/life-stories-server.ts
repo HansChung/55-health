@@ -6,6 +6,8 @@
 import { createSupabaseAdmin } from "@/lib/supabase/server";
 import { sendPushToUser } from "@/lib/push/send";
 import { signStoryAudio, type StoredStoryAudio } from "@/lib/story-audio-server";
+import { storyVoiceHash, type StoredVoiceReading } from "@/lib/story-voice-server";
+import { storyVoiceText } from "@/lib/story-voice";
 import { authorDirectory } from "@/lib/video-comments-server";
 import {
   VIDEO_COMMENTS_PER_AUTHOR,
@@ -38,6 +40,8 @@ export interface StoryRow {
   photos: { path: string; width: number; height: number }[] | null;
   /** 聲音故事（add-story-audio.sql 之前的資料沒有這欄） */
   audio?: StoredStoryAudio | null;
+  /** 用自己的聲音念好的錄音（add-story-voice.sql 之前的資料沒有這欄） */
+  voice_reading?: StoredVoiceReading | null;
   interview: unknown;
   share_with_family: boolean;
   created_at: string;
@@ -53,7 +57,9 @@ export function storyPhotoPath(userId: string, storyId: string, index: number, s
 /** 好幾篇故事的照片和錄音一次簽網址（路徑 → 網址；照片和錄音在不同 bucket，檔名不會重複） */
 export async function signStoryMedia(admin: Admin, rows: StoryRow[]): Promise<Map<string, string>> {
   const paths = rows.flatMap((r) => (r.photos ?? []).map((p) => p.path));
-  const audioPaths = rows.map((r) => r.audio?.path).filter((p): p is string => Boolean(p));
+  const audioPaths = rows
+    .flatMap((r) => [r.audio?.path, r.voice_reading?.path])
+    .filter((p): p is string => Boolean(p));
   const urls = new Map<string, string>();
   const [photos, audio] = await Promise.all([
     paths.length ? admin.storage.from(STORY_BUCKET).createSignedUrls(paths, SIGNED_URL_SECONDS) : null,
@@ -65,7 +71,13 @@ export async function signStoryMedia(admin: Admin, rows: StoryRow[]): Promise<Ma
   return urls;
 }
 
+/** 念好的錄音還對得上現在的文字嗎（改過標題或內容就對不上了） */
+export function isVoiceReadingCurrent(row: Pick<StoryRow, "title" | "era" | "body" | "voice_reading">): boolean {
+  return Boolean(row.voice_reading) && row.voice_reading!.text_hash === storyVoiceHash(storyVoiceText(row));
+}
+
 export function toClientStory(row: StoryRow, urls: Map<string, string>): LifeStory {
+  const voiceUrl = row.voice_reading?.path ? urls.get(row.voice_reading.path) : undefined;
   return {
     id: row.id,
     title: row.title,
@@ -75,6 +87,10 @@ export function toClientStory(row: StoryRow, urls: Map<string, string>): LifeSto
       .map((p) => ({ url: urls.get(p.path) ?? "", width: p.width, height: p.height }))
       .filter((p) => p.url),
     audio: row.audio?.path && urls.get(row.audio.path) ? { url: urls.get(row.audio.path)!, seconds: row.audio.seconds } : null,
+    voice_reading:
+      row.voice_reading && voiceUrl
+        ? { url: voiceUrl, seconds: row.voice_reading.seconds, outdated: !isVoiceReadingCurrent(row) }
+        : null,
     share_with_family: row.share_with_family,
     created_at: row.created_at,
     updated_at: row.updated_at,

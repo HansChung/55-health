@@ -244,6 +244,16 @@ export const api = {
   updateStory: (id: string, patch: { title?: string; era?: string; body?: string; shareWithFamily?: boolean }) =>
     apiFetch<{ story: import("./life-stories").LifeStory }>(`/api/stories/${id}`, { method: "PATCH", json: patch }),
   deleteStory: (id: string) => apiFetch<{ ok: true }>(`/api/stories/${id}`, { method: "DELETE" }),
+  // 故事用自己的聲音念（專業版）：一段段合成再接起來，3000 字約 1～2 分鐘
+  storyVoiceQuota: (id: string) =>
+    apiFetch<{ quota: { used: number; limit: number } }>(`/api/stories/${id}/voice`),
+  readStoryInMyVoice: (id: string) =>
+    apiFetch<{ story: import("./life-stories").LifeStory; quota: { used: number; limit: number } }>(`/api/stories/${id}/voice`, {
+      method: "POST",
+      timeoutMs: 300000,
+    }),
+  deleteStoryVoice: (id: string) =>
+    apiFetch<{ story: import("./life-stories").LifeStory }>(`/api/stories/${id}/voice`, { method: "DELETE" }),
   reactToStory: (id: string, emoji: VideoReaction) =>
     apiFetch<{ comments: VideoCommentsView }>(`/api/stories/${id}/comments`, { method: "POST", json: { emoji } }),
   commentOnStory: (id: string, body: string) =>
