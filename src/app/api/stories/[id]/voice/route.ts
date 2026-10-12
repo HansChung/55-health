@@ -213,17 +213,31 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
     seconds: result.seconds,
     platform_cost: result.platformCost,
   };
-  // 已經付費合成好了：之後就算存檔失敗也照算次數（記下用量）
-  if (slot.id) await finishReservedUsage(slot.id, { model: result.model, metadata });
-  else await trackAiUsage({ userId: user.id, service: "minimax_tts", model: result.model, endpoint: ENDPOINT, success: true, metadata });
+  // 存好了才算次數；存檔失敗把名額退回（平台的費用照記在一筆失敗紀錄裡，失敗的不算次數）
+  const saveFailed = async (status: number, error: string, why: string) => {
+    if (slot.id) await releaseReservedUsage(slot.id);
+    await releaseLease();
+    await trackAiUsage({
+      userId: user.id,
+      service: "minimax_tts",
+      model: result.model,
+      endpoint: ENDPOINT,
+      success: false,
+      errorMessage: why.slice(0, 500),
+      metadata,
+    }).catch(() => undefined);
+    return NextResponse.json({ error }, { status });
+  };
 
-  const { error: upErr } = await admin.storage
-    .from(STORY_AUDIO_BUCKET)
-    .upload(reading.path, result.m4a, { contentType: "audio/mp4", upsert: true });
+  // 上傳失敗多試一次（已經付費合成好了，盡量存下來）
+  let upErr = (await admin.storage.from(STORY_AUDIO_BUCKET).upload(reading.path, result.m4a, { contentType: "audio/mp4", upsert: true })).error;
+  if (upErr) {
+    await new Promise((r) => setTimeout(r, 1_000));
+    upErr = (await admin.storage.from(STORY_AUDIO_BUCKET).upload(reading.path, result.m4a, { contentType: "audio/mp4", upsert: true })).error;
+  }
   if (upErr) {
     console.error("[api] story voice upload:", upErr.message);
-    await releaseLease();
-    return NextResponse.json({ error: "錄音存檔沒成功，請再試一次" }, { status: 500 });
+    return saveFailed(500, "錄音存檔沒成功，請再試一次（沒有算次數）", `upload: ${upErr.message}`);
   }
   // 念的這段時間故事可能被刪了：只更新還在的故事，否則把剛存的錄音刪掉
   const { data: saved, error: saveErr } = await admin
@@ -236,9 +250,13 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
   if (saveErr || !saved) {
     if (saveErr) console.error("[api] story voice save:", saveErr.message);
     await removeStoryAudio(admin, [reading.path]);
-    await releaseLease();
-    return NextResponse.json({ error: saveErr ? "伺服器忙線中，請稍後再試" : "這篇故事已經刪除了" }, { status: saveErr ? 500 : 404 });
+    return saveErr
+      ? saveFailed(500, "伺服器忙線中，請再試一次（沒有算次數）", `save: ${saveErr.message}`)
+      : saveFailed(404, "這篇故事已經刪除了", "story deleted while reading");
   }
+  if (slot.id) await finishReservedUsage(slot.id, { model: result.model, metadata });
+  else await trackAiUsage({ userId: user.id, service: "minimax_tts", model: result.model, endpoint: ENDPOINT, success: true, metadata });
+
   if (row.voice_reading?.path && row.voice_reading.path !== reading.path) {
     await removeStoryAudio(admin, [row.voice_reading.path]);
   }
