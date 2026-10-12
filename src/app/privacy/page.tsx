@@ -26,9 +26,10 @@ export default function PrivacyPage() {
             <li><strong>帳號資訊</strong>：透過 Google OAuth 登入時取得您的 email、姓名、頭像。</li>
             <li id="line-login">
               <strong>LINE 登入</strong>：使用「用 LINE 登入」或在「我的」連結 LINE 時，經您在 LINE 畫面上同意後，取得您的
-              LINE 使用者識別碼、顯示名稱、大頭貼，以及<strong>您在 LINE 登錄的 Email</strong>。Email 只用於：建立與辨識您的暖暖帳號、
-              讓您也能用 Email 驗證碼登入、寄送您訂閱的健康報告與安全通知。我們不會用這個 Email 寄送廣告，也不會提供給第三方；
-              您可以在「我的 → 登入方式」解除連結，或依第 4 節要求刪除帳號資料。
+              LINE 使用者識別碼、顯示名稱、大頭貼；若您同意提供，另取得<strong>您在 LINE 登錄的 Email</strong>。Email 只用於：建立與辨識您的
+              暖暖帳號、讓您也能用 Email 驗證碼登入、寄送您訂閱的健康報告與安全通知。我們不會用這個 Email 寄送廣告，也不會提供給第三方。
+              未取得 Email 的帳號只能用 LINE 登入，也不會收到電子郵件。已有其他登入方式的帳號可在「我的 → 登入方式」解除連結；
+              您也可以依第 4 節要求刪除帳號資料。
             </li>
             <li><strong>健康資料</strong>：您自行輸入的年齡、性別、慢性病、目標卡路里等。</li>
             <li><strong>飲食記錄</strong>：您拍攝的食物照片、辨識結果、用餐時間。</li>
