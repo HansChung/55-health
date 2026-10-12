@@ -149,6 +149,12 @@ export function LoginScreen({ onDone }: LoginScreenProps) {
                 {loading ? "登入中…" : "用 LINE 登入"}
               </button>
             )}
+            {lineEnabled && (
+              <p style={{ fontSize: "var(--fs-xs)", color: "var(--ink-3)", textAlign: "center", margin: "-4px 0 0", lineHeight: 1.5 }}>
+                用 LINE 登入時，經你同意後會取得 LINE 名稱、大頭貼和 Email，只用來建立帳號、寄健康報告與安全通知，不會寄廣告。
+                <a href="/privacy#line-login" style={{ color: "var(--primary-deep)", marginLeft: 4 }}>隱私權政策</a>
+              </p>
+            )}
 
             {/* Google 登入 */}
             <button
