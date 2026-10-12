@@ -316,6 +316,9 @@ describe("chapter-opening", () => {
     // 沒有專屬提示：用章名、提示不提拍照；不存在的章才顯示「書本練習」
     expect(getChapterDeepLinkHint("chapter0102")?.label).toBe("先找得到，再慢慢用");
     expect(getChapterDeepLinkHint("chapter0102")?.tips.join("")).not.toContain("拍");
+    expect(getChapterDeepLinkHint("chapter0100", "voice")?.tips[0]).toContain("說");
+    expect(getChapterDeepLinkHint("chapter0100", "camera")?.tips[0]).toContain("拍");
+    expect(getChapterDeepLinkHint("chapter0100", "photo")?.tips[0]).toContain("拍");
     expect(getChapterDeepLinkHint("chapter9999")?.label).toBe("書本練習");
   });
 
