@@ -306,6 +306,22 @@ stack works well for auth + meal/diary CRUD:
   `FamilyScamChecks`). No linked family → 409 `noFamily`, and the screen offers 「用 LINE 傳給家人」
   (`navigator.share`, first-person text from `scamShareText`, no links).
 
+### 看診小幫手（clinic helper, `subpage "clinic"`）
+- Home 「🩺 看診小幫手」 → `ClinicScreen`; deep link `/?open=clinic`. Needs `supabase/add-clinic-visits.sql`
+  (`clinic_visits`, server-only RLS). Explains only — never diagnoses; every screen shows the 119 note.
+- **回診前**: department / 哪裡不舒服 / 多久了 / 想問醫生 → `POST /api/clinic/prepare` → text model
+  (`writeClinicCard`; shares the 問暖暖 daily limit via `ASK_ENDPOINT`) returns `{chief, points, own_questions,
+  extra_questions}`. The elder's own questions always survive (`normalizeClinicCard`: rewritten ones only if the count
+  matches, otherwise the originals; extras are de-duplicated with `sameQuestion` because models rephrase). Current
+  meds (`profiles.medications`) and the last 30 days of BP/glucose/weight (`summarizeMetrics`) are added by the server,
+  not the model. The card can be ticked off during the visit, printed (`body.printing-clinic`), read aloud or shared.
+- **看完診**: 醫生交代的話 (PATCH) and 「拍檢驗報告」 → `POST /api/clinic/<id|new>/report` → vision model
+  (`readLabReport`): items copied as printed (name/value/unit/range/flag) + one plain line each, summary, questions for
+  the doctor. The photo is not stored; parse errors never include model output. Quota like 拍照問暖暖: free
+  `CLINIC_REPORT_FREE_DAILY` (3)/day, paid = monthly photo quota. `compareLab` matches items across reports by
+  `labKey` (NFKC, no spaces/brackets) against `previousReport`, ordered by the date printed on the report (`reportDay`,
+  ROC years handled), not by record creation time.
+
 ### Book × App light coupling（書本／App）
 - Chapter openings live at `/smart/chapter/[id]` (public, printable). Shared rhythm: **一拍、二問、三記下**.
 - Optional save: 「把這句話點成光點」→ `/smart/spark?source=chapterXXXX` (sessionStorage seed).

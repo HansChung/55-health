@@ -37,6 +37,7 @@ import { PhotoAskScreen } from "@/screens/photo-ask-screen";
 import { AskScreen } from "@/screens/ask-screen";
 import { StoriesScreen } from "@/screens/stories-screen";
 import { ScamCheckScreen } from "@/screens/scam-check-screen";
+import { ClinicScreen } from "@/screens/clinic-screen";
 import { photoPayload } from "@/lib/direct-upload";
 import { takeAskSeed, type AskSeed } from "@/lib/ask";
 import { takePhotoAskSeed } from "@/lib/photo-ask";
@@ -135,7 +136,7 @@ export default function Page() {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     const open = url.searchParams.get("open");
-    if (open && ["voice", "camera", "photo", "travel-video", "study-tours", "photo-ask", "caregiver", "ask", "stories", "scam-check"].includes(open)) {
+    if (open && ["voice", "camera", "photo", "travel-video", "study-tours", "photo-ask", "caregiver", "ask", "stories", "scam-check", "clinic"].includes(open)) {
       pendingOpenRef.current = open;
     }
     // 研學團站點 QR：/?stamp=代碼 → 先記下來（還沒登入的話登入後再蓋），網址上的代碼馬上拿掉
@@ -197,6 +198,8 @@ export default function Page() {
     }
     // 這則訊息可疑嗎？（書本第五章、安心保鑣的按鈕）
     else if (open === "scam-check") setSubpage("scam-check");
+    // 看診小幫手
+    else if (open === "clinic") setSubpage("clinic");
     else if (open === "ask") {
       setAskSeed(takeAskSeed());
       setSubpage("ask");
@@ -787,6 +790,7 @@ export default function Page() {
             }}
             onStories={() => { setStoriesAudio(false); setSubpage("stories"); }}
             onScamCheck={() => setSubpage("scam-check")}
+            onClinic={() => setSubpage("clinic")}
             caregiver={careElderCount > 0 ? { count: careElderCount, needsAttention: careNeedsAttention } : null}
             onCaregiver={() => setSubpage("caregiver")}
           />
@@ -900,6 +904,7 @@ export default function Page() {
         <StoriesScreen key={storiesAudio ? "audio" : "list"} initialAudio={storiesAudio} onBack={() => setSubpage(null)} />
       )}
       {subpage === "scam-check" && <ScamCheckScreen onBack={() => setSubpage(null)} />}
+      {subpage === "clinic" && <ClinicScreen onBack={() => setSubpage(null)} />}
       {subpage === "caregiver" && (
         <CaregiverScreen
           onBack={() => setSubpage(null)}
