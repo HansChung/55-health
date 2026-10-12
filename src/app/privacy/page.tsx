@@ -57,7 +57,7 @@ export default function PrivacyPage() {
             <li><strong>Supabase</strong>：資料庫與認證服務（資料儲存於亞洲區域）。</li>
             <li><strong>LY Corporation（LINE）</strong>：LINE 登入（僅在您選擇用 LINE 登入或連結時，由 LINE 驗證您的身分）。</li>
             <li><strong>邁笙 AI 影音創作平台（lk888）／Google Gemini</strong>：食物與藥袋照片 AI 辨識、「拍照問暖暖」的景物解說、每日飲食建議（照片、您輸入的問題與地點，以及稱呼、年齡、慢性病與當日飲食摘要，會經由該平台傳送給 Gemini 模型處理；「拍照問暖暖」的照片不會存到本服務）。</li>
-            <li><strong>OpenAI</strong>：語音對話功能（依 OpenAI API Data Policy，輸入不用於模型訓練）。</li>
+            <li><strong>邁笙 AI 影音創作平台（lk888）／Google Gemini</strong>：「問暖暖」打字對話與「跟暖暖聊聊」語音對話（您輸入的文字或說話的錄音，以及稱呼、年齡、慢性病，會經由該平台傳送給 Gemini 模型理解並回答；錄音在伺服器轉檔送出後就刪除，不會保存；回答由您手機內建的語音念出來）。</li>
             <li><strong>邁笙 AI 影音創作平台（lk888）／MiniMax</strong>：出遊回憶影片（您選擇的照片會經由該平台傳送給 MiniMax 海螺模型生成影片；若選擇口白，口白文字會傳送給 Gemini 配音模型，照片也可能用於 AI 撰寫口白；完成的影片與口白音檔存放在本服務的儲存空間）；多張照片遊記影片：照片會經由該平台傳送給 Gemini 模型協助撰寫每張的一句話（若您按「AI 幫我寫」），口白文字傳送給配音模型，影片本身在本服務的伺服器上製作。</li>
             <li><strong>Vercel</strong>：網站託管。</li>
             <li><strong>Resend</strong>：電子郵件寄送（如使用 Email 登入）。</li>

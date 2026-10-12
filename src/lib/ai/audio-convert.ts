@@ -117,6 +117,24 @@ export async function wavToM4a(wav: Buffer): Promise<Buffer> {
   }
 }
 
+/** WAV → mp3（單聲道 16kHz 32k）：語音對話送給看圖／聽音模型用（實測 webm 直接送會聽錯，mp3 就聽對） */
+export async function wavToMp3(wav: Buffer): Promise<Buffer> {
+  const dir = await mkdtemp(path.join(tmpdir(), "audio-"));
+  try {
+    const inPath = path.join(dir, "in.wav");
+    const outPath = path.join(dir, "out.mp3");
+    await writeFile(inPath, wav);
+    const result = await runFfmpeg(
+      ["-hide_banner", "-nostdin", "-y", ...SAFE_AUDIO_INPUT, "-i", inPath, "-ac", "1", "-ar", "16000", "-c:a", "libmp3lame", "-b:a", "32k", outPath],
+      CONVERT_TIMEOUT_MS
+    );
+    if (result.code !== 0) throw new Error(`ffmpeg mp3 exited ${result.code}: ${result.stderr.slice(-400)}`);
+    return await readFile(outPath);
+  } finally {
+    await rm(dir, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
 /**
  * 做好的歌（Suno 回 mp3）→ 立體聲 m4a 存 Storage（bucket 不收 mp3），順便量長度；
  * 超過 maxSeconds 的部分截掉（MV 合成時再淡出）

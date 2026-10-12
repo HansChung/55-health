@@ -5,7 +5,7 @@
 ## ✨ 功能
 
 - 📸 **AI 拍照辨識** — Gemini Pro Vision 自動分析食物熱量、營養
-- 🎙 **語音對話** — OpenAI Realtime API 即時雙向對話
+- 🎙 **語音對話** — 說一句、回一句：錄音經邁笙 lk888 的 Gemini 聽懂並回答，手機內建語音念出來
 - 📊 **每日營養追蹤** — 卡路里圈、三大營養素進度條
 - 👨‍👩‍👧 **家人共享** — 讓兒女遠端關心長輩飲食狀況
 - 💊 **慢性病提醒** — 高血壓、糖尿病等個人化建議
@@ -17,7 +17,7 @@
 
 - **前端**：Next.js 15 + React 19 + TypeScript
 - **資料庫**：Supabase（PostgreSQL + Auth + Storage）
-- **AI**：Google Gemini 2.5/3.1 Pro + OpenAI Realtime
+- **AI**：Google Gemini（經邁笙 lk888 平台）
 - **付款**：Stripe Checkout + Webhook
 - **手機 App**：Capacitor（Android）
 - **部署**：Vercel
@@ -61,7 +61,6 @@ npm run android:open  # 用 Android Studio 開啟
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Supabase 公開金鑰 |
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Supabase 管理員金鑰 |
 | `GEMINI_API_KEY` | ✅ | Google AI Studio API key |
-| `OPENAI_API_KEY` | ✅ | OpenAI API key |
 | `ADMIN_EMAILS` | ✅ | 管理員 email（逗號分隔）|
 | `STRIPE_SECRET_KEY` | 訂閱才需要 | Stripe secret key |
 
@@ -71,7 +70,7 @@ npm run android:open  # 用 Android Studio 開啟
 src/
 ├── app/
 │   ├── api/           # API routes (Next.js Route Handlers)
-│   │   ├── ai/        # Gemini / OpenAI 代理
+│   │   ├── ai/        # Gemini（lk888）代理
 │   │   ├── admin/     # 管理員 API
 │   │   ├── meals/     # 餐點 CRUD
 │   │   └── stripe/    # 訂閱付款

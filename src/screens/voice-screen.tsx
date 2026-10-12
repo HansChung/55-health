@@ -1,12 +1,19 @@
 "use client";
 
+// 跟暖暖聊聊：按一下說話、再按一下送出 → 暖暖（lk888 的 Gemini）聽懂並回答 → 手機念出來
+// 一句一句來（不是即時通話），次數和「問暖暖」共用每天的題數
+
 import { useState, useEffect, useRef } from "react";
 import { TranscriptMessage, VoiceTone } from "@/lib/types";
 import { Icon } from "@/components/icons";
 import { Mascot } from "@/components/mascot";
-import { api } from "@/lib/api-client";
-import { RealtimeClient } from "@/lib/realtime-client";
+import { api, ApiError } from "@/lib/api-client";
 import { trackEvent } from "@/lib/telemetry";
+import { useVoiceRecorder } from "@/hooks/use-voice-recorder";
+import { audioPayload } from "@/lib/direct-upload";
+import { speakGuideParagraphs, stopGuideSpeech } from "@/lib/speak-guide";
+import { VOICE_HISTORY_MAX, VOICE_TURN_MAX_SECONDS } from "@/lib/voice-chat";
+import type { AskMessage } from "@/lib/ask";
 import type { ChapterIntentHint } from "@/lib/chapter-opening";
 
 interface VoiceScreenProps {
@@ -42,25 +49,25 @@ function WaveformDots() {
 }
 
 export function VoiceScreen({ onClose, voiceTone = "warm", chapterIntent, onTypeInstead }: VoiceScreenProps) {
-  const [state, setState] = useState<"connecting" | "idle" | "listening" | "thinking" | "speaking" | "error">("idle");
+  // idle：等他按；recording：在錄；thinking：送出去等暖暖；speaking：暖暖在念
+  const [state, setState] = useState<"idle" | "recording" | "thinking" | "speaking" | "error">("idle");
   const [transcript, setTranscript] = useState<TranscriptMessage[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [maxSeconds, setMaxSeconds] = useState(180);
-  const [quotaText, setQuotaText] = useState("");
-  const clientRef = useRef<RealtimeClient | null>(null);
-  const startedAtRef = useRef<number | null>(null);
-  const maxSecondsRef = useRef(180);
-  const usageReportedRef = useRef(false);
-  const activeModelRef = useRef("gpt-realtime");
-  const activeSessionIdRef = useRef("");
-  const convSessionIdRef = useRef<string>("");           // 每次連線一個 UUID（conversations.session_id）
-  const lastSavedAssistantRef = useRef<string>("");       // 避免重複存同一句 AI 回應
+  const [quota, setQuota] = useState<{ used: number; limit: number } | null>(null);
+  const recorder = useVoiceRecorder(VOICE_TURN_MAX_SECONDS);
+  const historyRef = useRef<AskMessage[]>([]);
+  const convSessionIdRef = useRef<string>("");           // 這次打開畫面一個 UUID（conversations.session_id）
+  const closedRef = useRef(false);
+  const startedRef = useRef(false);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  // 第幾次念：被打斷的那句之後才觸發的「念完」不能改到新的狀態
+  const speechIdRef = useRef(0);
 
   // 寫入一則對話到 DB（fire-and-forget，失敗不影響 UX）
   const logMessage = (role: "user" | "assistant", content: string) => {
     const text = content?.trim();
-    if (!text || !convSessionIdRef.current) return;
+    if (!text) return;
+    if (!convSessionIdRef.current) convSessionIdRef.current = generateUuid();
     api.logConversation({
       role,
       content: text,
@@ -74,137 +81,107 @@ export function VoiceScreen({ onClose, voiceTone = "warm", chapterIntent, onType
     grandchild: "按一下，跟小孫子說話！",
   };
 
-  const reportUsage = async (reason: "manual" | "time_limit" | "close" | "unload" | "error") => {
-    if (usageReportedRef.current || !startedAtRef.current) return;
-    const seconds = Math.min(
-      maxSecondsRef.current,
-      Math.max(1, Math.ceil((Date.now() - startedAtRef.current) / 1000))
-    );
-    usageReportedRef.current = true;
-    try {
-      await api.trackRealtimeUsage({
-        seconds,
-        model: activeModelRef.current,
-        session_id: activeSessionIdRef.current || undefined,
-        reason,
-      });
-    } catch (e) {
-      console.error("[voice] usage tracking failed:", e);
-    }
-  };
-
-  const stopSession = async (reason: "manual" | "time_limit" | "close" | "unload" | "error" = "manual") => {
-    const client = clientRef.current;
-    clientRef.current = null;
-    client?.close();
-    await reportUsage(reason);
-    startedAtRef.current = null;
-    setElapsedSeconds(0);
-    setState("idle");
-  };
-
   useEffect(() => {
+    // 開發模式 React 會掛載兩次：重新掛載時要把旗標還原
+    closedRef.current = false;
+    api.askQuota().then((r) => setQuota(r.quota)).catch(() => undefined);
     return () => {
-      if (clientRef.current) {
-        void stopSession("unload");
-      }
+      closedRef.current = true;
+      stopGuideSpeech();
     };
   }, []);
 
+  // 有新的一句、或下面的按鈕變了（對話區高度跟著變）就捲到最下面
   useEffect(() => {
-    if (!clientRef.current || !startedAtRef.current) return;
-    const timer = window.setInterval(() => {
-      if (!startedAtRef.current) return;
-      const elapsed = Math.floor((Date.now() - startedAtRef.current) / 1000);
-      setElapsedSeconds(elapsed);
-      if (elapsed >= maxSecondsRef.current) {
-        setErrorMsg("這次語音已達 3 分鐘上限，暖暖先幫您暫停一下");
-        void stopSession("time_limit");
-      }
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, [state]);
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [transcript, state]);
 
-  const handleMicPress = async () => {
-    // 連線中不能按
-    if (state === "connecting") return;
+  // 錄好了就送出
+  useEffect(() => {
+    const rec = recorder.result;
+    if (!rec) return;
+    recorder.clear();
+    void sendTurn(rec.blob);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recorder.result]);
 
-    // 已連線中（聽中 / 想中 / 說話中）→ 按下去就斷線
-    if (clientRef.current) {
-      await stopSession("manual");
-      return;
-    }
-
-    setState("connecting");
-
+  const sendTurn = async (blob: Blob) => {
+    setState("thinking");
     try {
-      const { session, quota, max_seconds } = await api.createRealtimeSession();
-      trackEvent("voice_start");
-      const ephemeralKey = session.client_secret.value;
-      const sessionMax = Math.max(1, Math.min(180, max_seconds));
-      maxSecondsRef.current = sessionMax;
-      setMaxSeconds(sessionMax);
-      setQuotaText(`本月已用 ${quota.used}/${quota.limit} 分鐘`);
-      activeModelRef.current = session.model ?? "gpt-realtime";
-      activeSessionIdRef.current = session.id ?? "";
-      usageReportedRef.current = false;
-      // 為這次對話產一個 UUID 當 session_id（OpenAI 的 session.id 不是 UUID 格式）
-      // 後端用 z.string().uuid() 驗證，fallback 也必須是合法 UUID v4
-      convSessionIdRef.current = generateUuid();
-      lastSavedAssistantRef.current = "";
-
-      const client = new RealtimeClient({
-        onConnected: () => {
-          startedAtRef.current = Date.now();
-          setElapsedSeconds(0);
-          setState("listening");
-        },
-        onUserTranscript: (text) => {
-          setTranscript((t) => [...t, { role: "user", text }]);
-          setState("thinking");
-          logMessage("user", text);
-        },
-        onAssistantStartSpeaking: () => setState("speaking"),
-        onAssistantTranscript: (text, isFinal) => {
-          setTranscript((t) => {
-            const lastIsAi = t[t.length - 1]?.role === "ai";
-            if (lastIsAi) {
-              return [...t.slice(0, -1), { role: "ai", text }];
-            }
-            return [...t, { role: "ai", text }];
-          });
-          // 只在 isFinal 才存（中間 delta 不存，避免一堆短片段）
-          if (isFinal && text && text !== lastSavedAssistantRef.current) {
-            lastSavedAssistantRef.current = text;
-            logMessage("assistant", text);
-          }
-        },
-        onAssistantStopSpeaking: () => setState("listening"),
-        onListening: (listening) => setState(listening ? "listening" : "thinking"),
-        onError: (err) => {
-          setErrorMsg(err.message);
-          setState("error");
-          void reportUsage("error");
-        },
-        onClose: () => {
-          if (clientRef.current) setState("idle");
-        },
+      const payload = await audioPayload(blob);
+      const res = await api.voiceTurn({
+        ...payload,
+        history: historyRef.current,
+        chapterTitle: chapterIntent?.label ?? null,
       });
-
-      clientRef.current = client;
-      await client.connect(ephemeralKey);
+      if (closedRef.current) return;
+      setQuota(res.quota);
+      const heard = res.heard || "（暖暖沒聽清楚的一句話）";
+      historyRef.current = [
+        ...historyRef.current,
+        { role: "user" as const, text: heard },
+        { role: "assistant" as const, text: res.reply },
+      ].slice(-VOICE_HISTORY_MAX);
+      setTranscript((t) => [...t, { role: "user", text: res.heard || "🎤 （語音）" }, { role: "ai", text: res.reply }]);
+      if (res.heard) logMessage("user", res.heard);
+      logMessage("assistant", res.reply);
+      const speechId = ++speechIdRef.current;
+      const done = () => {
+        if (!closedRef.current && speechId === speechIdRef.current) setState((s) => (s === "speaking" ? "idle" : s));
+      };
+      const speaking = speakGuideParagraphs([res.reply], { onEnd: done, onError: done });
+      setState(speaking ? "speaking" : "idle");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "連線失敗";
+      if (closedRef.current) return;
+      const data = err instanceof ApiError ? (err.data as { quota?: { used: number; limit: number } } | null) : null;
+      if (data?.quota) setQuota(data.quota);
       const status = (err as { status?: number })?.status;
-      setErrorMsg(status === 429 ? "本月語音分鐘已用完" : status === 401 ? "請先登入" : msg);
+      setErrorMsg(
+        status === 401 ? "請先登入"
+          : err instanceof ApiError && err.isNetwork ? "網路不太穩，請再說一次"
+          : err instanceof Error && err.message ? err.message
+          : "暖暖這次沒聽清楚，請再說一次"
+      );
       setState("error");
     }
   };
 
+  const handleMicPress = async () => {
+    if (state === "thinking" || recorder.starting) return;
+    // 在錄 → 說完了，停下來送出（送出在 recorder.result 的 effect 裡）
+    if (recorder.recording) {
+      recorder.stop();
+      return;
+    }
+    // 暖暖還在念 → 先停下來，直接換他說
+    speechIdRef.current++;
+    stopGuideSpeech();
+    setErrorMsg("");
+    const err = await recorder.start();
+    if (err) {
+      setErrorMsg(err === "unsupported" ? "這支手機的瀏覽器不能錄音，請改用打字問暖暖" : "要先允許使用麥克風，暖暖才聽得到");
+      setState("error");
+      return;
+    }
+    if (closedRef.current) return;
+    if (!startedRef.current) {
+      startedRef.current = true;
+      trackEvent("voice_start");
+    }
+    setState("recording");
+  };
+
+  const stopSpeaking = () => {
+    speechIdRef.current++;
+    stopGuideSpeech();
+    setState("idle");
+  };
+
   const mascotMood = state === "thinking" ? "thinking" as const : state === "speaking" ? "excited" as const : "happy" as const;
-  const isActive = state === "listening" || state === "speaking" || state === "thinking" || state === "connecting";
-  const remainingSeconds = Math.max(0, maxSeconds - elapsedSeconds);
-  const timerLabel = `${Math.floor(remainingSeconds / 60)}:${String(remainingSeconds % 60).padStart(2, "0")}`;
+  const isActive = state === "recording" || state === "thinking" || state === "speaking";
+  const remaining = quota && quota.limit < 99999 ? Math.max(0, quota.limit - quota.used) : null;
+  const quotaText = remaining === null ? "" : remaining > 0 ? `今天還可以說 ${remaining} 句（和問暖暖一起算）` : "今天的題數用完了，明天再來聊";
 
   return (
     <div style={{
@@ -216,7 +193,7 @@ export function VoiceScreen({ onClose, voiceTone = "warm", chapterIntent, onType
       display: "flex", flexDirection: "column",
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "24px 20px 12px" }}>
-        <button onClick={() => { void stopSession("close").finally(onClose); }} style={{
+        <button onClick={onClose} aria-label="關閉" style={{
           width: 48, height: 48, borderRadius: "50%",
           background: "var(--surface)", border: "1px solid var(--line)",
           display: "flex", alignItems: "center", justifyContent: "center",
@@ -224,7 +201,7 @@ export function VoiceScreen({ onClose, voiceTone = "warm", chapterIntent, onType
           <Icon name="chevronD" size={24} color="var(--ink-1)" />
         </button>
         <div style={{ fontSize: "var(--fs-sm)", fontWeight: 600, color: "var(--ink-2)" }}>
-          {state === "connecting" ? "連線中…" : isActive ? "對話中" : "跟暖暖聊天"}
+          {isActive ? "對話中" : "跟暖暖聊天"}
         </div>
         <div style={{ width: 48 }} />
       </div>
@@ -260,9 +237,9 @@ export function VoiceScreen({ onClose, voiceTone = "warm", chapterIntent, onType
 
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "12px 24px 8px" }}>
         <Mascot
-          size={160}
+          size={transcript.length ? 96 : 160}
           mood={mascotMood}
-          listening={state === "listening"}
+          listening={state === "recording"}
           talking={state === "speaking"}
         />
         <div style={{
@@ -270,26 +247,38 @@ export function VoiceScreen({ onClose, voiceTone = "warm", chapterIntent, onType
           color: "var(--ink-1)", textAlign: "center",
           display: "flex", alignItems: "center", gap: 8,
         }}>
-          {state === "idle" && (transcript.length === 0 ? toneIntros[voiceTone] : "點麥克風繼續")}
-          {state === "connecting" && <>連線中…</>}
-          {state === "listening" && <><WaveformDots /> 我在聽…</>}
+          {state === "idle" && (transcript.length === 0 ? toneIntros[voiceTone] : "還想問什麼？")}
+          {state === "recording" && <><WaveformDots /> 我在聽…（{recorder.seconds} 秒）</>}
           {state === "thinking" && <>暖暖想一下…</>}
           {state === "speaking" && <><WaveformDots /> 暖暖正在說</>}
           {state === "error" && <>{errorMsg}</>}
         </div>
-        {(isActive || quotaText) && (
+        {quotaText && (
           <div style={{ marginTop: 8, fontSize: "var(--fs-sm)", color: "var(--ink-2)", textAlign: "center" }}>
-            {isActive ? `本次剩 ${timerLabel}` : quotaText}
-            {quotaText && isActive ? `　·　${quotaText}` : ""}
+            {quotaText}
           </div>
+        )}
+        {state === "speaking" && (
+          <button
+            type="button"
+            onClick={stopSpeaking}
+            style={{
+              marginTop: 10, padding: "8px 18px", minHeight: 44,
+              background: "var(--surface)", border: "1px solid var(--line-strong)", borderRadius: 999,
+              fontSize: "var(--fs-sm)", color: "var(--ink-1)", cursor: "pointer",
+            }}
+          >
+            🔇 先不要念
+          </button>
         )}
       </div>
 
-      <div className="scroll-area" style={{
+      <div ref={scrollRef} className="scroll-area" style={{
         flex: 1, overflowY: "auto", padding: "8px 20px",
         display: "flex", flexDirection: "column", gap: 12,
-        justifyContent: "flex-end",
       }}>
+        {/* 對話少的時候貼底；多了可以往上捲（flex-end 會讓上面的訊息捲不到） */}
+        <div style={{ flex: 1 }} />
         {transcript.length === 0 && state === "idle" && (
           <div style={{
             background: "var(--surface)", borderRadius: 16,
@@ -321,46 +310,44 @@ export function VoiceScreen({ onClose, voiceTone = "warm", chapterIntent, onType
       <div style={{ padding: "20px 24px 40px", display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
         <button
           onClick={handleMicPress}
-          disabled={state === "connecting"}
-          aria-label={state === "connecting" ? "連線中" : isActive ? "結束對話" : "開始語音對話"}
+          disabled={state === "thinking" || recorder.starting}
+          aria-label={state === "recording" ? "說完了，送出" : state === "thinking" ? "暖暖在想" : "開始說話"}
           style={{
             width: 100, height: 100, borderRadius: "50%",
-            background: isActive
+            background: state === "recording"
               ? "linear-gradient(135deg, #C95E36, #8B3D1F)"
               : "linear-gradient(135deg, #F4B58E, #E8845A)",
-            boxShadow: isActive
+            boxShadow: state === "recording"
               ? "0 4px 0 var(--primary-deep)"
               : "0 8px 0 var(--primary-deep), 0 14px 24px rgba(201, 94, 54, 0.3)",
             display: "flex", alignItems: "center", justifyContent: "center",
             position: "relative", transition: "all 0.2s",
           }}>
           {state === "idle" && (
-            <>
-              <div style={{
-                position: "absolute", inset: -6, borderRadius: "50%",
-                border: "2px solid rgba(232, 132, 90, 0.3)",
-                animation: "pulse-ring 2s ease-out infinite",
-              }} />
-              <Icon name="mic" size={48} color="#fff" stroke={2.5} />
-            </>
+            <div style={{
+              position: "absolute", inset: -6, borderRadius: "50%",
+              border: "2px solid rgba(232, 132, 90, 0.3)",
+              animation: "pulse-ring 2s ease-out infinite",
+            }} />
           )}
-          {state === "connecting" && (
+          {state === "recording" ? (
+            <div style={{ width: 34, height: 34, borderRadius: 6, background: "#fff" }} />
+          ) : state === "thinking" ? (
             <div style={{
               width: 36, height: 36, borderRadius: "50%",
               border: "4px solid rgba(255,255,255,0.3)",
               borderTopColor: "#fff",
               animation: "spin 0.8s linear infinite",
             }} />
+          ) : (
+            <Icon name="mic" size={48} color="#fff" stroke={2.5} />
           )}
-          {isActive && state !== "connecting" && <Icon name="x" size={48} color="#fff" stroke={2.5} />}
-          {state === "error" && <Icon name="mic" size={48} color="#fff" stroke={2.5} />}
         </button>
-        <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
-          {state === "idle" && "按一下開始說話"}
-          {state === "connecting" && "正在連線…"}
-          {state === "listening" && "按一下停止"}
-          {state === "thinking" && "稍等一下"}
-          {state === "speaking" && "暖暖回應中"}
+        <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", textAlign: "center" }}>
+          {state === "idle" && (transcript.length === 0 ? "按一下說話，說完再按一下" : "按一下再說一句")}
+          {state === "recording" && "說完了，按一下送出"}
+          {state === "thinking" && "暖暖在聽，稍等一下"}
+          {state === "speaking" && "想接著說，直接按麥克風"}
           {state === "error" && "按一下再試"}
         </div>
       </div>
