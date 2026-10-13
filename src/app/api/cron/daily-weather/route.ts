@@ -73,10 +73,15 @@ export async function GET(req: NextRequest) {
   const targets = candidates.filter((p) => subscribed.has(p.id));
   if (targets.length === 0) return NextResponse.json({ ok: true, candidates: candidates.length, sent: 0 });
 
-  // 天氣、空氣品質同時查。空氣品質是加分的：最多等 AIR_WAIT_MS，查太慢就照原本只報天氣，不吃掉發推播的時間
-  const [forecasts, air] = await Promise.all([
-    countiesForecast(targets.map((p) => p.county)),
-    Promise.race([countiesAir(), new Promise<Awaited<ReturnType<typeof countiesAir>>>((r) => setTimeout(() => r(new Map()), AIR_WAIT_MS))]),
+  // 天氣、空氣品質同時查。空氣品質是加分的：等天氣查完再看它好了沒——
+  // 從開始算最多等 AIR_WAIT_MS；天氣查比較久的話，那段時間內到的空氣品質照樣用，不會多等
+  const airStarted = Date.now();
+  const airTask = countiesAir();
+  const forecasts = await countiesForecast(targets.map((p) => p.county));
+  const airLeft = Math.max(0, AIR_WAIT_MS - (Date.now() - airStarted));
+  const air = await Promise.race([
+    airTask,
+    new Promise<Awaited<ReturnType<typeof countiesAir>>>((r) => setTimeout(() => r(new Map()), airLeft)),
   ]);
   let sent = 0;
   let noForecast = 0;
