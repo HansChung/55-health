@@ -402,3 +402,14 @@ stack works well for auth + meal/diary CRUD:
   `reserveDailySlot` and released on failure. The client sends the last `VOICE_HISTORY_MAX` turns as text; the
   recording is never stored (direct-upload staging is taken + deleted by `takeUserAudio`). Turns are still logged
   to `conversations` via `api.logConversation`.
+- **用我的聲音念（專業版，needs `supabase/add-story-voice.sql`）**: `StoryVoiceCard` on a story with text → `POST /api/stories/[id]/voice`
+  (`maxDuration = 300`, ffmpeg traced). Text = `storyVoiceText` (title, era, body) → `splitForVoice` (≤300 chars per
+  piece, split at 。！？, then commas, then hard) → `synthesizeNarration` with the elder's clone (`speech-2.8` HD, 3 in
+  parallel; a not-yet-activated voice does the first piece alone after `claimFirstUse`, so the 18.8 算力 activation
+  happens once) → `buildVoiceConcatArgs` (24 k mono, 0.5 s pauses, AAC 64k) → `story-audio/{user}/{story}/voice-{hash}.m4a`,
+  stored in `life_stories.voice_reading` `{path, seconds, text_hash, clone_id}`. `voice_reading_lease` (conditional
+  update) stops double clicks paying twice; same text + same voice returns the existing file free. Monthly cap
+  `STORY_VOICE_MONTHLY` (4) via `reserveDailySlot` on endpoint `/api/stories/voice` since the Taipei month start;
+  failures release the slot. Cost estimate from the price list (not measured yet): speech-2.8 HD ≈ 720 算力 per 1M
+  chars → ~2–4 算力 for a 3000-char story. Editing title/body marks it `outdated` (owner sees 「照新的內容重念」;
+  family only sees current readings, labelled 「AI 合成」). Deleting the story removes the file.

@@ -1,5 +1,5 @@
 // ────────────────────────────────────────────────
-// 我的故事集：改一篇（標題、年代、內容、給不給家人看）、刪一篇（照片、錄音一起刪）
+// 我的故事集：改一篇（標題、年代、內容、給不給家人看）、刪一篇（照片、錄音、用我的聲音念的錄音一起刪）
 // PATCH { title?, era?, body?, shareWithFamily? } → { story }；DELETE → { ok }
 // ────────────────────────────────────────────────
 import { NextRequest, NextResponse } from "next/server";
@@ -80,6 +80,7 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     if (rmErr) console.warn("[api] story photo remove (story already deleted):", found.row.id, rmErr.message);
     else await found.admin.from("life_stories").update({ photos: [] }).eq("id", found.row.id);
   }
-  if (found.row.audio?.path) await removeStoryAudio(found.admin, [found.row.audio.path]);
+  const audioPaths = [found.row.audio?.path, found.row.voice_reading?.path].filter((x): x is string => Boolean(x));
+  if (audioPaths.length) await removeStoryAudio(found.admin, audioPaths);
   return NextResponse.json({ ok: true });
 }

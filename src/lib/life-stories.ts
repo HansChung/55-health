@@ -43,6 +43,8 @@ export interface LifeStory {
   photos: StoryPhoto[];
   /** 聲音故事：長輩自己錄的或上傳的錄音（播放網址 1 小時有效） */
   audio: { url: string; seconds: number } | null;
+  /** AI 用長輩自己的聲音念的錄音（專業版）；outdated＝念好之後文字又改過 */
+  voice_reading?: { url: string; seconds: number; outdated: boolean } | null;
   share_with_family: boolean;
   created_at: string;
   updated_at: string;
