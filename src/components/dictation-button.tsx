@@ -35,8 +35,9 @@ export function DictationButton({
         onText(text);
         trackEvent("dictation_text", { where, mode, chars: [...text].length });
       },
-      (code) => {
-        const msg = dictationErrorMessage(code);
+      (code, message) => {
+        // 伺服器有說原因（方案不夠、次數用完、功能關掉）就照它說；否則用代碼對應的話
+        const msg = code === "no-speech" || code === "network" ? dictationErrorMessage(code) : message || dictationErrorMessage(code);
         if (msg) toast.error(msg);
       }
     );

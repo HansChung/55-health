@@ -107,45 +107,70 @@ export function useDictation(where = "") {
   }, []);
 
   /** 錄一句話 → 伺服器聽寫 */
-  const listenRecord = useCallback(async (onText: (text: string) => void, onError: (code: string) => void) => {
+  const listenRecord = useCallback(async (onText: (text: string) => void, onError: (code: string, message?: string) => void) => {
     active?.abort();
-    let stream: MediaStream;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
-    } catch (e) {
-      const name = (e as { name?: string })?.name;
-      return onError(name === "NotAllowedError" || name === "SecurityError" ? "not-allowed" : "audio-capture");
-    }
-    const mimeType = pickMimeType();
-    const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
-    const chunks: Blob[] = [];
+    // 一按下去就先佔住（等麥克風權限的時候再按一次＝取消；不會開出兩個錄音），
+    // AudioContext 也在按下的這一刻建立：之後才建立可能是暫停狀態，量不到音量
     let aborted = false;
-    let heardVoice = false;
+    let stream: MediaStream | null = null;
+    let recorder: MediaRecorder | null = null;
     let timer: ReturnType<typeof setInterval> | null = null;
     let ctx: AudioContext | null = null;
-    const startedAt = Date.now();
-    let lastVoiceAt = 0;
-
+    try {
+      ctx = new AudioContext();
+      void ctx.resume().catch(() => undefined);
+    } catch {
+      ctx = null;
+    }
     const cleanup = () => {
       if (timer) clearInterval(timer);
       timer = null;
-      stream.getTracks().forEach((t) => t.stop());
+      stream?.getTracks().forEach((t) => t.stop());
       ctx?.close().catch(() => undefined);
       ctx = null;
     };
     const handle = {
       abort: () => {
         aborted = true;
-        if (recorder.state === "recording") recorder.stop();
+        if (recorder?.state === "recording") recorder.stop();
         cleanup();
         setListening(false);
         setTranscribing(false);
+        if (active === handle) active = null;
       },
     };
+    active = handle;
+    abortRef.current = () => handle.abort();
+    stopRef.current = () => { if (recorder?.state === "recording") recorder.stop(); else handle.abort(); };
+    setListening(true);
 
-    // 開口後安靜一下就自動停；一直沒開口也停；最長 30 秒
     try {
-      ctx = new AudioContext();
+      stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+    } catch (e) {
+      const name = (e as { name?: string })?.name;
+      const wasAborted = aborted;
+      handle.abort();
+      if (!wasAborted) onError(name === "NotAllowedError" || name === "SecurityError" ? "not-allowed" : "audio-capture");
+      return;
+    }
+    // 等權限的時候已經取消（再按一次、按了別的欄位、離開畫面）：麥克風馬上關掉
+    if (aborted) {
+      stream.getTracks().forEach((t) => t.stop());
+      return;
+    }
+    const mimeType = pickMimeType();
+    const rec = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    recorder = rec;
+    const chunks: Blob[] = [];
+    let heardVoice = false;
+    const startedAt = Date.now();
+    let lastVoiceAt = 0;
+
+    // 開口後安靜一下就自動停；一直沒開口也停；最長 30 秒。量不到音量（AudioContext 沒在跑）就不靠它判斷
+    try {
+      if (!ctx) throw new Error("no audio context");
+      if (ctx.state !== "running") await ctx.resume();
+      if (ctx.state !== "running") throw new Error(`audio context ${ctx.state}`);
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 2048;
       ctx.createMediaStreamSource(stream).connect(analyser);
@@ -165,19 +190,19 @@ export function useDictation(where = "") {
           (heardVoice && now - lastVoiceAt > DICTATION_END_SILENCE_MS) ||
           (!heardVoice && elapsed > DICTATION_NO_SPEECH_MS)
         ) {
-          if (recorder.state === "recording") recorder.stop();
+          if (rec.state === "recording") rec.stop();
         }
       }, 120);
     } catch {
-      // 量不到音量（很少見）：就等長輩自己按停止，或到 30 秒
+      // 等長輩自己按停止，或到 30 秒；錄到的照樣送去聽寫（伺服器會判斷有沒有聲音）
       heardVoice = true;
       timer = setInterval(() => {
-        if (Date.now() - startedAt > DICTATION_MAX_SECONDS * 1000 && recorder.state === "recording") recorder.stop();
+        if (Date.now() - startedAt > DICTATION_MAX_SECONDS * 1000 && rec.state === "recording") rec.stop();
       }, 500);
     }
 
-    recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
-    recorder.onstop = async () => {
+    rec.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+    rec.onstop = async () => {
       cleanup();
       setListening(false);
       if (active === handle) active = null;
@@ -185,27 +210,28 @@ export function useDictation(where = "") {
       if (!heardVoice) return onError("no-speech");
       setTranscribing(true);
       try {
-        const blob = new Blob(chunks, { type: recorder.mimeType || mimeType || "audio/webm" });
+        const blob = new Blob(chunks, { type: rec.mimeType || mimeType || "audio/webm" });
         const res = await api.transcribe({ ...(await audioPayload(blob)), where });
         if (!aborted && res.text) onText(res.text);
       } catch (e) {
         if (aborted) return;
-        const code = e instanceof ApiError ? ((e.data as { code?: string } | null)?.code ?? (e.status === 503 ? "disabled" : e.isNetwork ? "network" : "")) : "";
-        onError(code || "failed");
+        if (e instanceof ApiError && !e.isNetwork) {
+          const code = (e.data as { code?: string } | null)?.code;
+          // 方案不夠、功能關掉、次數用完：照伺服器說的原因告訴長輩（不要說成「沒聽清楚」）
+          onError(code || (e.status === 503 ? "disabled" : e.status === 403 ? "blocked" : "failed"), e.message);
+        } else {
+          onError("network");
+        }
       } finally {
         if (!aborted) setTranscribing(false);
       }
     };
-    stopRef.current = () => { if (recorder.state === "recording") recorder.stop(); };
-    abortRef.current = () => handle.abort();
-    active = handle;
-    recorder.start(250);
-    setListening(true);
+    rec.start(250);
   }, [where]);
 
   /** 開始聽；聽到完整一句呼叫 onText；出錯呼叫 onError（錯誤代碼） */
   const listen = useCallback(
-    (onText: (text: string) => void, onError: (code: string) => void) => {
+    (onText: (text: string) => void, onError: (code: string, message?: string) => void) => {
       if (mode === "native") return listenNative(onText, onError);
       if (mode === "record") return void listenRecord(onText, onError);
       onError("unsupported");

@@ -62,3 +62,11 @@ describe("isSpeaking", () => {
     expect(DICTATION_NO_SPEECH_MS).toBeGreaterThan(DICTATION_END_SILENCE_MS);
   });
 });
+
+describe("cleanTranscript：引號", () => {
+  it("只拿掉整句外面成對的引號，句子裡的留著", () => {
+    expect(cleanTranscript("「明天回診」")).toBe("明天回診");
+    expect(cleanTranscript("醫生說「多喝水」")).toBe("醫生說「多喝水」");
+    expect(cleanTranscript("他說：「好」")).toBe("他說：「好」");
+  });
+});

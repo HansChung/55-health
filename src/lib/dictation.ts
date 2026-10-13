@@ -48,8 +48,10 @@ export const DICTATION_NO_SPEECH_MS = 7000;
 /** 聽寫模型回來的字：去掉引號、「聽寫：」這類前綴、多餘空白；說「（聽不清楚）」之類的當作沒聽到 */
 export function cleanTranscript(text: string | null | undefined): string {
   let t = (text ?? "").replace(/\r/g, "").trim();
-  t = t.replace(/^(聽寫|逐字稿|他說|內容)[:：]\s*/, "");
-  t = t.replace(/^["'「『“]+|["'」』”]+$/g, "").trim();
+  t = t.replace(/^(聽寫|逐字稿)[:：]\s*/, "");
+  // 整句被引號包起來才拿掉（句子裡本來就有的引號留著）
+  const PAIRS: Record<string, string> = { '"': '"', "'": "'", "「": "」", "『": "』", "“": "”" };
+  for (let i = 0; i < 2 && t.length >= 2 && PAIRS[t[0]] === t[t.length - 1]; i++) t = t.slice(1, -1).trim();
   if (/^[（(]?(聽不清楚|沒有聲音|無法辨識|無聲|靜音)[）)]?[。.]?$/.test(t)) return "";
   return [...t.replace(/\s+/g, " ")].slice(0, 300).join("");
 }
