@@ -1,13 +1,14 @@
 // ────────────────────────────────────────────────
 // 每天早上的天氣＋健康提醒（Web Push）
 // 對象：notification_settings.daily_weather 有開、選了縣市、這台裝置有訂閱推播的人
-// 一個請求查全部縣市的氣象署預報；每人先「搶」今天的記號（daily_weather_sent_on）才發，同一天不重複
+// 一個請求查全部縣市的氣象署預報（同時查環境部的空氣品質，空氣不好就加一句）；每人先「搶」今天的記號（daily_weather_sent_on）才發，同一天不重複
 // 由 Vercel Cron 觸發（見 vercel.json，23:00 UTC＝台灣 7 點），CRON_SECRET 保護；需要 CWA_API_KEY、VAPID
 // ────────────────────────────────────────────────
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/server";
 import { isWebPushConfigured, sendPushToUser } from "@/lib/push/send";
 import { countiesForecast, isWeatherConfigured } from "@/lib/weather-server";
+import { countiesAir } from "@/lib/air-quality-server";
 import { buildDailyWeatherPush, dailyWeatherCounty, taipeiDate, todayAndTonight } from "@/lib/daily-weather";
 import { createDeadline, mapWithConcurrency } from "@/lib/concurrency";
 import type { TaiwanCounty } from "@/lib/weather";
@@ -70,7 +71,8 @@ export async function GET(req: NextRequest) {
   const targets = candidates.filter((p) => subscribed.has(p.id));
   if (targets.length === 0) return NextResponse.json({ ok: true, candidates: candidates.length, sent: 0 });
 
-  const forecasts = await countiesForecast(targets.map((p) => p.county));
+  // 天氣、空氣品質同時查（空氣品質沒設金鑰或查不到就不帶）
+  const [forecasts, air] = await Promise.all([countiesForecast(targets.map((p) => p.county)), countiesAir()]);
   let sent = 0;
   let noForecast = 0;
   let skippedForTime = 0;
@@ -97,7 +99,7 @@ export async function GET(req: NextRequest) {
       if (claimErr) console.warn("[cron] daily-weather claim:", claimErr.message);
       return;
     }
-    const msg = buildDailyWeatherPush({ county: p.county, ...pair, conditions: p.chronic_conditions ?? [] });
+    const msg = buildDailyWeatherPush({ county: p.county, ...pair, conditions: p.chronic_conditions ?? [], air: air.get(p.county) ?? null });
     const res = await sendPushToUser(p.id, { ...msg, url: "/", tag: `daily-weather-${today}` }).catch((e) => {
       console.warn("[cron] daily-weather push:", e);
       return { sent: 0 };
@@ -111,6 +113,7 @@ export async function GET(req: NextRequest) {
     candidates: candidates.length,
     targets: targets.length,
     counties: forecasts.size,
+    air_counties: air.size,
     sent,
     no_forecast: noForecast,
     skipped_for_time: skippedForTime,

@@ -61,7 +61,7 @@ export function DailyWeatherCard({
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 800, fontSize: "var(--fs-lg)" }}>每天早上 {DAILY_WEATHER_HOUR} 點報天氣</div>
             <div style={{ color: "var(--ink-2)", fontSize: "var(--fs-sm)", lineHeight: 1.5 }}>
-              今天幾度、會不會下雨，再提醒你保暖、喝水或量血壓
+              今天幾度、會不會下雨，空氣不好也會說，再提醒你保暖、喝水或量血壓
             </div>
           </div>
         </div>
