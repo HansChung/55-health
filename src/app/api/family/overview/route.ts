@@ -8,6 +8,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
 import { checkinSetting, checkinState } from "@/lib/daily-checkin";
 import { todayCheckin } from "@/lib/daily-checkin-server";
+import { nextFamilyAppointment } from "@/lib/clinic-appointments-server";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +65,7 @@ export async function GET() {
         { data: iotRows },
         { data: shiRows },
         checkedAt,
+        nextAppointment,
       ] = await Promise.all([
         admin.from("profiles").select("display_name, medications, notification_settings").eq("id", elderId).single(),
         canMeals
@@ -94,6 +96,8 @@ export async function GET() {
           : none,
         // 平安打卡是長輩自己開來讓家人放心的 → 不另外看權限
         todayCheckin(admin, elderId),
+        // 回診是長輩自己選「也告訴家人」的 → 不另外看權限
+        nextFamilyAppointment(admin, elderId),
       ]);
 
       const elderName = profile?.display_name ?? "長輩";
@@ -179,6 +183,7 @@ export async function GET() {
         iot,
         shi,
         checkin,
+        next_appointment: nextAppointment,
       };
     })
   );

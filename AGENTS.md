@@ -377,6 +377,16 @@ stack works well for auth + meal/diary CRUD:
   `clinic_report_free_daily` (3)/day, paid = monthly photo quota. `compareLab` matches items across reports by
   `labKey` (NFKC, no spaces/brackets) against `previousReport`, ordered by the date printed on the report (`reportDay`,
   ROC years handled), not by record creation time.
+- **回診提醒** (needs `supabase/add-clinic-appointments.sql` + VAPID + `CRON_SECRET`): 「📅 回診提醒」 section in the
+  clinic screen (`ClinicAppointments`; hidden when the GET answers 503 = SQL not run). Rows in `clinic_appointments`
+  (server-only RLS): `kind` visit｜refill (領慢箋藥), Taipei `appt_date` + optional `appt_time` HH:MM, hospital,
+  department, note, `notify_family` (default on). ≤20 upcoming per user, ≤400 days ahead, past dates rejected
+  (`normalizeAppointmentInput`). Editing date/time clears the reminder claims so the new day is reminded again.
+  Cron `/api/cron/clinic-reminders?kind=day_before` (12:00 UTC = 20:00 Taipei, tomorrow's rows) and `?kind=same_day`
+  (23:00 UTC = 07:00, today's rows): each row is claimed via `reminded_*_at is null` before pushing the elder and, if
+  `notify_family`, every accepted family member. 看完診 → 「📅 設定下次回診提醒」 opens the form with the visit's
+  department. Home shows `UpcomingAppointmentCard` only for today/tomorrow; 家人狀況 shows the next `notify_family`
+  appointment within 14 days (not gated by permissions — the elder chose to tell family).
 
 ### Book × App light coupling（書本／App）
 - Chapter openings live at `/smart/chapter/[id]` (public, printable). Shared rhythm: **一拍、二問、三記下**.

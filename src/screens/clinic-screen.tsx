@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { SubPage } from "@/components/sub-page";
 import { Mascot } from "@/components/mascot";
 import { DictationButton } from "@/components/dictation-button";
+import { ClinicAppointments } from "@/components/clinic-appointments";
 import { api, ApiError } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/telemetry";
@@ -74,6 +75,8 @@ export function ClinicScreen({ onBack }: { onBack: () => void }) {
   const [asked, setAsked] = useState<Set<number>>(new Set());
   const [notes, setNotes] = useState("");
   const [speaking, setSpeaking] = useState<"card" | "report" | null>(null);
+  // 看完診按「設定下次回診」：回到列表，打開回診提醒的表單（帶上這次的科別）
+  const [apptPrefill, setApptPrefill] = useState<{ department: string | null } | null>(null);
 
   useEffect(() => {
     api.listClinicVisits()
@@ -240,6 +243,8 @@ export function ClinicScreen({ onBack }: { onBack: () => void }) {
             📄 看完診：拍檢驗報告給暖暖看
           </label>
 
+          <ClinicAppointments prefill={apptPrefill} onPrefillUsed={() => setApptPrefill(null)} />
+
           <div style={{ fontWeight: 800, margin: "24px 0 10px" }}>看診紀錄</div>
           {visits === null ? (
             <div style={{ color: "var(--ink-2)", textAlign: "center", padding: 20 }}>載入中…</div>
@@ -374,6 +379,22 @@ export function ClinicScreen({ onBack }: { onBack: () => void }) {
               <DictationButton where="clinic" onText={(t) => setNotes((p) => appendDictation(p, t, CLINIC_NOTES_MAX))} />
               <button type="button" className="btn-ghost" style={{ flex: 1 }} onClick={saveNotes} disabled={Boolean(busy) || notes === (current.doctor_notes ?? "")}>💾 記下來</button>
             </div>
+            <button
+              type="button"
+              className="btn-ghost"
+              style={{ width: "100%", marginTop: 12, minHeight: 56 }}
+              disabled={Boolean(busy)}
+              onClick={() => {
+                if (notes !== (current.doctor_notes ?? "") && !confirm("醫生交代的話還沒按「記下來」，先不存嗎？")) return;
+                stopGuideSpeech();
+                setSpeaking(null);
+                setApptPrefill({ department: current.department });
+                setView("list");
+                setTimeout(() => document.getElementById("clinic-appointments")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+              }}
+            >
+              📅 設定下次回診提醒
+            </button>
             {!current.report && (
               <label className="btn-primary" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", marginTop: 14, minHeight: 56, position: "relative", boxSizing: "border-box" }}>
                 <input type="file" accept="image/*" onChange={(e) => { readReport(e.target.files?.[0], current.id); e.target.value = ""; }} style={hiddenInput} disabled={Boolean(busy)} />

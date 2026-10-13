@@ -1,5 +1,5 @@
 import { api, type NotificationSettings, type ProfileData } from "@/lib/api-client";
-import { enableWebPush, hasWebPushSubscription, isWebPushSupported } from "@/lib/push/client";
+import { enableWebPush, isWebPushSupported } from "@/lib/push/client";
 import type { DailyCheckinSetting } from "@/lib/daily-checkin";
 
 /**
@@ -12,7 +12,8 @@ export async function saveDailyCheckin(value: DailyCheckinSetting): Promise<{ pr
   if (value.on) {
     try {
       if (!isWebPushSupported() || Notification.permission === "denied") pushOk = false;
-      else if (!(await hasWebPushSubscription())) await enableWebPush();
+      // 已經訂閱過也再送一次：換帳號登入、伺服器那筆被刪掉時，訂閱才會記在現在這個人身上
+      else await enableWebPush();
     } catch (e) {
       console.warn("[checkin] push not enabled:", e);
       pushOk = false;

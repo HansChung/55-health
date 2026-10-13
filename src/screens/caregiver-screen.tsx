@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { deadlineLabel, taipeiClock } from "@/lib/daily-checkin";
+import { appointmentPlace, appointmentTimeLabel, relativeDayLabel } from "@/lib/clinic-appointments";
 import { SubPage } from "@/components/sub-page";
 import { api, type ElderOverview } from "@/lib/api-client";
 import { FamilyVideos } from "@/components/family-videos";
@@ -153,6 +154,15 @@ function ElderCard({
                   : `今天還沒報（${deadlineLabel(elder.checkin.deadline)}前）`
             }
             warn={elder.checkin.state === "late"}
+          />
+        )}
+        {elder.next_appointment && (
+          <StatusRow icon={elder.next_appointment.kind === "refill" ? "💊" : "📅"} label={elder.next_appointment.kind === "refill" ? "領藥" : "回診"}
+            value={[
+              relativeDayLabel(elder.next_appointment.appt_date),
+              appointmentTimeLabel(elder.next_appointment.appt_time),
+              appointmentPlace(elder.next_appointment),
+            ].filter(Boolean).join(" ")}
           />
         )}
         {elder.iot && (
