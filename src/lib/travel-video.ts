@@ -274,7 +274,7 @@ export function checkVideoImageSize(
 
 // ── 多張照片遊記影片（montage）：照片慢慢移動＋每張一句配音與字幕，伺服器 ffmpeg 合成 ──
 
-export type TravelVideoKind = "single" | "montage" | "mv";
+export type TravelVideoKind = "single" | "montage" | "mv" | "yearly";
 export const MONTAGE_MIN_PHOTOS = 3;
 export const MONTAGE_MAX_PHOTOS = 5;
 /** 一次送出的照片（base64 data URL）合計上限：Vercel request body 上限 4.5MB */
@@ -560,6 +560,9 @@ export interface TravelVideo {
     alt_available: boolean;
   } | null;
   mv_progress?: { stage: MvStage; done: number; total: number } | null;
+  /** 年度回憶影片：年份、標題、製作進度 */
+  yearly?: { year: number; title: string } | null;
+  yearly_progress?: { stage: import("./travel-yearly").YearlyStage; done: number; total: number } | null;
 }
 
 /** 試聽過的口白（音檔已存在伺服器，送出影片時帶 id） */
@@ -587,13 +590,21 @@ export function videoSharePath(id: string): string {
 }
 
 /** 分享頁的標題與說明（LINE／FB 預覽用）。不放長輩的名字：連結可能被轉傳出去 */
-export function videoShareMeta(v: Pick<TravelVideo, "kind" | "place" | "narration_text" | "montage_lines"> & { mv?: TravelVideo["mv"] }): {
+export function videoShareMeta(
+  v: Pick<TravelVideo, "kind" | "place" | "narration_text" | "montage_lines"> & { mv?: TravelVideo["mv"]; yearly?: TravelVideo["yearly"] }
+): {
   title: string;
   description: string;
 } {
-  const what = v.kind === "mv" ? "MV" : v.kind === "montage" ? "遊記影片" : "出遊回憶影片";
+  const what = v.kind === "mv" ? "MV" : v.kind === "montage" ? "遊記影片" : v.kind === "yearly" ? "年度回憶影片" : "出遊回憶影片";
   const title =
-    v.kind === "mv" && v.mv?.title ? `🎵 ${v.mv.title}${v.place ? `・${v.place}` : ""}` : v.place ? `${v.place}・${what}` : what;
+    v.kind === "yearly" && v.yearly?.title
+      ? `📅 ${v.yearly.title}`
+      : v.kind === "mv" && v.mv?.title
+        ? `🎵 ${v.mv.title}${v.place ? `・${v.place}` : ""}`
+        : v.place
+          ? `${v.place}・${what}`
+          : what;
   const lines =
     v.kind === "mv"
       ? (v.mv?.lyrics ?? "").split("\n").filter((l) => l && !/^\[.*\]$/.test(l.trim())).slice(0, 2)

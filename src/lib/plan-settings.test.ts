@@ -65,7 +65,7 @@ describe("featureBlock／limitFor", () => {
 describe("pricingFeatures", () => {
   it("預設值：和原本方案頁一樣的數字", () => {
     const s = defaultPlanSettings();
-    expect(pricingFeatures(s, "free")).toEqual(["基本記錄", "每天拍照問暖暖 5 次", "每天問暖暖 20 句（打字）"]);
+    expect(pricingFeatures(s, "free")).toEqual(["基本記錄", "每天拍照問暖暖 5 次", "每天問暖暖 20 句（打字）", "每年 1 支年度回憶影片"]);
     expect(pricingFeatures(s, "basic")).toContain("每月 500 次 AI 拍照");
     expect(pricingFeatures(s, "basic")).toContain("每天問暖暖 50 句（打字或用說的）");
     expect(pricingFeatures(s, "basic")).toContain("每月 2 支出遊回憶影片");

@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
     "/api/ai/travel-video": ["./node_modules/ffmpeg-static/ffmpeg", "./public/music/*.m4a"],
     // 多張照片遊記：建立後在背景先開始做（配音、剪輯要用 ffmpeg）
     "/api/ai/travel-video/montage": ["./node_modules/ffmpeg-static/ffmpeg", "./public/music/*.m4a"],
+    "/api/ai/travel-video/yearly": ["./node_modules/ffmpeg-static/ffmpeg", "./public/music/*.m4a"],
     "/api/cron/montage-step": ["./node_modules/ffmpeg-static/ffmpeg", "./public/music/*.m4a"],
     // 遊記 MV：建立後在背景先開始等歌、轉檔、剪輯
     "/api/ai/travel-video/[id]/mv": ["./node_modules/ffmpeg-static/ffmpeg"],

@@ -181,7 +181,12 @@ export default function Page() {
     else if (open === "camera") setModal("camera");
     else if (open === "photo") setShowPhotoSource(true);
     // 出遊影片做好的推播點進來（不在這裡擋方案：profile 可能還沒載完；配額由伺服器把關）
-    else if (open === "travel-video") setSubpage("travel-video");
+    // &mode=yearly 直接打開「年度回憶」分頁
+    else if (open === "travel-video") {
+      const mode = url.searchParams.get("mode");
+      setTravelVideoMode(mode === "yearly" || mode === "montage" || mode === "mv" ? mode : null);
+      setSubpage("travel-video");
+    }
     // 研學團：分享連結／候補轉正推播（&tour=活動 id 直接打開那一團）
     else if (open === "study-tours") {
       setStudyTourId(url.searchParams.get("tour"));
@@ -251,6 +256,7 @@ export default function Page() {
   // 後台「方案與次數」：登入後載入一次（功能開關、最低方案、自己的個別開通）；planTier 是 "admin" 時全部可用
   const [planTier, setPlanTier] = useState<SubscriptionTier | "admin" | null>(null);
   const [planVersion, setPlanVersion] = useState(0);
+  const [travelVideoMode, setTravelVideoMode] = useState<"montage" | "mv" | "yearly" | null>(null);
   useEffect(() => {
     if (!user) return;
     let alive = true;
@@ -796,10 +802,10 @@ export default function Page() {
             onBookPractice={() => { window.location.href = "/smart/guide"; }}
             onIot={() => setSubpage("iot")}
             onTravelVideo={
-              featureEnabled("travel_video") || featureEnabled("travel_montage") || featureEnabled("travel_mv")
+              featureEnabled("travel_video") || featureEnabled("travel_montage") || featureEnabled("travel_mv") || featureEnabled("travel_yearly")
                 ? () =>
-                    // 單張影片、遊記、MV 有一種能用就打開（各分頁自己看次數）
-                    hasFeature(gateTier, "travel_montage") || hasFeature(gateTier, "travel_mv")
+                    // 單張影片、遊記、MV、年度回憶有一種能用就打開（各分頁自己看次數；年度回憶免費版也能用）
+                    hasFeature(gateTier, "travel_montage") || hasFeature(gateTier, "travel_mv") || hasFeature(gateTier, "travel_yearly")
                       ? setSubpage("travel-video")
                       : requireFeature("travel_video", () => setSubpage("travel-video"))
                 : undefined
@@ -900,7 +906,9 @@ export default function Page() {
       )}
       {subpage === "blueprint" && <BlueprintScreen onBack={() => setSubpage(null)} />}
       {subpage === "iot" && <IotScreen onBack={() => setSubpage(null)} />}
-      {subpage === "travel-video" && <TravelVideoScreen onBack={() => setSubpage(null)} />}
+      {subpage === "travel-video" && (
+        <TravelVideoScreen initialMode={travelVideoMode} onBack={() => { setTravelVideoMode(null); setSubpage(null); }} />
+      )}
       {(subpage === "study-tours" || subpage === "study-passport") && (
         <StudyToursScreen
           key={`${subpage}-${studyToursKey}`}

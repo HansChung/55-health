@@ -38,7 +38,7 @@ export function VideoShareView({ shared }: { shared: SharedVideo | null }) {
 function SharedVideoCard({ shared }: { shared: SharedVideo }) {
   const v = shared.video;
   const { title } = videoShareMeta(v);
-  const lines = v.kind === "mv" ? [] : v.kind === "montage" ? (v.montage_lines ?? []) : v.narration_text ? [v.narration_text] : [];
+  const lines = v.kind === "mv" || v.kind === "yearly" ? [] : v.kind === "montage" ? (v.montage_lines ?? []) : v.narration_text ? [v.narration_text] : [];
 
   return (
     <>
@@ -57,7 +57,7 @@ function SharedVideoCard({ shared }: { shared: SharedVideo }) {
         )}
         <div>
           <h1 style={{ fontSize: "var(--fs-xl, 24px)", fontWeight: 800, margin: 0, lineHeight: 1.4 }}>
-            {v.kind === "mv" ? "" : v.kind === "montage" ? "📚 " : "🎬 "}{title}
+            {v.kind === "mv" || v.kind === "yearly" ? "" : v.kind === "montage" ? "📚 " : "🎬 "}{title}
           </h1>
           <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-3)", marginTop: 4 }}>{formatDay(v.created_at)}</div>
         </div>

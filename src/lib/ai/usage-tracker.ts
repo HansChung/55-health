@@ -1,6 +1,7 @@
 import { createSupabaseAdmin } from "../supabase/server";
 import { calculateCost } from "./pricing";
 import { LIMIT_MAX } from "../plan-settings";
+import { taipeiYearMonth, taipeiYearRange } from "../travel-yearly";
 import { isAdminEmail, planAccessFor, type PlanAccess } from "../plan-access-server";
 
 interface TrackUsageParams {
@@ -61,6 +62,7 @@ const QUOTA_KEYS = {
   video: { feature: "travel_video", limit: "video_monthly" },
   montage: { feature: "travel_montage", limit: "montage_monthly" },
   mv: { feature: "travel_mv", limit: "mv_monthly" },
+  yearly: { feature: "travel_yearly", limit: "yearly_per_year" },
 } as const;
 
 /**
@@ -69,7 +71,7 @@ const QUOTA_KEYS = {
  */
 export async function checkUserQuota(
   userId: string,
-  service: "photo" | "video" | "montage" | "mv"
+  service: "photo" | "video" | "montage" | "mv" | "yearly"
 ): Promise<{
   allowed: boolean;
   used: number;
@@ -114,13 +116,15 @@ export async function checkUserQuota(
   }
 
   // 影片：失敗的不算；使用者刪掉的（deleted_at）仍算，避免刪了重做繞過配額
+  // 年度回憶影片一年算一次（台北時間 1 月 1 日起），其他每月
+  const since = service === "yearly" ? taipeiYearRange(taipeiYearMonth(new Date().toISOString()).year).start : startOfMonth.toISOString();
   let q = supabase
     .from("travel_videos")
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
-    .eq("kind", service === "video" ? "single" : service) // 單張、遊記、MV 各自計次
+    .eq("kind", service === "video" ? "single" : service) // 單張、遊記、MV、年度各自計次
     .neq("status", "failed")
-    .gte("created_at", startOfMonth.toISOString());
+    .gte("created_at", since);
   if (service === "mv") q = q.is("mv->>variant_of", null); // 「另一個版本」不扣次數
   const { count } = await q;
   const used = count ?? 0;
