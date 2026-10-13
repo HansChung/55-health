@@ -8,6 +8,7 @@
 // ────────────────────────────────────────────────
 
 import { useEffect, useRef, useState } from "react";
+import { StoryAudiobook } from "@/components/story-audiobook";
 import { SubPage } from "@/components/sub-page";
 import { Mascot } from "@/components/mascot";
 import { DictationButton } from "@/components/dictation-button";
@@ -109,6 +110,8 @@ export function StoriesScreen({ onBack, initialAudio = false }: { onBack: () => 
   const uid = user?.id ?? null;
   const [view, setView] = useState<View>(initialAudio ? "audio" : "list");
   const [stories, setStories] = useState<LifeStory[] | null>(null);
+  // 回憶錄有聲書（整本一篇接一篇念）
+  const [audiobook, setAudiobook] = useState(false);
   const [current, setCurrent] = useState<LifeStory | null>(null);
   const [work, setWork] = useState<Work>(EMPTY_WORK);
   const [input, setInput] = useState("");
@@ -357,6 +360,19 @@ export function StoriesScreen({ onBack, initialAudio = false }: { onBack: () => 
             🎧 用自己的聲音說（錄音或上傳錄音檔）
           </button>
 
+          {stories && stories.length > 0 && (
+            <button type="button" className="btn-ghost" style={{ width: "100%", marginTop: 12, minHeight: 56 }} onClick={() => setAudiobook(true)}>
+              🎧 聽整本有聲書
+            </button>
+          )}
+          {audiobook && stories && (
+            <StoryAudiobook
+              stories={stories}
+              title="我的回憶錄"
+              onClose={() => setAudiobook(false)}
+              onRefresh={() => api.listStories().then((r) => { setStories(r.stories); return r.stories; })}
+            />
+          )}
           {stories && stories.length > 0 && (
             <a href="/stories/book" className="btn-ghost" style={{ display: "block", textAlign: "center", textDecoration: "none", marginTop: 12 }}>
               📖 印成一本小書

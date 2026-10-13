@@ -503,6 +503,16 @@ stack works well for auth + meal/diary CRUD:
   failures release the slot. Cost estimate from the price list (not measured yet): speech-2.8 HD ≈ 720 算力 per 1M
   chars → ~2–4 算力 for a 3000-char story. Editing title/body marks it `outdated` (owner sees 「照新的內容重念」;
   family only sees current readings, labelled 「AI 合成」). Deleting the story removes the file.
+- **回憶錄有聲書** (no SQL, no extra AI): 「🎧 聽整本有聲書」 in the stories list and 「🎧 聽○○的回憶錄有聲書」 in 家人狀況
+  (shared stories only) open `StoryAudiobook`. `audiobookChapters` orders stories oldest-first and picks per chapter:
+  the elder's own recording → a current (not outdated) 用我的聲音念 reading → the phone's speechSynthesis reading
+  `storySpeech` paragraphs (skipped if the browser can't speak). Device speech is chained **one sentence per
+  utterance** (`speechChunks`, ≤80 chars; long utterances stop halfway in some browsers) with a per-sentence watchdog
+  that moves on if `onend` never fires; a token ref invalidates callbacks on pause/skip, and only `NotAllowedError`
+  from `audio.play()` flips the button back to ▶️. Closing clears the Media Session metadata and handlers.
+  Audio URLs are 1-hour signed URLs: on an `<audio>` error the player refetches the stories once (`onRefresh`) and
+  replays only if the URL changed; otherwise that source is marked broken (`brokenAudioKey(id, source)`) and the chapter
+  falls through to the next source (recording → voice reading → phone speech), skipped only when none is left. Every async step re-checks the play token so a pause/skip meanwhile wins. Auto-advances, prev/next, 0.8／1／1.2 speed, Media Session metadata for the lock screen.
 
 ### 方案與次數（後台 `/admin/plans`, needs `supabase/add-plan-settings.sql`）
 - **Every feature switch, minimum tier and quota lives in one place**: `src/lib/plan-settings.ts` (`FEATURE_DEFS`,
