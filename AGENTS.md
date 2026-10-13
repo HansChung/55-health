@@ -235,6 +235,19 @@ stack works well for auth + meal/diary CRUD:
   "One pending video per user" is enforced by the partial unique index
   `travel_videos_one_pending_per_user` (insert → 23505 → 409), so concurrent POSTs can't double-charge.
 
+### 存到手機相簿（`SaveToPhoneButton`, `src/lib/save-media.ts`）
+- On every finished video (own list, 家人狀況, share page `/v/<id>`) and in the 團體相簿 photo viewer. Three modes
+  (`saveMode()`): **native** = Capacitor Android → the app's own `GallerySaver` plugin
+  (`android/app/src/main/java/com/nuannuan/app/GallerySaverPlugin.java`, registered in `MainActivity` before
+  `super.onCreate`) downloads the URL and writes it into the gallery under Movies/暖暖 or Pictures/暖暖 (MediaStore on
+  Android 10+, no permission; Android 7–9 asks for `WRITE_EXTERNAL_STORAGE`, declared with `maxSdkVersion=28`);
+  **share** = browsers where `navigator.canShare({files})` (iPhone Safari, Android Chrome): the first tap fetches the
+  file, the button turns into 「📲 存到相簿」 and the **second tap** opens the share sheet (Safari only allows
+  `navigator.share` inside a user gesture — fetching first and sharing in the same tap gets blocked);
+  **download** = everything else (blob + `<a download>` with a readable name from `videoSaveName` / `mediaFilename`).
+  Supabase public/signed storage URLs allow CORS, so `fetch` works from the app origin. The plugin has not been
+  compiled on the dev Mac (no JDK/Android SDK) — build it in Android Studio before shipping the app.
+
 ### 後台（/admin）手機版
 - Admin pages keep their desktop styles inline; below 768px `src/app/admin/admin.css` overrides them via
   `adm-*` classes (with `!important`, since inline styles win otherwise): `adm-header`, `adm-grid-2`

@@ -8,6 +8,8 @@ import { VideoComments } from "@/components/video-comments";
 import { markVideoViewed } from "@/lib/mark-video-viewed";
 import { videoShareMeta } from "@/lib/travel-video";
 import type { SharedVideo } from "@/lib/video-share-server";
+import { SaveToPhoneButton } from "@/components/save-to-phone-button";
+import { videoSaveName } from "@/lib/travel-video";
 
 function formatDay(iso: string) {
   return new Date(iso).toLocaleDateString("zh-TW", { timeZone: "Asia/Taipei", year: "numeric", month: "long", day: "numeric" });
@@ -55,6 +57,7 @@ function SharedVideoCard({ shared }: { shared: SharedVideo }) {
             style={{ width: "100%", maxHeight: "70dvh", borderRadius: "var(--r-md)", background: "#000", display: "block" }}
           />
         )}
+        {v.video_url && <SaveToPhoneButton url={v.video_url} mime="video/mp4" name={`暖暖-${videoSaveName(v)}`} where="share_page" />}
         <div>
           <h1 style={{ fontSize: "var(--fs-xl, 24px)", fontWeight: 800, margin: 0, lineHeight: 1.4 }}>
             {v.kind === "mv" || v.kind === "yearly" || v.kind === "tour" ? "" : v.kind === "montage" ? "📚 " : "🎬 "}{title}

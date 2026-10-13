@@ -16,6 +16,7 @@ import { stagePhoto } from "@/lib/direct-upload";
 import { YearlyComposer } from "@/components/yearly-composer";
 import { TOUR_ALBUM_BATCH, type TourAlbumPhoto, type TourAlbumView } from "@/lib/tour-album";
 import { isTravelVideoPending } from "@/lib/travel-video";
+import { SaveToPhoneButton } from "@/components/save-to-phone-button";
 
 function imageSize(src: string): Promise<{ width: number; height: number }> {
   return new Promise((resolve) => {
@@ -186,7 +187,15 @@ export function TourAlbum({
         }}>
           <img src={viewing.url} alt="" style={{ maxWidth: "100%", maxHeight: "75dvh", objectFit: "contain", borderRadius: 8 }} />
           <div style={{ color: "#fff", fontSize: "var(--fs-base)" }}>{viewing.mine ? "我放的" : `${viewing.uploader} 放的`}</div>
-          <div style={{ display: "flex", gap: 10 }} onClick={(e) => e.stopPropagation()}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }} onClick={(e) => e.stopPropagation()}>
+            <SaveToPhoneButton
+              url={viewing.url}
+              mime="image/jpeg"
+              name={`暖暖-${tourTitle}-${viewing.uploader}`}
+              where="tour_album"
+              compact
+              style={{ background: "#fff" }}
+            />
             {viewing.can_delete && (
               <button onClick={() => remove(viewing)} className="btn-ghost" style={{ background: "#fff" }}>🗑️ 刪掉</button>
             )}
