@@ -802,10 +802,10 @@ export default function Page() {
             onBookPractice={() => { window.location.href = "/smart/guide"; }}
             onIot={() => setSubpage("iot")}
             onTravelVideo={
-              featureEnabled("travel_video") || featureEnabled("travel_montage") || featureEnabled("travel_mv")
+              featureEnabled("travel_video") || featureEnabled("travel_montage") || featureEnabled("travel_mv") || featureEnabled("travel_yearly")
                 ? () =>
-                    // 單張影片、遊記、MV 有一種能用就打開（各分頁自己看次數）
-                    hasFeature(gateTier, "travel_montage") || hasFeature(gateTier, "travel_mv")
+                    // 單張影片、遊記、MV、年度回憶有一種能用就打開（各分頁自己看次數；年度回憶免費版也能用）
+                    hasFeature(gateTier, "travel_montage") || hasFeature(gateTier, "travel_mv") || hasFeature(gateTier, "travel_yearly")
                       ? setSubpage("travel-video")
                       : requireFeature("travel_video", () => setSubpage("travel-video"))
                 : undefined

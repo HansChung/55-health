@@ -88,10 +88,12 @@ export async function GET(req: NextRequest) {
 
   const enabled = isVideoProviderConfigured();
   let rows = (data ?? []) as TravelVideoRow[];
-  if (enabled) {
+  if (rows.some((r) => isTravelVideoPending(r.status))) {
     rows = await Promise.all(
       rows.map((r) => {
         if (!isTravelVideoPending(r.status)) return r;
+        // 年度回憶影片只用 ffmpeg，不需要影片平台：沒設定 LK888 也要推進；其他種類要平台
+        if (!enabled && r.kind !== "yearly") return r;
         // 遊記在自己伺服器做（配音→剪輯→合成），每次輪詢推進一段；單張影片向平台查進度
         const origin = new URL(req.url).origin;
         const step =
