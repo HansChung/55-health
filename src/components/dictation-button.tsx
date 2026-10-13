@@ -1,6 +1,7 @@
 "use client";
 
-// 「🗣️ 用說的」：按一下說話，說完自動變成文字（瀏覽器不支援就不顯示）
+// 「🗣️ 用說的」：按一下說話，說完自動變成文字
+// 有瀏覽器內建辨識就用它；App（Android WebView）、Firefox 改成錄一句 → 伺服器聽寫（都不能錄音才不顯示）
 
 import { useDictation } from "@/hooks/use-dictation";
 import { useToast } from "@/hooks/use-toast";
@@ -22,19 +23,21 @@ export function DictationButton({
   compact?: boolean;
 }) {
   const toast = useToast();
-  const { supported, listening, interim, listen, stop } = useDictation();
+  const { supported, mode, listening, transcribing, interim, listen, stop } = useDictation(where);
   if (!supported) return null;
 
   const toggle = () => {
+    if (transcribing) return;
     if (listening) return stop();
-    trackEvent("dictation_start", { where });
+    trackEvent("dictation_start", { where, mode });
     listen(
       (text) => {
         onText(text);
-        trackEvent("dictation_text", { where, chars: [...text].length });
+        trackEvent("dictation_text", { where, mode, chars: [...text].length });
       },
-      (code) => {
-        const msg = dictationErrorMessage(code);
+      (code, message) => {
+        // 伺服器有說原因（方案不夠、次數用完、功能關掉）就照它說；否則用代碼對應的話
+        const msg = code === "no-speech" || code === "network" ? dictationErrorMessage(code) : message || dictationErrorMessage(code);
         if (msg) toast.error(msg);
       }
     );
@@ -45,9 +48,10 @@ export function DictationButton({
       <button
         type="button"
         onClick={toggle}
-        disabled={disabled && !listening}
+        disabled={(disabled && !listening) || transcribing}
         aria-pressed={listening}
-        aria-label={listening ? "停止聽寫" : "用說的輸入文字"}
+        aria-busy={transcribing}
+        aria-label={transcribing ? "正在轉成文字" : listening ? "停止聽寫" : "用說的輸入文字"}
         style={{
           padding: compact ? "6px 10px" : "8px 14px",
           minHeight: compact ? 36 : 44,
@@ -62,8 +66,13 @@ export function DictationButton({
           opacity: disabled && !listening ? 0.5 : 1,
         }}
       >
-        {listening ? "🔴 請說話…" : "🗣️ 用說的"}
+        {transcribing ? "⏳ 轉成文字…" : listening ? "🔴 請說話…" : "🗣️ 用說的"}
       </button>
+      {listening && mode === "record" && (
+        <span role="status" style={{ fontSize: "var(--fs-xs)", color: "var(--ink-2)", maxWidth: 240 }}>
+          說完停一下會自動送出，也可以再按一下
+        </span>
+      )}
       {listening && interim && (
         <span role="status" style={{ fontSize: "var(--fs-xs)", color: "var(--ink-2)", maxWidth: 240 }}>
           聽到：{interim}
