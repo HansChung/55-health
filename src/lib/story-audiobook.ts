@@ -20,11 +20,45 @@ export interface AudiobookChapter {
   source: ChapterSource;
   /** recording／voice 的播放網址 */
   url: string | null;
-  /** 手機念的段落（標題、年代、內文） */
+  /** 手機念的句子（標題、年代、內文切成一句一句） */
   paragraphs: string[];
   /** 秒數（手機念的是估的） */
   seconds: number;
   cover: string | null;
+}
+
+/** 手機念的時候一次最多念幾個字（太長的一段有些瀏覽器會念到一半停住） */
+export const SPEECH_CHUNK_MAX = 80;
+
+/** 段落切成一句一句：先照句號、問號、驚嘆號切，還是太長就照逗號，最後硬切 */
+export function speechChunks(paragraphs: string[], max = SPEECH_CHUNK_MAX): string[] {
+  const out: string[] = [];
+  const push = (t: string) => {
+    const s = t.trim();
+    if (s) out.push(s);
+  };
+  for (const p of paragraphs) {
+    for (const sentence of p.split(/(?<=[。！？!?])/)) {
+      if ([...sentence].length <= max) {
+        push(sentence);
+        continue;
+      }
+      let buf = "";
+      for (const part of sentence.split(/(?<=[，、；,;])/)) {
+        if ([...buf + part].length > max && buf) {
+          push(buf);
+          buf = "";
+        }
+        buf += part;
+        while ([...buf].length > max) {
+          push([...buf].slice(0, max).join(""));
+          buf = [...buf].slice(max).join("");
+        }
+      }
+      push(buf);
+    }
+  }
+  return out;
 }
 
 /** 手機念中文大約每秒 4 個字（慢一點的速度） */
@@ -44,7 +78,7 @@ export function audiobookChapters(stories: LifeStory[], opts: { deviceSpeech: bo
   const out: AudiobookChapter[] = [];
   for (const s of sorted) {
     const base = { id: s.id, title: s.title, era: s.era, cover: s.photos[0]?.url ?? null };
-    const paragraphs = storySpeech(s);
+    const paragraphs = speechChunks(storySpeech(s));
     if (s.audio?.url) {
       out.push({ ...base, source: "recording", url: s.audio.url, paragraphs, seconds: Math.round(s.audio.seconds) });
     } else if (s.voice_reading?.url && !s.voice_reading.outdated) {

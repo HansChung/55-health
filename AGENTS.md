@@ -496,8 +496,10 @@ stack works well for auth + meal/diary CRUD:
 - **回憶錄有聲書** (no SQL, no extra AI): 「🎧 聽整本有聲書」 in the stories list and 「🎧 聽○○的回憶錄有聲書」 in 家人狀況
   (shared stories only) open `StoryAudiobook`. `audiobookChapters` orders stories oldest-first and picks per chapter:
   the elder's own recording → a current (not outdated) 用我的聲音念 reading → the phone's speechSynthesis reading
-  `storySpeech` paragraphs (skipped if the browser can't speak). Device speech is chained **one paragraph per
-  utterance** (one long utterance stops halfway in some browsers); a token ref invalidates callbacks on pause/skip.
+  `storySpeech` paragraphs (skipped if the browser can't speak). Device speech is chained **one sentence per
+  utterance** (`speechChunks`, ≤80 chars; long utterances stop halfway in some browsers) with a per-sentence watchdog
+  that moves on if `onend` never fires; a token ref invalidates callbacks on pause/skip, and only `NotAllowedError`
+  from `audio.play()` flips the button back to ▶️. Closing clears the Media Session metadata and handlers.
   Audio URLs are 1-hour signed URLs: on an `<audio>` error the player refetches the stories once (`onRefresh`), then
   skips. Auto-advances, prev/next, 0.8／1／1.2 speed, Media Session metadata for the lock screen.
 

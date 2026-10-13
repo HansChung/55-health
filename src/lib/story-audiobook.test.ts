@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LifeStory } from "./life-stories";
-import { audiobookChapters, audiobookSeconds, estimateSpeechSeconds, formatBookDuration, sourceCounts } from "./story-audiobook";
+import { audiobookChapters, audiobookSeconds, estimateSpeechSeconds, formatBookDuration, sourceCounts, speechChunks } from "./story-audiobook";
 
 const story = (over: Partial<LifeStory>): LifeStory => ({
   id: "x", title: "標題", era: null, body: "", photos: [], audio: null, voice_reading: null,
@@ -45,5 +45,15 @@ describe("durations", () => {
     expect(formatBookDuration(65 * 60)).toBe("約 1 小時 5 分");
     expect(formatBookDuration(120 * 60)).toBe("約 2 小時");
     expect(audiobookSeconds([{ seconds: 3 }, { seconds: 4 }] as never)).toBe(7);
+  });
+});
+
+describe("speechChunks", () => {
+  it("splits paragraphs into sentences, then at commas, then hard", () => {
+    expect(speechChunks(["第一句。第二句！", "第三句"])).toEqual(["第一句。", "第二句！", "第三句"]);
+    const long = "一二三四五，六七八九十，甲乙丙丁戊";
+    expect(speechChunks([long], 8)).toEqual(["一二三四五，", "六七八九十，", "甲乙丙丁戊"]);
+    expect(speechChunks(["一二三四五六七八九十"], 4)).toEqual(["一二三四", "五六七八", "九十"]);
+    expect(speechChunks(["  ", ""])).toEqual([]);
   });
 });

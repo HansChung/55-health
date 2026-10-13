@@ -13,6 +13,7 @@ import { trackEvent } from "@/lib/telemetry";
 import { canSpeakGuide } from "@/lib/speak-guide";
 import {
   CHAPTER_SOURCE_LABEL,
+  DEVICE_CHARS_PER_SECOND,
   audiobookChapters,
   audiobookSeconds,
   formatBookDuration,
@@ -64,7 +65,16 @@ export function StoryAudiobook({
     if (deviceSpeech) window.speechSynthesis.cancel();
   };
 
-  useEffect(() => () => stopAll(), []);
+  // 關掉時：停聲音，也把鎖定畫面的標題、按鈕清掉（不然按了會叫到已經關掉的播放器）
+  useEffect(() => () => {
+    stopAll();
+    if ("mediaSession" in navigator) {
+      try {
+        navigator.mediaSession.metadata = null;
+        for (const action of ["nexttrack", "previoustrack", "pause", "play"] as const) navigator.mediaSession.setActionHandler(action, null);
+      } catch { /* 不支援就算了 */ }
+    }
+  }, []);
 
   const next = () => {
     if (index + 1 < chapters.length) {
@@ -88,13 +98,30 @@ export function StoryAudiobook({
       }
       paraRef.current = i;
       setPosition(i);
-      const u = new SpeechSynthesisUtterance(ch.paragraphs[i]);
+      const text = ch.paragraphs[i];
+      const u = new SpeechSynthesisUtterance(text);
       u.lang = "zh-TW";
       u.rate = 0.95 * rateRef.current;
-      u.onend = () => say(i + 1);
+      // 每一句只往下走一次（有些瀏覽器 cancel 時也會叫 onend）
+      let done = false;
+      const advance = () => {
+        if (done) return;
+        done = true;
+        clearTimeout(watchdog);
+        say(i + 1);
+      };
+      // 有些瀏覽器念到一半停住、onend 永遠不來：超過預估時間太多就跳下一句，整本不會卡在這一篇
+      const watchdog = setTimeout(() => {
+        if (token !== tokenRef.current || done) return;
+        done = true;
+        window.speechSynthesis.cancel();
+        say(i + 1);
+      }, (([...text].length / DEVICE_CHARS_PER_SECOND) / (0.95 * rateRef.current)) * 2000 + 8000);
+      u.onend = () => advance();
       u.onerror = (e) => {
         // 換章、暫停時會 cancel，不算錯
-        if (token === tokenRef.current && e.error !== "interrupted" && e.error !== "canceled") say(i + 1);
+        if (token === tokenRef.current && e.error !== "interrupted" && e.error !== "canceled") advance();
+        else { done = true; clearTimeout(watchdog); }
       };
       window.speechSynthesis.speak(u);
     };
@@ -110,7 +137,7 @@ export function StoryAudiobook({
       speakFrom(current, paraRef.current);
     } else {
       if (deviceSpeech) window.speechSynthesis.cancel();
-      tokenRef.current++;
+      const token = ++tokenRef.current;
       const a = (audioRef.current ??= new Audio());
       if (a.src !== current.url) {
         a.src = current.url!;
@@ -120,7 +147,11 @@ export function StoryAudiobook({
       a.onended = () => next();
       a.ontimeupdate = () => setPosition(a.currentTime);
       a.onerror = () => void handleAudioError(current);
-      a.play().catch(() => setPlaying(false));
+      a.play().catch((e: unknown) => {
+        // 換章時 pause 會讓上一次的 play 失敗（AbortError）；網址壞掉由 onerror 處理（會重新拿網址再播）。
+        // 只有瀏覽器不讓自動播放（NotAllowedError）才顯示成暫停，讓長輩自己按一次
+        if (token === tokenRef.current && (e as { name?: string })?.name === "NotAllowedError") setPlaying(false);
+      });
     }
     // 鎖定畫面上的標題、上一篇下一篇
     if ("mediaSession" in navigator) {
