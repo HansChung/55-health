@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { deadlineLabel, taipeiClock } from "@/lib/daily-checkin";
 import { SubPage } from "@/components/sub-page";
 import { api, type ElderOverview } from "@/lib/api-client";
 import { FamilyVideos } from "@/components/family-videos";
@@ -142,6 +143,18 @@ function ElderCard({
 
       {/* 狀態列表 */}
       <div style={{ padding: "8px 18px 16px" }}>
+        {elder.checkin && (
+          <StatusRow icon="👋" label="報平安"
+            value={
+              elder.checkin.checked_at
+                ? `今天 ${taipeiClock(elder.checkin.checked_at)} 報過平安`
+                : elder.checkin.state === "late"
+                  ? `過了${deadlineLabel(elder.checkin.deadline)}還沒報平安`
+                  : `今天還沒報（${deadlineLabel(elder.checkin.deadline)}前）`
+            }
+            warn={elder.checkin.state === "late"}
+          />
+        )}
         {elder.iot && (
           <StatusRow
             icon="🏠" label="居家"
