@@ -1,7 +1,7 @@
 "use client";
 
 // ────────────────────────────────────────────────
-// 年度回憶影片：選年份 → 勾照片（這一年的遊記、出遊影片、故事集照片；太多時先幫忙平均挑好）
+// 年度回憶影片（研學團遊記也用這個畫面：tour 有給就從團體相簿挑照片，沒有年份）：選年份 → 勾照片（這一年的遊記、出遊影片、故事集照片；太多時先幫忙平均挑好）
 // → 每張下面一行字（預設「3 月・阿里山」，可以改）→ 標題、配樂 → 做成影片（伺服器自己剪，不花算力）
 // ────────────────────────────────────────────────
 
@@ -24,6 +24,7 @@ import {
   YEARLY_TITLE_MAX,
   YEARLY_TITLE_SECONDS,
   defaultYearlyTitle,
+  taipeiYearMonth,
   type YearlyCandidate,
 } from "@/lib/travel-yearly";
 
@@ -49,11 +50,14 @@ export function YearlyComposer({
   pendingYearly,
   onCreated,
   onMakeMontage,
+  tour,
 }: {
   /** 已經有一支在做：先不給做第二支 */
   pendingYearly: boolean;
   onCreated: (video: TravelVideo, quota: TravelVideoQuota) => void;
-  onMakeMontage: () => void;
+  onMakeMontage?: () => void;
+  /** 研學團遊記：從這一團的團體相簿挑照片 */
+  tour?: { id: string; title: string };
 }) {
   const [year, setYear] = useState<number | null>(null);
   const [years, setYears] = useState<number[]>([]);
@@ -76,7 +80,10 @@ export function YearlyComposer({
     const seq = ++loadSeq.current;
     setCandidates(null);
     setLoadError("");
-    api.yearlyCandidates(y)
+    const request = tour
+      ? api.tourVideoCandidates(tour.id).then((r) => ({ ...r, year: taipeiYearMonth(new Date().toISOString()).year, years: [] as number[] }))
+      : api.yearlyCandidates(y);
+    request
       .then((r) => {
         if (seq !== loadSeq.current) return;
         setYear(r.year);
@@ -85,7 +92,8 @@ export function YearlyComposer({
         setPicked(r.defaultPicks);
         setCaptions(Object.fromEntries(r.candidates.map((c) => [c.key, c.caption])));
         setQuota(r.quota);
-        if (!titleTouched) setTitle(defaultYearlyTitle(r.year));
+        const serverTitle = "title" in r && typeof r.title === "string" ? r.title : "";
+        if (!titleTouched) setTitle(tour ? serverTitle || tour.title : defaultYearlyTitle(r.year));
       })
       .catch((e) => {
         if (seq !== loadSeq.current) return;
@@ -107,7 +115,7 @@ export function YearlyComposer({
   const wasPending = useRef(pendingYearly);
   useEffect(() => {
     if (wasPending.current && !pendingYearly && year) {
-      api.yearlyCandidates(year).then((r) => setQuota(r.quota)).catch(() => undefined);
+      (tour ? api.tourVideoCandidates(tour.id) : api.yearlyCandidates(year)).then((r) => setQuota(r.quota)).catch(() => undefined);
     }
     wasPending.current = pendingYearly;
   }, [pendingYearly, year]);
@@ -151,13 +159,11 @@ export function YearlyComposer({
     setError("");
     stopPreview();
     try {
-      const res = await api.createYearlyVideo({
-        year,
-        title: title.trim() || defaultYearlyTitle(year),
-        music,
-        picks: picked.map((key) => ({ key, caption: captions[key] ?? "" })),
-      });
-      trackEvent("travel_yearly_create", { photos: picked.length, music });
+      const picks = picked.map((key) => ({ key, caption: captions[key] ?? "" }));
+      const res = tour
+        ? await api.createTourVideo(tour.id, { title: title.trim() || tour.title, music, picks })
+        : await api.createYearlyVideo({ year, title: title.trim() || defaultYearlyTitle(year), music, picks });
+      trackEvent(tour ? "tour_video_create" : "travel_yearly_create", { photos: picked.length, music });
       setQuota(res.quota);
       onCreated(res.video, res.quota);
     } catch (e) {
@@ -193,15 +199,17 @@ export function YearlyComposer({
         </span>
       </div>
       {candidates === null ? (
-        <div className="card" style={{ textAlign: "center", color: "var(--ink-2)" }}>找這一年的照片中…</div>
+        <div className="card" style={{ textAlign: "center", color: "var(--ink-2)" }}>{tour ? "找團體相簿的照片中…" : "找這一年的照片中…"}</div>
       ) : loadError ? (
         <div className="card" style={{ color: "var(--danger, #b91c1c)" }}>{loadError}</div>
       ) : candidates.length === 0 ? (
         <div className="card" style={{ textAlign: "center", color: "var(--ink-2)", lineHeight: 1.6 }}>
-          {year} 年還沒有做好的遊記、出遊影片或有照片的故事。
-          <button onClick={onMakeMontage} className="btn-primary" style={{ display: "block", width: "100%", marginTop: 12 }}>
-            📚 先做一支遊記
-          </button>
+          {tour ? "團體相簿還沒有照片，大家先放幾張吧。" : `${year} 年還沒有做好的遊記、出遊影片或有照片的故事。`}
+          {!tour && onMakeMontage && (
+            <button onClick={onMakeMontage} className="btn-primary" style={{ display: "block", width: "100%", marginTop: 12 }}>
+              📚 先做一支遊記
+            </button>
+          )}
         </div>
       ) : (
         <>
@@ -277,7 +285,7 @@ export function YearlyComposer({
             value={title}
             maxLength={YEARLY_TITLE_MAX}
             onChange={(e) => { setTitle(e.target.value); setTitleTouched(true); }}
-            placeholder={year ? defaultYearlyTitle(year) : ""}
+            placeholder={tour ? tour.title : year ? defaultYearlyTitle(year) : ""}
             style={inputStyle}
           />
 
@@ -306,7 +314,7 @@ export function YearlyComposer({
 
           <div style={{ marginTop: 24, fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.6 }}>
             影片大約 {seconds} 秒，做好會通知你（大約 5～15 分鐘，可以先離開這個畫面）。
-            {quota && quota.limit < 9999 && remaining !== null ? ` 今年還可以做 ${remaining} 支。` : ""}
+            {quota && quota.limit < 9999 && remaining !== null ? ` ${tour ? "這個月" : "今年"}還可以做 ${remaining} 支。` : ""}
           </div>
           {error && <div role="alert" style={{ marginTop: 10, color: "var(--danger, #b91c1c)", fontWeight: 700 }}>{error}</div>}
           <button
@@ -315,7 +323,7 @@ export function YearlyComposer({
             className="btn-primary"
             style={{ width: "100%", marginTop: 12, minHeight: 60, fontSize: "var(--fs-lg)" }}
           >
-            {submitting ? "準備中…" : pendingYearly ? "上一支還在做…" : "📅 做成年度回憶影片"}
+            {submitting ? "準備中…" : pendingYearly ? "上一支還在做…" : tour ? "🎬 做成研學團遊記" : "📅 做成年度回憶影片"}
           </button>
         </>
       )}

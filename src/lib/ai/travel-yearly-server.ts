@@ -19,6 +19,7 @@ import { STORY_BUCKET } from "../life-stories-server";
 import { isMontageMusicId, isTravelVideoPending, montageMusicFile, type MontageState } from "../travel-video";
 import {
   YEARLY_MAX_PHOTOS,
+  yearlySegments,
   sanitizeYearlyCaption,
   taipeiYearRange,
   yearlyCaption,
@@ -210,6 +211,60 @@ export async function copyYearlyPhotos(
 /** 影片大小：直式照片比較多就直式；量不到大小的照片（單張影片）當作橫式 */
 export function yearlySize(picks: Pick<YearlySource, "width" | "height">[]): { width: number; height: number } {
   return montageSize(picks.map((p) => ({ width: p.width ?? 4, height: p.height ?? 3 })));
+}
+
+/**
+ * 建立一支合輯影片（年度回憶 kind='yearly'、全團遊記 kind='tour' 共用）：
+ * 選好的照片照順序複製到影片底下 → 寫一筆 travel_videos（同種類同時只能一支在做，唯一索引擋）。
+ * 回傳 { row } 或 { pending: true }（已經有一支在做）；其他錯誤丟出去
+ */
+export async function insertCompilationVideo(
+  admin: Admin,
+  opts: {
+    userId: string;
+    kind: "yearly" | "tour";
+    year: number;
+    title: string;
+    music: YearlyState["music"];
+    chosen: YearlySource[];
+    captions: string[];
+    /** 全團遊記：哪一團（之後畫面顯示用） */
+    place?: string | null;
+  }
+): Promise<{ row: TravelVideoRow } | { pending: true }> {
+  const id = crypto.randomUUID();
+  const copied = await copyYearlyPhotos(admin, { user_id: opts.userId, id }, opts.chosen);
+  const state: YearlyState = {
+    year: opts.year,
+    title: opts.title,
+    music: opts.music,
+    size: yearlySize(opts.chosen),
+    photos: opts.chosen.map((s, i) => ({ path: copied[i], width: s.width ?? 0, height: s.height ?? 0, caption: opts.captions[i] })),
+    segments: yearlySegments(opts.title, opts.captions),
+    attempts: 0,
+  };
+  const { data, error } = await admin
+    .from("travel_videos")
+    .insert({
+      id,
+      user_id: opts.userId,
+      kind: opts.kind,
+      status: "queued",
+      style: "gentle",
+      place: opts.place ?? null,
+      prompt: opts.title,
+      model: "ffmpeg",
+      photo_path: copied[0],
+      yearly: state,
+    })
+    .select("*")
+    .single();
+  if (error || !data) {
+    await admin.storage.from(TRAVEL_VIDEO_BUCKET).remove(copied);
+    if (error?.code === "23505") return { pending: true };
+    throw new Error(`insert ${opts.kind} video failed (SQL 跑了嗎？): ${error?.message ?? "no row"}`);
+  }
+  return { row: data as TravelVideoRow };
 }
 
 // ── 製作 ──

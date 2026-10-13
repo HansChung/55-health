@@ -56,9 +56,9 @@ export function FamilyVideos() {
                   />
                 )}
                 <div style={{ display: "flex", gap: 8, fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
-                  <span aria-hidden="true">{v.kind === "yearly" ? "📅" : v.kind === "mv" ? "🎵" : v.kind === "montage" ? "📚" : "🎬"}</span>
+                  <span aria-hidden="true">{v.kind === "tour" ? "🧭" : v.kind === "yearly" ? "📅" : v.kind === "mv" ? "🎵" : v.kind === "montage" ? "📚" : "🎬"}</span>
                   <span style={{ fontWeight: 700, color: "var(--ink-1)" }}>
-                    {e.name}{v.kind === "yearly" && v.yearly?.title ? `・${v.yearly.title}` : ""}{v.kind === "mv" && v.mv?.title ? `・MV「${v.mv.title}」` : ""}{v.place ? `・${v.place}` : ""}
+                    {e.name}{(v.kind === "yearly" || v.kind === "tour") && v.yearly?.title ? `・${v.yearly.title}` : ""}{v.kind === "mv" && v.mv?.title ? `・MV「${v.mv.title}」` : ""}{v.place ? `・${v.place}` : ""}
                   </span>
                   <span style={{ marginLeft: "auto", fontSize: "var(--fs-xs)" }}>{formatWhen(v.created_at)}</span>
                 </div>

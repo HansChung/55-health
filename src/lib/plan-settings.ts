@@ -32,6 +32,7 @@ export const FEATURE_DEFS = [
   { key: "travel_montage", label: "多張照片遊記", group: "video", minTier: "basic", note: "每支約 0.1 算力（配音）" },
   { key: "travel_mv", label: "遊記 MV", group: "video", minTier: "pro", note: "每首約 0.54 算力" },
   { key: "travel_yearly", label: "年度回憶影片", group: "video", minTier: "free", note: "伺服器自己剪，不花算力" },
+  { key: "tour_album", label: "研學團共享相簿、全團遊記影片", group: "video", minTier: "free", note: "影片伺服器自己剪，不花算力" },
   { key: "voice_clone", label: "我的聲音（口白、念故事）", group: "video", minTier: "pro", note: "每個聲音第一次使用要 18.8 算力啟用費" },
   // 一般功能
   { key: "medication_reminders", label: "用藥提醒", group: "app", minTier: "basic" },
@@ -69,6 +70,7 @@ export const LIMIT_DEFS = [
   { key: "montage_monthly", label: "多張照片遊記", period: "每月", feature: "travel_montage", defaults: { free: 0, basic: 10, pro: 30 } },
   { key: "mv_monthly", label: "遊記 MV", period: "每月", feature: "travel_mv", defaults: { free: 0, basic: 0, pro: 6 } },
   { key: "yearly_per_year", label: "年度回憶影片", period: "每年", feature: "travel_yearly", defaults: { free: 1, basic: 3, pro: 5 } },
+  { key: "tour_video_monthly", label: "研學團遊記影片", period: "每月", feature: "tour_album", defaults: { free: 2, basic: 5, pro: 10 } },
   { key: "story_voice_monthly", label: "用我的聲音念故事", period: "每月", feature: "voice_clone", defaults: { free: 4, basic: 4, pro: 4 } },
   { key: "voice_clones_30d", label: "錄「我的聲音」", period: "每 30 天", feature: "voice_clone", defaults: { free: 2, basic: 2, pro: 2 } },
   { key: "story_audio_daily", label: "聲音故事上傳", period: "每天", feature: "life_stories", defaults: { free: 10, basic: 10, pro: 10 } },

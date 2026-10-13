@@ -12,6 +12,7 @@ import { Mascot } from "@/components/mascot";
 import { api, ApiError, type FamilyLink } from "@/lib/api-client";
 import { usePushOffer } from "@/hooks/use-push-offer";
 import { useToast } from "@/hooks/use-toast";
+import { TourAlbum } from "@/components/tour-album";
 import { trackEvent } from "@/lib/telemetry";
 import { canSpeakGuide, speakGuideParagraphs, stopGuideSpeech } from "@/lib/speak-guide";
 import {
@@ -46,6 +47,8 @@ interface StudyToursScreenProps {
   displayName?: string | null;
   /** 拍照問暖暖（帶目前這團的名稱當地點；從某一團打開時帶 id，返回時回到那一團） */
   onPhotoAsk?: (place?: string, tourId?: string) => void;
+  /** 研學團遊記做好後去「出遊回憶影片」看 */
+  onOpenVideos?: () => void;
 }
 
 const sectionTitle: React.CSSProperties = {
@@ -85,7 +88,7 @@ function hasStarted(tour: StudyTourView, now = Date.now()) {
   return new Date(tour.starts_at).getTime() <= now;
 }
 
-export function StudyToursScreen({ onBack, initialTourId = null, initialView = "list", displayName, onPhotoAsk }: StudyToursScreenProps) {
+export function StudyToursScreen({ onBack, initialTourId = null, initialView = "list", displayName, onPhotoAsk, onOpenVideos }: StudyToursScreenProps) {
   const [tours, setTours] = useState<StudyTourView[] | null>(null);
   const [elders, setElders] = useState<StudyTourElder[]>([]);
   const [familyLinks, setFamilyLinks] = useState<FamilyLink[]>([]);
@@ -166,6 +169,7 @@ export function StudyToursScreen({ onBack, initialTourId = null, initialView = "
           onToursChanged={(next) => (next ? setTours(next) : load())}
           onOpenCertificate={() => setCertificateTourId(selected.id)}
           onPhotoAsk={onPhotoAsk ? () => onPhotoAsk(selected.title, selected.id) : undefined}
+          onOpenVideos={onOpenVideos}
         />
       )}
 
@@ -315,6 +319,7 @@ function TourDetail({
   onToursChanged,
   onOpenCertificate,
   onPhotoAsk,
+  onOpenVideos,
 }: {
   tour: StudyTourView;
   elders: StudyTourElder[];
@@ -324,6 +329,7 @@ function TourDetail({
   onToursChanged: (tours: StudyTourView[] | null) => void;
   onOpenCertificate: () => void;
   onPhotoAsk?: () => void;
+  onOpenVideos?: () => void;
 }) {
   const toast = useToast();
   const walking = walkingLevelMeta(tour.walking_level);
@@ -526,6 +532,11 @@ function TourDetail({
             </div>
           ) : null}
         </div>
+      )}
+
+      {/* 團體相簿：只有這一團的參加者（和幫他報名的家人）看得到；其他人伺服器回 404，不顯示 */}
+      {tour.status === "published" && (
+        <TourAlbum tourId={tour.id} tourTitle={tour.title} started={started} onOpenVideos={onOpenVideos} />
       )}
 
       <button onClick={share} className="btn-ghost" style={{ width: "100%", marginTop: 14 }}>
