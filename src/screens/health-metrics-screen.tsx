@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/icons";
 import { SubPage } from "@/components/sub-page";
 import { api, type HealthMetric } from "@/lib/api-client";
@@ -29,16 +29,21 @@ export function HealthMetricsScreen({ onBack }: HealthMetricsScreenProps) {
   // 趨勢要和前一段比 → 讀 2 倍天數；下面的列表只列這一段
   const [allMetrics, setAllMetrics] = useState<HealthMetric[]>([]);
 
+  // 快速換分頁、換天數時，只用最後一次請求的結果（舊的晚回來不要蓋掉）
+  const requestId = useRef(0);
+
   const reload = async () => {
+    const id = ++requestId.current;
     setLoading(true);
     try {
       const { metrics } = await api.listMetrics(tab, range * 2);
+      if (id !== requestId.current) return;
       setAllMetrics(metrics);
       setMetrics(splitPeriods(metrics, range).current.reverse());
     } catch (e) {
       console.error(e);
     }
-    setLoading(false);
+    if (id === requestId.current) setLoading(false);
   };
 
   useEffect(() => {

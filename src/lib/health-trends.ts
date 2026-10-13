@@ -64,10 +64,10 @@ function taipeiHour(iso: string): number {
   return new Date(new Date(iso).getTime() + 8 * HOUR).getUTCHours();
 }
 
-/** 早上（4～11 點）／晚上（18 點以後、凌晨 4 點前） */
+/** 早上（4 點～11 點 59 分）／晚上（18 點以後、凌晨 4 點前） */
 export function partOfDay(iso: string): "morning" | "evening" | "other" {
   const h = taipeiHour(iso);
-  if (h >= 4 && h < 11) return "morning";
+  if (h >= 4 && h < 12) return "morning";
   if (h >= 18 || h < 4) return "evening";
   return "other";
 }
@@ -140,6 +140,8 @@ export function summarizeBp(metrics: BpReading[], rangeDays: number, now: Date =
   const avgSys = round(avg(sys));
   const avgDia = round(avg(dia));
   const prev = bpOnly(previous);
+  // 這一段、前一段都要至少 MIN_COMPARE 次才比（太少次比出來的不準）
+  const comparable = current.length >= MIN_COMPARE && prev.length >= MIN_COMPARE;
   return {
     count: current.length,
     days: new Set(current.map((m) => taipeiDay(m.measured_at))).size,
@@ -150,8 +152,8 @@ export function summarizeBp(metrics: BpReading[], rangeDays: number, now: Date =
     levels,
     morning: partAvg(current.filter((m) => partOfDay(m.measured_at) === "morning")),
     evening: partAvg(current.filter((m) => partOfDay(m.measured_at) === "evening")),
-    diffSys: prev.length >= MIN_COMPARE ? avgSys - round(avg(prev.map((m) => m.systolic))) : null,
-    diffDia: prev.length >= MIN_COMPARE ? avgDia - round(avg(prev.map((m) => m.diastolic))) : null,
+    diffSys: comparable ? avgSys - round(avg(prev.map((m) => m.systolic))) : null,
+    diffDia: comparable ? avgDia - round(avg(prev.map((m) => m.diastolic))) : null,
   };
 }
 

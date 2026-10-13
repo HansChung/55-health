@@ -50,6 +50,7 @@ describe("levels", () => {
     expect(partOfDay("2026-10-13T00:00:00Z")).toBe("morning"); // 08:00
     expect(partOfDay("2026-10-13T13:00:00Z")).toBe("evening"); // 21:00
     expect(partOfDay("2026-10-13T06:00:00Z")).toBe("other"); // 14:00
+    expect(partOfDay("2026-10-13T03:30:00Z")).toBe("morning"); // 11:30
   });
 });
 
@@ -79,6 +80,10 @@ describe("summarizeBp", () => {
     expect(lines).toContain("比前 7 天收縮壓平均低 10。");
     expect(lines).toContain("3 次在 140/90 以上。");
     expect(lines).toContain("早上平均 140/88，晚上平均 120/76。");
+  });
+  it("no comparison when the current period has too few readings", () => {
+    const list = [m({ daysAgo: 1, systolic: 130, diastolic: 80 }), ...[8, 9, 10].map((d) => m({ daysAgo: d, systolic: 140, diastolic: 90 }))];
+    expect(summarizeBp(list, 7, NOW)!.diffSys).toBeNull();
   });
   it("no comparison with too few previous readings; praises all-normal", () => {
     const s = summarizeBp([m({ daysAgo: 1, systolic: 118, diastolic: 75 }), m({ daysAgo: 9, systolic: 150, diastolic: 95 })], 7, NOW)!;
