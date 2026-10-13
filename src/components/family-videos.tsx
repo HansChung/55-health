@@ -9,7 +9,7 @@ import { api, type FamilyElderVideos } from "@/lib/api-client";
 import { VideoComments } from "@/components/video-comments";
 import { markVideoViewed } from "@/lib/mark-video-viewed";
 import { SaveToPhoneButton } from "@/components/save-to-phone-button";
-import { videoSaveName } from "@/lib/travel-video";
+import { isCompilationKind, videoSaveName } from "@/lib/travel-video";
 
 function formatWhen(iso: string) {
   return new Date(iso).toLocaleDateString("zh-TW", { month: "numeric", day: "numeric" });
@@ -61,9 +61,9 @@ export function FamilyVideos() {
                   <SaveToPhoneButton url={v.video_url} mime="video/mp4" name={`${e.name}-${videoSaveName(v)}`} where="family_video" />
                 )}
                 <div style={{ display: "flex", gap: 8, fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
-                  <span aria-hidden="true">{v.kind === "tour" ? "🧭" : v.kind === "yearly" ? "📅" : v.kind === "mv" ? "🎵" : v.kind === "montage" ? "📚" : "🎬"}</span>
+                  <span aria-hidden="true">{v.kind === "greeting" ? "🎁" : v.kind === "tour" ? "🧭" : v.kind === "yearly" ? "📅" : v.kind === "mv" ? "🎵" : v.kind === "montage" ? "📚" : "🎬"}</span>
                   <span style={{ fontWeight: 700, color: "var(--ink-1)" }}>
-                    {e.name}{(v.kind === "yearly" || v.kind === "tour") && v.yearly?.title ? `・${v.yearly.title}` : ""}{v.kind === "mv" && v.mv?.title ? `・MV「${v.mv.title}」` : ""}{v.place ? `・${v.place}` : ""}
+                    {e.name}{isCompilationKind(v.kind) && v.yearly?.title ? `・${v.yearly.title}` : ""}{v.kind === "mv" && v.mv?.title ? `・MV「${v.mv.title}」` : ""}{v.place ? `・${v.place}` : ""}
                   </span>
                   <span style={{ marginLeft: "auto", fontSize: "var(--fs-xs)" }}>{formatWhen(v.created_at)}</span>
                 </div>

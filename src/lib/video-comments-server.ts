@@ -332,7 +332,7 @@ export async function notifyVideoComment(
 }
 
 /** 影片做好了 → 也告訴看得到影片的家人（失敗不影響本人的通知） */
-export async function notifyFamilyNewVideo(row: { id: string; user_id: string; place: string | null; kind?: string | null }): Promise<void> {
+export async function notifyFamilyNewVideo(row: { id: string; user_id: string; place: string | null; kind?: string | null; yearly?: { title?: string | null } | null }): Promise<void> {
   try {
     const admin = createSupabaseAdmin();
     const { data: links } = await admin
@@ -346,7 +346,10 @@ export async function notifyFamilyNewVideo(row: { id: string; user_id: string; p
     if (targets.length === 0) return;
     const { data: profile } = await admin.from("profiles").select("display_name").eq("id", row.user_id).maybeSingle();
     const elderName = (profile as { display_name: string | null } | null)?.display_name?.trim() || "長輩";
-    const msg = newVideoPushForFamily({ elderName, place: row.place, montage: row.kind === "montage", mv: row.kind === "mv", yearly: row.kind === "yearly", tour: row.kind === "tour" });
+    const msg = newVideoPushForFamily({
+      elderName, place: row.place, montage: row.kind === "montage", mv: row.kind === "mv", yearly: row.kind === "yearly", tour: row.kind === "tour",
+      greeting: row.kind === "greeting", greetingTitle: row.kind === "greeting" ? row.yearly?.title ?? null : null,
+    });
     await push(targets, msg, FAMILY_VIDEOS_LINK, `family-new-video-${row.id}`);
   } catch (e) {
     console.warn("[video-comments] family new-video push failed:", e);

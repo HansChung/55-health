@@ -274,7 +274,14 @@ export function checkVideoImageSize(
 
 // ── 多張照片遊記影片（montage）：照片慢慢移動＋每張一句配音與字幕，伺服器 ffmpeg 合成 ──
 
-export type TravelVideoKind = "single" | "montage" | "mv" | "yearly" | "tour";
+export type TravelVideoKind = "single" | "montage" | "mv" | "yearly" | "tour" | "greeting";
+
+/** 合輯影片：年度回憶、全團遊記、祝福影片——同一套剪輯（照片＋字幕＋曲庫配樂），狀態都在 travel_videos.yearly */
+export const COMPILATION_KINDS = ["yearly", "tour", "greeting"] as const;
+export type CompilationKind = (typeof COMPILATION_KINDS)[number];
+export function isCompilationKind(kind: string | null | undefined): kind is CompilationKind {
+  return (COMPILATION_KINDS as readonly string[]).includes(kind ?? "");
+}
 export const MONTAGE_MIN_PHOTOS = 3;
 export const MONTAGE_MAX_PHOTOS = 5;
 /** 一次送出的照片（base64 data URL）合計上限：Vercel request body 上限 4.5MB */
@@ -596,9 +603,11 @@ export function videoShareMeta(
   title: string;
   description: string;
 } {
-  const what = v.kind === "mv" ? "MV" : v.kind === "montage" ? "遊記影片" : v.kind === "yearly" ? "年度回憶影片" : v.kind === "tour" ? "研學團遊記" : "出遊回憶影片";
+  const what = v.kind === "mv" ? "MV" : v.kind === "montage" ? "遊記影片" : v.kind === "yearly" ? "年度回憶影片" : v.kind === "tour" ? "研學團遊記" : v.kind === "greeting" ? "祝福影片" : "出遊回憶影片";
   const title =
-    v.kind === "yearly" && v.yearly?.title
+    v.kind === "greeting" && v.yearly?.title
+      ? `🎁 ${v.yearly.title}`
+      : v.kind === "yearly" && v.yearly?.title
       ? `📅 ${v.yearly.title}`
       : v.kind === "tour" && v.yearly?.title
       ? `🧭 ${v.yearly.title}・研學團遊記`
@@ -626,7 +635,7 @@ export function videoSaveName(v: Pick<TravelVideo, "kind" | "place" | "created_a
   const day = `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, "0")}${String(d.getUTCDate()).padStart(2, "0")}`;
   const what =
     v.kind === "mv" ? v.mv?.title || "MV"
-    : v.kind === "yearly" || v.kind === "tour" ? v.yearly?.title || (v.kind === "tour" ? "研學團遊記" : "年度回憶")
+    : isCompilationKind(v.kind) ? v.yearly?.title || (v.kind === "tour" ? "研學團遊記" : v.kind === "greeting" ? "祝福影片" : "年度回憶")
     : v.place || (v.kind === "montage" ? "遊記" : "出遊影片");
   return `${what}-${day}`;
 }

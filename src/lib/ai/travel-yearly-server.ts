@@ -16,7 +16,7 @@ import { buildConcatList, clipBudgetNeededMs, montageSize, renderMontageClip } f
 import { acquireLease, download, leaseMsFor, releaseLease, scheduleContinuation, upload } from "./travel-montage-server";
 import { TRAVEL_VIDEO_BUCKET, finishRow, notifyOwner, reloadRow, type TravelVideoRow } from "./travel-video-server";
 import { STORY_BUCKET } from "../life-stories-server";
-import { isMontageMusicId, isTravelVideoPending, montageMusicFile, type MontageState } from "../travel-video";
+import { isMontageMusicId, isTravelVideoPending, montageMusicFile, type CompilationKind, type MontageState } from "../travel-video";
 import {
   YEARLY_MAX_PHOTOS,
   yearlySegments,
@@ -234,28 +234,45 @@ export async function insertCompilationVideo(
 ): Promise<{ row: TravelVideoRow } | { pending: true }> {
   const id = crypto.randomUUID();
   const copied = await copyYearlyPhotos(admin, { user_id: opts.userId, id }, opts.chosen);
-  const state: YearlyState = {
-    year: opts.year,
-    title: opts.title,
-    music: opts.music,
-    size: yearlySize(opts.chosen),
-    photos: opts.chosen.map((s, i) => ({ path: copied[i], width: s.width ?? 0, height: s.height ?? 0, caption: opts.captions[i] })),
-    segments: yearlySegments(opts.title, opts.captions),
-    attempts: 0,
-  };
+  return insertCompilationRow(admin, {
+    id,
+    userId: opts.userId,
+    kind: opts.kind,
+    place: opts.place ?? null,
+    state: {
+      year: opts.year,
+      title: opts.title,
+      music: opts.music,
+      size: yearlySize(opts.chosen),
+      photos: opts.chosen.map((s, i) => ({ path: copied[i], width: s.width ?? 0, height: s.height ?? 0, caption: opts.captions[i] })),
+      segments: yearlySegments(opts.title, opts.captions),
+      attempts: 0,
+    },
+  });
+}
+
+/**
+ * 照片已經放好（{user}/{video}/photo-N.jpg）之後寫那一筆（祝福影片也用）。
+ * 寫不進去就把照片刪掉；同種類已經有一支在做 → { pending: true }
+ */
+export async function insertCompilationRow(
+  admin: Admin,
+  opts: { id: string; userId: string; kind: CompilationKind; state: YearlyState; place?: string | null }
+): Promise<{ row: TravelVideoRow } | { pending: true }> {
+  const copied = opts.state.photos.map((p) => p.path);
   const { data, error } = await admin
     .from("travel_videos")
     .insert({
-      id,
+      id: opts.id,
       user_id: opts.userId,
       kind: opts.kind,
       status: "queued",
       style: "gentle",
       place: opts.place ?? null,
-      prompt: opts.title,
+      prompt: opts.state.title,
       model: "ffmpeg",
       photo_path: copied[0],
-      yearly: state,
+      yearly: opts.state,
     })
     .select("*")
     .single();
