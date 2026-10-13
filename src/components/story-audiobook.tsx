@@ -16,6 +16,7 @@ import {
   DEVICE_CHARS_PER_SECOND,
   audiobookChapters,
   audiobookSeconds,
+  brokenAudioKey,
   formatBookDuration,
   sourceCounts,
   type AudiobookChapter,
@@ -204,8 +205,10 @@ export function StoryAudiobook({
   const handleAudioError = async (ch: AudiobookChapter, token: number) => {
     // 長輩已經暫停、跳到別篇：這個錯誤不用管了
     if (token !== tokenRef.current) return;
-    if (onRefresh && retriedRef.current !== ch.id) {
-      retriedRef.current = ch.id;
+    const key = brokenAudioKey(ch.id, ch.source);
+    // 每一種錄音各重新拿一次網址
+    if (onRefresh && retriedRef.current !== key) {
+      retriedRef.current = key;
       try {
         const fresh = await onRefresh();
         if (token !== tokenRef.current) return;
@@ -218,12 +221,12 @@ export function StoryAudiobook({
       } catch { /* 拿不到就照下面處理 */ }
       if (token !== tokenRef.current) return;
     }
-    // 還是播不出來：有文字就改用手機的聲音念這一篇，沒有文字才跳下一篇
+    // 還是播不出來：記下這一種壞了，換這一篇的下一種聲音（自己錄的 → 我的聲音 → 手機念）；都沒有才跳下一篇
     detachAudio();
-    const story = list.find((s) => s.id === ch.id);
-    if (deviceSpeech && story?.body.trim()) {
+    const broken = new Set(brokenAudio).add(key);
+    if (audiobookChapters(list, { deviceSpeech, brokenAudio: broken }).some((c) => c.id === ch.id)) {
       paraRef.current = 0;
-      setBrokenAudio((prev) => new Set(prev).add(ch.id));
+      setBrokenAudio(broken);
       return;
     }
     next();

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LifeStory } from "./life-stories";
-import { audiobookChapters, audiobookSeconds, estimateSpeechSeconds, formatBookDuration, sourceCounts, speechChunks } from "./story-audiobook";
+import { audiobookChapters, audiobookSeconds, brokenAudioKey, estimateSpeechSeconds, formatBookDuration, sourceCounts, speechChunks } from "./story-audiobook";
 
 const story = (over: Partial<LifeStory>): LifeStory => ({
   id: "x", title: "標題", era: null, body: "", photos: [], audio: null, voice_reading: null,
@@ -30,8 +30,13 @@ describe("audiobookChapters", () => {
   });
 
   it("falls back to the phone voice for chapters whose audio is broken", () => {
-    const ch = audiobookChapters(stories, { deviceSpeech: true, brokenAudio: new Set(["a", "b"]) });
+    const ch = audiobookChapters(stories, { deviceSpeech: true, brokenAudio: new Set([brokenAudioKey("a", "recording"), brokenAudioKey("b", "voice")]) });
     expect(ch.slice(0, 2).map((c) => [c.id, c.source])).toEqual([["a", "device"], ["b", "device"]]);
+  });
+  it("a broken recording still uses a current voice reading of the same story", () => {
+    const both = [story({ id: "z", body: "文字", audio: { url: "rec.m4a", seconds: 5 }, voice_reading: { url: "voice.m4a", seconds: 9, outdated: false } })];
+    const ch = audiobookChapters(both, { deviceSpeech: true, brokenAudio: new Set([brokenAudioKey("z", "recording")]) });
+    expect(ch.map((c) => [c.source, c.url])).toEqual([["voice", "voice.m4a"]]);
   });
   it("skips text-only chapters when the phone cannot speak", () => {
     expect(audiobookChapters(stories, { deviceSpeech: false }).map((c) => c.id)).toEqual(["a", "b"]);
