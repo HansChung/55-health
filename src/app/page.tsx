@@ -24,6 +24,7 @@ import { FontSizeScreen } from "@/screens/font-size-screen";
 import { EditProfileScreen } from "@/screens/edit-profile-screen";
 import { HealthMetricsScreen } from "@/screens/health-metrics-screen";
 import { FeaturesScreen, type MenuActions } from "@/screens/features-screen";
+import { BrainGameScreen } from "@/screens/brain-game-screen";
 import { PrescriptionScanScreen } from "@/screens/prescription-scan-screen";
 import { WeeklyReportScreen } from "@/screens/weekly-report-screen";
 import { AlertsCenterScreen } from "@/screens/alerts-center-screen";
@@ -137,7 +138,7 @@ export default function Page() {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     const open = url.searchParams.get("open");
-    if (open && ["voice", "camera", "photo", "travel-video", "study-tours", "photo-ask", "caregiver", "ask", "stories", "scam-check", "clinic", "health-metrics"].includes(open)) {
+    if (open && ["voice", "camera", "photo", "travel-video", "study-tours", "photo-ask", "caregiver", "ask", "stories", "scam-check", "clinic", "health-metrics", "brain"].includes(open)) {
       pendingOpenRef.current = open;
     }
     // 研學團站點 QR：/?stamp=代碼 → 先記下來（還沒登入的話登入後再蓋），網址上的代碼馬上拿掉
@@ -198,6 +199,8 @@ export default function Page() {
     else if (open === "caregiver") setSubpage("caregiver");
     // 健康紀錄（血壓、血糖趨勢）
     else if (open === "health-metrics") setSubpage("health-metrics");
+    // 動動腦（每日一題）
+    else if (open === "brain") setSubpage("brain");
     // 打字問暖暖（書本練習的「打字問暖暖」：範例放在 sessionStorage，登入畫面也帶得過去）
     // 我的故事集（家人留言、按讚的推播點進來）
     else if (open === "stories") {
@@ -797,6 +800,7 @@ export default function Page() {
     scam_check: featureEnabled("scam_check") ? () => requireFeature("scam_check", () => setSubpage("scam-check")) : undefined,
     iot: () => setSubpage("iot"),
     family: () => setSubpage("family"),
+    brain_game: featureEnabled("brain_game") ? () => requireFeature("brain_game", () => setSubpage("brain")) : undefined,
     achievements: () => setSubpage("achievements"),
     smart: () => setSubpage("smart"),
   };
@@ -895,6 +899,7 @@ export default function Page() {
         />
       )}
       {subpage === "health-metrics" && <HealthMetricsScreen onBack={() => setSubpage(null)} />}
+      {subpage === "brain" && <BrainGameScreen onBack={() => setSubpage(null)} />}
       {subpage === "weekly-report" && <WeeklyReportScreen tier={tier} onBack={() => setSubpage(null)} />}
       {subpage === "alerts-center" && (
         <AlertsCenterScreen

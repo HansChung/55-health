@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { createSupabaseServer } from "@/lib/supabase/server";
+import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
 import { computeAchievementProgress, computeStreaks, type UserStats } from "@/lib/achievements";
+import { loadBrainStats } from "@/lib/brain-games-server";
 
 /** GET：算當前用戶的成就進度 + streak */
 export async function GET() {
@@ -80,6 +81,13 @@ export async function GET() {
       .not("completed_at", "is", null),
   ]);
 
+  // 8. 腦力小遊戲（還沒跑 SQL 就當 0）
+  let brain = { days: 0, streak: 0, longest: 0 };
+  try {
+    const b = await loadBrainStats(createSupabaseAdmin(), user.id);
+    brain = { days: b.days, streak: b.streak, longest: b.longest };
+  } catch { /* 沒有表 */ }
+
   const stats: UserStats = {
     total_meals: totalMeals,
     meal_streak: mealStreak,
@@ -93,6 +101,9 @@ export async function GET() {
     family_count: familyCount,
     tour_stamps: tourStamps ?? 0,
     tours_completed: toursCompleted ?? 0,
+    brain_days: brain.days,
+    brain_streak: brain.streak,
+    brain_longest_streak: brain.longest,
   };
 
   const achievements = computeAchievementProgress(stats);
