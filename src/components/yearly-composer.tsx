@@ -103,6 +103,15 @@ export function YearlyComposer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 上一支做完或失敗了：重新拿一次次數（失敗的不算，送出時先扣掉的那一支要還回來）
+  const wasPending = useRef(pendingYearly);
+  useEffect(() => {
+    if (wasPending.current && !pendingYearly && year) {
+      api.yearlyCandidates(year).then((r) => setQuota(r.quota)).catch(() => undefined);
+    }
+    wasPending.current = pendingYearly;
+  }, [pendingYearly, year]);
+
   const stopPreview = () => {
     previewRef.current?.pause();
     if (previewTimer.current) clearTimeout(previewTimer.current);
