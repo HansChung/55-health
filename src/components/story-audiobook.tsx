@@ -115,18 +115,20 @@ export function StoryAudiobook({
         if (token !== tokenRef.current || done) return;
         done = true;
         window.speechSynthesis.cancel();
-        say(i + 1);
+        // 取消後馬上念，有些瀏覽器會把下一句也吞掉：稍等一下再念
+        setTimeout(() => say(i + 1), 120);
       }, (([...text].length / DEVICE_CHARS_PER_SECOND) / (0.95 * rateRef.current)) * 2000 + 8000);
       u.onend = () => advance();
-      u.onerror = (e) => {
-        // 換章、暫停時會 cancel，不算錯
-        if (token === tokenRef.current && e.error !== "interrupted" && e.error !== "canceled") advance();
+      u.onerror = () => {
+        // 暫停、換章都會先讓 token 失效：token 還有效就不是長輩按的（包含瀏覽器自己 interrupted），接著念下一句
+        if (token === tokenRef.current) advance();
         else { done = true; clearTimeout(watchdog); }
       };
       window.speechSynthesis.speak(u);
     };
     window.speechSynthesis.cancel();
-    say(start);
+    // 同上：取消後稍等一下再念第一句
+    setTimeout(() => say(start), 60);
   };
 
   // 播放狀態或章節換了：開始念／播
