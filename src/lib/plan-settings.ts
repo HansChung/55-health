@@ -30,6 +30,7 @@ export const FEATURE_DEFS = [
   { key: "travel_video", label: "出遊回憶影片（單張照片）", group: "video", minTier: "basic", note: "每支約 1 算力" },
   { key: "travel_montage", label: "多張照片遊記", group: "video", minTier: "basic", note: "每支約 0.1 算力（配音）" },
   { key: "travel_mv", label: "遊記 MV", group: "video", minTier: "pro", note: "每首約 0.54 算力" },
+  { key: "travel_yearly", label: "年度回憶影片", group: "video", minTier: "free", note: "伺服器自己剪，不花算力" },
   { key: "voice_clone", label: "我的聲音（口白、念故事）", group: "video", minTier: "pro", note: "每個聲音第一次使用要 18.8 算力啟用費" },
   // 一般功能
   { key: "medication_reminders", label: "用藥提醒", group: "app", minTier: "basic" },
@@ -65,6 +66,7 @@ export const LIMIT_DEFS = [
   { key: "video_monthly", label: "出遊回憶影片", period: "每月", feature: "travel_video", defaults: { free: 0, basic: 2, pro: 6 } },
   { key: "montage_monthly", label: "多張照片遊記", period: "每月", feature: "travel_montage", defaults: { free: 0, basic: 10, pro: 30 } },
   { key: "mv_monthly", label: "遊記 MV", period: "每月", feature: "travel_mv", defaults: { free: 0, basic: 0, pro: 6 } },
+  { key: "yearly_per_year", label: "年度回憶影片", period: "每年", feature: "travel_yearly", defaults: { free: 1, basic: 3, pro: 5 } },
   { key: "story_voice_monthly", label: "用我的聲音念故事", period: "每月", feature: "voice_clone", defaults: { free: 4, basic: 4, pro: 4 } },
   { key: "voice_clones_30d", label: "錄「我的聲音」", period: "每 30 天", feature: "voice_clone", defaults: { free: 2, basic: 2, pro: 2 } },
   { key: "story_audio_daily", label: "聲音故事上傳", period: "每天", feature: "life_stories", defaults: { free: 10, basic: 10, pro: 10 } },
@@ -189,6 +191,7 @@ export function pricingFeatures(settings: PlanSettings, tier: SubscriptionTier):
   if (can("travel_montage") && n("montage_monthly") > 0) out.push(`每月 ${count(n("montage_monthly"), "支")}多張照片遊記影片`);
   if (can("voice_clone")) out.push("影片口白、故事用自己的聲音念");
   if (can("travel_mv") && n("mv_monthly") > 0) out.push(`每月 ${count(n("mv_monthly"), "首")}遊記 MV（寫成一首歌）`);
+  if (can("travel_yearly") && n("yearly_per_year") > 0) out.push(`每年 ${count(n("yearly_per_year"), "支")}年度回憶影片`);
   if (tier === "basic") out.push("完整營養分析", "雲端備份");
   if (tier === "pro") out.push("家人共享", "進階健康報告", "優先支援");
   return out;

@@ -7,6 +7,7 @@ import { NextRequest, NextResponse, after } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/server";
 import { montageRetryDelayMs, syncMontage } from "@/lib/ai/travel-montage-server";
 import { syncMv } from "@/lib/ai/travel-mv-server";
+import { syncYearly } from "@/lib/ai/travel-yearly-server";
 import type { TravelVideoRow } from "@/lib/ai/travel-video-server";
 import { isTravelVideoPending } from "@/lib/travel-video";
 
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
     .from("travel_videos")
     .select("*")
     .eq("id", id)
-    .in("kind", ["montage", "mv"]) // 遊記 MV 也用同一個接力端點
+    .in("kind", ["montage", "mv", "yearly"]) // 遊記 MV、年度回憶影片也用同一個接力端點
     .is("deleted_at", null)
     .maybeSingle();
   const row = data as TravelVideoRow | null;
@@ -43,12 +44,16 @@ export async function POST(req: NextRequest) {
 
   const origin = new URL(req.url).origin;
   after(async () => {
-    const wait = montageRetryDelayMs((row.kind === "mv" ? row.mv?.attempts : row.montage?.attempts) ?? 0);
+    const wait = montageRetryDelayMs(
+      (row.kind === "mv" ? row.mv?.attempts : row.kind === "yearly" ? row.yearly?.attempts : row.montage?.attempts) ?? 0
+    );
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
     const step =
       row.kind === "mv"
         ? syncMv(row, { origin, budgetMs: WORK_BUDGET_MS - wait, waitForSong: true })
-        : syncMontage(row, { origin, budgetMs: WORK_BUDGET_MS - wait });
+        : row.kind === "yearly"
+          ? syncYearly(row, { origin, budgetMs: WORK_BUDGET_MS - wait })
+          : syncMontage(row, { origin, budgetMs: WORK_BUDGET_MS - wait });
     await step.catch((e) => console.error("[montage] continuation step failed:", e));
   });
   return NextResponse.json({ ok: true }, { status: 202 });

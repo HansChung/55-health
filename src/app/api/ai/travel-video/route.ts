@@ -9,6 +9,7 @@ import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
 import { loadCommentsViews } from "@/lib/video-comments-server";
 import { syncMv } from "@/lib/ai/travel-mv-server";
+import { syncYearly } from "@/lib/ai/travel-yearly-server";
 import { checkUserQuota, trackAiUsage } from "@/lib/ai/usage-tracker";
 import {
   createImageToVideoTask,
@@ -94,7 +95,13 @@ export async function GET(req: NextRequest) {
         // 遊記在自己伺服器做（配音→剪輯→合成），每次輪詢推進一段；單張影片向平台查進度
         const origin = new URL(req.url).origin;
         const step =
-          r.kind === "montage" ? syncMontage(r, { origin }) : r.kind === "mv" ? syncMv(r, { origin }) : syncTravelVideo(r);
+          r.kind === "montage"
+            ? syncMontage(r, { origin })
+            : r.kind === "mv"
+              ? syncMv(r, { origin })
+              : r.kind === "yearly"
+                ? syncYearly(r, { origin })
+                : syncTravelVideo(r);
         return step.catch(() => r);
       })
     );

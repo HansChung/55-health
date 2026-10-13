@@ -213,6 +213,17 @@ stack works well for auth + meal/diary CRUD:
   the owner's own plays aren't recorded). `loadCommentsViews` attaches `viewers` **only to the owner's own
   videos**, so the elder sees 「👀 王小美（女兒）看過了」 under the reactions and family never see who else
   watched. Unlinked family are dropped (not in `authorDirectory`). Missing table → treated as no views.
+- **年度回憶影片** (`kind='yearly'`, needs `supabase/add-travel-video-yearly.sql`; feature `travel_yearly`, limit
+  `yearly_per_year` counted from the Taipei Jan 1 — defaults free 1 / basic 3 / pro 5; **no AI platform call, ffmpeg only**):
+  the 「📅 年度回憶」 tab (deep link `/?open=travel-video&mode=yearly`) → `GET /api/ai/travel-video/yearly?year=`
+  lists this or last year's photos (`collectYearlySources`: succeeded montage photos, single-video `photo_path`,
+  life-story photos via signed URLs; MV/yearly rows are copies so they're skipped). Defaults to last year in Jan–Feb
+  (made for 過年) and, with >16 photos, `defaultYearlyPicks` spreads 16 across the year. `POST` only accepts the
+  server's own `key`s (never client paths), copies the photos to `{user}/{video}/photo-N.jpg` (story photos are
+  downloaded + uploaded — different bucket) and `syncYearly` (`travel-yearly-server.ts`) reuses the montage lease /
+  `montage-step` relay: title clip 《2026 我的一年》 + one 5 s Ken Burns clip per photo with a caption
+  (「3 月・阿里山」, editable, ≤14 chars, **emoji stripped** — the subtitle font has none) → concat + a looped library
+  track (`buildYearlyMuxArgs`; silent track if the file is missing). ≤16 photos keeps it under the 90 s track.
 - Needs `supabase/add-travel-videos.sql` (table, bucket, `ai_usage` service `minimax_video`,
   `subscription_plans.ai_video_quota`). Quota counts non-failed rows incl. soft-deleted ones.
   "One pending video per user" is enforced by the partial unique index

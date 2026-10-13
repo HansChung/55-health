@@ -166,6 +166,22 @@ export const api = {
       timeoutMs: 70000,
     }),
 
+  // 年度回憶影片：候選照片（今年／去年）、建立（照片複製好就回來，剪輯在背景做）
+  yearlyCandidates: (year?: number) =>
+    apiFetch<{
+      year: number;
+      years: number[];
+      candidates: import("./travel-yearly").YearlyCandidate[];
+      defaultPicks: string[];
+      quota: TravelVideoQuota;
+    }>(`/api/ai/travel-video/yearly${year ? `?year=${year}` : ""}`, { timeoutMs: 30000 }),
+  createYearlyVideo: (input: { year: number; title: string; music: MontageMusicId; picks: { key: string; caption: string }[] }) =>
+    apiFetch<{ video: TravelVideo; quota: TravelVideoQuota }>("/api/ai/travel-video/yearly", {
+      method: "POST",
+      json: input,
+      timeoutMs: 70000,
+    }),
+
   // 逾時要比伺服器 maxDuration（60 秒）長：前端先放棄時，伺服器可能已經建好付費任務
   // AI 看照片寫一句口白（看圖模型約 10～15 秒）
   /** 照片：photoPath（直傳 Supabase）或 image（data URL，直傳失敗時） */
