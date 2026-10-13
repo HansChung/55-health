@@ -388,6 +388,20 @@ stack works well for auth + meal/diary CRUD:
   department. Home shows `UpcomingAppointmentCard` only for today/tomorrow; 家人狀況 shows the next `notify_family`
   appointment within 14 days (not gated by permissions — the elder chose to tell family).
 
+### 血壓血糖趨勢（health trends）
+- 我的 → 體重／血壓／血糖 (`HealthMetricsScreen`, deep link `/?open=health-metrics`) and 家人狀況 → 「📈 看血壓、血糖趨勢」
+  (`FamilyHealthTrends`) both render `HealthTrends`. No SQL, no AI — all numbers come from `src/lib/health-trends.ts`.
+- 7／30／90 days; the screens fetch **2× the range** so `splitPeriods` can compare with the previous period (`MIN_COMPARE`).
+  Responses from an older tab/range request are dropped (`requestId`). Levels match the old screen badges (`bpLevel`: ≥140/90 high, ≥130/85 warn,
+  <90/60 low; `glucoseLevel` by context: fasting/before-meal ≥126/≥100, after-meal ≥200/≥140, <70 low everywhere,
+  bedtime only flags lows). Morning = 04:00–11:59, evening = 18:00–03:59 Taipei; a comparison needs ≥3 readings in both periods. Summaries are plain sentences (`bpLines`,
+  `glucoseLines`, `weightLines`) plus the 722 tip and a "not a diagnosis" note.
+- Chart is a hand-drawn SVG: >7 days BP/weight plot one daily average per Taipei day (`dailyAverage`; per-reading
+  morning/evening zig-zag was unreadable); glucose is always dots only (fasting + after-meal on one line is
+  meaningless). 「🖨️ 列印給醫生看」 prints chart + summary + every reading (`body.printing-trends`).
+- `GET /api/family/health-metrics?elder=&type=&days=` (≤180 days) needs an accepted link **and**
+  `permissions.alerts`, same rule as the health rows in 家人狀況.
+
 ### Book × App light coupling（書本／App）
 - Chapter openings live at `/smart/chapter/[id]` (public, printable). Shared rhythm: **一拍、二問、三記下**.
 - Optional save: 「把這句話點成光點」→ `/smart/spark?source=chapterXXXX` (sessionStorage seed).
