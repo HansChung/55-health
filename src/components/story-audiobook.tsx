@@ -206,25 +206,26 @@ export function StoryAudiobook({
     // 長輩已經暫停、跳到別篇：這個錯誤不用管了
     if (token !== tokenRef.current) return;
     const key = brokenAudioKey(ch.id, ch.source);
+    // 下面挑下一種聲音要用最新的清單（重新拿到的網址都是新簽的）
+    let latest = list;
     // 每一種錄音各重新拿一次網址
     if (onRefresh && retriedRef.current !== key) {
       retriedRef.current = key;
       try {
         const fresh = await onRefresh();
         if (token !== tokenRef.current) return;
+        latest = fresh;
+        setList(fresh);
         const again = audiobookChapters(fresh, { deviceSpeech, brokenAudio }).find((c) => c.id === ch.id);
         // 拿到新的網址才重播（播放的 effect 看到網址換了會重新開始）
-        if (again?.url && again.url !== ch.url) {
-          setList(fresh);
-          return;
-        }
+        if (again?.url && again.url !== ch.url) return;
       } catch { /* 拿不到就照下面處理 */ }
       if (token !== tokenRef.current) return;
     }
     // 還是播不出來：記下這一種壞了，換這一篇的下一種聲音（自己錄的 → 我的聲音 → 手機念）；都沒有才跳下一篇
     detachAudio();
     const broken = new Set(brokenAudio).add(key);
-    if (audiobookChapters(list, { deviceSpeech, brokenAudio: broken }).some((c) => c.id === ch.id)) {
+    if (audiobookChapters(latest, { deviceSpeech, brokenAudio: broken }).some((c) => c.id === ch.id)) {
       paraRef.current = 0;
       setBrokenAudio(broken);
       return;
