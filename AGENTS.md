@@ -280,6 +280,21 @@ stack works well for auth + meal/diary CRUD:
   `<table>` is wrapped in `.adm-table-scroll` (scrolls sideways). The layout swaps the sidebar for a
   sticky top bar + ☰ drawer. New admin pages should reuse these classes.
 
+### 介面：首頁「今天」、底部「功能」分頁（2026-10-14 改版）
+- Bottom nav = 首頁／日記／📷／**功能**／我的 (the old 「對話」 tab is gone: voice chat is 「跟暖暖聊聊」 on the home
+  screen and in 功能 → 問暖暖; book chapter 0102 says so).
+- **Every feature entry lives in one registry**: `src/lib/feature-menu.ts` (`MenuId`, `MENU_ITEMS` label/emoji/desc,
+  `MENU_GROUPS` = 健康照顧／問暖暖／回憶與影片／出門走走／家人與安心／動動腦). `page.tsx` builds `menuActions`
+  (`MenuActions`, one function per id; **undefined = hidden**, e.g. feature switched off in /admin/plans or 家人狀況 for
+  someone who cares for nobody; tier-gated items stay visible and `requireFeature` shows the upgrade prompt).
+  `FeaturesScreen` (tab `features`) renders the groups; the home screen only shows `FavoriteFeatures`: 4 tiles chosen by
+  `pickFavorites` from per-device usage in localStorage (`recordMenuUse`; defaults 問暖暖／拍照問暖暖／可疑訊息／看診小幫手
+  get +1.5 so a feature needs 2 uses to replace one; shown in menu order so tiles don't jump around).
+- **Adding a feature**: add a `MenuId` + `MENU_ITEMS` entry, put it in a group, add its action in `menuActions`. Don't
+  add another `NavCard` to the home screen and don't add feature rows to 我的 (它只放資料和設定).
+- Home order: greeting → 報平安 → today/tomorrow appointment → calorie ring + 暖暖的建議 → 天氣 offer → 家人狀況 (if
+  caring) → 常用 → medicines / alerts → meals → 跟暖暖聊聊・記錄運動.
+
 ### 研學團（study tours）
 - Home 「研學團」/ 我的 → 「研學護照」→ subpages `study-tours` / `study-passport` (free for all tiers).
   Registration only — no payment (`fee_text` is display-only). Admin at `/admin/study-tours`

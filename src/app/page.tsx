@@ -23,6 +23,7 @@ import { ExerciseScreen } from "@/screens/exercise-screen";
 import { FontSizeScreen } from "@/screens/font-size-screen";
 import { EditProfileScreen } from "@/screens/edit-profile-screen";
 import { HealthMetricsScreen } from "@/screens/health-metrics-screen";
+import { FeaturesScreen, type MenuActions } from "@/screens/features-screen";
 import { PrescriptionScanScreen } from "@/screens/prescription-scan-screen";
 import { WeeklyReportScreen } from "@/screens/weekly-report-screen";
 import { AlertsCenterScreen } from "@/screens/alerts-center-screen";
@@ -756,6 +757,50 @@ export default function Page() {
     );
   }
 
+  // ── 功能入口：首頁「常用」、底部「功能」分頁共用（沒給的＝後台關掉，不顯示；方案不夠的照樣顯示，按下去再說要升級） ──
+  const openTravelVideo =
+    featureEnabled("travel_video") || featureEnabled("travel_montage") || featureEnabled("travel_mv") || featureEnabled("travel_yearly") || featureEnabled("greeting_video")
+      ? () =>
+          // 單張影片、遊記、MV、年度回憶、祝福影片有一種能用就打開（各分頁自己看次數；年度回憶、祝福影片免費版也能用）
+          hasFeature(gateTier, "travel_montage") || hasFeature(gateTier, "travel_mv") || hasFeature(gateTier, "travel_yearly") || hasFeature(gateTier, "greeting_video")
+            ? setSubpage("travel-video")
+            : requireFeature("travel_video", () => setSubpage("travel-video"))
+      : undefined;
+  const openClinic = featureEnabled("clinic") ? () => requireFeature("clinic", () => setSubpage("clinic")) : undefined;
+  const menuActions: MenuActions = {
+    clinic: openClinic,
+    health_metrics: () => setSubpage("health-metrics"),
+    chronic: () => setSubpage("chronic"),
+    exercise: () => setSubpage("exercise"),
+    weekly_report: featureEnabled("weekly_report") ? () => requireFeature("weekly_report", () => setSubpage("weekly-report")) : undefined,
+    ask: featureEnabled("ask") ? () => requireFeature("ask", () => { setAskSeed(null); setSubpage("ask"); }) : undefined,
+    voice: featureEnabled("ai_voice") ? () => requireFeature("ai_voice", () => setModal("voice")) : undefined,
+    photo_ask: featureEnabled("photo_ask") ? () => requireFeature("photo_ask", () => {
+      setPhotoAsk({ place: null, returnTo: null, tourId: null });
+      setSubpage("photo-ask");
+    }) : undefined,
+    travel_video: openTravelVideo,
+    greeting_video: featureEnabled("greeting_video") && hasFeature(gateTier, "greeting_video")
+      ? () => { setTravelVideoMode("greeting"); setSubpage("travel-video"); }
+      : undefined,
+    stories: featureEnabled("life_stories") ? () => requireFeature("life_stories", () => { setStoriesAudio(false); setSubpage("stories"); }) : undefined,
+    study_tours: () => {
+      setStudyTourId(null);
+      setStudyToursKey((k) => k + 1);
+      setSubpage("study-tours");
+    },
+    study_passport: () => setSubpage("study-passport"),
+    blueprint: () => setSubpage("blueprint"),
+    book: () => { window.location.href = "/smart/guide"; },
+    // 只有真的在關心長輩的人才有「家人狀況」（長輩自己看是空的）
+    caregiver: careElderCount > 0 ? () => setSubpage("caregiver") : undefined,
+    scam_check: featureEnabled("scam_check") ? () => requireFeature("scam_check", () => setSubpage("scam-check")) : undefined,
+    iot: () => setSubpage("iot"),
+    family: () => setSubpage("family"),
+    achievements: () => setSubpage("achievements"),
+    smart: () => setSubpage("smart"),
+  };
+
   return (
     <div className="app-root">
       <div className="safe-top" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -791,54 +836,15 @@ export default function Page() {
               api.trackPartnerCampaign(campaign.id, "click").catch(console.error);
               if (campaign.cta_url) window.open(campaign.cta_url, "_blank", "noopener,noreferrer");
             }}
-            achievementsSummary={achievements ? {
-              unlockedCount: achievements.unlocked_count,
-              totalCount: achievements.total_count,
-              latestEmoji: achievements.achievements.filter((a) => a.unlocked).slice(-1)[0]?.achievement.emoji,
-              streak: achievements.stats.meal_streak,
-            } : null}
-            onAchievements={() => setSubpage("achievements")}
-            smartSummary={{ shi: smartShi }}
-            onSmart={() => setSubpage("smart")}
-            onBlueprint={() => setSubpage("blueprint")}
-            onBookPractice={() => { window.location.href = "/smart/guide"; }}
-            onIot={() => setSubpage("iot")}
-            onTravelVideo={
-              featureEnabled("travel_video") || featureEnabled("travel_montage") || featureEnabled("travel_mv") || featureEnabled("travel_yearly") || featureEnabled("greeting_video")
-                ? () =>
-                    // 單張影片、遊記、MV、年度回憶、祝福影片有一種能用就打開（各分頁自己看次數；年度回憶、祝福影片免費版也能用）
-                    hasFeature(gateTier, "travel_montage") || hasFeature(gateTier, "travel_mv") || hasFeature(gateTier, "travel_yearly") || hasFeature(gateTier, "greeting_video")
-                      ? setSubpage("travel-video")
-                      : requireFeature("travel_video", () => setSubpage("travel-video"))
-                : undefined
-            }
-            onGreetingVideo={
-              featureEnabled("greeting_video") && hasFeature(gateTier, "greeting_video")
-                ? () => { setTravelVideoMode("greeting"); setSubpage("travel-video"); }
-                : undefined
-            }
-            onStudyTours={() => {
-              setStudyTourId(null);
-              setStudyToursKey((k) => k + 1);
-              setSubpage("study-tours");
-            }}
-            // 後台關掉的功能不顯示入口；方案不夠的照樣顯示，按下去再說要升級
-            onPhotoAsk={featureEnabled("photo_ask") ? () => requireFeature("photo_ask", () => {
-              setPhotoAsk({ place: null, returnTo: null, tourId: null });
-              setSubpage("photo-ask");
-            }) : undefined}
-            onAsk={featureEnabled("ask") ? () => requireFeature("ask", () => {
-              setAskSeed(null);
-              setSubpage("ask");
-            }) : undefined}
-            onStories={featureEnabled("life_stories") ? () => requireFeature("life_stories", () => { setStoriesAudio(false); setSubpage("stories"); }) : undefined}
-            onScamCheck={featureEnabled("scam_check") ? () => requireFeature("scam_check", () => setSubpage("scam-check")) : undefined}
-            onClinic={featureEnabled("clinic") ? () => requireFeature("clinic", () => setSubpage("clinic")) : undefined}
+            menuActions={menuActions}
+            onAllFeatures={() => setTab("features")}
+            onClinic={openClinic}
             caregiver={careElderCount > 0 ? { count: careElderCount, needsAttention: careNeedsAttention } : null}
             onCaregiver={() => setSubpage("caregiver")}
           />
         )}
         {tab === "history" && <HistoryScreen onMeal={(meal) => setSelectedMeal(meal)} />}
+        {tab === "features" && <FeaturesScreen actions={menuActions} />}
         {tab === "profile" && (
           <ProfileScreen
             onSubpage={(page) => {
@@ -874,7 +880,6 @@ export default function Page() {
           tab={tab}
           setTab={setTab}
           onCamera={() => requireFeature("ai_photo", () => setShowPhotoSource(true))}
-          onVoice={() => requireFeature("ai_voice", () => setModal("voice"))}
         />
       )}
 

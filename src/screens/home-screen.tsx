@@ -14,6 +14,8 @@ import { DailyWeatherCard } from "@/components/daily-weather-card";
 import { DailyCheckinCard } from "@/components/daily-checkin-card";
 import { UpcomingAppointmentCard } from "@/components/upcoming-appointment-card";
 import { hasFeature, type SubscriptionTier } from "@/lib/feature-gates";
+import { FavoriteFeatures } from "@/components/favorite-features";
+import type { MenuActions } from "@/screens/features-screen";
 
 interface HomeScreenProps {
   meals: Meal[];
@@ -38,23 +40,10 @@ interface HomeScreenProps {
   onPickFavorite?: (mealType: MealType) => void;
   partnerCampaigns?: PartnerCampaign[];
   onPartnerClick?: (campaign: PartnerCampaign) => void;
-  achievementsSummary?: { unlockedCount: number; totalCount: number; latestEmoji?: string; streak?: number } | null;
-  onAchievements?: () => void;
-  smartSummary?: { shi: number | null } | null;
-  onSmart?: () => void;
-  onBlueprint?: () => void;
-  onBookPractice?: () => void;
-  onIot?: () => void;
-  onTravelVideo?: () => void;
-  /** 節日、生日祝福影片（打開出遊回憶影片的「祝福影片」分頁） */
-  onGreetingVideo?: () => void;
-  onStudyTours?: () => void;
-  onPhotoAsk?: () => void;
-  /** 打字問暖暖 */
-  onAsk?: () => void;
-  /** 我的故事集 */
-  onStories?: () => void;
-  onScamCheck?: () => void;
+  /** 功能入口（首頁「常用」用；同一份也給底部「功能」分頁） */
+  menuActions: MenuActions;
+  onAllFeatures: () => void;
+  /** 今天、明天有回診時的卡片點下去 */
   onClinic?: () => void;
   caregiver?: { count: number; needsAttention: boolean } | null;
   onCaregiver?: () => void;
@@ -77,7 +66,7 @@ function getDateLabel(): string {
   return `${d.getMonth() + 1}月${d.getDate()}日　星期${WEEKDAYS[d.getDay()]}`;
 }
 
-export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart, onBlueprint, onBookPractice, onIot, onTravelVideo, onGreetingVideo, onStudyTours, onPhotoAsk, onAsk, onStories, onScamCheck, onClinic, caregiver = null, onCaregiver, notificationSettings, onProfileUpdated }: HomeScreenProps) {
+export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, menuActions, onAllFeatures, onClinic, caregiver = null, onCaregiver, notificationSettings, onProfileUpdated }: HomeScreenProps) {
   // 從餐點計算今日營養
   const totals = meals.reduce(
     (s, m) => {
@@ -123,7 +112,11 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
         </div>
       </div>
 
-      <div style={{ padding: "0 24px" }}>
+      {/* 今天最要緊的：報平安、今天明天的回診（有才出現） */}
+      {onProfileUpdated && <DailyCheckinCard settings={notificationSettings} onSaved={onProfileUpdated} />}
+      {onClinic && <UpcomingAppointmentCard onOpen={onClinic} />}
+
+      <div style={{ padding: "20px 24px 0" }}>
         <div className="card" style={{ padding: 24, background: "linear-gradient(180deg, #FFF9EF 0%, #FFFFFF 100%)" }}>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
             <CalorieRing value={calories} max={calorieGoal} />
@@ -171,10 +164,6 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
         </button>
       </div>
 
-      {onProfileUpdated && <DailyCheckinCard settings={notificationSettings} onSaved={onProfileUpdated} />}
-
-      {onClinic && <UpcomingAppointmentCard onOpen={onClinic} />}
-
       {onProfileUpdated && <DailyWeatherCard settings={notificationSettings} onSaved={onProfileUpdated} />}
 
       {caregiver && onCaregiver && (
@@ -195,165 +184,8 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
         />
       )}
 
-      {onTravelVideo && (
-        <NavCard
-          onClick={onTravelVideo}
-          emoji="🎬"
-          title="出遊回憶影片"
-          subtitle="一張出遊照片，變成 10 秒小影片"
-          background="linear-gradient(135deg, #FBEFE3 0%, #FFFFFF 100%)"
-          borderColor="#F0C9A8"
-          iconBg="var(--primary-soft)"
-        />
-      )}
-
-      {onGreetingVideo && (
-        <NavCard
-          onClick={onGreetingVideo}
-          emoji="🎁"
-          title="祝福影片"
-          subtitle="生日、過年、母親節，做一支影片送家人"
-          background="linear-gradient(135deg, #FBE8EC 0%, #FFFFFF 100%)"
-          borderColor="#E4A9B5"
-          iconBg="var(--berry-soft)"
-        />
-      )}
-
-      {onStudyTours && (
-        <NavCard
-          onClick={onStudyTours}
-          emoji="🧭"
-          title="研學團"
-          subtitle="出門走走、學新知，每站掃碼集章"
-          background="linear-gradient(135deg, #EAF3E7 0%, #FFFFFF 100%)"
-          borderColor="#C3DDBB"
-          iconBg="#D5E8CE"
-        />
-      )}
-
-      {onScamCheck && (
-        <NavCard
-          onClick={onScamCheck}
-          emoji="🛡️"
-          title="這則訊息可疑嗎？"
-          subtitle="收到奇怪的簡訊、LINE，截圖給暖暖看"
-          background="linear-gradient(135deg, #FBECEE 0%, #FFFFFF 100%)"
-          borderColor="#EBC3CB"
-          iconBg="#F6DCE1"
-        />
-      )}
-
-      {onClinic && (
-        <NavCard
-          onClick={onClinic}
-          emoji="🩺"
-          title="看診小幫手"
-          subtitle="回診前整理要問的話、看懂檢驗報告"
-          background="linear-gradient(135deg, #EAF4F1 0%, #FFFFFF 100%)"
-          borderColor="#BFDCD3"
-          iconBg="#D3EAE3"
-        />
-      )}
-
-      {onAsk && (
-        <NavCard
-          onClick={onAsk}
-          emoji="✍️"
-          title="問暖暖"
-          subtitle="打字或用說的，什麼都可以問"
-          background="linear-gradient(135deg, #FFF4E8 0%, #FFFFFF 100%)"
-          borderColor="#F3D2B0"
-          iconBg="#FCE3C8"
-        />
-      )}
-
-      {onStories && (
-        <NavCard
-          onClick={onStories}
-          emoji="📖"
-          title="我的故事集"
-          subtitle="把人生故事說給暖暖聽，整理成回憶錄"
-          background="linear-gradient(135deg, #F6EEE4 0%, #FFFFFF 100%)"
-          borderColor="#E3CFB6"
-          iconBg="#EEDFCB"
-        />
-      )}
-
-      {onPhotoAsk && (
-        <NavCard
-          onClick={onPhotoAsk}
-          emoji="📷"
-          title="拍照問暖暖"
-          subtitle="看到不認識的花草、古蹟，拍給暖暖看"
-          background="linear-gradient(135deg, #EEF6FB 0%, #FFFFFF 100%)"
-          borderColor="#CDE4F0"
-          iconBg="#DCEDF7"
-        />
-      )}
-
-      {onBlueprint && (
-        <NavCard
-          onClick={onBlueprint}
-          emoji="✨"
-          title="圓夢藍圖"
-          subtitle="日常小事也能點亮 SMART 光點（R＝安全）"
-          background="linear-gradient(135deg, #FBF3E8 0%, #FFFFFF 100%)"
-          borderColor="#E8D4B8"
-          iconBg="#F5E6D0"
-        />
-      )}
-
-      {onBookPractice && (
-        <NavCard
-          onClick={onBookPractice}
-          emoji="📖"
-          title="書本練習"
-          subtitle="章節目錄可搜尋｜一拍、二問、三記下"
-          background="linear-gradient(135deg, #E8F5EE 0%, #FFFFFF 100%)"
-          borderColor="#C3DDBB"
-          iconBg="#D5E8CE"
-        />
-      )}
-
-      {onSmart && (
-        <NavCard
-          onClick={onSmart}
-          emoji={smartSummary?.shi != null ? "🧭" : "✨"}
-          title="智慧幸福檢測"
-          subtitle={
-            smartSummary?.shi != null
-              ? `SHI 指數 ${smartSummary.shi} 分　·　看雷達圖`
-              : "3 分鐘看見人生五大面向"
-          }
-          background="linear-gradient(135deg, #EEF6FB 0%, #FFFFFF 100%)"
-          borderColor="#CDE4F0"
-          iconBg="#DCEDF7"
-        />
-      )}
-
-      {onIot && (
-        <NavCard
-          onClick={onIot}
-          emoji="🏠"
-          title="居家守護"
-          subtitle="感測器自動通知家人"
-          background="linear-gradient(135deg, #EAF2F8 0%, #FFFFFF 100%)"
-          borderColor="#CDE4F0"
-          iconBg="#DCEDF7"
-        />
-      )}
-
-      {achievementsSummary && onAchievements && (
-        <NavCard
-          onClick={onAchievements}
-          emoji={achievementsSummary.latestEmoji ?? "🏅"}
-          title="健康成就"
-          subtitle={
-            `已解鎖 ${achievementsSummary.unlockedCount}/${achievementsSummary.totalCount} 個徽章` +
-            (achievementsSummary.streak ? `　🔥 連續 ${achievementsSummary.streak} 天` : "")
-          }
-        />
-      )}
+      {/* 常用：這支手機最常用的 4 個功能＋全部功能 */}
+      <FavoriteFeatures actions={menuActions} onAll={onAllFeatures} />
 
       {medicationReminders.length > 0 && (
         <div style={{ padding: "18px 24px 0" }}>
