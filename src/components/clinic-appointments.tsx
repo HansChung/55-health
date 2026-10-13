@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/telemetry";
-import { enableWebPush, hasWebPushSubscription, isWebPushSupported } from "@/lib/push/client";
+import { enableWebPush, isWebPushSupported } from "@/lib/push/client";
 import {
   APPOINTMENT_DEPARTMENT_MAX,
   APPOINTMENT_HOSPITAL_MAX,
@@ -62,11 +62,14 @@ function emptyDraft(prefill?: { department?: string | null; hospital?: string | 
   };
 }
 
-/** 要提醒就試著打開這台裝置的推播；不允許也照樣存（家人那邊還是收得到） */
+/**
+ * 要提醒就試著打開這台裝置的推播；不允許也照樣存（家人那邊還是收得到）。
+ * 已經訂閱過也再送一次給伺服器：換帳號登入、伺服器那筆被刪掉時，訂閱才會記在現在這個人身上
+ */
 async function tryEnablePush(): Promise<boolean> {
   try {
     if (!isWebPushSupported() || Notification.permission === "denied") return false;
-    if (!(await hasWebPushSubscription())) await enableWebPush();
+    await enableWebPush();
     return true;
   } catch (e) {
     console.warn("[appointments] push not enabled:", e);
@@ -85,16 +88,24 @@ export function ClinicAppointments({
   const toast = useToast();
   const [list, setList] = useState<ClinicAppointment[] | null>(null);
   const [hidden, setHidden] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [reload, setReload] = useState(0);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     let alive = true;
+    setLoadFailed(false);
     api.listAppointments()
       .then((r) => { if (alive) setList(r.appointments); })
-      .catch(() => { if (alive) setHidden(true); });
+      .catch((e) => {
+        if (!alive) return;
+        // 503＝伺服器還沒跑 SQL：整塊不顯示；其他（沒網路、登入過期）顯示「再試一次」
+        if (e instanceof ApiError && e.status === 503) setHidden(true);
+        else setLoadFailed(true);
+      });
     return () => { alive = false; };
-  }, []);
+  }, [reload]);
 
   useEffect(() => {
     if (!prefill) return;
@@ -160,7 +171,14 @@ export function ClinicAppointments({
         記下回診、領慢箋藥的日子，前一天晚上 {REMIND_DAY_BEFORE_HOUR - 12} 點和當天早上 {REMIND_SAME_DAY_HOUR} 點提醒你
       </div>
 
-      {list === null ? (
+      {list === null && loadFailed ? (
+        <div style={{ textAlign: "center", padding: 12, color: "var(--ink-2)" }}>
+          回診提醒沒載入成功
+          <button type="button" className="btn-ghost" style={{ width: "100%", marginTop: 10 }} onClick={() => setReload((n) => n + 1)}>
+            🔄 再試一次
+          </button>
+        </div>
+      ) : list === null ? (
         <div style={{ color: "var(--ink-2)", textAlign: "center", padding: 12 }}>載入中…</div>
       ) : (
         list.length > 0 && (
