@@ -165,43 +165,8 @@ export function useDictation(where = "") {
     let heardVoice = false;
     const startedAt = Date.now();
     let lastVoiceAt = 0;
-
-    // 開口後安靜一下就自動停；一直沒開口也停；最長 30 秒。量不到音量（AudioContext 沒在跑）就不靠它判斷
-    try {
-      if (!ctx) throw new Error("no audio context");
-      if (ctx.state !== "running") await ctx.resume();
-      if (ctx.state !== "running") throw new Error(`audio context ${ctx.state}`);
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 2048;
-      ctx.createMediaStreamSource(stream).connect(analyser);
-      const buf = new Float32Array(analyser.fftSize);
-      timer = setInterval(() => {
-        analyser.getFloatTimeDomainData(buf);
-        let sum = 0;
-        for (const v of buf) sum += v * v;
-        const now = Date.now();
-        if (isSpeaking(Math.sqrt(sum / buf.length))) {
-          heardVoice = true;
-          lastVoiceAt = now;
-        }
-        const elapsed = now - startedAt;
-        if (
-          elapsed > DICTATION_MAX_SECONDS * 1000 ||
-          (heardVoice && now - lastVoiceAt > DICTATION_END_SILENCE_MS) ||
-          (!heardVoice && elapsed > DICTATION_NO_SPEECH_MS)
-        ) {
-          if (rec.state === "recording") rec.stop();
-        }
-      }, 120);
-    } catch {
-      // 等長輩自己按停止，或到 30 秒；錄到的照樣送去聽寫（伺服器會判斷有沒有聲音）
-      heardVoice = true;
-      timer = setInterval(() => {
-        if (Date.now() - startedAt > DICTATION_MAX_SECONDS * 1000 && rec.state === "recording") rec.stop();
-      }, 500);
-    }
-
     rec.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+
     rec.onstop = async () => {
       cleanup();
       setListening(false);
@@ -226,7 +191,46 @@ export function useDictation(where = "") {
         if (!aborted) setTranscribing(false);
       }
     };
+    // 先開始錄（之後按取消，abort 才停得掉），再準備音量偵測
     rec.start(250);
+
+    // 開口後安靜一下就自動停；一直沒開口也停；最長 30 秒。量不到音量（AudioContext 沒在跑）就不靠它判斷
+    try {
+      if (!ctx) throw new Error("no audio context");
+      if (ctx.state !== "running") await ctx.resume();
+      // 等 resume 的時候已經取消了：abort 已經停掉錄音、關了麥克風，不要再開計時器
+      if (aborted) return;
+      if (ctx.state !== "running") throw new Error(`audio context ${ctx.state}`);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 2048;
+      ctx.createMediaStreamSource(stream).connect(analyser);
+      const buf = new Float32Array(analyser.fftSize);
+      timer = setInterval(() => {
+        analyser.getFloatTimeDomainData(buf);
+        let sum = 0;
+        for (const v of buf) sum += v * v;
+        const now = Date.now();
+        if (isSpeaking(Math.sqrt(sum / buf.length))) {
+          heardVoice = true;
+          lastVoiceAt = now;
+        }
+        const elapsed = now - startedAt;
+        if (
+          elapsed > DICTATION_MAX_SECONDS * 1000 ||
+          (heardVoice && now - lastVoiceAt > DICTATION_END_SILENCE_MS) ||
+          (!heardVoice && elapsed > DICTATION_NO_SPEECH_MS)
+        ) {
+          if (rec.state === "recording") rec.stop();
+        }
+      }, 120);
+    } catch {
+      if (aborted) return;
+      // 等長輩自己按停止，或到 30 秒；錄到的照樣送去聽寫（伺服器會判斷有沒有聲音）
+      heardVoice = true;
+      timer = setInterval(() => {
+        if (Date.now() - startedAt > DICTATION_MAX_SECONDS * 1000 && rec.state === "recording") rec.stop();
+      }, 500);
+    }
   }, [where]);
 
   /** 開始聽；聽到完整一句呼叫 onText；出錯呼叫 onError（錯誤代碼） */
