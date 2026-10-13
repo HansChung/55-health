@@ -10,8 +10,8 @@ type Admin = ReturnType<typeof createSupabaseAdmin>;
 
 const FAMILY_LINK = "/?open=caregiver";
 
-/** 今天報過平安了嗎（台北日期）；還沒跑 SQL 就當作沒有 */
-export async function todayCheckin(admin: Admin, userId: string, now = new Date()): Promise<string | null> {
+/** 今天報過平安了嗎（台北日期）；畫面用，讀不到就當作沒有（排程用 strict，讀不到就丟錯） */
+export async function todayCheckin(admin: Admin, userId: string, now = new Date(), strict = false): Promise<string | null> {
   const { data, error } = await admin
     .from("daily_checkins")
     .select("checked_at")
@@ -19,18 +19,19 @@ export async function todayCheckin(admin: Admin, userId: string, now = new Date(
     .eq("day", taipeiDay(now))
     .maybeSingle();
   if (error) {
+    if (strict) throw new Error(`load checkin failed: ${error.message}`);
     console.warn("[checkin] load failed (add-daily-checkin.sql 跑了嗎？):", error.message);
     return null;
   }
   return (data as { checked_at: string } | null)?.checked_at ?? null;
 }
 
-/** 好幾位長輩今天報平安的時間 */
+/** 好幾位長輩今天報平安的時間；讀不到就丟錯（排程不能把「不知道」當成「沒報」，亂發通知） */
 export async function todayCheckins(admin: Admin, userIds: string[], now = new Date()): Promise<Map<string, string>> {
   const map = new Map<string, string>();
   if (userIds.length === 0) return map;
   const { data, error } = await admin.from("daily_checkins").select("user_id, checked_at").eq("day", taipeiDay(now)).in("user_id", userIds);
-  if (error) return map;
+  if (error) throw new Error(`load checkins failed: ${error.message}`);
   for (const r of (data ?? []) as { user_id: string; checked_at: string }[]) map.set(r.user_id, r.checked_at);
   return map;
 }

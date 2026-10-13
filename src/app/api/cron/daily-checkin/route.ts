@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/server";
 import { isWebPushConfigured, sendPushToUser } from "@/lib/push/send";
 import { checkinFamilyAlertPush, checkinReminderPush, checkinSetting, parseCheckinCronParams, taipeiDay } from "@/lib/daily-checkin";
-import { acceptedFamilyIds, todayCheckins } from "@/lib/daily-checkin-server";
+import { acceptedFamilyIds, todayCheckin, todayCheckins } from "@/lib/daily-checkin-server";
 import { createDeadline, mapWithConcurrency } from "@/lib/concurrency";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export const maxDuration = 60;
 
 const USER_CONCURRENCY = 8;
 const TIME_BUDGET_MS = 45_000;
-const MAX_USERS = 2000;
+const PAGE = 1000;
 const ID_CHUNK = 300;
 
 interface ProfileRow {
@@ -40,27 +40,31 @@ export async function GET(req: NextRequest) {
   const deadline = createDeadline(TIME_BUDGET_MS);
   const claimCol = params.step === "remind" ? "checkin_reminded_on" : "checkin_alerted_on";
 
-  // 有開平安打卡、今天這一步還沒做過的人；截止時間在程式裡比（沒存時間的人算預設 12 點）
-  const { data, error } = await admin
-    .from("profiles")
-    .select("id, display_name, notification_settings")
-    .eq("notification_settings->daily_checkin->>on", "true")
-    .or(`${claimCol}.is.null,${claimCol}.lt.${today}`)
-    .order("id")
-    .limit(MAX_USERS);
-  if (error) {
-    console.error("[cron] daily-checkin profiles:", error);
-    return NextResponse.json({ error: "讀取失敗（add-daily-checkin.sql 跑了嗎？）" }, { status: 500 });
-  }
-  const inSlot = ((data ?? []) as ProfileRow[]).filter(
-    (p) => checkinSetting(p.notification_settings?.daily_checkin).deadline === params.slot
-  );
-
-  // 今天已經報平安的不用管
+  // 有開平安打卡、今天這一步還沒做過的人（分頁讀完，不會因為人多就固定漏掉後面的）；截止時間在程式裡比（沒存時間的人算預設 12 點）
+  const inSlot: ProfileRow[] = [];
   const checked = new Map<string, string>();
-  for (let i = 0; i < inSlot.length; i += ID_CHUNK) {
-    const part = await todayCheckins(admin, inSlot.slice(i, i + ID_CHUNK).map((p) => p.id), now);
-    for (const [k, v] of part) checked.set(k, v);
+  try {
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await admin
+        .from("profiles")
+        .select("id, display_name, notification_settings")
+        .eq("notification_settings->daily_checkin->>on", "true")
+        .or(`${claimCol}.is.null,${claimCol}.lt.${today}`)
+        .order("id")
+        .range(from, from + PAGE - 1);
+      if (error) throw new Error(`profiles: ${error.message}`);
+      const rows = (data ?? []) as ProfileRow[];
+      inSlot.push(...rows.filter((p) => checkinSetting(p.notification_settings?.daily_checkin).deadline === params.slot));
+      if (rows.length < PAGE) break;
+    }
+    // 今天已經報平安的不用管（讀不到就整個停下來，不能當作沒報）
+    for (let i = 0; i < inSlot.length; i += ID_CHUNK) {
+      const part = await todayCheckins(admin, inSlot.slice(i, i + ID_CHUNK).map((p) => p.id), now);
+      for (const [k, v] of part) checked.set(k, v);
+    }
+  } catch (e) {
+    console.error("[cron] daily-checkin load:", e);
+    return NextResponse.json({ error: "讀取失敗（add-daily-checkin.sql 跑了嗎？）" }, { status: 500 });
   }
   const targets = inSlot.filter((p) => !checked.has(p.id));
 
@@ -80,6 +84,13 @@ export async function GET(req: NextRequest) {
       .select("id");
     if (claimErr || !claimed?.length) {
       if (claimErr) console.warn("[cron] daily-checkin claim:", claimErr.message);
+      return;
+    }
+    // 搶到記號之後再看一次：剛剛才按的就不發。之後才按的，報平安那邊看得到記號，會告訴家人報平安了
+    try {
+      if (await todayCheckin(admin, p.id, now, true)) return;
+    } catch (e) {
+      console.warn("[cron] daily-checkin recheck:", e);
       return;
     }
     if (params.step === "remind") {

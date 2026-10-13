@@ -162,7 +162,7 @@ export async function GET() {
       } else if (canMeals && meals && meals.logged === 0) {
         overall = "attention"; // 今天還沒有任何飲食記錄
       }
-      if (overall === "normal" && checkin?.state === "late") overall = "attention"; // 過了時間還沒報平安
+      if (checkin?.state === "late") overall = "alert"; // 過了時間還沒報平安 → 需要關心
 
       return {
         elder_id: elderId,
