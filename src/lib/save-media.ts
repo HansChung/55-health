@@ -15,10 +15,16 @@ const GallerySaver = registerPlugin<GallerySaverPlugin>("GallerySaver");
 
 export type SaveMode = "native" | "share" | "download";
 
-/** 這台裝置用哪一種方式存（畫面上的說明文字跟著變） */
+/** 手機、平板（iPadOS 會假裝是 Mac：看有沒有觸控） */
+export function isMobileDevice(ua: string, maxTouchPoints: number): boolean {
+  return /iPhone|iPad|iPod|Android/i.test(ua) || (/Macintosh/.test(ua) && maxTouchPoints > 1);
+}
+
+/** 這台裝置用哪一種方式存（畫面上的說明文字跟著變）；電腦就算支援分享檔案也直接下載 */
 export function saveMode(): SaveMode {
   if (typeof window === "undefined") return "download";
   if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") return "native";
+  if (!isMobileDevice(navigator.userAgent, navigator.maxTouchPoints ?? 0)) return "download";
   try {
     const probe = new File([new Blob(["x"], { type: "image/jpeg" })], "x.jpg", { type: "image/jpeg" });
     if (typeof navigator.canShare === "function" && navigator.canShare({ files: [probe] })) return "share";
@@ -48,13 +54,19 @@ export async function fetchMediaFile(url: string, mime: string, filename: string
   return new File([blob], filename, { type: blob.type || mime });
 }
 
-/** 網頁：打開分享選單（要在使用者按下的當下呼叫）；取消回 false */
-export async function shareFile(file: File, title: string): Promise<boolean> {
+/**
+ * 網頁：打開分享選單（要在使用者按下的當下呼叫）。
+ * shared＝分享了；cancelled＝自己取消；retry＝被瀏覽器擋（不是在按下的當下、已經有一個在開）→ 請長輩再按一次，
+ * 不要改成下載（iPhone 下載會進「檔案」不是相簿）
+ */
+export async function shareFile(file: File, title: string): Promise<"shared" | "cancelled" | "retry"> {
   try {
     await navigator.share({ files: [file], title });
-    return true;
+    return "shared";
   } catch (e) {
-    if ((e as { name?: string })?.name === "AbortError") return false;
+    const name = (e as { name?: string })?.name;
+    if (name === "AbortError") return "cancelled";
+    if (name === "NotAllowedError" || name === "InvalidStateError") return "retry";
     throw e;
   }
 }

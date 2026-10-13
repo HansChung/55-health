@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mediaFilename, saveMode } from "./save-media";
+import { isMobileDevice, mediaFilename, saveMode } from "./save-media";
 import { videoSaveName } from "./travel-video";
 
 describe("存到手機相簿", () => {
@@ -20,5 +20,15 @@ describe("存到手機相簿", () => {
     expect(videoSaveName({ kind: "single", place: null, created_at: at })).toBe("出遊影片-20261013");
     expect(videoSaveName({ kind: "mv", place: "鹿港", created_at: at, mv: { title: "鹿港小鎮", lyrics: "", language: "mandarin", style: "folk", is_variant: false, alt_available: false } })).toBe("鹿港小鎮-20261013");
     expect(videoSaveName({ kind: "tour", place: null, created_at: at, yearly: { year: 2026, title: "太魯閣峽谷健行" } })).toBe("太魯閣峽谷健行-20261013");
+  });
+});
+
+describe("手機才走分享選單", () => {
+  it("iPhone、Android、iPad（假裝是 Mac 但有觸控）是手機；Windows／Mac 電腦不是", () => {
+    expect(isMobileDevice("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)", 5)).toBe(true);
+    expect(isMobileDevice("Mozilla/5.0 (Linux; Android 15; Pixel 9)", 5)).toBe(true);
+    expect(isMobileDevice("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", 5)).toBe(true);
+    expect(isMobileDevice("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", 0)).toBe(false);
+    expect(isMobileDevice("Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/140", 0)).toBe(false);
   });
 });

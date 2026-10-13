@@ -53,17 +53,23 @@ export function SaveToPhoneButton({
 
   const onClick = async () => {
     if (busy) return;
-    // 第二步：檔案已經準備好，打開分享選單（使用者按下的當下）
+    // 第二步：檔案已經準備好，打開分享選單（使用者按下的當下）；分享選單開著的時候按鈕先鎖住
     if (ready) {
+      setBusy(true);
       try {
-        const done = await shareFile(ready, filename);
-        if (done) {
+        const result = await shareFile(ready, filename);
+        if (result === "shared") {
           trackEvent("save_to_phone", { where, mode: "share", video });
           setReady(null);
+        } else if (result === "retry") {
+          toast.info("請再按一次「存到相簿」");
         }
       } catch {
+        // 這台手機其實分享不了檔案：只好下載
         downloadFile(ready);
         setReady(null);
+      } finally {
+        if (alive.current) setBusy(false);
       }
       return;
     }
@@ -93,7 +99,9 @@ export function SaveToPhoneButton({
     }
   };
 
-  const label = busy
+  const label = busy && ready
+    ? "📲 打開中…"
+    : busy
     ? video ? "⏳ 準備影片中…" : "⏳ 準備照片中…"
     : ready
       ? "📲 存到相簿"
