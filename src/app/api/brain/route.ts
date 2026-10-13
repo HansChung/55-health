@@ -8,6 +8,8 @@ import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
 import { dailyKind, taipeiDay } from "@/lib/brain-games";
 import { loadBrainStats } from "@/lib/brain-games-server";
+import { loadAsker } from "@/lib/ai/ask-quota-server";
+import { blockedResponse } from "@/lib/plan-access-server";
 
 const Schema = z.object({ kind: z.string().max(20), correct: z.boolean() });
 
@@ -17,9 +19,17 @@ async function currentUser() {
   return user;
 }
 
+/** 後台關掉（503）或方案不夠（403）就擋下來 */
+async function gate(userId: string, email: string | undefined) {
+  const { access } = await loadAsker(userId, email);
+  return blockedResponse(access, "brain_game");
+}
+
 export async function GET() {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "未登入" }, { status: 401 });
+  const blocked = await gate(user.id, user.email);
+  if (blocked) return blocked;
   try {
     return NextResponse.json({ stats: await loadBrainStats(createSupabaseAdmin(), user.id) });
   } catch (e) {
@@ -31,6 +41,8 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "未登入" }, { status: 401 });
+  const blocked = await gate(user.id, user.email);
+  if (blocked) return blocked;
   const parsed = Schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "格式不對" }, { status: 400 });
   const day = taipeiDay();

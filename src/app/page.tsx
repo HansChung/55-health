@@ -199,8 +199,10 @@ export default function Page() {
     else if (open === "caregiver") setSubpage("caregiver");
     // 健康紀錄（血壓、血糖趨勢）
     else if (open === "health-metrics") setSubpage("health-metrics");
-    // 動動腦（每日一題）
-    else if (open === "brain") setSubpage("brain");
+    // 動動腦（每日一題）：後台關掉就不開，方案不夠就說要升級
+    else if (open === "brain") {
+      if (featureEnabled("brain_game")) requireFeature("brain_game", () => setSubpage("brain"));
+    }
     // 打字問暖暖（書本練習的「打字問暖暖」：範例放在 sessionStorage，登入畫面也帶得過去）
     // 我的故事集（家人留言、按讚的推播點進來）
     else if (open === "stories") {
