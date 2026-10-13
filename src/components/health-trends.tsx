@@ -154,7 +154,12 @@ export function HealthTrends({
     kind === "blood_pressure" ? (() => { const s = summarizeBp(ofKind, range, nowDate); return s ? bpLines(s, range) : []; })()
     : kind === "blood_glucose" ? (() => { const s = summarizeGlucose(ofKind, range, nowDate); return s ? glucoseLines(s, range) : []; })()
     : (() => { const s = summarizeWeight(ofKind, range, nowDate); return s ? weightLines(s, range) : []; })();
-  const readings = splitPeriods(ofKind, range, nowDate).current;
+  // 列印的表格和圖、摘要用同一批（沒有數字的那筆不列）
+  const readings = splitPeriods(ofKind, range, nowDate).current.filter((m) =>
+    kind === "blood_pressure" ? m.systolic != null && m.diastolic != null
+    : kind === "blood_glucose" ? m.glucose_mg_dl != null
+    : m.weight_kg != null && Number(m.weight_kg) > 0
+  );
 
   const print = () => {
     document.body.classList.add("printing-trends");
