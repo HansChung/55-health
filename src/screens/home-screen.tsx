@@ -11,6 +11,7 @@ import { FoodPlaceholder } from "@/components/food-placeholder";
 import { LockedFeatureCard } from "@/components/locked-feature-card";
 import { NavCard } from "@/components/nav-card";
 import { DailyWeatherCard } from "@/components/daily-weather-card";
+import { DailyCheckinCard } from "@/components/daily-checkin-card";
 import { hasFeature, type SubscriptionTier } from "@/lib/feature-gates";
 
 interface HomeScreenProps {
@@ -166,6 +167,8 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
           </div>
         </button>
       </div>
+
+      {onProfileUpdated && <DailyCheckinCard settings={notificationSettings} onSaved={onProfileUpdated} />}
 
       {onProfileUpdated && <DailyWeatherCard settings={notificationSettings} onSaved={onProfileUpdated} />}
 

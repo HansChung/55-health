@@ -27,6 +27,38 @@
     {
       "path": "/api/cron/cleanup-uploads",
       "schedule": "30 19 * * *"
+    },
+    {
+      "path": "/api/cron/daily-checkin?step=remind&slot=9",
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/cron/daily-checkin?step=alert&slot=9",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/daily-checkin?step=remind&slot=12",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/daily-checkin?step=alert&slot=12",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/daily-checkin?step=remind&slot=15",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/daily-checkin?step=alert&slot=15",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/daily-checkin?step=remind&slot=18",
+      "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/daily-checkin?step=alert&slot=18",
+      "schedule": "0 12 * * *"
     }
   ]
 }

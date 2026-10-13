@@ -547,6 +547,10 @@ export const api = {
 
   dailyWeatherStatus: () => apiFetch<{ available: boolean }>("/api/daily-weather"),
 
+  // 每日平安打卡
+  checkinToday: () => apiFetch<{ checkedAt: string | null }>("/api/checkin"),
+  checkin: () => apiFetch<{ checkedAt: string; first: boolean }>("/api/checkin", { method: "POST" }),
+
   getVapidPublicKey: () =>
     apiFetch<{ configured: boolean; publicKey: string | null }>("/api/push/vapid-public-key"),
 
@@ -841,6 +845,8 @@ export interface NotificationSettings {
   web_push?: { on: boolean };
   /** 每天早上 7 點的天氣＋健康提醒（推播）；選好縣市就開 */
   daily_weather?: { on: boolean; county: string | null };
+  /** 每日平安打卡：到 deadline 點（台北時間）還沒按「我今天很好」→ 提醒自己，兩小時後通知家人 */
+  daily_checkin?: { on: boolean; deadline: number };
 }
 
 export interface AiSuggestion {
@@ -875,6 +881,8 @@ export interface ElderOverview {
   latest_alert: { title: string; severity: string; created_at: string } | null;
   iot: { lastActivityAt: string | null; temp: number | null; recentCritical: boolean } | null;
   shi: number | null;
+  /** 每日平安打卡（長輩沒開就是 null） */
+  checkin: { deadline: number; checked_at: string | null; state: "done" | "waiting" | "late" } | null;
 }
 
 /** 書本練習內容（管理員） */

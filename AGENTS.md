@@ -79,6 +79,20 @@ and Stripe. Capacitor/Android is only a packaging target and is not needed for w
   can't unlink and `sendEmail` skips their placeholder address. `LINE_LOGIN_REQUEST_EMAIL=1` only after LINE approves
   the email permission. Local test: `LINE_ACCESS_BASE` / `LINE_API_BASE` point at a fake LINE server.
 
+- **每日平安打卡** (needs `supabase/add-daily-checkin.sql` + VAPID + `CRON_SECRET`): the elder presses 「👋 我今天很好」 on
+  the home card (`DailyCheckinCard`, asked once like the weather card; 「不用了」 stores `on:false`, 提醒通知 → 每日平安打卡
+  turns it back on / changes the time). Setting = `notification_settings.daily_checkin = { on, deadline }`, deadline
+  9／12／15／18 (Taipei). One row per Taipei day in `daily_checkins` (server-only; a second press keeps the first time).
+  Cron `/api/cron/daily-checkin?step=remind|alert&slot=N`: 8 entries in `vercel.json` — `remind` at the deadline hour
+  pushes the elder, `alert` **two** hours later pushes every accepted family member (Hobby crons fire anywhere in their
+  hour, so a 1-hour gap could be a minute). Each step claims `profiles.checkin_reminded_on` / `checkin_alerted_on`
+  before pushing, then re-reads today's check-in and skips if it now exists (a later check-in sees the claim and
+  sends the 「報平安了」 push); profiles are paged (no fixed cap) and a failed check-in read aborts the run (500) rather
+  than alerting everyone. A missing deadline counts as 12. If family were already alerted, the check-in pushes them
+  「報平安了」 from `after()`. 家人狀況 shows a 報平安 row (not gated by permissions — the elder opted in), and a late
+  check-in turns the elder's status to 「需要關心」 (`alert`). Local test: web-push only speaks https, so the fake push service
+  needs a self-signed cert + `NODE_TLS_REJECT_UNAUTHORIZED=0` in the scratch `.env.local`.
+
 ### Running a real backend locally (no cloud Supabase needed)
 The app requires a live Supabase API to do anything past the login screen (auth is forced). A local
 stack works well for auth + meal/diary CRUD:

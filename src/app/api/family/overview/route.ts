@@ -6,6 +6,8 @@
 // ────────────────────────────────────────────────
 import { NextResponse } from "next/server";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
+import { checkinSetting, checkinState } from "@/lib/daily-checkin";
+import { todayCheckin } from "@/lib/daily-checkin-server";
 
 export const dynamic = "force-dynamic";
 
@@ -61,8 +63,9 @@ export async function GET() {
         { data: alertRows },
         { data: iotRows },
         { data: shiRows },
+        checkedAt,
       ] = await Promise.all([
-        admin.from("profiles").select("display_name, medications").eq("id", elderId).single(),
+        admin.from("profiles").select("display_name, medications, notification_settings").eq("id", elderId).single(),
         canMeals
           ? admin.from("meals").select("eaten_at").eq("user_id", elderId)
               .gte("eaten_at", todayISO).order("eaten_at", { ascending: false })
@@ -89,6 +92,8 @@ export async function GET() {
           ? admin.from("smart_assessments").select("shi").eq("user_id", elderId)
               .order("created_at", { ascending: false }).limit(1)
           : none,
+        // 平安打卡是長輩自己開來讓家人放心的 → 不另外看權限
+        todayCheckin(admin, elderId),
       ]);
 
       const elderName = profile?.display_name ?? "長輩";
@@ -144,6 +149,12 @@ export async function GET() {
         shi = shiRows?.[0]?.shi ?? null;
       }
 
+      // 每日平安打卡（長輩有開才顯示）
+      const checkinCfg = checkinSetting((profile?.notification_settings as Record<string, unknown> | null)?.daily_checkin);
+      const checkin = checkinCfg.on
+        ? { deadline: checkinCfg.deadline, checked_at: checkedAt, state: checkinState(checkinCfg, checkedAt) }
+        : null;
+
       // 綜合狀態
       let overall: "normal" | "attention" | "alert" = "normal";
       if (alertsUnresolved > 0 || iot?.recentCritical) {
@@ -151,6 +162,7 @@ export async function GET() {
       } else if (canMeals && meals && meals.logged === 0) {
         overall = "attention"; // 今天還沒有任何飲食記錄
       }
+      if (checkin?.state === "late") overall = "alert"; // 過了時間還沒報平安 → 需要關心
 
       return {
         elder_id: elderId,
@@ -166,6 +178,7 @@ export async function GET() {
         latest_alert: latestAlert,
         iot,
         shi,
+        checkin,
       };
     })
   );
