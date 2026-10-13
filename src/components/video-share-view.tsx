@@ -9,7 +9,7 @@ import { markVideoViewed } from "@/lib/mark-video-viewed";
 import { videoShareMeta } from "@/lib/travel-video";
 import type { SharedVideo } from "@/lib/video-share-server";
 import { SaveToPhoneButton } from "@/components/save-to-phone-button";
-import { videoSaveName } from "@/lib/travel-video";
+import { isCompilationKind, videoSaveName } from "@/lib/travel-video";
 
 function formatDay(iso: string) {
   return new Date(iso).toLocaleDateString("zh-TW", { timeZone: "Asia/Taipei", year: "numeric", month: "long", day: "numeric" });
@@ -40,7 +40,7 @@ export function VideoShareView({ shared }: { shared: SharedVideo | null }) {
 function SharedVideoCard({ shared }: { shared: SharedVideo }) {
   const v = shared.video;
   const { title } = videoShareMeta(v);
-  const lines = v.kind === "mv" || v.kind === "yearly" || v.kind === "tour" ? [] : v.kind === "montage" ? (v.montage_lines ?? []) : v.narration_text ? [v.narration_text] : [];
+  const lines = v.kind === "mv" || isCompilationKind(v.kind) ? [] : v.kind === "montage" ? (v.montage_lines ?? []) : v.narration_text ? [v.narration_text] : [];
 
   return (
     <>
@@ -60,7 +60,7 @@ function SharedVideoCard({ shared }: { shared: SharedVideo }) {
         {v.video_url && <SaveToPhoneButton url={v.video_url} mime="video/mp4" name={`暖暖-${videoSaveName(v)}`} where="share_page" />}
         <div>
           <h1 style={{ fontSize: "var(--fs-xl, 24px)", fontWeight: 800, margin: 0, lineHeight: 1.4 }}>
-            {v.kind === "mv" || v.kind === "yearly" || v.kind === "tour" ? "" : v.kind === "montage" ? "📚 " : "🎬 "}{title}
+            {v.kind === "mv" || isCompilationKind(v.kind) ? "" : v.kind === "montage" ? "📚 " : "🎬 "}{title}
           </h1>
           <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-3)", marginTop: 4 }}>{formatDay(v.created_at)}</div>
         </div>

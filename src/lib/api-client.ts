@@ -195,6 +195,15 @@ export const api = {
       json: input,
       timeoutMs: 70000,
     }),
+  greetingQuota: () => apiFetch<{ quota: TravelVideoQuota }>("/api/ai/travel-video/greeting"),
+  createGreetingVideo: (input: {
+    occasion: import("./greeting-video").GreetingOccasion;
+    to: string;
+    from: string;
+    music: MontageMusicId;
+    photos: { photoPath: string; width: number; height: number; caption: string }[];
+  }) =>
+    apiFetch<{ video: TravelVideo; quota: TravelVideoQuota }>("/api/ai/travel-video/greeting", { method: "POST", json: input, timeoutMs: 70000 }),
   createYearlyVideo: (input: { year: number; title: string; music: MontageMusicId; picks: { key: string; caption: string }[] }) =>
     apiFetch<{ video: TravelVideo; quota: TravelVideoQuota }>("/api/ai/travel-video/yearly", {
       method: "POST",

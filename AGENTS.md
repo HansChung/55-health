@@ -261,6 +261,16 @@ stack works well for auth + meal/diary CRUD:
   **download** = everything else (blob + `<a download>` with a readable name from `videoSaveName` / `mediaFilename`).
   Supabase public/signed storage URLs allow CORS, so `fetch` works from the app origin. The plugin has not been
   compiled on the dev Mac (no JDK/Android SDK) — build it in Android Studio before shipping the app.
+- **祝福影片** (`kind='greeting'`, needs `supabase/add-greeting-video.sql`; feature `greeting_video`, limit
+  `greeting_monthly` free 3／basic 10／pro 30): the 「🎁 祝福影片」 tab of the travel-video screen (home card, deep link
+  `/?open=travel-video&mode=greeting`, `GreetingComposer`). Occasion (`GREETING_OCCASIONS`: title template, default lines,
+  default music), 給誰／你是誰, 1–10 photos uploaded straight to `user-uploads` with one line each.
+  `POST /api/ai/travel-video/greeting` reads each staged photo with `readUserImage` (owner + magic bytes — the
+  travel-videos bucket is public, so never `copyUserUpload` arbitrary files into it), stores it as
+  `{user}/{video}/photo-N.jpg` and inserts via `insertCompilationRow`. Segments = 《title》 + one per photo + 「愛你的 ○○」
+  closing on the last photo (`greetingSegments`). Everything else (clips, mux, lease, `montage-step` relay, delete,
+  family push) is the yearly pipeline — use `isCompilationKind()` (`COMPILATION_KINDS` = yearly／tour／greeting) instead
+  of listing kinds.
 
 ### 後台（/admin）手機版
 - Admin pages keep their desktop styles inline; below 768px `src/app/admin/admin.css` overrides them via

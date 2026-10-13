@@ -18,6 +18,7 @@ import { TravelMontageForm } from "@/components/travel-montage-form";
 import { VideoComments } from "@/components/video-comments";
 import { MvComposerSheet } from "@/components/mv-composer-sheet";
 import { YearlyComposer } from "@/components/yearly-composer";
+import { GreetingComposer } from "@/components/greeting-composer";
 import { yearlyProgressLabel } from "@/lib/travel-yearly";
 import { DictationButton } from "@/components/dictation-button";
 import { appendDictation } from "@/lib/dictation";
@@ -34,6 +35,7 @@ import {
   TRAVEL_VIDEO_PLACE_MAX,
   TRAVEL_VIDEO_STYLES,
   checkVideoImageSize,
+  isCompilationKind,
   isTravelVideoPending,
   montageProgressLabel,
   mvProgressLabel,
@@ -55,7 +57,7 @@ const POLL_MS = 10_000;
 interface TravelVideoScreenProps {
   onBack: () => void;
   /** 推播／深連結指定先打開哪個分頁（例如 ?open=travel-video&mode=yearly） */
-  initialMode?: "single" | "montage" | "mv" | "yearly" | null;
+  initialMode?: "single" | "montage" | "mv" | "yearly" | "greeting" | null;
 }
 
 function imageSize(src: string): Promise<{ width: number; height: number }> {
@@ -113,8 +115,9 @@ export function TravelVideoScreen({ onBack, initialMode }: TravelVideoScreenProp
     { id: "montage", feature: "travel_montage", emoji: "📚", label: "多張照片", desc: "做成遊記" },
     { id: "mv", feature: "travel_mv", emoji: "🎵", label: "做 MV", desc: "遊記寫成歌" },
     { id: "yearly", feature: "travel_yearly", emoji: "📅", label: "年度回憶", desc: "一年串一支" },
+    { id: "greeting", feature: "greeting_video", emoji: "🎁", label: "祝福影片", desc: "送給家人" },
   ] as const).filter((m) => featureEnabled(m.feature));
-  const [mode, setMode] = useState<"single" | "montage" | "mv" | "yearly">(() => (initialMode && modes.some((m) => m.id === initialMode) ? initialMode : modes[0]?.id ?? "single"));
+  const [mode, setMode] = useState<"single" | "montage" | "mv" | "yearly" | "greeting">(() => (initialMode && modes.some((m) => m.id === initialMode) ? initialMode : modes[0]?.id ?? "single"));
   const [enabled, setEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
@@ -164,7 +167,9 @@ export function TravelVideoScreen({ onBack, initialMode }: TravelVideoScreenProp
           const montage = v.kind === "montage";
           if (v.status === "succeeded") {
             toast.success(
-              v.kind === "tour"
+              v.kind === "greeting"
+                ? "祝福影片做好了！可以播放、傳給要祝福的人"
+                : v.kind === "tour"
                 ? "研學團遊記做好了！可以播放、分享給家人"
                 : v.kind === "yearly"
                 ? "年度回憶影片做好了！可以播放、分享給家人"
@@ -177,7 +182,9 @@ export function TravelVideoScreen({ onBack, initialMode }: TravelVideoScreenProp
           }
           else if (v.status === "failed") {
             toast.info(
-              v.kind === "tour"
+              v.kind === "greeting"
+                ? "祝福影片沒做成功，不會扣次數，請再做一次"
+                : v.kind === "tour"
                 ? "研學團遊記沒做成功，不會扣次數，請再做一次"
                 : v.kind === "yearly"
                 ? "年度回憶影片沒做成功，不會扣次數，請再做一次"
@@ -425,8 +432,10 @@ export function TravelVideoScreen({ onBack, initialMode }: TravelVideoScreenProp
 
   const handleShare = async (v: TravelVideo) => {
     if (!v.video_url) return;
-    const kindLabel = v.kind === "montage" ? "遊記影片" : v.kind === "yearly" ? "年度回憶影片" : v.kind === "tour" ? "研學團遊記" : "出遊回憶影片";
-    const text = `我用暖暖做了一支${kindLabel}${v.place ? `（${v.place}）` : ""}，給你看看！`;
+    const kindLabel = v.kind === "montage" ? "遊記影片" : v.kind === "yearly" ? "年度回憶影片" : v.kind === "tour" ? "研學團遊記" : v.kind === "greeting" ? "祝福影片" : "出遊回憶影片";
+    const text = v.kind === "greeting" && v.yearly?.title
+      ? `${v.yearly.title}！我用暖暖做了一支祝福影片給你 🎁`
+      : `我用暖暖做了一支${kindLabel}${v.place ? `（${v.place}）` : ""}，給你看看！`;
     // 分享頁（LINE 會顯示縮圖和標題，打開就能播放；家人還能按讚留言）。App 裡 origin 是 localhost → 用正式網址
     const url = `${publicAppOrigin(process.env.NEXT_PUBLIC_APP_URL, window.location.origin)}${videoSharePath(v.id)}`;
     trackEvent("travel_video_share", { style: v.style, kind: v.kind });
@@ -492,6 +501,8 @@ export function TravelVideoScreen({ onBack, initialMode }: TravelVideoScreenProp
             <>拍一張出遊的照片，暖暖幫你變成 <strong>{TRAVEL_VIDEO_DURATION_SECONDS} 秒小影片</strong>，傳給家人一起看！</>
           ) : mode === "montage" ? (
             <>選幾張出遊照片，暖暖做成<strong>有配音、有字幕的遊記影片</strong>，照片會慢慢移動！</>
+          ) : mode === "greeting" ? (
+            <>生日、過年、母親節……放幾張照片、每張一句祝福，暖暖做成<strong>有字幕、有配樂的祝福影片</strong>，傳給孫子、家人！</>
           ) : mode === "yearly" ? (
             <>把這一年的遊記、出遊影片、故事照片<strong>串成一支年度回憶影片</strong>，有字幕、有配樂，過年放給家人看！</>
           ) : (
@@ -521,7 +532,7 @@ export function TravelVideoScreen({ onBack, initialMode }: TravelVideoScreenProp
 
       {/* 一張／多張 */}
       {modes.length > 1 && (
-      <div role="tablist" style={{ display: "grid", gridTemplateColumns: `repeat(${modes.length === 4 ? 2 : modes.length}, 1fr)`, gap: 8, marginTop: 16 }}>
+      <div role="tablist" style={{ display: "grid", gridTemplateColumns: `repeat(${modes.length === 4 ? 2 : modes.length >= 5 ? 3 : modes.length}, 1fr)`, gap: 8, marginTop: 16 }}>
         {modes.map((m) => (
           <button
             key={m.id}
@@ -542,7 +553,16 @@ export function TravelVideoScreen({ onBack, initialMode }: TravelVideoScreenProp
       </div>
       )}
 
-      {mode === "yearly" ? (
+      {mode === "greeting" ? (
+        <GreetingComposer
+          pending={videos.some((v) => v.kind === "greeting" && isTravelVideoPending(v.status))}
+          onCreated={(video) => {
+            lastStatus.current[video.id] = video.status;
+            setVideos((prev) => [video, ...prev]);
+            toast.success("開始做了！做好會通知你，可以先離開這個畫面");
+          }}
+        />
+      ) : mode === "yearly" ? (
         <YearlyComposer
           pendingYearly={videos.some((v) => v.kind === "yearly" && isTravelVideoPending(v.status))}
           onMakeMontage={() => setMode("montage")}
@@ -859,8 +879,9 @@ function VideoCard({
   const pending = isTravelVideoPending(v.status);
   const montage = v.kind === "montage";
   const mv = v.kind === "mv";
-  // 年度回憶、全團遊記同一套剪輯
-  const yearly = v.kind === "yearly" || v.kind === "tour";
+  // 年度回憶、全團遊記、祝福影片同一套剪輯
+  const yearly = isCompilationKind(v.kind);
+  const greeting = v.kind === "greeting";
   const tour = v.kind === "tour";
   const [showLyrics, setShowLyrics] = useState(false);
 
@@ -923,7 +944,7 @@ function VideoCard({
               </>
             ) : (
               <div role="status">
-                {yearly ? `${tour ? "研學團遊記" : "年度回憶影片"}沒做成功（不會扣次數）` : mv ? "這支 MV 沒做成功（不會扣次數）" : montage ? "這支遊記沒做成功（不會扣次數）" : "這支沒做成功（不會扣次數）"}
+                {yearly ? `${greeting ? "祝福影片" : tour ? "研學團遊記" : "年度回憶影片"}沒做成功（不會扣次數）` : mv ? "這支 MV 沒做成功（不會扣次數）" : montage ? "這支遊記沒做成功（不會扣次數）" : "這支沒做成功（不會扣次數）"}
                 <br />
                 {mv || montage || yearly ? "請再做一次" : "換張照片再試試"}
               </div>
@@ -933,10 +954,10 @@ function VideoCard({
       )}
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
-        <span aria-hidden="true">{tour ? "🧭" : yearly ? "📅" : mv ? "🎵" : montage ? "📚" : styleMeta?.emoji ?? "🎬"}</span>
+        <span aria-hidden="true">{greeting ? "🎁" : tour ? "🧭" : yearly ? "📅" : mv ? "🎵" : montage ? "📚" : styleMeta?.emoji ?? "🎬"}</span>
         <span style={{ fontWeight: 700, color: "var(--ink-1)" }}>
           {yearly
-            ? `${tour ? "研學團遊記" : "年度回憶"}：${v.yearly?.title ?? ""}`
+            ? `${greeting ? "祝福影片" : tour ? "研學團遊記" : "年度回憶"}：${v.yearly?.title ?? ""}`
             : mv
             ? `MV：${v.mv?.title ?? ""}${v.place ? `（${v.place}）` : ""}`
             : v.place || (montage ? `遊記影片（${v.montage_lines?.length ?? 0} 張）` : styleMeta?.label || "出遊影片")}

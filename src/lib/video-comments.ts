@@ -212,10 +212,16 @@ export function formatVoiceSeconds(seconds: number | null): string {
 }
 
 /** 推播文字：長輩做好一支新影片（給看得到影片的家人） */
-export function newVideoPushForFamily(opts: { elderName: string; place: string | null; montage: boolean; mv?: boolean; yearly?: boolean; tour?: boolean }): {
+export function newVideoPushForFamily(opts: { elderName: string; place: string | null; montage: boolean; mv?: boolean; yearly?: boolean; tour?: boolean; greeting?: boolean; greetingTitle?: string | null }): {
   title: string;
   body: string;
 } {
+  if (opts.greeting) {
+    return {
+      title: `🎁 ${opts.elderName}做了一支祝福影片`,
+      body: `${opts.greetingTitle ? `「${opts.greetingTitle}」，` : ""}點這裡看看，回個話給${opts.elderName}吧`,
+    };
+  }
   const what = opts.tour ? "研學團遊記影片" : opts.yearly ? "年度回憶影片" : opts.mv ? "MV" : opts.montage ? "遊記影片" : "出遊影片";
   return {
     title: `🎬 ${opts.elderName}做了一支${what}`,

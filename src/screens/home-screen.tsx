@@ -46,6 +46,8 @@ interface HomeScreenProps {
   onBookPractice?: () => void;
   onIot?: () => void;
   onTravelVideo?: () => void;
+  /** 節日、生日祝福影片（打開出遊回憶影片的「祝福影片」分頁） */
+  onGreetingVideo?: () => void;
   onStudyTours?: () => void;
   onPhotoAsk?: () => void;
   /** 打字問暖暖 */
@@ -75,7 +77,7 @@ function getDateLabel(): string {
   return `${d.getMonth() + 1}月${d.getDate()}日　星期${WEEKDAYS[d.getDay()]}`;
 }
 
-export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart, onBlueprint, onBookPractice, onIot, onTravelVideo, onStudyTours, onPhotoAsk, onAsk, onStories, onScamCheck, onClinic, caregiver = null, onCaregiver, notificationSettings, onProfileUpdated }: HomeScreenProps) {
+export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, achievementsSummary = null, onAchievements, smartSummary = null, onSmart, onBlueprint, onBookPractice, onIot, onTravelVideo, onGreetingVideo, onStudyTours, onPhotoAsk, onAsk, onStories, onScamCheck, onClinic, caregiver = null, onCaregiver, notificationSettings, onProfileUpdated }: HomeScreenProps) {
   // 從餐點計算今日營養
   const totals = meals.reduce(
     (s, m) => {
@@ -202,6 +204,18 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
           background="linear-gradient(135deg, #FBEFE3 0%, #FFFFFF 100%)"
           borderColor="#F0C9A8"
           iconBg="var(--primary-soft)"
+        />
+      )}
+
+      {onGreetingVideo && (
+        <NavCard
+          onClick={onGreetingVideo}
+          emoji="🎁"
+          title="祝福影片"
+          subtitle="生日、過年、母親節，做一支影片送家人"
+          background="linear-gradient(135deg, #FBE8EC 0%, #FFFFFF 100%)"
+          borderColor="#E4A9B5"
+          iconBg="var(--berry-soft)"
         />
       )}
 
