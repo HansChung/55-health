@@ -493,6 +493,13 @@ stack works well for auth + meal/diary CRUD:
   failures release the slot. Cost estimate from the price list (not measured yet): speech-2.8 HD ≈ 720 算力 per 1M
   chars → ~2–4 算力 for a 3000-char story. Editing title/body marks it `outdated` (owner sees 「照新的內容重念」;
   family only sees current readings, labelled 「AI 合成」). Deleting the story removes the file.
+- **回憶錄有聲書** (no SQL, no extra AI): 「🎧 聽整本有聲書」 in the stories list and 「🎧 聽○○的回憶錄有聲書」 in 家人狀況
+  (shared stories only) open `StoryAudiobook`. `audiobookChapters` orders stories oldest-first and picks per chapter:
+  the elder's own recording → a current (not outdated) 用我的聲音念 reading → the phone's speechSynthesis reading
+  `storySpeech` paragraphs (skipped if the browser can't speak). Device speech is chained **one paragraph per
+  utterance** (one long utterance stops halfway in some browsers); a token ref invalidates callbacks on pause/skip.
+  Audio URLs are 1-hour signed URLs: on an `<audio>` error the player refetches the stories once (`onRefresh`), then
+  skips. Auto-advances, prev/next, 0.8／1／1.2 speed, Media Session metadata for the lock screen.
 
 ### 方案與次數（後台 `/admin/plans`, needs `supabase/add-plan-settings.sql`）
 - **Every feature switch, minimum tier and quota lives in one place**: `src/lib/plan-settings.ts` (`FEATURE_DEFS`,
