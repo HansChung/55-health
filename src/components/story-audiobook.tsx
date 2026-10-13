@@ -45,6 +45,10 @@ export function StoryAudiobook({
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [rate, setRate] = useState<(typeof RATES)[number]>(1);
+  // 手機念的回呼要拿到「剛選的」速度（state 要等下一次畫面才更新）
+  const rateRef = useRef<number>(1);
+  /** 點目錄裡正在播的那一篇：index、playing 都沒變，靠這個讓播放重新開始 */
+  const [playGen, setPlayGen] = useState(0);
   const [position, setPosition] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   /** 手機念到第幾段 */
@@ -86,7 +90,7 @@ export function StoryAudiobook({
       setPosition(i);
       const u = new SpeechSynthesisUtterance(ch.paragraphs[i]);
       u.lang = "zh-TW";
-      u.rate = 0.95 * rate;
+      u.rate = 0.95 * rateRef.current;
       u.onend = () => say(i + 1);
       u.onerror = (e) => {
         // 換章、暫停時會 cancel，不算錯
@@ -133,7 +137,7 @@ export function StoryAudiobook({
         navigator.mediaSession.setActionHandler("play", () => setPlaying(true));
       } catch { /* 不支援就算了 */ }
     }
-  }, [index, playing, current?.url, current?.source]);
+  }, [index, playing, playGen, current?.url, current?.source]);
 
   useEffect(() => {
     if (audioRef.current) audioRef.current.playbackRate = rate;
@@ -164,6 +168,7 @@ export function StoryAudiobook({
     setIndex(i);
     setPosition(0);
     setPlaying(true);
+    setPlayGen((g) => g + 1);
   };
 
   const start = () => {
@@ -237,6 +242,7 @@ export function StoryAudiobook({
                   aria-checked={rate === r}
                   onClick={() => {
                     setRate(r);
+                    rateRef.current = r;
                     // 手機念的：從這一段用新速度重念
                     if (playing && current?.source === "device") speakFrom(current, paraRef.current);
                   }}
