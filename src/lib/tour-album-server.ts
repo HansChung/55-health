@@ -68,16 +68,36 @@ export async function loadAlbumAccess(admin: Admin, tourId: string, userId: stri
   return (regs ?? []).length > 0 ? { tour: tour as AlbumTour, isAdmin: false } : null;
 }
 
+/** 一團的全部照片（分頁讀，不會因為人多照片多就漏掉後面的） */
+const PAGE = 1000;
 async function loadPhotos(admin: Admin, tourId: string): Promise<PhotoRow[]> {
-  const { data, error } = await admin
+  const all: PhotoRow[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await admin
+      .from("study_tour_photos")
+      .select("id, tour_id, user_id, path, width, height, created_at")
+      .eq("tour_id", tourId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (error) throw new Error(`load tour photos failed (add-study-tour-album.sql 跑了嗎？): ${error.message}`);
+    const rows = (data ?? []) as PhotoRow[];
+    all.push(...rows);
+    if (rows.length < PAGE) return all;
+  }
+}
+
+/** 自己在這一團放了幾張（和上傳時的上限用同一個算法） */
+async function countMine(admin: Admin, tourId: string, userId: string): Promise<number> {
+  const { count, error } = await admin
     .from("study_tour_photos")
-    .select("id, tour_id, user_id, path, width, height, created_at")
+    .select("id", { count: "exact", head: true })
     .eq("tour_id", tourId)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: true })
-    .limit(500);
-  if (error) throw new Error(`load tour photos failed (add-study-tour-album.sql 跑了嗎？): ${error.message}`);
-  return (data ?? []) as PhotoRow[];
+    .eq("user_id", userId)
+    .is("deleted_at", null);
+  if (error) throw new Error(`count my tour photos failed: ${error.message}`);
+  return count ?? 0;
 }
 
 /** 誰放的：這一團報名時填的名字，沒有就用個人資料的稱呼 */
@@ -99,15 +119,17 @@ async function uploaderNames(admin: Admin, tourId: string, userIds: string[]): P
 
 async function signPaths(admin: Admin, paths: string[]): Promise<Map<string, string>> {
   const urls = new Map<string, string>();
-  if (paths.length === 0) return urls;
-  const { data, error } = await admin.storage.from(TOUR_ALBUM_BUCKET).createSignedUrls(paths, SIGNED_URL_SECONDS);
-  if (error) console.warn("[tour-album] sign failed:", error.message);
-  for (const d of (data ?? []) as { path: string | null; signedUrl: string }[]) if (d.path && d.signedUrl) urls.set(d.path, d.signedUrl);
+  // 一次簽一批（照片很多時也不會一個請求塞太多）
+  for (let i = 0; i < paths.length; i += 200) {
+    const { data, error } = await admin.storage.from(TOUR_ALBUM_BUCKET).createSignedUrls(paths.slice(i, i + 200), SIGNED_URL_SECONDS);
+    if (error) console.warn("[tour-album] sign failed:", error.message);
+    for (const d of (data ?? []) as { path: string | null; signedUrl: string }[]) if (d.path && d.signedUrl) urls.set(d.path, d.signedUrl);
+  }
   return urls;
 }
 
 export async function loadAlbumView(admin: Admin, access: AlbumAccess, userId: string): Promise<TourAlbumView> {
-  const rows = await loadPhotos(admin, access.tour.id);
+  const [rows, mine] = await Promise.all([loadPhotos(admin, access.tour.id), countMine(admin, access.tour.id, userId)]);
   const [names, urls] = await Promise.all([
     uploaderNames(admin, access.tour.id, [...new Set(rows.map((r) => r.user_id))]),
     signPaths(admin, rows.map((r) => r.path)),
@@ -124,7 +146,6 @@ export async function loadAlbumView(admin: Admin, access: AlbumAccess, userId: s
       can_delete: r.user_id === userId || access.isAdmin,
       created_at: r.created_at,
     }));
-  const mine = rows.filter((r) => r.user_id === userId).length;
   return {
     photos,
     can_upload: access.isAdmin || (access.tour.status === "published" && tourAlbumOpen(access.tour)),
@@ -190,7 +211,7 @@ export async function addAlbumPhoto(
   }
 }
 
-/** 刪一張：自己的，或管理員；先軟刪除再刪檔案（刪檔失敗路徑還留在那一列，之後找得到） */
+/** 刪一張：自己的，或管理員；先軟刪除再刪檔案，檔案刪不掉就把那一列還原、回報失敗（使用者可以再刪一次） */
 export async function deleteAlbumPhoto(admin: Admin, access: AlbumAccess, userId: string, photoId: string): Promise<boolean> {
   let q = admin
     .from("study_tour_photos")
@@ -204,7 +225,10 @@ export async function deleteAlbumPhoto(admin: Admin, access: AlbumAccess, userId
   const row = ((data ?? []) as { path: string }[])[0];
   if (!row) return false;
   const { error: rmErr } = await admin.storage.from(TOUR_ALBUM_BUCKET).remove([row.path]);
-  if (rmErr) console.warn("[tour-album] remove file failed (row already deleted):", photoId, rmErr.message);
+  if (rmErr) {
+    await admin.from("study_tour_photos").update({ deleted_at: null }).eq("id", photoId);
+    throw new Error(`remove tour photo file failed (row restored): ${rmErr.message}`);
+  }
   return true;
 }
 

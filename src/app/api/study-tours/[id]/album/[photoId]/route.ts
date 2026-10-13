@@ -21,6 +21,6 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     return NextResponse.json({ album: await loadAlbumView(admin, found, user.id) });
   } catch (e) {
     console.error("[api] tour album delete:", e);
-    return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
+    return NextResponse.json({ error: "刪除沒成功，請再試一次" }, { status: 500 });
   }
 }
