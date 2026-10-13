@@ -15,6 +15,7 @@ import { compressImage } from "@/lib/image-utils";
 import { stagePhoto } from "@/lib/direct-upload";
 import { YearlyComposer } from "@/components/yearly-composer";
 import { TOUR_ALBUM_BATCH, type TourAlbumPhoto, type TourAlbumView } from "@/lib/tour-album";
+import { isTravelVideoPending } from "@/lib/travel-video";
 
 function imageSize(src: string): Promise<{ width: number; height: number }> {
   return new Promise((resolve) => {
@@ -93,6 +94,14 @@ export function TourAlbum({
     }
   };
 
+  // 每次打開都從影片清單確認還有沒有一支研學團遊記在做（做好了就可以再做下一支）
+  const openComposer = () => {
+    setComposing(true);
+    api.listTravelVideos()
+      .then((r) => setPendingVideo(r.videos.some((v) => v.kind === "tour" && isTravelVideoPending(v.status))))
+      .catch(() => setPendingVideo(false)); // 查不到就讓伺服器把關（同時只能一支，會回 409）
+  };
+
   const remove = async (p: TourAlbumPhoto) => {
     if (!confirm(p.mine ? "刪掉這張照片？" : `刪掉 ${p.uploader} 放的這張照片？（管理員）`)) return;
     try {
@@ -165,7 +174,7 @@ export function TourAlbum({
       )}
 
       {started && album.photos.length >= 3 && (
-        <button onClick={() => setComposing(true)} className="btn-primary" style={{ width: "100%", marginTop: 10 }}>
+        <button onClick={openComposer} className="btn-primary" style={{ width: "100%", marginTop: 10 }}>
           🎬 做成研學團遊記影片
         </button>
       )}
