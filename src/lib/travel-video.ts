@@ -619,3 +619,14 @@ export function videoShareMeta(
   const description = said ? `「${said.length > 60 ? `${said.slice(0, 60)}…` : said}」用暖暖做的${what}` : `用暖暖做的${what}，點開來看看`;
   return { title, description };
 }
+
+/** 存到手機時的檔名（不含副檔名）：MV 用歌名、年度／研學團用標題、其他用地點，再加上日期 */
+export function videoSaveName(v: Pick<TravelVideo, "kind" | "place" | "created_at"> & { mv?: TravelVideo["mv"]; yearly?: TravelVideo["yearly"] }): string {
+  const d = new Date(new Date(v.created_at).getTime() + 8 * 3600_000);
+  const day = `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, "0")}${String(d.getUTCDate()).padStart(2, "0")}`;
+  const what =
+    v.kind === "mv" ? v.mv?.title || "MV"
+    : v.kind === "yearly" || v.kind === "tour" ? v.yearly?.title || (v.kind === "tour" ? "研學團遊記" : "年度回憶")
+    : v.place || (v.kind === "montage" ? "遊記" : "出遊影片");
+  return `${what}-${day}`;
+}

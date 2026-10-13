@@ -25,6 +25,7 @@ import { publicAppOrigin } from "@/lib/study-tours";
 import { NarrationVoicePicker, myVoiceReady } from "@/components/narration-voice-picker";
 import { MyVoiceSheet } from "@/components/my-voice-sheet";
 import { featureEnabled, requiredTierLabel } from "@/lib/feature-gates";
+import { videoSaveName } from "@/lib/travel-video";
 import {
   DEFAULT_NARRATION_ACCENT,
   MY_VOICE,
@@ -47,6 +48,7 @@ import {
   type TravelVideoStatus,
   type TravelVideoStyleId,
 } from "@/lib/travel-video";
+import { SaveToPhoneButton } from "@/components/save-to-phone-button";
 
 const POLL_MS = 10_000;
 
@@ -437,7 +439,7 @@ export function TravelVideoScreen({ onBack, initialMode }: TravelVideoScreenProp
       toast.success("已複製影片連結，可以貼到 LINE 給家人");
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") return; // 自己取消分享
-      toast.error("分享沒成功，可以改用「存到手機」再傳給家人");
+      toast.error("分享沒成功，可以改用「存到手機相簿」再傳給家人");
     }
   };
 
@@ -981,13 +983,7 @@ function VideoCard({
           <button onClick={onShare} className="btn-primary" style={{ width: "100%", fontSize: "var(--fs-base)", minHeight: 56 }}>
             📤 分享給家人
           </button>
-          <a
-            href={v.download_url ?? v.video_url}
-            className="btn-ghost"
-            style={{ width: "100%", boxSizing: "border-box", textDecoration: "none" }}
-          >
-            ⬇️ 存到手機
-          </a>
+          <SaveToPhoneButton url={v.video_url} mime="video/mp4" name={`暖暖-${videoSaveName(v)}`} where="my_video" />
           {montage && onMakeMv && (
             <button onClick={onMakeMv} className="btn-ghost" style={{ width: "100%", fontSize: "var(--fs-base)" }}>
               🎵 把這趟寫成一首歌（MV）
