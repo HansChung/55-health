@@ -525,6 +525,9 @@ export const api = {
   createMetric: (input: Partial<HealthMetric>) =>
     apiFetch<{ metric: HealthMetric }>("/api/health-metrics", { method: "POST", json: input }),
 
+  familyMetrics: (elderId: string, type: "weight" | "blood_pressure" | "blood_glucose", days: number) =>
+    apiFetch<{ metrics: HealthMetric[] }>(`/api/family/health-metrics?${new URLSearchParams({ elder: elderId, type, days: String(days) })}`),
+
   deleteMetric: (id: string) =>
     apiFetch<{ ok: true }>(`/api/health-metrics/${id}`, { method: "DELETE" }),
 

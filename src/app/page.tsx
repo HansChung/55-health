@@ -136,7 +136,7 @@ export default function Page() {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     const open = url.searchParams.get("open");
-    if (open && ["voice", "camera", "photo", "travel-video", "study-tours", "photo-ask", "caregiver", "ask", "stories", "scam-check", "clinic"].includes(open)) {
+    if (open && ["voice", "camera", "photo", "travel-video", "study-tours", "photo-ask", "caregiver", "ask", "stories", "scam-check", "clinic", "health-metrics"].includes(open)) {
       pendingOpenRef.current = open;
     }
     // 研學團站點 QR：/?stamp=代碼 → 先記下來（還沒登入的話登入後再蓋），網址上的代碼馬上拿掉
@@ -195,6 +195,8 @@ export default function Page() {
     }
     // 家人收到「長輩已抵達」通知點進來 → 家人狀況
     else if (open === "caregiver") setSubpage("caregiver");
+    // 健康紀錄（血壓、血糖趨勢）
+    else if (open === "health-metrics") setSubpage("health-metrics");
     // 打字問暖暖（書本練習的「打字問暖暖」：範例放在 sessionStorage，登入畫面也帶得過去）
     // 我的故事集（家人留言、按讚的推播點進來）
     else if (open === "stories") {

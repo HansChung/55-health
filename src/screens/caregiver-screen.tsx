@@ -8,6 +8,7 @@ import { api, type ElderOverview } from "@/lib/api-client";
 import { FamilyVideos } from "@/components/family-videos";
 import { FamilyStories } from "@/components/family-stories";
 import { FamilyScamChecks } from "@/components/family-scam-checks";
+import { FamilyHealthTrends } from "@/components/family-health-trends";
 
 interface CaregiverScreenProps {
   onBack: () => void;
@@ -88,6 +89,7 @@ function ElderCard({
   const st = STATUS[elder.overall] ?? STATUS.normal;
   const perms = elder.permissions ?? {};
   const canHealth = !!perms.alerts;
+  const [trends, setTrends] = useState(false);
 
   return (
     <div className="card" style={{ padding: 0, overflow: "hidden" }}>
@@ -195,6 +197,21 @@ function ElderCard({
         {canHealth && elder.shi != null && (
           <StatusRow icon="🧭" label="幸福指數" value={`${elder.shi} 分`} />
         )}
+        {canHealth && (
+          <button
+            type="button"
+            onClick={() => setTrends(true)}
+            style={{
+              width: "100%", marginTop: 8, padding: "12px 14px",
+              borderRadius: 12, border: "1px solid var(--line-strong)",
+              background: "var(--surface)", fontSize: "var(--fs-sm)", fontWeight: 800, color: "var(--primary-deep)",
+              cursor: "pointer", fontFamily: "inherit",
+            }}
+          >
+            📈 看血壓、血糖趨勢
+          </button>
+        )}
+        {trends && <FamilyHealthTrends elderId={elder.elder_id} elderName={elder.name} onClose={() => setTrends(false)} />}
         {!canHealth && (
           <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-3)", padding: "6px 0" }}>
             （長輩尚未開放健康與守護資訊的查看權限）

@@ -5,6 +5,8 @@ import { Icon } from "@/components/icons";
 import { SubPage } from "@/components/sub-page";
 import { api, type HealthMetric } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
+import { HealthTrends } from "@/components/health-trends";
+import { splitPeriods, type TrendRange } from "@/lib/health-trends";
 
 interface HealthMetricsScreenProps {
   onBack: () => void;
@@ -23,12 +25,16 @@ export function HealthMetricsScreen({ onBack }: HealthMetricsScreenProps) {
   const [metrics, setMetrics] = useState<HealthMetric[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const [range, setRange] = useState<TrendRange>(30);
+  // 趨勢要和前一段比 → 讀 2 倍天數；下面的列表只列這一段
+  const [allMetrics, setAllMetrics] = useState<HealthMetric[]>([]);
 
   const reload = async () => {
     setLoading(true);
     try {
-      const { metrics } = await api.listMetrics(tab, 30);
-      setMetrics(metrics);
+      const { metrics } = await api.listMetrics(tab, range * 2);
+      setAllMetrics(metrics);
+      setMetrics(splitPeriods(metrics, range).current.reverse());
     } catch (e) {
       console.error(e);
     }
@@ -37,7 +43,7 @@ export function HealthMetricsScreen({ onBack }: HealthMetricsScreenProps) {
 
   useEffect(() => {
     reload();
-  }, [tab]);
+  }, [tab, range]);
 
   return (
     <SubPage
@@ -81,21 +87,14 @@ export function HealthMetricsScreen({ onBack }: HealthMetricsScreenProps) {
       </div>
 
       {/* 最新數值 */}
-      <LatestCard tab={tab} metrics={metrics} />
+      <LatestCard tab={tab} metrics={allMetrics} />
 
-      {/* 趨勢圖 */}
-      {metrics.length >= 2 && (
-        <div className="card" style={{ padding: 18, marginBottom: 20 }}>
-          <div style={{ fontSize: "var(--fs-base)", fontWeight: 700, marginBottom: 14 }}>
-            過去 30 天趨勢
-          </div>
-          <TrendChart tab={tab} metrics={metrics} />
-        </div>
-      )}
+      {/* 趨勢 */}
+      {!loading && <HealthTrends kind={tab} metrics={allMetrics} range={range} onRange={setRange} />}
 
       {/* 列表 */}
       <div style={{ fontSize: "var(--fs-sm)", fontWeight: 700, color: "var(--ink-2)", marginBottom: 12 }}>
-        所有記錄
+        最近 {range} 天的記錄
       </div>
       {loading ? (
         <div style={{ padding: 30, textAlign: "center", color: "var(--ink-2)" }}>載入中…</div>
@@ -121,7 +120,7 @@ export function HealthMetricsScreen({ onBack }: HealthMetricsScreenProps) {
       {showAdd && (
         <AddMetricSheet
           tab={tab}
-          previousMetric={metrics[0]}
+          previousMetric={allMetrics[0]}
           onClose={() => setShowAdd(false)}
           onSaved={() => { setShowAdd(false); reload(); }}
         />
@@ -199,41 +198,6 @@ function LatestCard({ tab, metrics }: { tab: TabType; metrics: HealthMetric[] })
           month: "long", day: "numeric", hour: "2-digit", minute: "2-digit",
         })}
       </div>
-    </div>
-  );
-}
-
-function TrendChart({ tab, metrics }: { tab: TabType; metrics: HealthMetric[] }) {
-  const info = TAB_INFO[tab];
-  // 依時間升序
-  const sorted = [...metrics].reverse();
-  const values = sorted.map((m) => {
-    if (tab === "weight") return Number(m.weight_kg) || 0;
-    if (tab === "blood_pressure") return m.systolic ?? 0;
-    return m.glucose_mg_dl ?? 0;
-  });
-  const max = Math.max(...values);
-  const min = Math.min(...values);
-  const range = max - min || 1;
-
-  return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 120 }}>
-      {sorted.map((m, i) => {
-        const v = values[i];
-        const heightPct = ((v - min) / range) * 80 + 10; // 10-90%
-        return (
-          <div
-            key={m.id}
-            title={`${new Date(m.measured_at).toLocaleDateString("zh-TW")}: ${v}`}
-            style={{
-              flex: 1, height: `${heightPct}%`,
-              background: info.color,
-              borderRadius: "4px 4px 0 0",
-              minHeight: 4,
-            }}
-          />
-        );
-      })}
     </div>
   );
 }
