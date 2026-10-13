@@ -632,6 +632,13 @@ export const api = {
   updateClinicVisit: (id: string, patch: { doctorNotes?: string; visitDate?: string; department?: string }) =>
     apiFetch<{ visit: import("./clinic").ClinicVisit }>(`/api/clinic/${id}`, { method: "PATCH", json: patch }),
   deleteClinicVisit: (id: string) => apiFetch<{ ok: true }>(`/api/clinic/${id}`, { method: "DELETE" }),
+  // 回診提醒
+  listAppointments: () => apiFetch<{ appointments: import("./clinic-appointments").ClinicAppointment[] }>("/api/clinic/appointments"),
+  createAppointment: (input: import("./clinic-appointments").AppointmentInput) =>
+    apiFetch<{ appointment: import("./clinic-appointments").ClinicAppointment }>("/api/clinic/appointments", { method: "POST", json: input }),
+  updateAppointment: (id: string, input: import("./clinic-appointments").AppointmentInput) =>
+    apiFetch<{ appointment: import("./clinic-appointments").ClinicAppointment }>(`/api/clinic/appointments/${id}`, { method: "PUT", json: input }),
+  deleteAppointment: (id: string) => apiFetch<{ ok: true }>(`/api/clinic/appointments/${id}`, { method: "DELETE" }),
 
   // 書本章節的 Podcast：拿簽名上傳網址，瀏覽器直接傳到 Supabase
   adminChapterAudioUpload: (input: { chapterId: string; fileName: string; size: number; type: string }) =>
@@ -883,6 +890,8 @@ export interface ElderOverview {
   shi: number | null;
   /** 每日平安打卡（長輩沒開就是 null） */
   checkin: { deadline: number; checked_at: string | null; state: "done" | "waiting" | "late" } | null;
+  /** 14 天內的下一次回診（長輩選了讓家人知道的才有） */
+  next_appointment: import("./clinic-appointments").ClinicAppointment | null;
 }
 
 /** 書本練習內容（管理員） */

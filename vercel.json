@@ -59,6 +59,14 @@
     {
       "path": "/api/cron/daily-checkin?step=alert&slot=18",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/clinic-reminders?kind=day_before",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/clinic-reminders?kind=same_day",
+      "schedule": "0 23 * * *"
     }
   ]
 }
