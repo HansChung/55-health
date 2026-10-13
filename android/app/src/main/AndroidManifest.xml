@@ -38,4 +38,7 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 麥克風：用說的打字、跟暖暖聊聊、語音留言、錄「我的聲音」（WebView 的 getUserMedia 由 Capacitor 代為詢問） -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 </manifest>

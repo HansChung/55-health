@@ -162,11 +162,17 @@ stack works well for auth + meal/diary CRUD:
   forwarded; `robots: noindex`). Anyone with the link can watch (same exposure as the old public mp4 link);
   only the owner / family who can see videos (logged in) get reactions & comments, everyone else gets an
   「打開暖暖」 button (`/?open=caregiver`). Deleted or unfinished videos show a "deleted" message.
-- **說話變文字** (`DictationButton` / `useDictation`): 「🗣️ 用說的」 on video comments, the single-video narration
-  and each montage line, using the browser's own `SpeechRecognition`/`webkitSpeechRecognition` (`zh-TW`,
-  one sentence per tap, free; Chrome sends audio to Google, Safari to Apple). It only renders when the API
-  exists — not in the Capacitor Android WebView or Firefox, where people just type. Newer Chrome exposes the
-  unprefixed `SpeechRecognition`, so mocks in tests must replace both names.
+- **說話變文字** (`DictationButton` / `useDictation`): 「🗣️ 用說的」 on 問暖暖, comments, narration, montage lines,
+  stories, scam check, clinic… Two modes: **native** = the browser's `SpeechRecognition`/`webkitSpeechRecognition`
+  (`zh-TW`, one sentence per tap, free; Chrome sends audio to Google, Safari to Apple); **record** = where that API
+  is missing (the Capacitor Android WebView, Firefox) the hook records one sentence with MediaRecorder (an
+  AnalyserNode stops it 1.4 s after the voice ends, 7 s with no voice, 30 s max) → `audioPayload` →
+  `POST /api/ai/transcribe` → ffmpeg mp3 → lk888 Gemini (`TRANSCRIBE_PROMPT`, ~0.0007 算力, ~1.3 s; measured 2026-10-13).
+  Feature `dictation` + daily limit `dictation_daily` in 方案與次數; silence / "no voice" answers aren't counted.
+  The Android app needs `RECORD_AUDIO` + `MODIFY_AUDIO_SETTINGS` in `AndroidManifest.xml` (Capacitor's
+  `BridgeWebChromeClient` asks for the runtime permission when the page calls getUserMedia) — that also makes
+  voice chat, voice comments and 「我的聲音」 work in the app. Newer Chrome exposes the unprefixed
+  `SpeechRecognition`, so mocks in tests must replace both names.
 - **遊記 MV** (`kind='mv'`, Pro only, 6/month via `mv_monthly` in 方案與次數; needs `supabase/add-travel-video-mv.sql`): from a
   finished 遊記, `POST /api/ai/travel-video/[id]/mv/lyrics` has Gemini write title + lyrics (國語 or 台語 — the 台語
   prompt needs the 華語→台語 word list or the model just echoes the Mandarin trip lines), the elder edits, then
