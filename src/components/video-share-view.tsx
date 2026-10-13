@@ -75,11 +75,6 @@ function SharedVideoCard({ shared }: { shared: SharedVideo }) {
             <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.8, marginTop: 6 }}>{v.mv.lyrics}</div>
           </details>
         )}
-        {v.download_url && (
-          <a href={v.download_url} className="btn-ghost" style={{ textAlign: "center", textDecoration: "none" }}>
-            ⬇️ 存到手機
-          </a>
-        )}
       </div>
 
       {shared.viewer ? (
