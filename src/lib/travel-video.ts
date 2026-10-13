@@ -167,8 +167,6 @@ export const NARRATION_VOICE_CHOICES = [...NARRATION_VOICE_IDS, MY_VOICE] as [
 /** 錄音複製聲音：平台要求至少 10 秒，太長也沒幫助（建議 10～60 秒） */
 export const VOICE_SAMPLE_MIN_SECONDS = 12;
 export const VOICE_SAMPLE_MAX_SECONDS = 60;
-/** 每 30 天最多重錄幾次（每個新聲音第一次使用都要付一次啟用費） */
-export const VOICE_CLONES_PER_30_DAYS = 2;
 /** 錄音時請長輩念這段（開頭是同意聲明，後面讓錄音夠長、有各種聲調） */
 export const VOICE_SAMPLE_SCRIPT =
   "我同意暖暖用我自己的聲音，念我自己的出遊影片。今天天氣很好，我們一家人去山上走走，看到好多花，風景好漂亮。中午吃了一碗熱熱的麵，下午在湖邊喝茶聊天，下次還要再來。";
@@ -272,19 +270,7 @@ export function checkVideoImageSize(
   return { ok: true };
 }
 
-/**
- * 每月影片支數預設值（subscription_plans.ai_video_quota 沒設定時用）
- * 邁笙 minimax-h3 768P 0.095 算力/秒 → 一支 10 秒約 0.95 算力（晚上 10 點後有折扣）
- */
-export const DEFAULT_VIDEO_QUOTA: Record<string, number> = {
-  free: 0,
-  basic: 2,
-  pro: 6,
-};
-
-export function defaultVideoQuota(tier: string): number {
-  return DEFAULT_VIDEO_QUOTA[tier] ?? 0;
-}
+// 每月影片、遊記、MV 支數：後台「方案與次數」（video_monthly／montage_monthly／mv_monthly，預設值見 plan-settings.ts）
 
 // ── 多張照片遊記影片（montage）：照片慢慢移動＋每張一句配音與字幕，伺服器 ffmpeg 合成 ──
 
@@ -298,16 +284,6 @@ export const MONTAGE_CLIENT_TARGET_CHARS = 3_800_000;
 /** 每張照片的一句話：約 2.2 字／秒 → 最多約 9 秒 */
 export const MONTAGE_LINE_MAX = 20;
 
-/** 每月遊記支數（只花配音費，一支約 0.1 算力） */
-export const DEFAULT_MONTAGE_QUOTA: Record<string, number> = { free: 0, basic: 10, pro: 30 };
-/** 遊記 MV（Suno 做歌，每首約 0.54 算力）：只給專業版 */
-export const DEFAULT_MV_QUOTA: Record<string, number> = { free: 0, basic: 0, pro: 6 };
-export function mvQuota(tier: string): number {
-  return DEFAULT_MV_QUOTA[tier] ?? 0;
-}
-export function montageQuota(tier: string): number {
-  return DEFAULT_MONTAGE_QUOTA[tier] ?? 0;
-}
 
 export function sanitizeMontageLine(text: string | null | undefined): string {
   return [...sanitizeNarration(text)].slice(0, MONTAGE_LINE_MAX).join("");

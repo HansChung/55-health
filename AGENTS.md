@@ -141,7 +141,7 @@ stack works well for auth + meal/diary CRUD:
   ffmpeg killed at the step deadline counts as "out of time", not a failure; (3) Vercel answers a self-call
   chain with **508 Loop Detected** after ~4 hops, so `montage-step` runs `maxDuration = 300` (Hobby + Fluid
   max) with a 240 s budget and a matching lease (`leaseMsFor`) — an MV finishes in 2–3 hops. Needs
-  `supabase/add-travel-video-montage.sql`. Separate monthly quota (`DEFAULT_MONTAGE_QUOTA`), costs only TTS
+  `supabase/add-travel-video-montage.sql`. Separate monthly quota (`montage_monthly` in 方案與次數), costs only TTS
   (~0.01 算力 per line). The Linux ffmpeg has every filter used (verified in Docker amazonlinux).
 - **口音與「我的聲音」** (needs `supabase/add-narration-voices.sql`): the four AI voices take an accent
   (`NARRATION_ACCENTS`: 台灣口音 default / 台灣國語 / 客家腔 / 廣東腔 / 四川腔 / 山東腔) — still Mandarin, just
@@ -167,7 +167,7 @@ stack works well for auth + meal/diary CRUD:
   one sentence per tap, free; Chrome sends audio to Google, Safari to Apple). It only renders when the API
   exists — not in the Capacitor Android WebView or Firefox, where people just type. Newer Chrome exposes the
   unprefixed `SpeechRecognition`, so mocks in tests must replace both names.
-- **遊記 MV** (`kind='mv'`, Pro only, 6/month via `mvQuota`; needs `supabase/add-travel-video-mv.sql`): from a
+- **遊記 MV** (`kind='mv'`, Pro only, 6/month via `mv_monthly` in 方案與次數; needs `supabase/add-travel-video-mv.sql`): from a
   finished 遊記, `POST /api/ai/travel-video/[id]/mv/lyrics` has Gemini write title + lyrics (國語 or 台語 — the 台語
   prompt needs the 華語→台語 word list or the model just echoes the Mandarin trip lines), the elder edits, then
   `POST …/mv` copies the montage photos, inserts the row (one pending MV per user via the kind index) and starts
@@ -273,7 +273,7 @@ stack works well for auth + meal/diary CRUD:
 ### 拍照問暖暖（photo ask）
 - Home 「拍照問暖暖」, a button on 研學團 pages (prefills the tour title as the place) and the book's photo chapters
   → subpage `photo-ask`. Deep link `/?open=photo-ask`; book chapters put the question in sessionStorage
-  (`savePhotoAskSeed`) and the screen shows a 書本練習 banner. **Open to every tier**: free = `PHOTO_ASK_FREE_DAILY`
+  (`savePhotoAskSeed`) and the screen shows a 書本練習 banner. **Open to every tier**: free = `photo_ask_free_daily`
   (5) per Taipei day (counted from successful `/api/ai/photo-ask` rows), basic+ = the monthly photo quota.
 - Questions up to 200 characters (book prompts are ~80). For text photos (menus, ingredient labels, handouts,
   data screens) the model fills `text_lines` (「原文 → 中文」, allergens, 3–5 key points) and the screen shows
@@ -288,7 +288,7 @@ stack works well for auth + meal/diary CRUD:
 
 ### 這則訊息可疑嗎？（scam check, `subpage "scam-check"`）
 - Home 「🛡️ 這則訊息可疑嗎？」, the 安心保鑣 page (`/smart/fraud`) and book 0502's app link → `ScamCheckScreen`;
-  deep link `/?open=scam-check`. **Every tier**, `SCAM_CHECK_DAILY` (10) per Taipei day via `reserveDailySlot` on
+  deep link `/?open=scam-check`. **Every tier**, `scam_check_daily` (10) per Taipei day via `reserveDailySlot` on
   endpoint `/api/scam-check`; usage is logged as `gemini_text` even with a screenshot, because every `gemini_vision`
   row counts toward the paid monthly photo quota.
 - Input: a screenshot (direct upload, `imageFromRequest`; not stored) and/or pasted text (≤2000) + an optional
@@ -318,7 +318,7 @@ stack works well for auth + meal/diary CRUD:
 - **看完診**: 醫生交代的話 (PATCH) and 「拍檢驗報告」 → `POST /api/clinic/<id|new>/report` → vision model
   (`readLabReport`): items copied as printed (name/value/unit/range/flag) + one plain line each, summary, questions for
   the doctor. The photo is not stored; parse errors never include model output. Quota like 拍照問暖暖: free
-  `CLINIC_REPORT_FREE_DAILY` (3)/day, paid = monthly photo quota. `compareLab` matches items across reports by
+  `clinic_report_free_daily` (3)/day, paid = monthly photo quota. `compareLab` matches items across reports by
   `labKey` (NFKC, no spaces/brackets) against `previousReport`, ordered by the date printed on the report (`reportDay`,
   ROC years handled), not by record creation time.
 
@@ -345,7 +345,7 @@ stack works well for auth + meal/diary CRUD:
 ### 打字問暖暖（text chat, `subpage "ask"`）
 - Home 「問暖暖」, the voice screen's 「改用打字問暖暖」 and book examples open `AskScreen`. Typed or dictated
   (`DictationButton`), follow-ups allowed, answers read aloud with speechSynthesis. **Everyone can use it**
-  (free tier too) with a daily limit per Taipei day (`ASK_DAILY_LIMITS`: free 20 / basic 50 / pro 100 messages;
+  (free tier too) with a daily limit per Taipei day (`ask_daily`: free 20 / basic 50 / pro 100 messages;
   counted from successful `ai_usage` rows with endpoint `/api/ai/chat`).
 - `POST /api/ai/chat` is stateless: the client sends the recent history (`trimAskHistory`, ≤40 messages) and the
   server adds 暖暖's instructions (`buildAskSystemPrompt`: Traditional Chinese, short, no Markdown, no diagnosis,
@@ -358,7 +358,7 @@ stack works well for auth + meal/diary CRUD:
 
 ### 我的故事集（life stories, `subpage "stories"`）
 - Home 「我的故事集」 → `StoriesScreen`; deep link `/?open=stories`. Free for every tier; uses the shared 問暖暖
-  daily limit (`ASK_DAILY_LIMITS`): every interview reply is a normal `POST /api/ai/chat` with `mode: "story"`
+  daily limit (`ask_daily`): every interview reply is a normal `POST /api/ai/chat` with `mode: "story"`
   (`STORY_INTERVIEW_RULES`: one question at a time, never invent), and 「整理成文章」 (`POST /api/stories/write`,
   needs ≥3 answers) reserves one more slot (`reserveDailySlot` on endpoint `/api/ai/chat`) and asks Gemini for
   JSON `{title, era, body}` (first person, only what the elder said, 300–800 字, `normalizeStoryDraft`).
@@ -398,7 +398,7 @@ stack works well for auth + meal/diary CRUD:
   browser's speechSynthesis (free); tapping the mic while it speaks interrupts it.
 - Tested 2026-10-11 against lk888: **webm sent as-is was misheard, mp3/ogg were heard correctly** (~1.5–1.9 s,
   ~0.001 算力 per turn) — keep the mp3 conversion. The route needs ffmpeg in `outputFileTracingIncludes`.
-- Shares the daily ask quota with 打字問暖暖 (`ENDPOINT = "/api/ai/chat"`, `ASK_DAILY_LIMITS`), reserved with
+- Shares the daily ask quota with 打字問暖暖 (`ENDPOINT = "/api/ai/chat"`, `ask_daily`), reserved with
   `reserveDailySlot` and released on failure. The client sends the last `VOICE_HISTORY_MAX` turns as text; the
   recording is never stored (direct-upload staging is taken + deleted by `takeUserAudio`). Turns are still logged
   to `conversations` via `api.logConversation`.
@@ -409,7 +409,25 @@ stack works well for auth + meal/diary CRUD:
   happens once) → `buildVoiceConcatArgs` (24 k mono, 0.5 s pauses, AAC 64k) → `story-audio/{user}/{story}/voice-{hash}.m4a`,
   stored in `life_stories.voice_reading` `{path, seconds, text_hash, clone_id}`. `voice_reading_lease` (conditional
   update) stops double clicks paying twice; same text + same voice returns the existing file free. Monthly cap
-  `STORY_VOICE_MONTHLY` (4) via `reserveDailySlot` on endpoint `/api/stories/voice` since the Taipei month start;
+  `story_voice_monthly` (4) via `reserveDailySlot` on endpoint `/api/stories/voice` since the Taipei month start;
   failures release the slot. Cost estimate from the price list (not measured yet): speech-2.8 HD ≈ 720 算力 per 1M
   chars → ~2–4 算力 for a 3000-char story. Editing title/body marks it `outdated` (owner sees 「照新的內容重念」;
   family only sees current readings, labelled 「AI 合成」). Deleting the story removes the file.
+
+### 方案與次數（後台 `/admin/plans`, needs `supabase/add-plan-settings.sql`）
+- **Every feature switch, minimum tier and quota lives in one place**: `src/lib/plan-settings.ts` (`FEATURE_DEFS`,
+  `LIMIT_DEFS` with defaults = the old hard-coded numbers). Admins edit them at `/admin/plans`; they're stored in
+  `app_settings` (`key='plan'`, normalised by `normalizePlanSettings`, so partial/old JSON is fine). Photo / video
+  defaults come from `subscription_plans.ai_photo_quota` / `ai_video_quota` (`baseSettings`). Without the SQL
+  everything falls back to defaults (admin page says so).
+- **Server**: never hard-code a limit or tier again. `loadAsker(...).access` / `checkUserQuota(...).access` give a
+  `PlanAccess` (`plan-access-server.ts`, settings cached 30 s per instance): `blockedResponse(access, feature)` (503 =
+  switched off, 403 + `upgradeUrl` = tier too low; admins are never blocked) and `access.limit("ask_daily")` etc.
+  Every AI / video creation route checks its feature; background jobs (montage/MV steps) don't, so switching a
+  feature off lets started videos finish.
+- **Per-user grants** (`user_feature_grants`, unique per user+feature, optional `expires_at`): the user is treated as
+  that tier **for that feature and its limits only** (`effectiveTier`). Admin form looks the user up by email.
+- **Client**: `page.tsx` loads `GET /api/plan-settings` after login → `applyPlanSettings` (module-level state in
+  `feature-gates.ts`; never call it on the server — it would leak grants between requests). `hasFeature` /
+  `featureEnabled` / `requiredTierLabel` read it; switched-off home entries are hidden; the travel-video screen hides
+  switched-off tabs; `/pricing` lists `pricingFeatures(settings, tier)`.

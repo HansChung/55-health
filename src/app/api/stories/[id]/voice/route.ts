@@ -1,7 +1,7 @@
 // ────────────────────────────────────────────────
 // 故事用自己的聲音念（專業版）：用「我的聲音」把整篇故事念成一個錄音，家人也聽得到
 // GET    → { quota: { used, limit } }（這個月念了幾篇）
-// POST   → { story, quota }：一段段合成再接起來，3000 字約 1～2 分鐘；每篇約 2～4 算力，每月 STORY_VOICE_MONTHLY 篇
+// POST   → { story, quota }：一段段合成再接起來，3000 字約 1～2 分鐘；每篇約 2～4 算力，每月幾篇照後台「方案與次數」
 // DELETE → { story }：不要這個錄音了（不退次數）
 // 錄音存在 story-audio：{user}/{story}/voice-{hash}.m4a；文字改過會標示「可以重念」
 // ────────────────────────────────────────────────
@@ -24,13 +24,13 @@ import {
   markVoiceActivated,
   releaseFirstUse,
   resolveSpeaker,
-  voiceCloneAllowed,
 } from "@/lib/ai/voice-clone-server";
 import { MY_VOICE } from "@/lib/travel-video";
 import { signStoryMedia, toClientStory, type StoryRow } from "@/lib/life-stories-server";
 import { STORY_AUDIO_BUCKET } from "@/lib/story-audio";
 import { removeStoryAudio } from "@/lib/story-audio-server";
-import { STORY_VOICE_MONTHLY, storyVoiceText, taipeiMonthStartIso } from "@/lib/story-voice";
+import { storyVoiceText, taipeiMonthStartIso } from "@/lib/story-voice";
+import { blockedResponse, type PlanAccess } from "@/lib/plan-access-server";
 import {
   storyVoiceHash,
   storyVoicePath,
@@ -62,8 +62,8 @@ async function ownStory(id: string) {
   return { user, admin, row: data as StoryRow };
 }
 
-async function monthlyQuota(userId: string, tier: string) {
-  const limit = tier === "admin" ? 99999 : STORY_VOICE_MONTHLY;
+async function monthlyQuota(userId: string, access: PlanAccess) {
+  const limit = access.limit("story_voice_monthly");
   const used = await countEndpointSuccessSince(userId, ENDPOINT, taipeiMonthStartIso());
   return { used: Math.min(used, limit), limit };
 }
@@ -71,9 +71,9 @@ async function monthlyQuota(userId: string, tier: string) {
 export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const found = await ownStory((await ctx.params).id);
   if ("error" in found) return found.error;
-  const { tier } = await checkUserQuota(found.user.id, "video");
+  const { access } = await checkUserQuota(found.user.id, "video");
   try {
-    return NextResponse.json({ quota: await monthlyQuota(found.user.id, tier) });
+    return NextResponse.json({ quota: await monthlyQuota(found.user.id, access) });
   } catch (e) {
     console.error("[api] story voice quota:", e);
     return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
@@ -87,13 +87,13 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
   if (!isVideoProviderConfigured()) {
     return NextResponse.json({ error: "這個功能還在準備中，請稍後再試" }, { status: 503 });
   }
-  const { tier } = await checkUserQuota(user.id, "video");
-  if (!voiceCloneAllowed(tier)) {
-    return NextResponse.json({ error: "用自己的聲音念是專業版功能，升級後就可以使用", upgradeUrl: "/pricing" }, { status: 403 });
-  }
+  const { tier, access } = await checkUserQuota(user.id, "video");
+  const blocked = blockedResponse(access, "voice_clone");
+  if (blocked) return blocked;
+  const monthlyLimit = access.limit("story_voice_monthly");
   if (!row.body.trim()) return NextResponse.json({ error: "這篇還沒有文字，先寫下內容才能念" }, { status: 400 });
 
-  const resolved = await resolveSpeaker(admin, { userId: user.id, tier, voice: MY_VOICE });
+  const resolved = await resolveSpeaker(admin, { userId: user.id, access, voice: MY_VOICE });
   if (!resolved.ok) return NextResponse.json({ error: resolved.error }, { status: resolved.status });
   const cloneId = resolved.cloneId!;
   const text = storyVoiceText(row);
@@ -102,7 +102,7 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
   if (row.voice_reading?.text_hash === hash && row.voice_reading.clone_id === cloneId) {
     return NextResponse.json({
       story: toClientStory(row, await signStoryMedia(admin, [row])),
-      quota: await monthlyQuota(user.id, tier),
+      quota: await monthlyQuota(user.id, access),
     });
   }
 
@@ -132,7 +132,7 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
         service: "minimax_tts",
         endpoint: ENDPOINT,
         sinceIso: taipeiMonthStartIso(),
-        limit: STORY_VOICE_MONTHLY,
+        limit: monthlyLimit,
       });
     } catch (e) {
       console.error("[api] story voice quota:", e);
@@ -142,7 +142,7 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
     if (!slot.id) {
       await releaseLease();
       return NextResponse.json(
-        { error: `這個月已經念了 ${STORY_VOICE_MONTHLY} 篇，下個月再來`, quota: { used: STORY_VOICE_MONTHLY, limit: STORY_VOICE_MONTHLY } },
+        { error: `這個月已經念了 ${monthlyLimit} 篇，下個月再來`, quota: { used: monthlyLimit, limit: monthlyLimit } },
         { status: 429 }
       );
     }
@@ -263,7 +263,7 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
   const story = saved as StoryRow;
   return NextResponse.json({
     story: toClientStory(story, await signStoryMedia(admin, [story])),
-    quota: await monthlyQuota(user.id, tier),
+    quota: await monthlyQuota(user.id, access),
   });
 }
 

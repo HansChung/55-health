@@ -1,27 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { defaultPlanSettings, pricingFeatures, type PlanSettings, type SubscriptionTier } from "@/lib/plan-settings";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-const PLANS = [
-  {
-    id: "free", name: "免費版", price: 0, color: "#94a3b8",
-    features: ["基本記錄", "每月 10 次 AI 拍照", "每天問暖暖 20 句（打字或用說的）"],
-  },
-  {
-    id: "basic", name: "標準版", price: 199, color: "#3b82f6",
-    features: ["每月 100 次 AI 拍照", "每天問暖暖 50 句（打字或用說的）", "每月 2 支出遊回憶影片", "每月 10 支多張照片遊記影片", "完整營養分析", "雲端備份"],
-    popular: true,
-  },
-  {
-    id: "pro", name: "專業版", price: 399, color: "#f59e0b",
-    features: ["每月 500 次 AI 拍照", "每天問暖暖 100 句（打字或用說的）", "每月 6 支出遊回憶影片", "每月 30 支多張照片遊記影片", "影片口白用自己的聲音念", "每月 6 首遊記 MV（寫成一首歌）", "家人共享", "進階健康報告", "優先支援"],
-  },
+// 每個方案列的項目照後台「方案與次數」（載入前先用預設值）
+const PLANS: { id: SubscriptionTier; name: string; price: number; color: string; popular?: boolean }[] = [
+  { id: "free", name: "免費版", price: 0, color: "#94a3b8" },
+  { id: "basic", name: "標準版", price: 199, color: "#3b82f6", popular: true },
+  { id: "pro", name: "專業版", price: 399, color: "#f59e0b" },
 ];
 
 export default function PricingPage() {
   const [loading, setLoading] = useState<string | null>(null);
+  const [settings, setSettings] = useState<PlanSettings>(defaultPlanSettings);
+  useEffect(() => {
+    fetch("/api/plan-settings", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { settings?: PlanSettings } | null) => { if (d?.settings) setSettings(d.settings); })
+      .catch(() => undefined);
+  }, []);
   const supabase = createSupabaseBrowser();
   const toast = useToast();
 
@@ -89,7 +88,7 @@ export default function PricingPage() {
                 <span style={{ fontSize: 16, color: "#6B5848" }}>/月</span>
               </div>
               <ul style={{ marginTop: 24, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 12 }}>
-                {p.features.map((f) => (
+                {pricingFeatures(settings, p.id).map((f) => (
                   <li key={f} style={{ display: "flex", gap: 10, fontSize: 15, color: "#3D2E20" }}>
                     <span style={{ color: p.color }}>✓</span> {f}
                   </li>

@@ -9,7 +9,7 @@ import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server
 import { isGeminiConfigured } from "@/lib/ai/gemini";
 import { ASK_ENDPOINT, loadAsker } from "@/lib/ai/ask-quota-server";
 import { finishReservedUsage, releaseReservedUsage, reserveDailySlot, trackAiUsage } from "@/lib/ai/usage-tracker";
-import { askDailyLimit, conditionLabels, taipeiDayStartIso } from "@/lib/ask";
+import { conditionLabels, taipeiDayStartIso } from "@/lib/ask";
 import { writeClinicCard } from "@/lib/ai/clinic";
 import {
   CLINIC_DEPARTMENT_MAX,
@@ -20,6 +20,7 @@ import {
   type ClinicPrepInput,
 } from "@/lib/clinic";
 import { taipeiToday, toClientVisit, type ClinicVisitRow } from "@/lib/clinic-server";
+import { blockedResponse } from "@/lib/plan-access-server";
 
 export const maxDuration = 60;
 
@@ -48,8 +49,10 @@ export async function POST(req: NextRequest) {
   if (!isGeminiConfigured()) return NextResponse.json({ error: "暖暖暫時休息中，請稍後再試" }, { status: 503 });
 
   const admin = createSupabaseAdmin();
-  const { profile, tier } = await loadAsker(user.id, user.email);
-  const limit = askDailyLimit(tier);
+  const { profile, tier, access } = await loadAsker(user.id, user.email);
+  const blocked = blockedResponse(access, "clinic");
+  if (blocked) return blocked;
+  const limit = access.limit("ask_daily");
   let slot: { id: string | null; used: number } = { id: null, used: 0 };
   if (tier !== "admin") {
     try {

@@ -2,7 +2,7 @@
 // 看診小幫手：看懂檢驗報告
 // POST /api/clinic/<id>/report { photoPath | imageBase64+mimeType } → { visit }（id 用 "new" 就新增一次看診）
 // 照片直傳 Supabase 暫存區，看完不保存；只存暖暖抄下來的項目與白話說明
-// 免費會員每天 CLINIC_REPORT_FREE_DAILY 張；標準版以上和拍照記餐共用每月拍照次數
+// 免費會員每天幾張（後台「方案與次數」）；標準版以上和拍照記餐共用每月拍照次數
 // ────────────────────────────────────────────────
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -12,8 +12,8 @@ import { resolveGeminiConfig } from "@/lib/ai/gemini";
 import { readLabReport } from "@/lib/ai/clinic";
 import { checkUserQuota, finishReservedUsage, releaseReservedUsage, reserveDailySlot, trackAiUsage } from "@/lib/ai/usage-tracker";
 import { taipeiDayStartIso } from "@/lib/ask";
-import { CLINIC_REPORT_FREE_DAILY } from "@/lib/clinic";
 import { ownVisit, taipeiToday, toClientVisit, type ClinicVisitRow } from "@/lib/clinic-server";
+import { blockedResponse } from "@/lib/plan-access-server";
 
 export const maxDuration = 60;
 const ENDPOINT = "/api/clinic/report";
@@ -46,17 +46,20 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
 
   // 次數：和「拍照問暖暖」一樣——免費每天幾張；付費和拍照記餐共用每月拍照次數
   const quota = await checkUserQuota(user.id, "photo");
+  const blocked = blockedResponse(quota.access, "clinic");
+  if (blocked) return blocked;
+  const freeDaily = quota.access.limit("clinic_report_free_daily");
   let slot: { id: string | null; used: number } | null = null;
   if (quota.tier === "free") {
     try {
-      slot = await reserveDailySlot({ userId: user.id, service: "gemini_vision", endpoint: ENDPOINT, sinceIso: taipeiDayStartIso(), limit: CLINIC_REPORT_FREE_DAILY });
+      slot = await reserveDailySlot({ userId: user.id, service: "gemini_vision", endpoint: ENDPOINT, sinceIso: taipeiDayStartIso(), limit: freeDaily });
     } catch (e) {
       console.error("[api] clinic report quota:", e);
       return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
     }
     if (!slot.id) {
       return NextResponse.json(
-        { error: `免費會員每天可以看 ${CLINIC_REPORT_FREE_DAILY} 張報告，明天再來`, upgradeUrl: "/pricing" },
+        { error: `免費會員每天可以看 ${freeDaily} 張報告，明天再來`, upgradeUrl: "/pricing" },
         { status: 429 }
       );
     }

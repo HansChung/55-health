@@ -1,5 +1,5 @@
 // ────────────────────────────────────────────────
-// 打字問暖暖（文字對話）：所有人都能用，每天限題數（ASK_DAILY_LIMITS）
+// 打字問暖暖（文字對話）：所有人都能用，每天限題數（後台「方案與次數」的 ask_daily）
 // GET  → { quota }
 // POST { messages, mode?, chapterId?, chapterTitle?, guide? } → { reply, quota }
 // 對話不存伺服器：前端每次把這段對話帶過來（最多 ASK_HISTORY_MAX 則）
@@ -22,10 +22,10 @@ import {
   ASK_GUIDE_MAX,
   ASK_HISTORY_MAX,
   ASK_MESSAGE_MAX,
-  askDailyLimit,
   taipeiDayStartIso,
   trimAskHistory,
 } from "@/lib/ask";
+import { blockedResponse, type PlanAccess } from "@/lib/plan-access-server";
 
 export const maxDuration = 60;
 
@@ -43,18 +43,18 @@ const Schema = z.object({
   guide: z.object({ label: z.string().max(40), text: z.string().max(ASK_GUIDE_MAX * 2) }).nullish(),
 });
 
-async function quotaFor(userId: string, tier: string) {
+async function quotaFor(userId: string, access: PlanAccess) {
   const used = await countEndpointSuccessSince(userId, ENDPOINT, taipeiDayStartIso());
-  return { used, limit: askDailyLimit(tier) };
+  return { used, limit: access.limit("ask_daily") };
 }
 
 export async function GET() {
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "未登入" }, { status: 401 });
-  const { tier } = await loadAsker(user.id, user.email);
+  const { access } = await loadAsker(user.id, user.email);
   try {
-    return NextResponse.json({ quota: await quotaFor(user.id, tier) });
+    return NextResponse.json({ quota: await quotaFor(user.id, access) });
   } catch (e) {
     console.error("[api] ask quota:", e);
     return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
@@ -79,8 +79,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "暖暖暫時休息中，請稍後再試" }, { status: 503 });
   }
 
-  const { profile, tier } = await loadAsker(user.id, user.email);
-  const limit = askDailyLimit(tier);
+  const { profile, tier, access } = await loadAsker(user.id, user.email);
+  // 故事訪談也走這裡（mode=story）：照故事集的開關；其他照問暖暖的開關
+  const blocked = blockedResponse(access, body.mode === "story" ? "life_stories" : "ask");
+  if (blocked) return blocked;
+  const limit = access.limit("ask_daily");
   // 先佔一格（同時送出好幾則也不會超過每天的題數）；管理員不限，不用佔
   let slot: { id: string | null; used: number } = { id: null, used: 0 };
   if (tier !== "admin") {

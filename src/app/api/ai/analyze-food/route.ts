@@ -4,6 +4,7 @@ import { imageFromRequest, UserUploadError } from "@/lib/ai/user-uploads-server"
 import { analyzeFoodImage, resolveGeminiConfig } from "@/lib/ai/gemini";
 import { trackAiUsage, checkUserQuota } from "@/lib/ai/usage-tracker";
 import { z } from "zod";
+import { blockedResponse } from "@/lib/plan-access-server";
 
 // 看圖模型實測約 10～15 秒，預留空間
 export const maxDuration = 60;
@@ -25,6 +26,8 @@ export async function POST(req: NextRequest) {
 
   // 2. 配額檢查
   const quota = await checkUserQuota(user.id, "photo");
+  const blocked = blockedResponse(quota.access, "ai_photo");
+  if (blocked) return blocked;
   if (!quota.allowed) {
     return NextResponse.json(
       {

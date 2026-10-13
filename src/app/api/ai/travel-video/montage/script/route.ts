@@ -16,6 +16,7 @@ import {
   sanitizeMontageLine,
   sanitizePlace,
 } from "@/lib/travel-video";
+import { blockedResponse } from "@/lib/plan-access-server";
 
 const ENDPOINT = "/api/ai/travel-video/montage/script";
 
@@ -43,6 +44,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "AI 暫時忙線，請自己寫寫看" }, { status: 503 });
   }
   const quota = await checkUserQuota(user.id, "montage");
+  const blocked = blockedResponse(quota.access, "travel_montage");
+  if (blocked) return blocked;
   if (quota.limit === 0) return NextResponse.json({ error: "升級方案就可以做遊記影片喔" }, { status: 429 });
   // AI 寫稿不扣遊記次數，但每月有上限（避免一直按）
   const cap = quota.limit >= 9999 ? Number.POSITIVE_INFINITY : Math.max(5, quota.limit * 3);

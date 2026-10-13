@@ -3,7 +3,6 @@ import {
   MV_MAX_SECONDS,
   buildMvLyricsPrompt,
   mvProgressLabel,
-  mvQuota,
   mvSegments,
   mvStage,
   mvSunoPrompt,
@@ -45,11 +44,6 @@ describe("MV 分段", () => {
 });
 
 describe("MV 方案與文字", () => {
-  it("只給專業版，每月 6 首", () => {
-    expect(mvQuota("pro")).toBe(6);
-    expect(mvQuota("basic")).toBe(0);
-    expect(mvQuota("free")).toBe(0);
-  });
   it("歌名、歌詞整理：保留換行與分段標記，去掉多餘空行", () => {
     expect(sanitizeMvTitle("  日月潭\n之歌  ")).toBe("日月潭 之歌");
     expect(sanitizeMvLyrics("[Verse 1]\r\n湖水  藍藍\n\n\n\n[Chorus]\n真歡喜")).toBe("[Verse 1]\n湖水 藍藍\n\n[Chorus]\n真歡喜");

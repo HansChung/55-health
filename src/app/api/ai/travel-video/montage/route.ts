@@ -28,6 +28,7 @@ import {
   sanitizePlace,
   type MontageState,
 } from "@/lib/travel-video";
+import { blockedResponse } from "@/lib/plan-access-server";
 
 export const maxDuration = 60;
 
@@ -82,6 +83,8 @@ export async function POST(req: NextRequest) {
   }
 
   const quota = await checkUserQuota(user.id, "montage");
+  const blocked = blockedResponse(quota.access, "travel_montage");
+  if (blocked) return blocked;
   if (!quota.allowed) {
     return NextResponse.json(
       {
@@ -104,7 +107,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "每張照片都要寫一句話（可以按「AI 幫我寫」）" }, { status: 400 });
   }
   // 選「我的聲音」：現在就確認方案、有錄好、沒過期（背景配音時才發現就太晚了）
-  const speaker = await resolveSpeaker(admin, { userId: user.id, tier: quota.tier, voice: body.voice, accent: body.accent });
+  const speaker = await resolveSpeaker(admin, { userId: user.id, access: quota.access, voice: body.voice, accent: body.accent });
   if (!speaker.ok) return NextResponse.json({ error: speaker.error }, { status: speaker.status });
   const accent = body.voice === MY_VOICE ? null : body.accent ?? DEFAULT_NARRATION_ACCENT;
 

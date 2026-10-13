@@ -6,8 +6,7 @@
 /** 問題最多幾個字（書本範例最長約 80 字：菜單翻譯＋飲食需要、商品比較） */
 export const PHOTO_ASK_QUESTION_MAX = 200;
 export const PHOTO_ASK_PLACE_MAX = 40;
-/** 免費會員每天可以拍照問幾次（標準版以上照每月拍照次數） */
-export const PHOTO_ASK_FREE_DAILY = 5;
+// 免費會員每天可以拍照問幾次：後台「方案與次數」的 photo_ask_free_daily（預設 5；標準版以上照每月拍照次數）
 
 /** 一鍵提問（長輩不用打字） */
 export const PHOTO_ASK_PRESETS = ["這是什麼？", "有什麼故事？", "要注意什麼？"] as const;

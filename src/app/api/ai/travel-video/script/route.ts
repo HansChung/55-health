@@ -16,6 +16,7 @@ import {
   sanitizePlace,
   travelVideoExtrasLimit,
 } from "@/lib/travel-video";
+import { blockedResponse } from "@/lib/plan-access-server";
 
 const ENDPOINT = "/api/ai/travel-video/script";
 
@@ -53,6 +54,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "AI 暫時忙線，請自己寫一句試試" }, { status: 503 });
   }
   const quota = await checkUserQuota(user.id, "video");
+  const blocked = blockedResponse(quota.access, "travel_video");
+  if (blocked) return blocked;
   if (!quota.allowed) {
     return NextResponse.json({ error: "本月的影片次數用完了，下個月再來做吧" }, { status: 429 });
   }

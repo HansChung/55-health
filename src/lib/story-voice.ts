@@ -6,8 +6,7 @@
 
 import type { LifeStory } from "./life-stories";
 
-/** 每人每月可以念幾篇（重新念也算一篇） */
-export const STORY_VOICE_MONTHLY = 4;
+// 每人每月可以念幾篇（重新念也算一篇）：後台「方案與次數」的 story_voice_monthly（預設 4）
 /** 一段最多幾個字（平台一次合成的長度；太長容易逾時） */
 export const STORY_VOICE_CHUNK_MAX = 300;
 /** 段落之間停頓幾秒 */

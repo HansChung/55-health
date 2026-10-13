@@ -20,6 +20,7 @@ import {
   sanitizeMvTitle,
   type MvState,
 } from "@/lib/travel-video";
+import { blockedResponse } from "@/lib/plan-access-server";
 
 export const maxDuration = 60;
 
@@ -40,8 +41,10 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   if (!isVideoProviderConfigured()) return NextResponse.json({ error: "MV 還在準備中，請稍後再試" }, { status: 503 });
 
   const quota = await checkUserQuota(user.id, "mv");
+  const blocked = blockedResponse(quota.access, "travel_mv");
+  if (blocked) return blocked;
   if (quota.limit === 0) {
-    return NextResponse.json({ error: "遊記 MV 是專業版功能，升級後就可以使用", upgradeUrl: "/pricing" }, { status: 403 });
+    return NextResponse.json({ error: "你的方案這個月不能做 MV，升級後就可以使用", upgradeUrl: "/pricing" }, { status: 403 });
   }
   if (!quota.allowed) return NextResponse.json({ error: "本月的 MV 次數用完了，下個月再來做吧" }, { status: 429 });
 

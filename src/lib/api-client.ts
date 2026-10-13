@@ -299,6 +299,13 @@ export const api = {
 
   // 我的聲音（專業版）：錄一段自己的聲音，影片口白用自己的聲音念
   getMyVoice: () => apiFetch<{ status: MyVoiceStatus }>("/api/ai/voice-clone"),
+  // 後台「方案與次數」：功能開關、最低方案、自己的個別開通
+  planSettings: () =>
+    apiFetch<{
+      settings: import("./plan-settings").PlanSettings;
+      grants: import("./plan-settings").FeatureGrant[];
+      tier: import("./plan-settings").SubscriptionTier | "admin";
+    }>("/api/plan-settings"),
   // 轉檔＋送去平台複製約 10～30 秒
   createMyVoice: (input: ({ audioPath: string } | { audio: string }) & { consent: true }) =>
     apiFetch<{ status: MyVoiceStatus }>("/api/ai/voice-clone", { method: "POST", json: input, timeoutMs: 65000 }),
@@ -584,6 +591,21 @@ export const api = {
       method: "POST",
       json: input,
     }),
+
+  adminPlanSettings: () =>
+    apiFetch<{
+      settings: import("./plan-settings").PlanSettings;
+      defaults: import("./plan-settings").PlanSettings;
+      updatedAt: string | null;
+      ready: boolean;
+    }>("/api/admin/plan-settings"),
+  adminSavePlanSettings: (settings: import("./plan-settings").PlanSettings) =>
+    apiFetch<{ settings: import("./plan-settings").PlanSettings }>("/api/admin/plan-settings", { method: "PUT", json: { settings } }),
+  adminFeatureGrants: () => apiFetch<{ grants: AdminFeatureGrant[]; ready: boolean }>("/api/admin/feature-grants"),
+  adminGrantFeature: (input: { email: string; feature: string; tier: string; expiresAt?: string | null; note?: string }) =>
+    apiFetch<{ grant: AdminFeatureGrant }>("/api/admin/feature-grants", { method: "POST", json: input }),
+  adminRevokeFeature: (id: string) =>
+    apiFetch<{ ok: true }>(`/api/admin/feature-grants?id=${encodeURIComponent(id)}`, { method: "DELETE" }),
 
   adminListUsers: () =>
     apiFetch<{ users: AdminUserRow[] }>("/api/admin/users"),
@@ -1027,6 +1049,19 @@ export interface AdminUsageSummary {
   byService: { service: string; count: number; cost: number; tokens: number }[];
   daily: { date: string; cost: number; count: number }[];
   topUsers: { user_id: string; email: string | null; cost: number; count: number }[];
+}
+
+export interface AdminFeatureGrant {
+  id: string;
+  user_id: string;
+  feature: string;
+  tier: string;
+  expires_at: string | null;
+  note: string | null;
+  created_at: string;
+  email: string | null;
+  display_name?: string | null;
+  user_tier?: string;
 }
 
 export interface AdminUserRow {
