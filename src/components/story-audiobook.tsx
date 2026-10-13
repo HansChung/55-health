@@ -59,9 +59,21 @@ export function StoryAudiobook({
   const retriedRef = useRef<string | null>(null);
   const current: AudiobookChapter | undefined = chapters[index];
 
+  /** 錄音播完、出錯的回呼先拆掉（要播時播放的 effect 會重新掛上），免得停掉後又叫到 next */
+  const detachAudio = () => {
+    const a = audioRef.current;
+    if (!a) return;
+    a.onended = null;
+    a.onerror = null;
+    return a;
+  };
+
+  /** 長輩按的暫停、跳篇、關掉：全部停下來 */
   const stopAll = () => {
     tokenRef.current++;
-    audioRef.current?.pause();
+    const a = detachAudio();
+    // 載入失敗的錄音不要 pause：pause 會讓它重新載入
+    if (a && !a.error) a.pause();
     if (deviceSpeech) window.speechSynthesis.cancel();
   };
 
@@ -76,9 +88,17 @@ export function StoryAudiobook({
     }
   }, []);
 
-  const next = () => {
-    // 先停掉這一篇（排在後面還沒念的句子也一起作廢）；要播下一篇由播放的 effect 重新開始
-    stopAll();
+  /**
+   * 下一篇。fromUser＝鎖定畫面按「下一首」：全部停下來。
+   * 自然播完（錄音 onended、手機念完最後一句、錄音壞掉跳過）：只作廢排著的句子、拆掉錄音的回呼——
+   * 不在 onend 裡 cancel 語音（有些瀏覽器會把下一篇的第一句吞掉），也不 pause 壞掉的錄音（會重新載入、一直出錯）
+   */
+  const next = (fromUser = false) => {
+    if (fromUser) stopAll();
+    else {
+      tokenRef.current++;
+      detachAudio();
+    }
     if (index + 1 < chapters.length) {
       paraRef.current = 0;
       setIndex(index + 1);
@@ -166,7 +186,7 @@ export function StoryAudiobook({
           album: title,
           artwork: current.cover ? [{ src: current.cover }] : [],
         });
-        navigator.mediaSession.setActionHandler("nexttrack", () => next());
+        navigator.mediaSession.setActionHandler("nexttrack", () => next(true));
         navigator.mediaSession.setActionHandler("previoustrack", () => go(Math.max(0, index - 1)));
         navigator.mediaSession.setActionHandler("pause", () => pause());
         navigator.mediaSession.setActionHandler("play", () => setPlaying(true));
@@ -183,8 +203,13 @@ export function StoryAudiobook({
     if (onRefresh && retriedRef.current !== ch.id) {
       retriedRef.current = ch.id;
       try {
-        setList(await onRefresh());
-        return;
+        const fresh = await onRefresh();
+        const again = audiobookChapters(fresh, { deviceSpeech }).find((c) => c.id === ch.id);
+        // 拿到新的網址才重播（播放的 effect 看到網址換了會重新開始）；一樣的網址就是檔案本身壞了，跳過
+        if (again?.url && again.url !== ch.url) {
+          setList(fresh);
+          return;
+        }
       } catch { /* 拿不到就跳過 */ }
     }
     next();
