@@ -20,6 +20,8 @@ const USER_CONCURRENCY = 8;
 const TIME_BUDGET_MS = 45_000;
 const MAX_USERS = 2000;
 const ID_CHUNK = 300;
+/** 空氣品質最多等幾毫秒（天氣預報本身最多等 12 秒） */
+const AIR_WAIT_MS = 4_000;
 
 interface ProfileRow {
   id: string;
@@ -71,8 +73,11 @@ export async function GET(req: NextRequest) {
   const targets = candidates.filter((p) => subscribed.has(p.id));
   if (targets.length === 0) return NextResponse.json({ ok: true, candidates: candidates.length, sent: 0 });
 
-  // 天氣、空氣品質同時查（空氣品質沒設金鑰或查不到就不帶）
-  const [forecasts, air] = await Promise.all([countiesForecast(targets.map((p) => p.county)), countiesAir()]);
+  // 天氣、空氣品質同時查。空氣品質是加分的：最多等 AIR_WAIT_MS，查太慢就照原本只報天氣，不吃掉發推播的時間
+  const [forecasts, air] = await Promise.all([
+    countiesForecast(targets.map((p) => p.county)),
+    Promise.race([countiesAir(), new Promise<Awaited<ReturnType<typeof countiesAir>>>((r) => setTimeout(() => r(new Map()), AIR_WAIT_MS))]),
+  ]);
   let sent = 0;
   let noForecast = 0;
   let skippedForTime = 0;

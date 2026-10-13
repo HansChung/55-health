@@ -11,7 +11,7 @@ function aqxUrl(): string {
   return `${(process.env.MOENV_API_BASE || "https://data.moenv.gov.tw").replace(/\/+$/, "")}/api/v2/aqx_p_432`;
 }
 const CACHE_MS = 30 * 60 * 1000;
-const TIMEOUT_MS = 10_000;
+const TIMEOUT_MS = 6_000;
 
 let cache: { at: number; data: Map<TaiwanCounty, CountyAir> } | null = null;
 
