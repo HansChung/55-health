@@ -41,8 +41,10 @@ export function StoryAudiobook({
   onRefresh?: () => Promise<LifeStory[]>;
 }) {
   const [list, setList] = useState(stories);
+  /** 錄音播不出來（重新拿網址也一樣）的篇：改用手機的聲音念 */
+  const [brokenAudio, setBrokenAudio] = useState<ReadonlySet<string>>(() => new Set());
   const deviceSpeech = canSpeakGuide();
-  const chapters = useMemo(() => audiobookChapters(list, { deviceSpeech }), [list, deviceSpeech]);
+  const chapters = useMemo(() => audiobookChapters(list, { deviceSpeech, brokenAudio }), [list, deviceSpeech, brokenAudio]);
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [rate, setRate] = useState<(typeof RATES)[number]>(1);
@@ -170,7 +172,7 @@ export function StoryAudiobook({
       a.playbackRate = rate;
       a.onended = () => next();
       a.ontimeupdate = () => setPosition(a.currentTime);
-      a.onerror = () => void handleAudioError(current);
+      a.onerror = () => void handleAudioError(current, token);
       a.play().catch((e: unknown) => {
         // 換章時 pause 會讓上一次的 play 失敗（AbortError）；網址壞掉由 onerror 處理（會重新拿網址再播）。
         // 只有瀏覽器不讓自動播放（NotAllowedError）才顯示成暫停，讓長輩自己按一次
@@ -199,18 +201,30 @@ export function StoryAudiobook({
   }, [rate]);
 
   // 錄音網址過期（1 小時）：重新拿故事清單再播一次；還是不行就跳下一篇
-  const handleAudioError = async (ch: AudiobookChapter) => {
+  const handleAudioError = async (ch: AudiobookChapter, token: number) => {
+    // 長輩已經暫停、跳到別篇：這個錯誤不用管了
+    if (token !== tokenRef.current) return;
     if (onRefresh && retriedRef.current !== ch.id) {
       retriedRef.current = ch.id;
       try {
         const fresh = await onRefresh();
-        const again = audiobookChapters(fresh, { deviceSpeech }).find((c) => c.id === ch.id);
-        // 拿到新的網址才重播（播放的 effect 看到網址換了會重新開始）；一樣的網址就是檔案本身壞了，跳過
+        if (token !== tokenRef.current) return;
+        const again = audiobookChapters(fresh, { deviceSpeech, brokenAudio }).find((c) => c.id === ch.id);
+        // 拿到新的網址才重播（播放的 effect 看到網址換了會重新開始）
         if (again?.url && again.url !== ch.url) {
           setList(fresh);
           return;
         }
-      } catch { /* 拿不到就跳過 */ }
+      } catch { /* 拿不到就照下面處理 */ }
+      if (token !== tokenRef.current) return;
+    }
+    // 還是播不出來：有文字就改用手機的聲音念這一篇，沒有文字才跳下一篇
+    detachAudio();
+    const story = list.find((s) => s.id === ch.id);
+    if (deviceSpeech && story?.body.trim()) {
+      paraRef.current = 0;
+      setBrokenAudio((prev) => new Set(prev).add(ch.id));
+      return;
     }
     next();
   };

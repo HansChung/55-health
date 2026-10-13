@@ -73,15 +73,19 @@ export function estimateSpeechSeconds(paragraphs: string[]): number {
  * 章節：照寫故事的時間排（舊的在前，像一本書）；
  * 沒有錄音、也沒有文字可以念的篇（手機不能念時）就跳過
  */
-export function audiobookChapters(stories: LifeStory[], opts: { deviceSpeech: boolean }): AudiobookChapter[] {
+export function audiobookChapters(
+  stories: LifeStory[],
+  opts: { deviceSpeech: boolean; /** 錄音播不出來的篇：改用手機的聲音念文字 */ brokenAudio?: ReadonlySet<string> }
+): AudiobookChapter[] {
   const sorted = [...stories].sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id));
   const out: AudiobookChapter[] = [];
   for (const s of sorted) {
     const base = { id: s.id, title: s.title, era: s.era, cover: s.photos[0]?.url ?? null };
     const paragraphs = speechChunks(storySpeech(s));
-    if (s.audio?.url) {
+    const audioOk = !opts.brokenAudio?.has(s.id);
+    if (audioOk && s.audio?.url) {
       out.push({ ...base, source: "recording", url: s.audio.url, paragraphs, seconds: Math.round(s.audio.seconds) });
-    } else if (s.voice_reading?.url && !s.voice_reading.outdated) {
+    } else if (audioOk && s.voice_reading?.url && !s.voice_reading.outdated) {
       out.push({ ...base, source: "voice", url: s.voice_reading.url, paragraphs, seconds: Math.round(s.voice_reading.seconds) });
     } else if (opts.deviceSpeech && s.body.trim()) {
       out.push({ ...base, source: "device", url: null, paragraphs, seconds: estimateSpeechSeconds(paragraphs) });

@@ -29,6 +29,10 @@ describe("audiobookChapters", () => {
     expect(sourceCounts(ch)).toEqual({ recording: 1, voice: 1, device: 2 });
   });
 
+  it("falls back to the phone voice for chapters whose audio is broken", () => {
+    const ch = audiobookChapters(stories, { deviceSpeech: true, brokenAudio: new Set(["a", "b"]) });
+    expect(ch.slice(0, 2).map((c) => [c.id, c.source])).toEqual([["a", "device"], ["b", "device"]]);
+  });
   it("skips text-only chapters when the phone cannot speak", () => {
     expect(audiobookChapters(stories, { deviceSpeech: false }).map((c) => c.id)).toEqual(["a", "b"]);
   });

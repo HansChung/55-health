@@ -500,8 +500,9 @@ stack works well for auth + meal/diary CRUD:
   utterance** (`speechChunks`, ≤80 chars; long utterances stop halfway in some browsers) with a per-sentence watchdog
   that moves on if `onend` never fires; a token ref invalidates callbacks on pause/skip, and only `NotAllowedError`
   from `audio.play()` flips the button back to ▶️. Closing clears the Media Session metadata and handlers.
-  Audio URLs are 1-hour signed URLs: on an `<audio>` error the player refetches the stories once (`onRefresh`), then
-  skips. Auto-advances, prev/next, 0.8／1／1.2 speed, Media Session metadata for the lock screen.
+  Audio URLs are 1-hour signed URLs: on an `<audio>` error the player refetches the stories once (`onRefresh`) and
+  replays only if the URL changed; otherwise the chapter falls back to phone speech (`brokenAudio`) or is skipped if it
+  has no text. Every async step re-checks the play token so a pause/skip meanwhile wins. Auto-advances, prev/next, 0.8／1／1.2 speed, Media Session metadata for the lock screen.
 
 ### 方案與次數（後台 `/admin/plans`, needs `supabase/add-plan-settings.sql`）
 - **Every feature switch, minimum tier and quota lives in one place**: `src/lib/plan-settings.ts` (`FEATURE_DEFS`,
