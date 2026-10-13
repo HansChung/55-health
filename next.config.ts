@@ -23,6 +23,7 @@ const nextConfig: NextConfig = {
     "/api/stories": ["./node_modules/ffmpeg-static/ffmpeg"],
     "/api/stories/[id]/voice": ["./node_modules/ffmpeg-static/ffmpeg"],
     "/api/ai/voice-turn": ["./node_modules/ffmpeg-static/ffmpeg"],
+    "/api/ai/transcribe": ["./node_modules/ffmpeg-static/ffmpeg"],
   },
   // Capacitor build 時透過 BUILD_TARGET=mobile 切換成 static export
   ...(process.env.BUILD_TARGET === "mobile" && {

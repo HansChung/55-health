@@ -342,6 +342,14 @@ export const api = {
       timeoutMs: 60000,
     }),
 
+  // 說話變文字（伺服器聽寫）：App 的 WebView、Firefox 沒有內建語音辨識時用
+  transcribe: (input: ({ audioPath: string } | { audio: string }) & { where?: string }) =>
+    apiFetch<{ text: string; quota: { used: number; limit: number } }>("/api/ai/transcribe", {
+      method: "POST",
+      json: input,
+      timeoutMs: 45000,
+    }),
+
   // 跟暖暖聊聊（語音）：錄音 → 暖暖聽懂並回答；和問暖暖共用每天的題數
   voiceTurn: (input: ({ audioPath: string } | { audio: string }) & {
     history: import("./ask").AskMessage[];
