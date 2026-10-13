@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import {
   buildTravelVideoPrompt,
   checkVideoImageSize,
-  defaultVideoQuota,
   isTravelVideoPending,
   sanitizePlace,
   TRAVEL_VIDEO_PLACE_MAX,
@@ -62,19 +61,12 @@ describe("checkVideoImageSize", () => {
   });
 });
 
-describe("isTravelVideoPending / defaultVideoQuota", () => {
+describe("isTravelVideoPending", () => {
   it("queued/running 是進行中", () => {
     expect(isTravelVideoPending("queued")).toBe(true);
     expect(isTravelVideoPending("running")).toBe(true);
     expect(isTravelVideoPending("succeeded")).toBe(false);
     expect(isTravelVideoPending("failed")).toBe(false);
-  });
-
-  it("免費版 0 支、未知方案 0 支", () => {
-    expect(defaultVideoQuota("free")).toBe(0);
-    expect(defaultVideoQuota("nope")).toBe(0);
-    expect(defaultVideoQuota("basic")).toBeGreaterThan(0);
-    expect(defaultVideoQuota("pro")).toBeGreaterThan(defaultVideoQuota("basic"));
   });
 });
 

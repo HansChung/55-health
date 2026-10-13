@@ -27,6 +27,7 @@ import {
   travelVideoExtrasLimit,
   videoSecondsForNarration,
 } from "@/lib/travel-video";
+import { blockedResponse } from "@/lib/plan-access-server";
 
 const ENDPOINT = "/api/ai/travel-video/narration";
 
@@ -49,6 +50,8 @@ export async function POST(req: NextRequest) {
 
   // 只有還能做影片的人才需要試聽口白
   const quota = await checkUserQuota(user.id, "video");
+  const blocked = blockedResponse(quota.access, "travel_video");
+  if (blocked) return blocked;
   if (!quota.allowed) {
     return NextResponse.json(
       { error: quota.limit === 0 ? "升級方案就可以做出遊影片喔" : "本月的影片次數用完了，下個月再來做吧" },
@@ -70,7 +73,7 @@ export async function POST(req: NextRequest) {
   if (!text) return NextResponse.json({ error: "先寫一句想說的話喔" }, { status: 400 });
 
   const admin = createSupabaseAdmin();
-  const resolved = await resolveSpeaker(admin, { userId: user.id, tier: quota.tier, voice: body.voice, accent: body.accent });
+  const resolved = await resolveSpeaker(admin, { userId: user.id, access: quota.access, voice: body.voice, accent: body.accent });
   if (!resolved.ok) return NextResponse.json({ error: resolved.error }, { status: resolved.status });
   const { speaker } = resolved;
   const accent = speaker.kind === "preset" ? speaker.accent ?? DEFAULT_NARRATION_ACCENT : null;

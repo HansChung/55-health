@@ -13,7 +13,8 @@ import { takeUserAudio, UserUploadError } from "@/lib/ai/user-uploads-server";
 import { answerVoiceTurn } from "@/lib/ai/voice-chat";
 import { loadAsker } from "@/lib/ai/ask-quota-server";
 import { finishReservedUsage, releaseReservedUsage, reserveDailySlot, trackAiUsage } from "@/lib/ai/usage-tracker";
-import { ASK_CHAPTER_TITLE_MAX, ASK_MESSAGE_MAX, askDailyLimit, taipeiDayStartIso } from "@/lib/ask";
+import { ASK_CHAPTER_TITLE_MAX, ASK_MESSAGE_MAX, taipeiDayStartIso } from "@/lib/ask";
+import { blockedResponse } from "@/lib/plan-access-server";
 import { VOICE_HISTORY_MAX, VOICE_TURN_MAX_SECONDS, VOICE_TURN_MIN_SECONDS, voiceHistory } from "@/lib/voice-chat";
 
 /** 轉檔＋模型，通常 3～5 秒 */
@@ -64,8 +65,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "暖暖暫時休息中，請稍後再試" }, { status: 503 });
   }
 
-  const { profile, tier } = await loadAsker(user.id, user.email);
-  const limit = askDailyLimit(tier);
+  const { profile, tier, access } = await loadAsker(user.id, user.email);
+  const blocked = blockedResponse(access, "ai_voice");
+  if (blocked) return blocked;
+  const limit = access.limit("ask_daily");
   // 先佔一格（同時送出好幾句也不會超過每天的題數）；管理員不限，不用佔
   let slot: { id: string | null; used: number } = { id: null, used: 0 };
   if (tier !== "admin") {

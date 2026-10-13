@@ -10,8 +10,6 @@ export const STORY_AUDIO_MAX_BYTES = 50 * 1024 * 1024;
 export const STORY_AUDIO_RECORD_MAX_SECONDS = 15 * 60;
 /** 太短的不算（不小心按到） */
 export const STORY_AUDIO_MIN_SECONDS = 3;
-/** 每人一天最多上傳幾個錄音 */
-export const STORY_AUDIO_DAILY_UPLOADS = 10;
 
 export interface StoryAudioType {
   /** 存檔用的 content-type */

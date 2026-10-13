@@ -22,6 +22,7 @@ import { appendDictation } from "@/lib/dictation";
 import { publicAppOrigin } from "@/lib/study-tours";
 import { NarrationVoicePicker, myVoiceReady } from "@/components/narration-voice-picker";
 import { MyVoiceSheet } from "@/components/my-voice-sheet";
+import { featureEnabled, requiredTierLabel } from "@/lib/feature-gates";
 import {
   DEFAULT_NARRATION_ACCENT,
   MY_VOICE,
@@ -100,7 +101,13 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
   const [mvQuota, setMvQuota] = useState<TravelVideoQuota | null>(null);
   const [mvFor, setMvFor] = useState<TravelVideo | null>(null);
   // 一張照片（AI 影片平台做動畫）／多張照片遊記（自己伺服器做）
-  const [mode, setMode] = useState<"single" | "montage" | "mv">("single");
+  // 後台關掉的分頁不顯示（單張／遊記／MV）；一打開就落在第一個開著的分頁
+  const modes = ([
+    { id: "single", feature: "travel_video", emoji: "🎬", label: "一張照片", desc: "照片動起來" },
+    { id: "montage", feature: "travel_montage", emoji: "📚", label: "多張照片", desc: "做成遊記" },
+    { id: "mv", feature: "travel_mv", emoji: "🎵", label: "做 MV", desc: "遊記寫成歌" },
+  ] as const).filter((m) => featureEnabled(m.feature));
+  const [mode, setMode] = useState<"single" | "montage" | "mv">(() => modes[0]?.id ?? "single");
   const [enabled, setEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
@@ -481,7 +488,7 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
           {mode === "mv" && mvQuota && (
             <div style={{ marginTop: 6, fontWeight: 700, color: "var(--primary-deep)" }}>
               {mvQuota.limit === 0
-                ? "專業版功能（每月 6 首）"
+                ? `${requiredTierLabel("travel_mv")}功能，升級後就可以做`
                 : mvQuota.limit >= 9999
                   ? "管理員不限次數"
                   : `本月還可以做 ${Math.max(0, mvQuota.limit - mvQuota.used)} 首（共 ${mvQuota.limit} 首）`}
@@ -496,12 +503,9 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
       </div>
 
       {/* 一張／多張 */}
-      <div role="tablist" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 16 }}>
-        {([
-          { id: "single", emoji: "🎬", label: "一張照片", desc: "照片動起來" },
-          { id: "montage", emoji: "📚", label: "多張照片", desc: "做成遊記" },
-          { id: "mv", emoji: "🎵", label: "做 MV", desc: "遊記寫成歌" },
-        ] as const).map((m) => (
+      {modes.length > 1 && (
+      <div role="tablist" style={{ display: "grid", gridTemplateColumns: `repeat(${modes.length}, 1fr)`, gap: 8, marginTop: 16 }}>
+        {modes.map((m) => (
           <button
             key={m.id}
             role="tab"
@@ -519,6 +523,7 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
           </button>
         ))}
       </div>
+      )}
 
       {mode === "mv" ? (
         <MvPicker

@@ -26,13 +26,7 @@ export const ASK_HISTORY_MAX = 40;
 export const ASK_GUIDE_MAX = 1500;
 export const ASK_CHAPTER_TITLE_MAX = 60;
 
-/** 每天可以問幾題（每送出一則算一題；所有人都能用，免費會員也可以） */
-export const ASK_DAILY_LIMITS: Record<string, number> = { free: 20, basic: 50, pro: 100 };
-
-export function askDailyLimit(tier: string): number {
-  if (tier === "admin") return 99999;
-  return ASK_DAILY_LIMITS[tier] ?? ASK_DAILY_LIMITS.free;
-}
+// 每天可以問幾題：後台「方案與次數」的 ask_daily（預設免費 20／標準 50／專業 100，見 plan-settings.ts）
 
 /** 台灣今天 0 點（UTC ISO）：每天的題數從這裡算 */
 export function taipeiDayStartIso(now: Date = new Date()): string {

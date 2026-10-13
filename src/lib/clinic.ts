@@ -7,8 +7,7 @@
 export const CLINIC_TEXT_MAX = 600;
 export const CLINIC_DEPARTMENT_MAX = 40;
 export const CLINIC_NOTES_MAX = 1000;
-/** 免費會員每天可以看幾張檢驗報告（標準版以上和拍照記餐共用每月拍照次數） */
-export const CLINIC_REPORT_FREE_DAILY = 3;
+// 免費會員每天可以看幾張檢驗報告：後台「方案與次數」的 clinic_report_free_daily（預設 3；標準版以上用每月拍照次數）
 
 /** 不舒服多久了（點一下就好） */
 export const CLINIC_SINCE_OPTIONS = ["今天", "這幾天", "一兩個禮拜", "一個月以上", "時好時壞"] as const;

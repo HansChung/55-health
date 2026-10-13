@@ -1,3 +1,5 @@
+import { buildPlanAccess } from "@/lib/plan-access-server";
+import { defaultPlanSettings } from "@/lib/plan-settings";
 import { describe, it, expect } from "vitest";
 import { isVoiceExpired, toMyVoice, voiceCloneAllowed, type VoiceCloneRow } from "./voice-clone-server";
 import { SAFE_AUDIO_INPUT, buildToWavArgs, isWav, wavRms } from "./audio-convert";
@@ -34,11 +36,13 @@ function pcmWav(samples: number, value: number): Buffer {
 }
 
 describe("我的聲音：方案", () => {
-  it("只有專業版與管理員可以用", () => {
-    expect(voiceCloneAllowed("pro")).toBe(true);
-    expect(voiceCloneAllowed("admin")).toBe(true);
-    expect(voiceCloneAllowed("basic")).toBe(false);
-    expect(voiceCloneAllowed("free")).toBe(false);
+  it("預設只有專業版與管理員可以用；個別開通也可以", () => {
+    const s = defaultPlanSettings();
+    expect(voiceCloneAllowed(buildPlanAccess("pro", s, []))).toBe(true);
+    expect(voiceCloneAllowed(buildPlanAccess("admin", s, []))).toBe(true);
+    expect(voiceCloneAllowed(buildPlanAccess("basic", s, []))).toBe(false);
+    expect(voiceCloneAllowed(buildPlanAccess("free", s, []))).toBe(false);
+    expect(voiceCloneAllowed(buildPlanAccess("free", s, [{ feature: "voice_clone", tier: "pro", expires_at: null }]))).toBe(true);
   });
 });
 

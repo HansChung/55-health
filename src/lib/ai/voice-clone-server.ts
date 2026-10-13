@@ -4,11 +4,10 @@
 // ────────────────────────────────────────────────
 
 import { createSupabaseAdmin } from "@/lib/supabase/server";
-import { hasFeature, type SubscriptionTier } from "@/lib/feature-gates";
+import type { PlanAccess } from "@/lib/plan-access-server";
 import {
   DEFAULT_NARRATION_ACCENT,
   MY_VOICE,
-  VOICE_CLONES_PER_30_DAYS,
   type MyVoice,
   type NarrationAccentId,
   type NarrationVoiceChoice,
@@ -35,9 +34,9 @@ export interface VoiceCloneRow {
 const COLUMNS =
   "id, user_id, provider_voice_id, model, sample_seconds, demo_url, consent_text, consented_at, activated_at, expires_at, deleted_at, created_at";
 
-/** checkUserQuota 回的 tier（管理員是 "admin"） */
-export function voiceCloneAllowed(tier: string): boolean {
-  return tier === "admin" || hasFeature(tier as SubscriptionTier, "voice_clone");
+/** 能不能用「我的聲音」（後台「方案與次數」的 voice_clone；管理員一律可以） */
+export function voiceCloneAllowed(access: PlanAccess): boolean {
+  return access.can("voice_clone");
 }
 
 /** 還沒用過、過了平台給的 7 天就失效（用過一次就永久有效） */
@@ -83,7 +82,7 @@ async function loadVoiceById(admin: Admin, userId: string, cloneId: string): Pro
 }
 
 /** 這 30 天還能錄幾次（刪掉的也算，避免一直刪了重錄） */
-export async function remainingClones(admin: Admin, userId: string, now = new Date()): Promise<number> {
+export async function remainingClones(admin: Admin, userId: string, perThirtyDays: number, now = new Date()): Promise<number> {
   const since = new Date(now.getTime() - 30 * 86_400_000).toISOString();
   const { count, error } = await admin
     .from("voice_clones")
@@ -91,14 +90,20 @@ export async function remainingClones(admin: Admin, userId: string, now = new Da
     .eq("user_id", userId)
     .gte("created_at", since);
   if (error) throw error;
-  return Math.max(0, VOICE_CLONES_PER_30_DAYS - (count ?? 0));
+  return Math.max(0, perThirtyDays - (count ?? 0));
 }
 
 /**
- * 錄音名額：這 30 天內依建立順序排，排在前 VOICE_CLONES_PER_30_DAYS 名內才算數。
+ * 錄音名額：這 30 天內依建立順序排，排在前 perThirtyDays 名內才算數。
  * 同時送出好幾段時，每一段都先占位再來排，超過的就退回（不會先付費才發現超過）
  */
-export async function reservationWithinLimit(admin: Admin, userId: string, cloneId: string, now = new Date()): Promise<boolean> {
+export async function reservationWithinLimit(
+  admin: Admin,
+  userId: string,
+  cloneId: string,
+  perThirtyDays: number,
+  now = new Date()
+): Promise<boolean> {
   const since = new Date(now.getTime() - 30 * 86_400_000).toISOString();
   const { data, error } = await admin
     .from("voice_clones")
@@ -107,7 +112,7 @@ export async function reservationWithinLimit(admin: Admin, userId: string, clone
     .gte("created_at", since)
     .order("created_at", { ascending: true })
     .order("id", { ascending: true })
-    .limit(VOICE_CLONES_PER_30_DAYS);
+    .limit(perThirtyDays);
   if (error) throw error;
   return ((data ?? []) as { id: string }[]).some((r) => r.id === cloneId);
 }
@@ -124,7 +129,8 @@ export async function resolveSpeaker(
   admin: Admin,
   opts: {
     userId: string;
-    tier: string;
+    /** 方案與開關（checkTier=false 的背景工作可以不給） */
+    access?: PlanAccess | null;
     voice: NarrationVoiceChoice;
     accent?: NarrationAccentId | null;
     checkTier?: boolean;
@@ -140,7 +146,7 @@ export async function resolveSpeaker(
       activated: true,
     };
   }
-  if (opts.checkTier !== false && !voiceCloneAllowed(opts.tier)) {
+  if (opts.checkTier !== false && !(opts.access && voiceCloneAllowed(opts.access))) {
     return { ok: false, status: 403, error: "用自己的聲音念是專業版功能，升級後就可以使用" };
   }
   const row = opts.cloneId ? await loadVoiceById(admin, opts.userId, opts.cloneId) : await loadActiveVoice(admin, opts.userId);

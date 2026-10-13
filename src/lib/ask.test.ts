@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import {
-  askDailyLimit,
   buildAskSystemPrompt,
   buildGuideContext,
   cleanAskReply,
@@ -12,13 +11,6 @@ import {
 import { toGeminiContents } from "./ai/ask-chat";
 
 describe("打字問暖暖：限額與時間", () => {
-  it("所有人都能用：免費 20、標準 50、專業 100、管理員不限", () => {
-    expect(askDailyLimit("free")).toBe(20);
-    expect(askDailyLimit("basic")).toBe(50);
-    expect(askDailyLimit("pro")).toBe(100);
-    expect(askDailyLimit("admin")).toBe(99999);
-    expect(askDailyLimit("unknown")).toBe(20);
-  });
   it("每天從台灣 0 點算", () => {
     expect(taipeiDayStartIso(new Date("2026-10-06T17:30:00Z"))).toBe("2026-10-06T16:00:00.000Z");
     expect(taipeiDayStartIso(new Date("2026-10-06T15:59:00Z"))).toBe("2026-10-05T16:00:00.000Z");

@@ -40,6 +40,7 @@ import {
   sanitizePlace,
   videoSecondsForNarration,
 } from "@/lib/travel-video";
+import { blockedResponse } from "@/lib/plan-access-server";
 
 // 成功時要下載影片再轉存 Storage
 export const maxDuration = 60;
@@ -152,6 +153,8 @@ export async function POST(req: NextRequest) {
 
   // 3. 配額檢查（失敗的影片不算次數）
   const quota = await checkUserQuota(user.id, "video");
+  const blocked = blockedResponse(quota.access, "travel_video");
+  if (blocked) return blocked;
   if (!quota.allowed) {
     return NextResponse.json(
       {

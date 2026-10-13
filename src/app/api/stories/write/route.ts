@@ -9,7 +9,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { getGeminiModel, isGeminiConfigured, parseModelJson } from "@/lib/ai/gemini";
 import { ASK_ENDPOINT, loadAsker } from "@/lib/ai/ask-quota-server";
 import { finishReservedUsage, releaseReservedUsage, reserveDailySlot, trackAiUsage } from "@/lib/ai/usage-tracker";
-import { askDailyLimit, taipeiDayStartIso } from "@/lib/ask";
+import { taipeiDayStartIso } from "@/lib/ask";
 import {
   STORY_INTERVIEW_MAX,
   STORY_MIN_ANSWERS,
@@ -18,6 +18,7 @@ import {
   storyAnswerCount,
   trimStoryInterview,
 } from "@/lib/life-stories";
+import { blockedResponse } from "@/lib/plan-access-server";
 
 export const maxDuration = 60;
 
@@ -37,8 +38,10 @@ export async function POST(req: NextRequest) {
   }
   if (!isGeminiConfigured()) return NextResponse.json({ error: "暖暖暫時休息中，請稍後再試" }, { status: 503 });
 
-  const { profile, tier } = await loadAsker(user.id, user.email);
-  const limit = askDailyLimit(tier);
+  const { profile, tier, access } = await loadAsker(user.id, user.email);
+  const blocked = blockedResponse(access, "life_stories");
+  if (blocked) return blocked;
+  const limit = access.limit("ask_daily");
   let slot: { id: string | null; used: number } = { id: null, used: 0 };
   if (tier !== "admin") {
     try {

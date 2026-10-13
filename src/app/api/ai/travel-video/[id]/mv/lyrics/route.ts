@@ -15,6 +15,7 @@ import {
   sanitizeMvLyrics,
   sanitizeMvTitle,
 } from "@/lib/travel-video";
+import { blockedResponse } from "@/lib/plan-access-server";
 
 const ENDPOINT = "/api/ai/travel-video/mv/lyrics";
 
@@ -29,8 +30,10 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   if (!isGeminiConfigured()) return NextResponse.json({ error: "AI 暫時忙線，請自己寫寫看" }, { status: 503 });
 
   const quota = await checkUserQuota(user.id, "mv");
+  const blocked = blockedResponse(quota.access, "travel_mv");
+  if (blocked) return blocked;
   if (quota.limit === 0) {
-    return NextResponse.json({ error: "遊記 MV 是專業版功能，升級後就可以使用", upgradeUrl: "/pricing" }, { status: 403 });
+    return NextResponse.json({ error: "你的方案這個月不能做 MV，升級後就可以使用", upgradeUrl: "/pricing" }, { status: 403 });
   }
   // 寫歌詞不扣 MV 次數，但每月有上限（避免一直按）
   const cap = quota.limit >= 9999 ? Number.POSITIVE_INFINITY : Math.max(10, quota.limit * 5);

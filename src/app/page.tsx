@@ -58,7 +58,7 @@ import { uploadMealPhoto } from "@/lib/upload-photo";
 import type { FoodItem } from "@/lib/types";
 import { getPendingMedicationReminders, isSameLocalDay } from "@/lib/medication-utils";
 import { generateHealthAlerts } from "@/lib/health-alerts";
-import { hasFeature, requiredTierLabel, type FeatureKey, type SubscriptionTier } from "@/lib/feature-gates";
+import { applyPlanSettings, featureEnabled, hasFeature, requiredTierLabel, type FeatureKey, type SubscriptionTier } from "@/lib/feature-gates";
 import {
   CHAPTER_INTENT_KEY,
   getChapterDeepLinkHint,
@@ -248,12 +248,29 @@ export default function Page() {
   const totalCal = useMemo(() => meals.reduce((s, m) => s + (m.cal || 0), 0), [meals]);
   const calorieGoal = profile?.calorie_goal ?? 1800;
   const tier = (profile?.subscription_tier ?? "free") as SubscriptionTier;
+  // 後台「方案與次數」：登入後載入一次（功能開關、最低方案、自己的個別開通）；planTier 是 "admin" 時全部可用
+  const [planTier, setPlanTier] = useState<SubscriptionTier | "admin" | null>(null);
+  const [planVersion, setPlanVersion] = useState(0);
+  useEffect(() => {
+    if (!user) return;
+    let alive = true;
+    api.planSettings()
+      .then((r) => {
+        if (!alive) return;
+        applyPlanSettings(r.settings, r.grants);
+        setPlanTier(r.tier);
+        setPlanVersion((v) => v + 1);
+      })
+      .catch(() => undefined); // 載不到就用預設規則（伺服器仍會把關）
+    return () => { alive = false; };
+  }, [user, profile?.subscription_tier]);
+  const gateTier = planTier ?? tier;
   const medicationReminders = useMemo(
     () =>
-      hasFeature(tier, "medication_reminders")
+      hasFeature(gateTier, "medication_reminders")
         ? getPendingMedicationReminders(profile?.medications ?? []).slice(0, 3)
         : [],
-    [tier, profile?.medications]
+    [gateTier, planVersion, profile?.medications]
   );
   const allHealthAlerts = useMemo(
     () =>
@@ -265,13 +282,17 @@ export default function Page() {
     [recentDbMeals, recentMetrics, profile?.medications]
   );
   const healthAlerts = useMemo(
-    () => (hasFeature(tier, "health_alerts") ? allHealthAlerts.slice(0, 3) : []),
-    [tier, allHealthAlerts]
+    () => (hasFeature(gateTier, "health_alerts") ? allHealthAlerts.slice(0, 3) : []),
+    [gateTier, planVersion, allHealthAlerts]
   );
 
   const requireFeature = (feature: FeatureKey, action: () => void) => {
-    if (hasFeature(tier, feature)) {
+    if (hasFeature(gateTier, feature)) {
       action();
+      return;
+    }
+    if (!featureEnabled(feature)) {
+      toast.info("這個功能暫時停用，請稍後再試。");
       return;
     }
     toast.info(`這是${requiredTierLabel(feature)}功能，升級後就可以使用。`);
@@ -300,7 +321,7 @@ export default function Page() {
   };
 
   const reloadFavoriteMeals = async () => {
-    if (!hasFeature(tier, "favorite_meals")) {
+    if (!hasFeature(gateTier, "favorite_meals")) {
       setFavoriteMeals([]);
       return;
     }
@@ -313,7 +334,7 @@ export default function Page() {
   };
 
   const reloadPartnerCampaigns = async () => {
-    if (!hasFeature(tier, "partner_offers")) {
+    if (!hasFeature(gateTier, "partner_offers")) {
       setPartnerCampaigns([]);
       return;
     }
@@ -478,7 +499,7 @@ export default function Page() {
   }, [user, recentDbMeals.length, recentMetrics.length, profile?.medications?.length, subpage]);
 
   const handleSaveFavoriteMeal = async (meal: MealRecord) => {
-    if (!hasFeature(tier, "favorite_meals")) {
+    if (!hasFeature(gateTier, "favorite_meals")) {
       requireFeature("favorite_meals", () => {});
       return;
     }
@@ -502,7 +523,7 @@ export default function Page() {
   };
 
   const handleUseFavoriteMeal = async (favorite: FavoriteMeal) => {
-    if (!hasFeature(tier, "favorite_meals")) {
+    if (!hasFeature(gateTier, "favorite_meals")) {
       requireFeature("favorite_meals", () => {});
       return;
     }
@@ -774,23 +795,32 @@ export default function Page() {
             onBlueprint={() => setSubpage("blueprint")}
             onBookPractice={() => { window.location.href = "/smart/guide"; }}
             onIot={() => setSubpage("iot")}
-            onTravelVideo={() => requireFeature("travel_video", () => setSubpage("travel-video"))}
+            onTravelVideo={
+              featureEnabled("travel_video") || featureEnabled("travel_montage") || featureEnabled("travel_mv")
+                ? () =>
+                    // 單張影片、遊記、MV 有一種能用就打開（各分頁自己看次數）
+                    hasFeature(gateTier, "travel_montage") || hasFeature(gateTier, "travel_mv")
+                      ? setSubpage("travel-video")
+                      : requireFeature("travel_video", () => setSubpage("travel-video"))
+                : undefined
+            }
             onStudyTours={() => {
               setStudyTourId(null);
               setStudyToursKey((k) => k + 1);
               setSubpage("study-tours");
             }}
-            onPhotoAsk={() => {
+            // 後台關掉的功能不顯示入口；方案不夠的照樣顯示，按下去再說要升級
+            onPhotoAsk={featureEnabled("photo_ask") ? () => requireFeature("photo_ask", () => {
               setPhotoAsk({ place: null, returnTo: null, tourId: null });
               setSubpage("photo-ask");
-            }}
-            onAsk={() => {
+            }) : undefined}
+            onAsk={featureEnabled("ask") ? () => requireFeature("ask", () => {
               setAskSeed(null);
               setSubpage("ask");
-            }}
-            onStories={() => { setStoriesAudio(false); setSubpage("stories"); }}
-            onScamCheck={() => setSubpage("scam-check")}
-            onClinic={() => setSubpage("clinic")}
+            }) : undefined}
+            onStories={featureEnabled("life_stories") ? () => requireFeature("life_stories", () => { setStoriesAudio(false); setSubpage("stories"); }) : undefined}
+            onScamCheck={featureEnabled("scam_check") ? () => requireFeature("scam_check", () => setSubpage("scam-check")) : undefined}
+            onClinic={featureEnabled("clinic") ? () => requireFeature("clinic", () => setSubpage("clinic")) : undefined}
             caregiver={careElderCount > 0 ? { count: careElderCount, needsAttention: careNeedsAttention } : null}
             onCaregiver={() => setSubpage("caregiver")}
           />

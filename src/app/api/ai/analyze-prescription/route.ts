@@ -4,6 +4,7 @@ import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server
 import { imageFromRequest, UserUploadError } from "@/lib/ai/user-uploads-server";
 import { trackAiUsage, checkUserQuota } from "@/lib/ai/usage-tracker";
 import { z } from "zod";
+import { blockedResponse } from "@/lib/plan-access-server";
 
 // 看圖模型實測約 10～15 秒，預留空間
 export const maxDuration = 60;
@@ -59,6 +60,8 @@ export async function POST(req: NextRequest) {
 
   // 配額檢查（拍藥袋共用拍照配額）
   const quota = await checkUserQuota(user.id, "photo");
+  const blocked = blockedResponse(quota.access, "ai_photo");
+  if (blocked) return blocked;
   if (!quota.allowed) {
     return NextResponse.json(
       { error: "本月拍照次數已用完，請升級方案" },

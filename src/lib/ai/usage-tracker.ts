@@ -1,6 +1,7 @@
 import { createSupabaseAdmin } from "../supabase/server";
 import { calculateCost } from "./pricing";
-import { defaultVideoQuota, montageQuota, mvQuota } from "../travel-video";
+import { LIMIT_MAX } from "../plan-settings";
+import { isAdminEmail, planAccessFor, type PlanAccess } from "../plan-access-server";
 
 interface TrackUsageParams {
   userId: string | null;
@@ -54,100 +55,52 @@ export async function trackAiUsage(params: TrackUsageParams) {
   return data?.id ?? null;
 }
 
-/** 檢查用戶本月配額是否還夠 */
+/** 每種用量對應的功能與上限（後台「方案與次數」可以改） */
+const QUOTA_KEYS = {
+  photo: { feature: "ai_photo", limit: "photo_monthly" },
+  video: { feature: "travel_video", limit: "video_monthly" },
+  montage: { feature: "travel_montage", limit: "montage_monthly" },
+  mv: { feature: "travel_mv", limit: "mv_monthly" },
+} as const;
+
+/**
+ * 檢查用戶本月配額是否還夠（上限照後台設定；有個別開通就照開通的方案）。
+ * access 給呼叫端判斷功能開關（access.blocked(...)）與其他上限
+ */
 export async function checkUserQuota(
   userId: string,
-  service: "photo" | "voice" | "video" | "montage" | "mv"
+  service: "photo" | "video" | "montage" | "mv"
 ): Promise<{
   allowed: boolean;
   used: number;
   limit: number;
   tier: string;
-  usedSeconds?: number;
-  remainingSeconds?: number;
+  access: PlanAccess;
 }> {
   const supabase = createSupabaseAdmin();
 
   // 1. 取得用戶訂閱方案 + 是否管理員
   const { data: profile } = await supabase
     .from("profiles")
-    .select("subscription_tier, subscription_expires_at, is_admin")
+    .select("subscription_tier, is_admin")
     .eq("id", userId)
     .single();
 
   // 管理員 + ADMIN_EMAILS 白名單 → 不限制
-  const { data: { user } } = await supabase.auth.admin.getUserById(userId);
-  const adminEmails = (process.env.ADMIN_EMAILS ?? "").split(",").map((s) => s.trim());
-  const isAdmin = profile?.is_admin || (user?.email && adminEmails.includes(user.email));
-  if (isAdmin) {
-    return { allowed: true, used: 0, limit: 99999, tier: "admin" };
+  let isAdmin = Boolean(profile?.is_admin);
+  if (!isAdmin && (process.env.ADMIN_EMAILS ?? "").trim()) {
+    const { data: { user } } = await supabase.auth.admin.getUserById(userId);
+    isAdmin = isAdminEmail(user?.email);
   }
-
-  const tier = profile?.subscription_tier ?? "free";
+  const access = await planAccessFor(userId, isAdmin ? "admin" : profile?.subscription_tier ?? "free");
+  if (isAdmin) return { allowed: true, used: 0, limit: LIMIT_MAX, tier: "admin", access };
+  const tier = access.tier;
+  const limit = access.limit(QUOTA_KEYS[service].limit);
 
   // 本月起算時間（計算本月用量用）
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
-
-  if (service === "mv") {
-    // 遊記 MV（做歌要算力）：專業版每月幾首；失敗的不算，刪掉的仍算
-    const { count } = await supabase
-      .from("travel_videos")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .eq("kind", "mv")
-      .is("mv->>variant_of", null) // 「另一個版本」不扣次數
-      .neq("status", "failed")
-      .gte("created_at", startOfMonth.toISOString());
-    const used = count ?? 0;
-    const limit = mvQuota(tier);
-    return { allowed: used < limit, used, limit, tier };
-  }
-
-  if (service === "montage") {
-    // 多張照片遊記：只花配音費，另外計次（失敗的不算；刪掉的仍算）
-    const { count } = await supabase
-      .from("travel_videos")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .eq("kind", "montage")
-      .neq("status", "failed")
-      .gte("created_at", startOfMonth.toISOString());
-    const used = count ?? 0;
-    const limit = montageQuota(tier);
-    return { allowed: used < limit, used, limit, tier };
-  }
-
-  if (service === "video") {
-    // 分開查：ai_video_quota 欄位是後加的（add-travel-videos.sql），沒跑 SQL 時退回程式預設值，
-    // 也不會連帶讓拍照／語音配額查詢失敗
-    const { data: videoPlan } = await supabase
-      .from("subscription_plans")
-      .select("ai_video_quota")
-      .eq("id", tier)
-      .maybeSingle();
-
-    // 失敗的不算；使用者刪掉的（deleted_at）仍算，避免刪了重做繞過配額
-    const { count } = await supabase
-      .from("travel_videos")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .eq("kind", "single") // 遊記、MV 另外計次
-      .neq("status", "failed")
-      .gte("created_at", startOfMonth.toISOString());
-
-    const used = count ?? 0;
-    const limit = videoPlan?.ai_video_quota ?? defaultVideoQuota(tier);
-    return { allowed: used < limit, used, limit, tier };
-  }
-
-  // 2. 取得方案限額
-  const { data: plan } = await supabase
-    .from("subscription_plans")
-    .select("ai_photo_quota, ai_voice_minutes")
-    .eq("id", tier)
-    .single();
 
   if (service === "photo") {
     const { count } = await supabase
@@ -156,35 +109,22 @@ export async function checkUserQuota(
       .eq("user_id", userId)
       .eq("service", "gemini_vision")
       .gte("created_at", startOfMonth.toISOString());
-
-    const limit = plan?.ai_photo_quota ?? 10;
-    return { allowed: (count ?? 0) < limit, used: count ?? 0, limit, tier };
-  } else {
-    const { data: usage } = await supabase
-      .from("ai_usage")
-      .select("audio_seconds")
-      .eq("user_id", userId)
-      .eq("service", "openai_realtime")
-      .gte("created_at", startOfMonth.toISOString());
-
-    const totalSeconds =
-      usage?.reduce(
-        (s: number, u: { audio_seconds: number | null }) =>
-          s + Number(u.audio_seconds || 0),
-        0
-      ) ?? 0;
-    const usedMinutes = Math.ceil(totalSeconds / 60);
-    const limit = plan?.ai_voice_minutes ?? 2;
-    const limitSeconds = limit * 60;
-    return {
-      allowed: totalSeconds < limitSeconds,
-      used: usedMinutes,
-      limit,
-      tier,
-      usedSeconds: totalSeconds,
-      remainingSeconds: Math.max(0, limitSeconds - totalSeconds),
-    };
+    const used = count ?? 0;
+    return { allowed: used < limit, used, limit, tier, access };
   }
+
+  // 影片：失敗的不算；使用者刪掉的（deleted_at）仍算，避免刪了重做繞過配額
+  let q = supabase
+    .from("travel_videos")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("kind", service === "video" ? "single" : service) // 單張、遊記、MV 各自計次
+    .neq("status", "failed")
+    .gte("created_at", startOfMonth.toISOString());
+  if (service === "mv") q = q.is("mv->>variant_of", null); // 「另一個版本」不扣次數
+  const { count } = await q;
+  const used = count ?? 0;
+  return { allowed: used < limit, used, limit, tier, access };
 }
 
 /**

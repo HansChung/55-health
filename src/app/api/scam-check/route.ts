@@ -2,7 +2,7 @@
 // 這則訊息可疑嗎？
 // GET  → { checks, quota }（自己最近問過的，新的在前）
 // POST { photoPath? | imageBase64?+mimeType?, text?, source? } → { check, quota }
-//   截圖已直傳 Supabase 暫存區（看完不另外保存）；所有方案每天 SCAM_CHECK_DAILY 次，失敗不算
+//   截圖已直傳 Supabase 暫存區（看完不另外保存）；每天幾次照後台「方案與次數」，失敗不算
 // ────────────────────────────────────────────────
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -13,8 +13,9 @@ import { checkScamMessage } from "@/lib/ai/scam-check";
 import { loadAsker } from "@/lib/ai/ask-quota-server";
 import { finishReservedUsage, releaseReservedUsage, reserveDailySlot, trackAiUsage } from "@/lib/ai/usage-tracker";
 import { taipeiDayStartIso } from "@/lib/ask";
-import { SCAM_CHECK_DAILY, SCAM_NOTE_MAX, SCAM_TEXT_MAX, sanitizeScamText } from "@/lib/scam-check";
+import { SCAM_NOTE_MAX, SCAM_TEXT_MAX, sanitizeScamText } from "@/lib/scam-check";
 import { toClientScamCheck, type ScamCheckRow } from "@/lib/scam-check-server";
+import { blockedResponse } from "@/lib/plan-access-server";
 
 // 看圖模型實測約 10～15 秒，預留空間
 export const maxDuration = 60;
@@ -45,14 +46,14 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "未登入" }, { status: 401 });
   const admin = createSupabaseAdmin();
-  const [{ data, error }, used, { tier }] = await Promise.all([
+  const [{ data, error }, used, { access }] = await Promise.all([
     admin.from("scam_checks").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
     usedToday(user.id),
     loadAsker(user.id, user.email),
   ]);
   if (error) console.warn("[api] scam-check GET:", error.message); // 還沒跑 SQL：當作沒有紀錄
   const checks = ((data ?? []) as ScamCheckRow[]).map(toClientScamCheck).filter((c) => c !== null);
-  return NextResponse.json({ checks, quota: { used, limit: tier === "admin" ? 99999 : SCAM_CHECK_DAILY } });
+  return NextResponse.json({ checks, quota: { used, limit: access.limit("scam_check_daily") } });
 }
 
 export async function POST(req: NextRequest) {
@@ -81,12 +82,15 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const { tier } = await loadAsker(user.id, user.email);
+  const { tier, access } = await loadAsker(user.id, user.email);
+  const blocked = blockedResponse(access, "scam_check");
+  if (blocked) return blocked;
+  const dailyLimit = access.limit("scam_check_daily");
   let slot: { id: string | null; used: number } = { id: null, used: 0 };
   if (tier !== "admin") {
     try {
       // 記成 gemini_text：看圖的用量會算進每月拍照次數，防詐不該吃掉拍照次數
-      slot = await reserveDailySlot({ userId: user.id, service: "gemini_text", endpoint: ENDPOINT, sinceIso: taipeiDayStartIso(), limit: SCAM_CHECK_DAILY });
+      slot = await reserveDailySlot({ userId: user.id, service: "gemini_text", endpoint: ENDPOINT, sinceIso: taipeiDayStartIso(), limit: dailyLimit });
     } catch (e) {
       console.error("[api] scam-check daily slot:", e);
       return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
@@ -94,8 +98,8 @@ export async function POST(req: NextRequest) {
     if (!slot.id) {
       return NextResponse.json(
         {
-          error: `今天的 ${SCAM_CHECK_DAILY} 次問完了。著急的話請直接打 165 反詐騙專線（免費）`,
-          quota: { used: SCAM_CHECK_DAILY, limit: SCAM_CHECK_DAILY },
+          error: `今天的 ${dailyLimit} 次問完了。著急的話請直接打 165 反詐騙專線（免費）`,
+          quota: { used: dailyLimit, limit: dailyLimit },
         },
         { status: 429 }
       );
@@ -123,7 +127,7 @@ export async function POST(req: NextRequest) {
       : { ...result, id: "", created_at: new Date().toISOString(), shared_at: null };
     return NextResponse.json({
       check,
-      quota: { used: slot.id ? slot.used : 0, limit: slot.id ? SCAM_CHECK_DAILY : 99999 },
+      quota: { used: slot.id ? slot.used : 0, limit: dailyLimit },
     });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);

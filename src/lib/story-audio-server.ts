@@ -12,7 +12,6 @@ import { runFfmpeg } from "@/lib/ai/video-compose";
 import { SAFE_AUDIO_INPUT } from "@/lib/ai/audio-convert";
 import {
   STORY_AUDIO_BUCKET,
-  STORY_AUDIO_DAILY_UPLOADS,
   STORY_AUDIO_MAX_BYTES,
   STORY_AUDIO_MIN_SECONDS,
   STORY_AUDIO_RECORD_MAX_SECONDS,
@@ -47,13 +46,13 @@ export interface StoredStoryAudio {
  * 每天上傳上限：拿網址時就先記一筆（claim_story_audio_upload 用鎖排隊，同時要很多個網址也不會超過）。
  * 還沒跑新版 SQL 時退回「數今天上傳了幾個檔案」（同時送出可能多給幾個）
  */
-async function claimUploadSlot(admin: Admin, userId: string): Promise<boolean> {
-  const { data, error } = await admin.rpc("claim_story_audio_upload", { p_user: userId, p_limit: STORY_AUDIO_DAILY_UPLOADS });
+async function claimUploadSlot(admin: Admin, userId: string, dailyLimit: number): Promise<boolean> {
+  const { data, error } = await admin.rpc("claim_story_audio_upload", { p_user: userId, p_limit: dailyLimit });
   if (!error) return data === true;
   if (!/claim_story_audio_upload/.test(error.message)) throw new Error(`claim story audio upload failed: ${error.message}`);
   const { data: today, error: countErr } = await admin.rpc("story_audio_uploads_today", { p_user: userId });
   if (countErr) throw new Error(`count story audio uploads failed: ${countErr.message}`);
-  return Number(today ?? 0) < STORY_AUDIO_DAILY_UPLOADS;
+  return Number(today ?? 0) < dailyLimit;
 }
 
 /** 給瀏覽器一個簽名上傳網址（直接傳到 Supabase，大檔案不經過 Vercel） */
@@ -61,14 +60,17 @@ export async function createStoryAudioUpload(
   admin: Admin,
   userId: string,
   file: { fileName: string; size: number; type: string }
+,
+  /** 每天可以上傳幾段（後台「方案與次數」的 story_audio_daily） */
+  dailyLimit: number
 ): Promise<{ path: string; token: string; contentType: string }> {
   const t = storyAudioType(file.fileName, file.type);
   if (!t) throw new StoryAudioError("只能放 mp3、m4a、aac、wav 錄音檔", 415);
   if (file.size > STORY_AUDIO_MAX_BYTES) {
     throw new StoryAudioError("錄音檔超過 50MB，請錄短一點，或分成幾段故事", 413);
   }
-  if (!(await claimUploadSlot(admin, userId))) {
-    throw new StoryAudioError(`今天已經上傳 ${STORY_AUDIO_DAILY_UPLOADS} 段錄音了，明天再來`, 429);
+  if (!(await claimUploadSlot(admin, userId, dailyLimit))) {
+    throw new StoryAudioError(`今天已經上傳 ${dailyLimit} 段錄音了，明天再來`, 429);
   }
   const p = pendingStoryAudioPath(userId, t.ext);
   const { data, error } = await admin.storage.from(STORY_AUDIO_BUCKET).createSignedUploadUrl(p);

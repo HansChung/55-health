@@ -1,5 +1,6 @@
 // 問暖暖的使用者資料與方案（打字問暖暖、我的故事集「整理成文章」共用每天的題數）
 import { createSupabaseAdmin } from "../supabase/server";
+import { isAdminEmail, planAccessFor } from "../plan-access-server";
 
 /** 問暖暖、故事集共用的每天題數：都記在這個 endpoint 底下 */
 export const ASK_ENDPOINT = "/api/ai/chat";
@@ -21,7 +22,8 @@ export async function loadAsker(userId: string, email: string | undefined) {
     .eq("id", userId)
     .maybeSingle();
   const profile = data as Profile | null;
-  const adminEmails = (process.env.ADMIN_EMAILS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-  const tier = profile?.is_admin || (email && adminEmails.includes(email)) ? "admin" : profile?.subscription_tier ?? "free";
-  return { profile, tier };
+  const tier = profile?.is_admin || isAdminEmail(email) ? "admin" : profile?.subscription_tier ?? "free";
+  // access：功能開關、每天題數等上限（後台「方案與次數」）
+  const access = await planAccessFor(userId, tier);
+  return { profile, tier: access.tier as string, access };
 }
