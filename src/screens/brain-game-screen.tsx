@@ -40,41 +40,53 @@ export function BrainGameScreen({ onBack }: { onBack: () => void }) {
   const [unavailable, setUnavailable] = useState(false);
   const [mode, setMode] = useState<Mode>({ type: "daily" });
   const [chosen, setChosen] = useState<number | null>(null);
-  const [hiding, setHiding] = useState(0);
+  /** 記數字還剩幾秒；memorizedKey＝哪一題已經看完了（沒看完之前不給看選項） */
+  const [hiding, setHiding] = useState(MEMORY_SECONDS);
+  const [memorizedKey, setMemorizedKey] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  /** 作答已經回來了：之後才到的舊統計不要蓋掉 */
+  const answeredRef = useRef(false);
+  const [statsLoaded, setStatsLoaded] = useState(false);
 
   const question: BrainQuestion = mode.type === "daily" ? dailyQuestion(taipeiDay()) : makeQuestion(mode.kind, mode.seed);
+  const questionKey = mode.type === "daily" ? `daily:${taipeiDay()}` : `practice:${mode.seed}`;
   const kindMeta = BRAIN_KINDS.find((k) => k.id === question.kind)!;
   const dailyDone = mode.type === "daily" && Boolean(stats?.today.played);
+  // 每日一題要先知道今天玩過沒（還在讀就先不給作答）
+  const dailyLoading = mode.type === "daily" && !statsLoaded;
+  const memorizing = Boolean(question.memorize) && chosen === null && !dailyDone && !dailyLoading && memorizedKey !== questionKey;
 
   useEffect(() => {
     api.brainStats()
-      .then((r) => setStats(r.stats))
-      .catch((e) => { if (e instanceof ApiError && e.status === 503) setUnavailable(true); });
+      .then((r) => { if (!answeredRef.current) setStats(r.stats); })
+      .catch((e) => { if (e instanceof ApiError && e.status === 503) setUnavailable(true); })
+      .finally(() => setStatsLoaded(true));
     return () => {
       stopGuideSpeech();
       if (timer.current) clearInterval(timer.current);
     };
   }, []);
 
-  // 記數字：換題時先給看幾秒
+  // 記數字：換題時先給看幾秒，倒數完才記下「這一題看完了」，選項這時才出來
   useEffect(() => {
     if (timer.current) clearInterval(timer.current);
-    if (!question.memorize || chosen !== null || dailyDone) {
-      setHiding(0);
-      return;
-    }
+    if (!memorizing) return;
+    const key = questionKey;
     setHiding(MEMORY_SECONDS);
     timer.current = setInterval(() => {
       setHiding((s) => {
-        if (s <= 1 && timer.current) clearInterval(timer.current);
-        return Math.max(0, s - 1);
+        if (s <= 1) {
+          if (timer.current) clearInterval(timer.current);
+          setMemorizedKey(key);
+          return 0;
+        }
+        return s - 1;
       });
     }, 1000);
-  }, [mode, dailyDone]);
+  }, [memorizing, questionKey]);
 
   const answer = async (i: number) => {
-    if (chosen !== null || hiding > 0) return;
+    if (chosen !== null || memorizing || dailyLoading) return;
     setChosen(i);
     stopGuideSpeech();
     const correct = i === question.answer;
@@ -82,6 +94,7 @@ export function BrainGameScreen({ onBack }: { onBack: () => void }) {
     if (mode.type !== "daily" || unavailable) return;
     try {
       const r = await api.brainAnswer({ kind: question.kind, correct });
+      answeredRef.current = true;
       setStats(r.stats);
       if (r.first && r.stats.streak > 1) toast.success(`連續 ${r.stats.streak} 天動動腦 🔥`);
     } catch (e) {
@@ -129,20 +142,22 @@ export function BrainGameScreen({ onBack }: { onBack: () => void }) {
           <span style={{ fontSize: "var(--fs-sm)", fontWeight: 800, color: "var(--primary-deep)", background: "var(--primary-soft)", borderRadius: 999, padding: "4px 12px", whiteSpace: "nowrap" }}>
             {mode.type === "daily" ? "今天的題目" : "練習"}・{kindMeta.emoji} {kindMeta.label}
           </span>
-          {canSpeakGuide() && !dailyDone && hiding === 0 && (
+          {canSpeakGuide() && !dailyDone && !dailyLoading && !memorizing && (
             <button type="button" onClick={speak} className="btn-ghost" style={{ minHeight: 44, padding: "4px 12px", whiteSpace: "nowrap" }} aria-label="念題目">🔊 念題目</button>
           )}
         </div>
 
-        {dailyDone && !answered ? (
+        {dailyLoading ? (
+          <div style={{ textAlign: "center", padding: "24px 0", color: "var(--ink-2)" }}>載入中…</div>
+        ) : dailyDone && !answered ? (
           <div style={{ textAlign: "center", padding: "12px 0", lineHeight: 1.7 }}>
             <div style={{ fontSize: 44 }} aria-hidden="true">{stats?.today.correct ? "🎉" : "💪"}</div>
             <div style={{ fontSize: "var(--fs-lg)", fontWeight: 800 }}>今天的題目做完了</div>
             <div style={{ color: "var(--ink-2)" }}>{stats?.today.correct ? "答對了，明天再來！" : "沒關係，明天再試試看"}</div>
           </div>
-        ) : hiding > 0 && question.memorize ? (
+        ) : memorizing ? (
           <div style={{ textAlign: "center", padding: "20px 0" }}>
-            <div style={{ fontSize: "var(--fs-base)", color: "var(--ink-2)" }}>記住這個號碼（{hiding} 秒）</div>
+            <div style={{ fontSize: "var(--fs-base)", color: "var(--ink-2)" }}>記住這個號碼（{hiding || MEMORY_SECONDS} 秒）</div>
             <div style={{ fontSize: 56, fontWeight: 800, letterSpacing: 8, margin: "12px 0", fontVariantNumeric: "tabular-nums" }}>{question.memorize}</div>
           </div>
         ) : (
