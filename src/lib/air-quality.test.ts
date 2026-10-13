@@ -44,7 +44,7 @@ describe("advice", () => {
 });
 
 describe("daily weather push with air", () => {
-  const today = { start: "2026-10-13T22:00:00Z", end: "2026-10-14T10:00:00Z", wx: "晴時多雲", pop: 10, minT: 22, maxT: 27, ci: null };
+  const today = { start: "2026-10-13T22:00:00Z", end: "2026-10-14T10:00:00Z", wx: "晴時多雲", pop: 10, minT: 22, maxT: 27, comfort: null };
   it("bad air replaces the go-outside tip and marks the title", () => {
     const p = buildDailyWeatherPush({ county: "高雄市", today, tonight: null, air: { aqi: 155 } });
     expect(p.title).toContain("早安！高雄市今天晴時多雲，空氣不好😷");
