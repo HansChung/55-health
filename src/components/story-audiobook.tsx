@@ -77,6 +77,8 @@ export function StoryAudiobook({
   }, []);
 
   const next = () => {
+    // 先停掉這一篇（排在後面還沒念的句子也一起作廢）；要播下一篇由播放的 effect 重新開始
+    stopAll();
     if (index + 1 < chapters.length) {
       paraRef.current = 0;
       setIndex(index + 1);
