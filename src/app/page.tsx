@@ -783,8 +783,8 @@ export default function Page() {
       setSubpage("photo-ask");
     }) : undefined,
     travel_video: openTravelVideo,
-    greeting_video: featureEnabled("greeting_video") && hasFeature(gateTier, "greeting_video")
-      ? () => { setTravelVideoMode("greeting"); setSubpage("travel-video"); }
+    greeting_video: featureEnabled("greeting_video")
+      ? () => requireFeature("greeting_video", () => { setTravelVideoMode("greeting"); setSubpage("travel-video"); })
       : undefined,
     stories: featureEnabled("life_stories") ? () => requireFeature("life_stories", () => { setStoriesAudio(false); setSubpage("stories"); }) : undefined,
     study_tours: () => {
