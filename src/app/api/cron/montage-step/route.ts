@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     .from("travel_videos")
     .select("*")
     .eq("id", id)
-    .in("kind", ["montage", "mv", "yearly"]) // 遊記 MV、年度回憶影片也用同一個接力端點
+    .in("kind", ["montage", "mv", "yearly", "tour"]) // 遊記 MV、年度回憶影片也用同一個接力端點
     .is("deleted_at", null)
     .maybeSingle();
   const row = data as TravelVideoRow | null;
@@ -45,13 +45,13 @@ export async function POST(req: NextRequest) {
   const origin = new URL(req.url).origin;
   after(async () => {
     const wait = montageRetryDelayMs(
-      (row.kind === "mv" ? row.mv?.attempts : row.kind === "yearly" ? row.yearly?.attempts : row.montage?.attempts) ?? 0
+      (row.kind === "mv" ? row.mv?.attempts : row.kind === "yearly" || row.kind === "tour" ? row.yearly?.attempts : row.montage?.attempts) ?? 0
     );
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
     const step =
       row.kind === "mv"
         ? syncMv(row, { origin, budgetMs: WORK_BUDGET_MS - wait, waitForSong: true })
-        : row.kind === "yearly"
+        : row.kind === "yearly" || row.kind === "tour"
           ? syncYearly(row, { origin, budgetMs: WORK_BUDGET_MS - wait })
           : syncMontage(row, { origin, budgetMs: WORK_BUDGET_MS - wait });
     await step.catch((e) => console.error("[montage] continuation step failed:", e));

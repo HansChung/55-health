@@ -63,6 +63,7 @@ const QUOTA_KEYS = {
   montage: { feature: "travel_montage", limit: "montage_monthly" },
   mv: { feature: "travel_mv", limit: "mv_monthly" },
   yearly: { feature: "travel_yearly", limit: "yearly_per_year" },
+  tour: { feature: "tour_album", limit: "tour_video_monthly" },
 } as const;
 
 /**
@@ -71,7 +72,7 @@ const QUOTA_KEYS = {
  */
 export async function checkUserQuota(
   userId: string,
-  service: "photo" | "video" | "montage" | "mv" | "yearly"
+  service: "photo" | "video" | "montage" | "mv" | "yearly" | "tour"
 ): Promise<{
   allowed: boolean;
   used: number;

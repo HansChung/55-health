@@ -162,7 +162,9 @@ export function TravelVideoScreen({ onBack, initialMode }: TravelVideoScreenProp
           const montage = v.kind === "montage";
           if (v.status === "succeeded") {
             toast.success(
-              v.kind === "yearly"
+              v.kind === "tour"
+                ? "研學團遊記做好了！可以播放、分享給家人"
+                : v.kind === "yearly"
                 ? "年度回憶影片做好了！可以播放、分享給家人"
                 : v.kind === "mv"
                 ? "MV 做好了！可以播放、分享給家人"
@@ -173,7 +175,9 @@ export function TravelVideoScreen({ onBack, initialMode }: TravelVideoScreenProp
           }
           else if (v.status === "failed") {
             toast.info(
-              v.kind === "yearly"
+              v.kind === "tour"
+                ? "研學團遊記沒做成功，不會扣次數，請再做一次"
+                : v.kind === "yearly"
                 ? "年度回憶影片沒做成功，不會扣次數，請再做一次"
                 : v.kind === "mv"
                 ? "有一支 MV 沒做成功，不會扣次數，請再做一次"
@@ -419,7 +423,7 @@ export function TravelVideoScreen({ onBack, initialMode }: TravelVideoScreenProp
 
   const handleShare = async (v: TravelVideo) => {
     if (!v.video_url) return;
-    const kindLabel = v.kind === "montage" ? "遊記影片" : v.kind === "yearly" ? "年度回憶影片" : "出遊回憶影片";
+    const kindLabel = v.kind === "montage" ? "遊記影片" : v.kind === "yearly" ? "年度回憶影片" : v.kind === "tour" ? "研學團遊記" : "出遊回憶影片";
     const text = `我用暖暖做了一支${kindLabel}${v.place ? `（${v.place}）` : ""}，給你看看！`;
     // 分享頁（LINE 會顯示縮圖和標題，打開就能播放；家人還能按讚留言）。App 裡 origin 是 localhost → 用正式網址
     const url = `${publicAppOrigin(process.env.NEXT_PUBLIC_APP_URL, window.location.origin)}${videoSharePath(v.id)}`;
@@ -853,7 +857,9 @@ function VideoCard({
   const pending = isTravelVideoPending(v.status);
   const montage = v.kind === "montage";
   const mv = v.kind === "mv";
-  const yearly = v.kind === "yearly";
+  // 年度回憶、全團遊記同一套剪輯
+  const yearly = v.kind === "yearly" || v.kind === "tour";
+  const tour = v.kind === "tour";
   const [showLyrics, setShowLyrics] = useState(false);
 
   return (
@@ -915,7 +921,7 @@ function VideoCard({
               </>
             ) : (
               <div role="status">
-                {yearly ? "年度回憶影片沒做成功（不會扣次數）" : mv ? "這支 MV 沒做成功（不會扣次數）" : montage ? "這支遊記沒做成功（不會扣次數）" : "這支沒做成功（不會扣次數）"}
+                {yearly ? `${tour ? "研學團遊記" : "年度回憶影片"}沒做成功（不會扣次數）` : mv ? "這支 MV 沒做成功（不會扣次數）" : montage ? "這支遊記沒做成功（不會扣次數）" : "這支沒做成功（不會扣次數）"}
                 <br />
                 {mv || montage || yearly ? "請再做一次" : "換張照片再試試"}
               </div>
@@ -925,10 +931,10 @@ function VideoCard({
       )}
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
-        <span aria-hidden="true">{yearly ? "📅" : mv ? "🎵" : montage ? "📚" : styleMeta?.emoji ?? "🎬"}</span>
+        <span aria-hidden="true">{tour ? "🧭" : yearly ? "📅" : mv ? "🎵" : montage ? "📚" : styleMeta?.emoji ?? "🎬"}</span>
         <span style={{ fontWeight: 700, color: "var(--ink-1)" }}>
           {yearly
-            ? `年度回憶：${v.yearly?.title ?? ""}`
+            ? `${tour ? "研學團遊記" : "年度回憶"}：${v.yearly?.title ?? ""}`
             : mv
             ? `MV：${v.mv?.title ?? ""}${v.place ? `（${v.place}）` : ""}`
             : v.place || (montage ? `遊記影片（${v.montage_lines?.length ?? 0} 張）` : styleMeta?.label || "出遊影片")}

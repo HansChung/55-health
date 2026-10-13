@@ -152,7 +152,7 @@ export function toClientVideo(admin: Admin, row: TravelVideoRow): TravelVideo {
     created_at: row.created_at,
     completed_at: row.completed_at,
     narration_text: row.narration_text ?? null,
-    kind: row.kind === "montage" || row.kind === "mv" || row.kind === "yearly" ? row.kind : "single",
+    kind: row.kind === "montage" || row.kind === "mv" || row.kind === "yearly" || row.kind === "tour" ? row.kind : "single",
     montage_lines: row.kind === "montage" && row.montage ? row.montage.photos.map((p) => p.line) : null,
     montage_progress:
       row.kind === "montage" && row.montage && isTravelVideoPending(row.status) ? montageProgress(row.montage) : null,
@@ -168,9 +168,10 @@ export function toClientVideo(admin: Admin, row: TravelVideoRow): TravelVideo {
           }
         : null,
     mv_progress: row.kind === "mv" && row.mv && isTravelVideoPending(row.status) ? mvProgress(row.mv) : null,
-    yearly: row.kind === "yearly" && row.yearly ? { year: row.yearly.year, title: row.yearly.title } : null,
+    // 年度回憶、全團遊記（同一套剪輯，狀態都放在 yearly 欄位）
+    yearly: (row.kind === "yearly" || row.kind === "tour") && row.yearly ? { year: row.yearly.year, title: row.yearly.title } : null,
     yearly_progress:
-      row.kind === "yearly" && row.yearly && isTravelVideoPending(row.status) ? yearlyProgress(row.yearly) : null,
+      (row.kind === "yearly" || row.kind === "tour") && row.yearly && isTravelVideoPending(row.status) ? yearlyProgress(row.yearly) : null,
   };
 }
 
@@ -201,7 +202,11 @@ export async function notifyOwner(row: TravelVideoRow): Promise<void> {
   const montage = row.kind === "montage";
   const mvTitle = row.mv?.title ? `「${row.mv.title}」` : "";
   const message =
-    row.kind === "yearly"
+    row.kind === "tour"
+      ? row.status === "succeeded"
+        ? { title: "🧭 研學團遊記做好了！", body: `${row.yearly?.title ? `「${row.yearly.title}」` : ""}全團的照片做成影片了，點這裡播放、分享給家人` }
+        : { title: "研學團遊記這次沒做成功", body: "不會扣次數，請再做一次試試看" }
+      : row.kind === "yearly"
       ? row.status === "succeeded"
         ? { title: "📅 年度回憶影片做好了！", body: `${row.yearly?.title ? `「${row.yearly.title}」` : ""}做好了，點這裡播放、分享給家人` }
         : { title: "年度回憶影片這次沒做成功", body: "不會扣次數，請再做一次試試看" }

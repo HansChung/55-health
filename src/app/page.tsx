@@ -920,6 +920,7 @@ export default function Page() {
             setPhotoAsk({ place: place ?? null, returnTo: subpage, tourId: tourId ?? null });
             setSubpage("photo-ask");
           }}
+          onOpenVideos={() => setSubpage("travel-video")}
         />
       )}
       {subpage === "photo-ask" && (

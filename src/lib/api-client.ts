@@ -175,6 +175,26 @@ export const api = {
       defaultPicks: string[];
       quota: TravelVideoQuota;
     }>(`/api/ai/travel-video/yearly${year ? `?year=${year}` : ""}`, { timeoutMs: 30000 }),
+  // 研學團共享相簿、全團遊記影片
+  tourAlbum: (tourId: string) =>
+    apiFetch<{ album: import("./tour-album").TourAlbumView }>(`/api/study-tours/${tourId}/album`),
+  addTourAlbumPhoto: (tourId: string, photo: { photoPath: string; width: number; height: number }) =>
+    apiFetch<{ album: import("./tour-album").TourAlbumView }>(`/api/study-tours/${tourId}/album`, { method: "POST", json: photo, timeoutMs: 30000 }),
+  deleteTourAlbumPhoto: (tourId: string, photoId: string) =>
+    apiFetch<{ album: import("./tour-album").TourAlbumView }>(`/api/study-tours/${tourId}/album/${photoId}`, { method: "DELETE" }),
+  tourVideoCandidates: (tourId: string) =>
+    apiFetch<{
+      title: string;
+      candidates: import("./travel-yearly").YearlyCandidate[];
+      defaultPicks: string[];
+      quota: TravelVideoQuota;
+    }>(`/api/study-tours/${tourId}/album/video`, { timeoutMs: 30000 }),
+  createTourVideo: (tourId: string, input: { title: string; music: MontageMusicId; picks: { key: string; caption: string }[] }) =>
+    apiFetch<{ video: TravelVideo; quota: TravelVideoQuota }>(`/api/study-tours/${tourId}/album/video`, {
+      method: "POST",
+      json: input,
+      timeoutMs: 70000,
+    }),
   createYearlyVideo: (input: { year: number; title: string; music: MontageMusicId; picks: { key: string; caption: string }[] }) =>
     apiFetch<{ video: TravelVideo; quota: TravelVideoQuota }>("/api/ai/travel-video/yearly", {
       method: "POST",

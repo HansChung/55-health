@@ -281,6 +281,18 @@ stack works well for auth + meal/diary CRUD:
     a stamp is new. `family_links` has only select/insert RLS policies, so `PATCH`/`DELETE /api/family/[id]`
     write with the service role filtered by `owner_id = user.id`.
 
+### 研學團共享相簿（needs `supabase/add-study-tour-album.sql`; feature `tour_album`, limit `tour_video_monthly`）
+- Tour detail → 「📸 團體相簿」 (`TourAlbum`). Members = a `confirmed` registration (incl. on-site) for the tour as
+  `user_id` **or** `registered_by` (the family member who signed the elder up); admins see/delete everything
+  (`loadAlbumAccess`). Non-members get 404 and the section stays hidden. Uploads open 3 h before start until 30 days
+  after the end (`tourAlbumOpen`), ≤30 photos per person per tour (insert-then-count like comments), up to 5 per batch:
+  browser → `user-uploads` staging → `copyUserUpload` into the private `study-tour-photos` bucket at
+  `{tour}/{user}/{id}.jpg`, read back through 1 h signed URLs. Delete = own photo (admins: any), soft delete + file.
+- 「🎬 做成研學團遊記影片」 reuses the 年度回憶 composer (`YearlyComposer tour={…}`) and pipeline: `kind='tour'` rows
+  keep their state in the `yearly` column, `insertCompilationVideo` (shared with yearly) copies the picked album
+  photos into the video folder, captions default to 「王阿嬤拍的」, title = tour title; `syncYearly` / `montage-step`
+  render it (ffmpeg only, no AI cost). The video lands in the creator's own 出遊回憶影片 list.
+
 ### 拍照問暖暖（photo ask）
 - Home 「拍照問暖暖」, a button on 研學團 pages (prefills the tour title as the place) and the book's photo chapters
   → subpage `photo-ask`. Deep link `/?open=photo-ask`; book chapters put the question in sessionStorage

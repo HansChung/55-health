@@ -9,8 +9,8 @@ import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
 import { checkUserQuota } from "@/lib/ai/usage-tracker";
 import { blockedResponse } from "@/lib/plan-access-server";
-import { TRAVEL_VIDEO_BUCKET, toClientVideo, type TravelVideoRow } from "@/lib/ai/travel-video-server";
-import { collectYearlySources, copyYearlyPhotos, syncYearly, toCandidate, yearlySize } from "@/lib/ai/travel-yearly-server";
+import { toClientVideo } from "@/lib/ai/travel-video-server";
+import { collectYearlySources, insertCompilationVideo, syncYearly, toCandidate } from "@/lib/ai/travel-yearly-server";
 import { DEFAULT_MONTAGE_MUSIC, MONTAGE_MUSIC_IDS } from "@/lib/travel-video";
 import {
   YEARLY_MAX_PHOTOS,
@@ -20,8 +20,6 @@ import {
   sanitizeYearlyCaption,
   sanitizeYearlyTitle,
   taipeiYearMonth,
-  yearlySegments,
-  type YearlyState,
 } from "@/lib/travel-yearly";
 
 /** 建立後在背景先剪第一段（剩下的由背景接力做完） */
@@ -122,49 +120,18 @@ export async function POST(req: NextRequest) {
   const captions = picks.map((p, i) => sanitizeYearlyCaption(p.caption) || chosen[i].caption);
 
   // 照片複製一份到影片底下：之後遊記、故事被刪掉，年度影片也不受影響
-  const id = crypto.randomUUID();
-  let copied: string[];
+  let created;
   try {
-    copied = await copyYearlyPhotos(admin, { user_id: user.id, id }, chosen);
+    created = await insertCompilationVideo(admin, { userId: user.id, kind: "yearly", year: body.year, title, music: body.music, chosen, captions });
   } catch (e) {
-    console.error("[api] yearly photo copy:", e);
+    console.error("[api] yearly create:", e);
     return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
   }
-  const state: YearlyState = {
-    year: body.year,
-    title,
-    music: body.music,
-    size: yearlySize(chosen),
-    photos: chosen.map((s, i) => ({ path: copied[i], width: s.width ?? 0, height: s.height ?? 0, caption: captions[i] })),
-    segments: yearlySegments(title, captions),
-    attempts: 0,
-  };
-  const { data: inserted, error: insErr } = await admin
-    .from("travel_videos")
-    .insert({
-      id,
-      user_id: user.id,
-      kind: "yearly",
-      status: "queued",
-      style: "gentle",
-      place: null,
-      prompt: title,
-      model: "ffmpeg",
-      photo_path: copied[0],
-      yearly: state,
-    })
-    .select("*")
-    .single();
-  if (insErr || !inserted) {
-    await admin.storage.from(TRAVEL_VIDEO_BUCKET).remove(copied);
-    if (insErr?.code === "23505") return NextResponse.json({ error: PENDING_MESSAGE }, { status: 409 });
-    console.error("[api] yearly insert (add-travel-video-yearly.sql 跑了嗎？):", insErr);
-    return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
-  }
+  if ("pending" in created) return NextResponse.json({ error: PENDING_MESSAGE }, { status: 409 });
 
   // 回應送出後先開始剪（背景接力會接著做完，長輩離開畫面也會做好並推播）
   const origin = new URL(req.url).origin;
-  const row = inserted as TravelVideoRow;
+  const row = created.row;
   after(() => syncYearly(row, { origin }).then(() => undefined).catch((e) => console.error("[yearly] first step failed:", e)));
 
   return NextResponse.json({

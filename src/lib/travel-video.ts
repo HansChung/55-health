@@ -274,7 +274,7 @@ export function checkVideoImageSize(
 
 // ── 多張照片遊記影片（montage）：照片慢慢移動＋每張一句配音與字幕，伺服器 ffmpeg 合成 ──
 
-export type TravelVideoKind = "single" | "montage" | "mv" | "yearly";
+export type TravelVideoKind = "single" | "montage" | "mv" | "yearly" | "tour";
 export const MONTAGE_MIN_PHOTOS = 3;
 export const MONTAGE_MAX_PHOTOS = 5;
 /** 一次送出的照片（base64 data URL）合計上限：Vercel request body 上限 4.5MB */
@@ -596,10 +596,12 @@ export function videoShareMeta(
   title: string;
   description: string;
 } {
-  const what = v.kind === "mv" ? "MV" : v.kind === "montage" ? "遊記影片" : v.kind === "yearly" ? "年度回憶影片" : "出遊回憶影片";
+  const what = v.kind === "mv" ? "MV" : v.kind === "montage" ? "遊記影片" : v.kind === "yearly" ? "年度回憶影片" : v.kind === "tour" ? "研學團遊記" : "出遊回憶影片";
   const title =
     v.kind === "yearly" && v.yearly?.title
       ? `📅 ${v.yearly.title}`
+      : v.kind === "tour" && v.yearly?.title
+      ? `🧭 ${v.yearly.title}・研學團遊記`
       : v.kind === "mv" && v.mv?.title
         ? `🎵 ${v.mv.title}${v.place ? `・${v.place}` : ""}`
         : v.place
