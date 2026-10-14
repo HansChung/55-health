@@ -37,7 +37,7 @@ export interface TranscriptMessage {
 }
 
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
-export type Tab = "home" | "history" | "profile";
+export type Tab = "home" | "history" | "features" | "profile";
 export type Modal = "camera" | "result" | "voice" | "suggestion" | "onboarding" | "login" | null;
 export type Subpage = "chronic" | "family" | "notif" | "exercise" | "font" | "edit-profile" | "health-metrics" | "prescription" | "weekly-report" | "alerts-center" | "achievements" | "smart" | "blueprint" | "iot" | "caregiver" | "travel-video" | "study-tours" | "study-passport" | "photo-ask" | "ask" | "stories" | "scam-check" | "clinic" | null;
 export type MascotMood = "happy" | "thinking" | "sleeping" | "excited";

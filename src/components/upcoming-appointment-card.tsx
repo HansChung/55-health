@@ -45,7 +45,7 @@ export function UpcomingAppointmentCard({ onOpen }: { onOpen: () => void }) {
         <span style={{ fontSize: 40, flexShrink: 0 }} aria-hidden="true">{kind.emoji}</span>
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: "block", fontWeight: 800, fontSize: "var(--fs-lg)" }}>
-            {relativeDayLabel(next.appt_date)}{next.appt_time ? ` ${appointmentTimeLabel(next.appt_time)}` : ""}要{kind.label}
+            {relativeDayLabel(next.appt_date)}{next.appt_time ? ` ${appointmentTimeLabel(next.appt_time)} ` : ""}要{kind.label}
           </span>
           <span style={{ display: "block", color: "var(--ink-2)", fontSize: "var(--fs-sm)", lineHeight: 1.5 }}>
             {appointmentPlace(next)}{next.note ? `・${next.note}` : ""}
