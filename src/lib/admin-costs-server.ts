@@ -76,7 +76,7 @@ export async function fetchTokenRates(models: string[]): Promise<Record<string, 
   return out;
 }
 
-/** 記今天的累計用量（同一天後面的覆蓋前面的）；還沒跑 SQL 就略過 */
+/** 記今天的累計用量：同一天後面的覆蓋前面的，所以每一筆＝那一天最後看到的值（見 UsageSnapshot）；還沒跑 SQL 就略過 */
 export async function saveSnapshot(admin: Admin, b: Lk888Balance, now = new Date()): Promise<void> {
   const { error } = await admin
     .from("lk888_usage_snapshots")

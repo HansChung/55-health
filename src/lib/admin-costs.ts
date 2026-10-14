@@ -113,6 +113,12 @@ export function rateFromPricing(json: unknown): TokenRate | null {
   };
 }
 
+/** 沒有 token、平台也沒回報算力，但價格固定的呼叫（每次幾算力） */
+export const FIXED_CALL_POINTS: Record<string, number> = {
+  // lk888 POST /v1/skills/voices/clone：每次 0.1 算力（第一次拿來配音的 18.8 啟用費算在配音那一筆的 platform_cost）
+  "/api/ai/voice-clone": 0.1,
+};
+
 export interface UsageRow {
   user_id: string | null;
   endpoint: string | null;
@@ -121,18 +127,29 @@ export interface UsageRow {
   output_tokens: number | null;
   success: boolean | null;
   metadata: Record<string, unknown> | null;
+  /** 依官方單價估的美元（Google 直連時用這個換算） */
+  cost_usd?: number | string | null;
   created_at: string;
 }
 
-/** 一筆紀錄的算力：{ points, actual }；先佔位還沒用的（reserved）、失敗的（平台會退）都算 0 */
-export function rowPoints(row: UsageRow, rates: Record<string, TokenRate>): { points: number; actual: boolean } {
+/**
+ * 一筆紀錄的算力：{ points, actual }；先佔位還沒用的（reserved）、失敗的（平台會退）都算 0。
+ * 順序：平台回報的實際算力 → 固定價格 → lk888 模型單價 × token → 沒有 lk888 單價（Google 直連）就用 cost_usd 換算。
+ * usdToPoints＝1 美元等於幾算力（台幣匯率 ÷ 算力價格）
+ */
+export function rowPoints(row: UsageRow, rates: Record<string, TokenRate>, usdToPoints = 0): { points: number; actual: boolean } {
   if (row.success === false || row.metadata?.reserved === true) return { points: 0, actual: true };
   const pc = row.metadata?.platform_cost;
   if (typeof pc === "number" && Number.isFinite(pc) && pc >= 0) return { points: pc, actual: true };
-  const rate = row.model ? rates[row.model] ?? FALLBACK_TOKEN_RATES[row.model] : undefined;
-  if (!rate) return { points: 0, actual: false };
-  const points = ((row.input_tokens ?? 0) * rate.input + (row.output_tokens ?? 0) * rate.output) / 1_000_000;
-  return { points, actual: false };
+  const fixed = row.endpoint ? FIXED_CALL_POINTS[row.endpoint] : undefined;
+  if (fixed !== undefined && !row.input_tokens && !row.output_tokens) return { points: fixed, actual: false };
+  const viaGoogle = row.metadata?.provider === "google";
+  const rate = row.model && !viaGoogle ? rates[row.model] ?? FALLBACK_TOKEN_RATES[row.model] : undefined;
+  if (rate) {
+    return { points: ((row.input_tokens ?? 0) * rate.input + (row.output_tokens ?? 0) * rate.output) / 1_000_000, actual: false };
+  }
+  const usd = Number(row.cost_usd ?? 0);
+  return { points: Number.isFinite(usd) && usd > 0 ? usd * usdToPoints : 0, actual: false };
 }
 
 export interface FeatureCost {
@@ -160,7 +177,7 @@ export function taipeiDay(iso: string): string {
   return new Date(new Date(iso).getTime() + 8 * 3600_000).toISOString().slice(0, 10);
 }
 
-export function summarizeUsage(rows: UsageRow[], rates: Record<string, TokenRate>): CostSummary {
+export function summarizeUsage(rows: UsageRow[], rates: Record<string, TokenRate>, usdToPoints = 0): CostSummary {
   const byFeature = new Map<string, { calls: number; failed: number; points: number; est: number }>();
   const daily = new Map<string, number>();
   const users = new Map<string, { points: number; calls: number }>();
@@ -170,7 +187,7 @@ export function summarizeUsage(rows: UsageRow[], rates: Record<string, TokenRate
   let failed = 0;
   for (const row of rows) {
     if (row.metadata?.reserved === true) continue;
-    const { points: p, actual } = rowPoints(row, rates);
+    const { points: p, actual } = rowPoints(row, rates, usdToPoints);
     const f = featureLabel(row.endpoint);
     const cur = byFeature.get(f) ?? { calls: 0, failed: 0, points: 0, est: 0 };
     cur.calls++;
@@ -236,6 +253,10 @@ export function recentMonths(now: Date = new Date(), count = 6): string[] {
   });
 }
 
+/**
+ * 每天一筆：**那一天（台北）最後看到的累計用量**——排程在台北晚上 11 點多記，打開後台也會用當下的值覆蓋今天那一筆。
+ * 所以「某一天那筆」＝那一天結束時的累計；上個月最後一天那筆＝這個月開始時的累計
+ */
 export interface UsageSnapshot {
   day: string;
   used: number;
@@ -243,20 +264,24 @@ export interface UsageSnapshot {
 }
 
 /**
- * lk888 這個月實際扣了多少：月底（或現在）的累計用量 − 上個月最後一天的累計用量。
- * 沒有月初以前的紀錄就從這個月第一筆算（標示為「從 X 日起」）；金鑰換過（累計變小）就算不出來
+ * lk888 這個月實際扣了多少：這個月最後一筆（或現在）的累計 − 上個月最後一天那筆。
+ * 沒有月初以前的紀錄就從這個月第一筆算（標示為「從 X 日起」，那一天當天的用量算不到）；
+ * 區間裡累計有變小（金鑰換過）就算不出來
  */
 export function lk888MonthUsed(snapshots: UsageSnapshot[], month: string, live?: { used: number } | null): { used: number; since: string } | null {
   const sorted = [...snapshots].sort((a, b) => a.day.localeCompare(b.day));
   const before = sorted.filter((s) => s.day < `${month}-01`).at(-1);
   const inMonth = sorted.filter((s) => s.day.startsWith(month));
-  const isCurrent = live && month === taipeiMonth();
-  const endUsed = isCurrent ? live.used : inMonth.at(-1)?.used;
-  const start = before ?? inMonth[0];
-  if (endUsed === undefined || !start) return null;
-  const used = endUsed - start.used;
-  if (used < 0) return null;
-  return { used, since: before ? `${month}-01` : start.day };
+  const isCurrent = Boolean(live) && month === taipeiMonth();
+  const series = [...(before ? [before.used] : []), ...inMonth.map((s) => s.used), ...(isCurrent ? [live!.used] : [])];
+  if (series.length < 2) return null;
+  for (let i = 1; i < series.length; i++) if (series[i] < series[i - 1]) return null;
+  // 沒有月初以前的紀錄：從這個月第一筆（那一天結束時）算起
+  return { used: series[series.length - 1] - series[0], since: before ? `${month}-01` : nextDay(inMonth[0].day) };
+}
+
+function nextDay(day: string): string {
+  return new Date(Date.parse(`${day}T00:00:00Z`) + 86400_000).toISOString().slice(0, 10);
 }
 
 /** 照最近 7 天平均，剩下的算力大約還能用幾天（用量是 0 就回 null） */

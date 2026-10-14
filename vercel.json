@@ -70,7 +70,7 @@
     },
     {
       "path": "/api/cron/lk888-snapshot",
-      "schedule": "0 16 * * *"
+      "schedule": "0 15 * * *"
     }
   ]
 }

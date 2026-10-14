@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
   for (let from = 0; from < MAX_ROWS; from += PAGE) {
     const { data, error } = await admin
       .from("ai_usage")
-      .select("user_id, endpoint, model, input_tokens, output_tokens, success, metadata, created_at")
+      .select("user_id, endpoint, model, input_tokens, output_tokens, success, metadata, cost_usd, created_at")
       .gte("created_at", start)
       .lt("created_at", end)
       .order("created_at", { ascending: true })
@@ -59,7 +59,8 @@ export async function GET(req: NextRequest) {
   ]);
   if (balance) await saveSnapshot(admin, balance);
   const snapshots = await loadSnapshots(admin);
-  const summary = summarizeUsage(rows, rates);
+  // Google 直連（沒有 lk888 單價）的紀錄用 cost_usd 換算：1 美元 = 匯率 ÷ 算力價格 個算力
+  const summary = summarizeUsage(rows, rates, settings.usdNtd / settings.pointNtd);
 
   // 前 10 名的 email
   const emails = new Map<string, string>();

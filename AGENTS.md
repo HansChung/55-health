@@ -317,12 +317,13 @@ stack works well for auth + meal/diary CRUD:
 - AI cost per month and per feature from `ai_usage` (`src/lib/admin-costs.ts`): rows with `metadata.platform_cost`
   (lk888 video／TTS／Suno／voice: the real 算力 the platform charged) count as **actual**; token-only rows (Gemini via
   lk888) are **estimated** with lk888's own per-model prices — `GET /v1/skills/models/{model}/pricing` (算力 per 1M
-  tokens, median of the key's usable 按token channels, cached 6 h; `FALLBACK_TOKEN_RATES` if unreachable). Failed and
-  `reserved` rows cost 0. Endpoint → 中文功能名 in `FEATURE_LABELS` (add new AI endpoints there).
+  tokens, median of the key's usable 按token channels, cached 6 h; `FALLBACK_TOKEN_RATES` if unreachable). Google-direct
+  rows (`metadata.provider = google`, no lk888 price) use `cost_usd` × (USD→NT$ ÷ 算力價格); fixed-price calls without
+  tokens are in `FIXED_CALL_POINTS` (voice clone 0.1). Failed and `reserved` rows cost 0. Endpoint → 中文功能名 in `FEATURE_LABELS` (add new AI endpoints there).
 - **Real monthly spend**: `GET /v1/skills/balance` → `{ balance, api_key_quota.used }` (read-only, free). Cron
-  `/api/cron/lk888-snapshot` (16:00 UTC = Taipei midnight) and every page load upsert one row per Taipei day into
-  `lk888_usage_snapshots`; `lk888MonthUsed` = used now/at month end − last snapshot before the month (null if the key
-  was rotated). The page uses that for the AI total when it covers the whole month, otherwise the itemized sum, and
+  `/api/cron/lk888-snapshot` (15:00 UTC = Taipei 23:xx) and every page load upsert one row per Taipei day into
+  `lk888_usage_snapshots`, so **a row = the last value seen that Taipei day (end of day)**. `lk888MonthUsed` = last
+  in-month row (or live now) − the previous month's last row; null if any value in that window decreases (key rotated). The page uses that for the AI total when it covers the whole month, otherwise the itemized sum, and
   shows both as 對帳. `daysLeft` = balance ÷ last-7-day average.
 - Settings in `app_settings` key `costs` (`normalizeCostSettings`): 1 算力 = NT$ (default 4.8 = NT$96／20 點), USD→NT$,
   金流手續費 %, fixed monthly costs (default Vercel Pro 20 + Supabase Pro 25 USD). Revenue = paying profiles (not admins)

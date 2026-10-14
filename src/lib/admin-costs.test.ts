@@ -33,6 +33,13 @@ describe("points", () => {
     expect(rowPoints(row({ success: false, metadata: { platform_cost: 5 } }), rates).points).toBe(0);
     expect(rowPoints(row({ model: "mystery" , input_tokens: 99 }), rates)).toEqual({ points: 0, actual: false });
   });
+  it("Google-direct rows use cost_usd; voice clone has a fixed price", () => {
+    // 1 美元 = 32 台幣 ÷ 4.8 = 6.67 算力
+    const g = rowPoints(row({ model: "gemini-2.5-flash", cost_usd: "0.003", metadata: { provider: "google" }, input_tokens: 10 }), {}, 32 / 4.8);
+    expect(g.points).toBeCloseTo(0.02);
+    expect(g.actual).toBe(false);
+    expect(rowPoints(row({ endpoint: "/api/ai/voice-clone", model: "speech-2.8-clone" }), {})).toEqual({ points: 0.1, actual: false });
+  });
   it("median of usable token-priced channels", () => {
     const r = rateFromPricing({ channel_groups: [
       { is_active: true, in_key_whitelist: true, billing_method: "按token", input_token_price: 1, output_token_price: 10, current_time_discount: 1 },
@@ -71,7 +78,11 @@ describe("months and lk888 snapshots", () => {
   it("monthly used = end − last snapshot before the month", () => {
     const snaps = [{ day: "2026-09-30", used: 10, balance: 50 }, { day: "2026-10-05", used: 14, balance: 46 }, { day: "2026-10-20", used: 20, balance: 40 }];
     expect(lk888MonthUsed(snaps, "2026-10")).toEqual({ used: 10, since: "2026-10-01" });
-    expect(lk888MonthUsed(snaps.slice(1), "2026-10")).toEqual({ used: 6, since: "2026-10-05" });
+    // 沒有月初以前的紀錄：從第一筆那一天結束時算起
+    expect(lk888MonthUsed(snaps.slice(1), "2026-10")).toEqual({ used: 6, since: "2026-10-06" });
+    // 金鑰中途換過（累計歸零後又長回來）也要看得出來
+    expect(lk888MonthUsed([{ day: "2026-09-30", used: 100, balance: 0 }, { day: "2026-10-05", used: 0, balance: 0 }, { day: "2026-10-20", used: 150, balance: 0 }], "2026-10")).toBeNull();
+    expect(lk888MonthUsed([{ day: "2026-10-05", used: 3, balance: 0 }], "2026-10")).toBeNull();
     expect(lk888MonthUsed([{ day: "2026-10-01", used: 30, balance: 0 }, { day: "2026-10-02", used: 1, balance: 0 }], "2026-10")).toBeNull();
     expect(lk888MonthUsed([], "2026-10")).toBeNull();
   });

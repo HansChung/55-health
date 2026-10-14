@@ -1,5 +1,5 @@
 // 每天記一次 lk888 的累計用量和餘額（後台「每月成本」用來算每個月實際扣了多少）
-// Vercel Cron（見 vercel.json，16:00 UTC＝台北午夜），CRON_SECRET 保護；只查詢，不扣點
+// Vercel Cron（見 vercel.json，15:00 UTC＝台北晚上 11 點那一小時）：記成「今天結束時」的累計；CRON_SECRET 保護；只查詢，不扣點
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/server";
 import { fetchLk888Balance, saveSnapshot } from "@/lib/admin-costs-server";
