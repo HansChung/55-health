@@ -43,9 +43,9 @@ export default function CostsPage() {
 
   const s = data.settings;
   const { summary, lk888, revenue } = data;
-  // lk888 有整個月的實際扣點就用實際的，不然用明細（實際＋估算）
+  // lk888 有整個月的實際扣點就用實際的（再加上不是 lk888 扣的 Google 直連），不然用明細（實際＋估算）
   const fullMonthActual = lk888.monthUsed && lk888.monthUsed.since === `${data.month}-01` ? lk888.monthUsed.used : null;
-  const aiPoints = fullMonthActual ?? summary.points;
+  const aiPoints = fullMonthActual !== null ? fullMonthActual + summary.externalPoints : summary.points;
   const aiNtd = aiPoints * s.pointNtd;
   const fixedNtd = s.fixed.reduce((n, f) => n + f.usd * s.usdNtd, 0);
   const income = revenue.basic * revenue.prices.basic + revenue.pro * revenue.prices.pro;
@@ -84,7 +84,9 @@ export default function CostsPage() {
           <div style={label}>AI 花費</div>
           <div style={big}>{pts(aiPoints)} 算力</div>
           <div style={small}>
-            {fullMonthActual !== null ? "lk888 實際扣點" : "明細合計（實際＋估算）"}・1 算力 = NT$ {s.pointNtd}
+            {fullMonthActual !== null
+              ? `lk888 實際扣點${summary.externalPoints > 0 ? `＋Google 直連 ${pts(summary.externalPoints)}` : ""}`
+              : "明細合計（實際＋估算）"}・1 算力 = NT$ {s.pointNtd}
           </div>
         </div>
         <div style={card}>

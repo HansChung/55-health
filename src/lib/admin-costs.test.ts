@@ -31,13 +31,15 @@ describe("points", () => {
     expect(rowPoints(row({ input_tokens: 1000, output_tokens: 500 }), rates)).toEqual({ points: 0.005, actual: false });
     expect(rowPoints(row({ model: "gem-3.8-flash", input_tokens: 1_000_000 }), {}).points).toBeCloseTo(0.396);
     expect(rowPoints(row({ success: false, metadata: { platform_cost: 5 } }), rates).points).toBe(0);
-    expect(rowPoints(row({ model: "mystery" , input_tokens: 99 }), rates)).toEqual({ points: 0, actual: false });
+    expect(rowPoints(row({ model: "mystery" , input_tokens: 99 }), rates)).toMatchObject({ points: 0, actual: false });
   });
   it("Google-direct rows use cost_usd; voice clone has a fixed price", () => {
     // 1 美元 = 32 台幣 ÷ 4.8 = 6.67 算力
     const g = rowPoints(row({ model: "gemini-2.5-flash", cost_usd: "0.003", metadata: { provider: "google" }, input_tokens: 10 }), {}, 32 / 4.8);
     expect(g.points).toBeCloseTo(0.02);
     expect(g.actual).toBe(false);
+    expect(g.external).toBe(true);
+    expect(summarizeUsage([row({ model: "gemini-2.5-flash", cost_usd: 0.003, metadata: { provider: "google" } }), row({ metadata: { platform_cost: 1 } })], {}, 32 / 4.8).externalPoints).toBeCloseTo(0.02);
     expect(rowPoints(row({ endpoint: "/api/ai/voice-clone", model: "speech-2.8-clone" }), {})).toEqual({ points: 0.1, actual: false });
   });
   it("median of usable token-priced channels", () => {

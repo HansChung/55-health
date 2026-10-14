@@ -137,7 +137,11 @@ export interface UsageRow {
  * 順序：平台回報的實際算力 → 固定價格 → lk888 模型單價 × token → 沒有 lk888 單價（Google 直連）就用 cost_usd 換算。
  * usdToPoints＝1 美元等於幾算力（台幣匯率 ÷ 算力價格）
  */
-export function rowPoints(row: UsageRow, rates: Record<string, TokenRate>, usdToPoints = 0): { points: number; actual: boolean } {
+export function rowPoints(
+  row: UsageRow,
+  rates: Record<string, TokenRate>,
+  usdToPoints = 0
+): { points: number; actual: boolean; external?: boolean } {
   if (row.success === false || row.metadata?.reserved === true) return { points: 0, actual: true };
   const pc = row.metadata?.platform_cost;
   if (typeof pc === "number" && Number.isFinite(pc) && pc >= 0) return { points: pc, actual: true };
@@ -148,8 +152,9 @@ export function rowPoints(row: UsageRow, rates: Record<string, TokenRate>, usdTo
   if (rate) {
     return { points: ((row.input_tokens ?? 0) * rate.input + (row.output_tokens ?? 0) * rate.output) / 1_000_000, actual: false };
   }
+  // 不是 lk888 扣的（Google 直連）：external，lk888 的實際扣點裡沒有這一筆
   const usd = Number(row.cost_usd ?? 0);
-  return { points: Number.isFinite(usd) && usd > 0 ? usd * usdToPoints : 0, actual: false };
+  return { points: Number.isFinite(usd) && usd > 0 ? usd * usdToPoints : 0, actual: false, external: true };
 }
 
 export interface FeatureCost {
@@ -167,6 +172,8 @@ export interface CostSummary {
   points: number;
   actualPoints: number;
   estimatedPoints: number;
+  /** 不是 lk888 扣的（Google 直連，用 cost_usd 換算）：總額用 lk888 實際扣點時要另外加上 */
+  externalPoints: number;
   byFeature: FeatureCost[];
   daily: { day: string; points: number }[];
   topUsers: { user_id: string; points: number; calls: number }[];
@@ -183,11 +190,13 @@ export function summarizeUsage(rows: UsageRow[], rates: Record<string, TokenRate
   const users = new Map<string, { points: number; calls: number }>();
   let points = 0;
   let actualPoints = 0;
+  let externalPoints = 0;
   let calls = 0;
   let failed = 0;
   for (const row of rows) {
     if (row.metadata?.reserved === true) continue;
-    const { points: p, actual } = rowPoints(row, rates, usdToPoints);
+    const { points: p, actual, external } = rowPoints(row, rates, usdToPoints);
+    if (external) externalPoints += p;
     const f = featureLabel(row.endpoint);
     const cur = byFeature.get(f) ?? { calls: 0, failed: 0, points: 0, est: 0 };
     cur.calls++;
@@ -216,6 +225,7 @@ export function summarizeUsage(rows: UsageRow[], rates: Record<string, TokenRate
     points,
     actualPoints,
     estimatedPoints: points - actualPoints,
+    externalPoints,
     byFeature: [...byFeature.entries()]
       .map(([feature, v]) => ({ feature, calls: v.calls, failed: v.failed, points: v.points, estimatedShare: v.points > 0 ? v.est / v.points : 0 }))
       .sort((a, b) => b.points - a.points || b.calls - a.calls),
