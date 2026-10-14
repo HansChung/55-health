@@ -4,6 +4,7 @@
 // ────────────────────────────────────────────────
 
 import { isTaiwanCounty, weatherAdvice, weatherEmoji, type ForecastPeriod, type TaiwanCounty } from "./weather";
+import { airQualityTip, airTitleSuffix, type CountyAir } from "./air-quality";
 
 /** 台灣時間幾點發（Vercel Cron 23:00 UTC；Hobby 方案會在這個小時內的某一刻觸發） */
 export const DAILY_WEATHER_HOUR = 7;
@@ -85,6 +86,8 @@ export function buildDailyWeatherPush(opts: {
   today: ForecastPeriod;
   tonight: ForecastPeriod | null;
   conditions?: string[];
+  /** 環境部即時 AQI（查不到就沒有，照原本發） */
+  air?: Pick<CountyAir, "aqi"> | null;
 }): { title: string; body: string } {
   const { county, today, tonight } = opts;
   const facts: string[] = [];
@@ -94,9 +97,11 @@ export function buildDailyWeatherPush(opts: {
   let advice = weatherAdvice(today);
   // 腎臟病：天氣那句的「多喝水」拿掉（健康提醒會說照醫師交代的量）
   if (advice?.includes("多喝水") && has(conditions, "kidney")) advice = "天氣熱，戴帽子、擦防曬";
-  const sentences = [facts.join("，"), advice, weatherHealthTip(today, tonight, conditions)].filter(Boolean);
+  // 空氣不好：講空氣那句，健康提醒那句不講（它可能叫人出去走走）
+  const airTip = opts.air ? airQualityTip(opts.air, conditions) : null;
+  const sentences = [facts.join("，"), airTip, advice, airTip ? null : weatherHealthTip(today, tonight, conditions)].filter(Boolean);
   return {
-    title: `${weatherEmoji(today.wx)} 早安！${county}今天${today.wx}`,
+    title: `${weatherEmoji(today.wx)} 早安！${county}今天${today.wx}${airTitleSuffix(opts.air)}`,
     body: sentences.join("。") + "。",
   };
 }
