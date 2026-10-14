@@ -9,6 +9,7 @@ import "./admin.css";
 
 const navItems = [
   { href: "/admin", label: "總覽", icon: "📊" },
+  { href: "/admin/costs", label: "每月成本", icon: "🧾" },
   { href: "/admin/usage", label: "Token 用量", icon: "💰" },
   { href: "/admin/users", label: "會員管理", icon: "👥" },
   { href: "/admin/plans", label: "方案與次數", icon: "🎚️" },
