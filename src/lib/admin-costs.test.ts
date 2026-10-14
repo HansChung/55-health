@@ -40,6 +40,10 @@ describe("points", () => {
     expect(g.actual).toBe(false);
     expect(g.external).toBe(true);
     expect(summarizeUsage([row({ model: "gemini-2.5-flash", cost_usd: 0.003, metadata: { provider: "google" } }), row({ metadata: { platform_cost: 1 } })], {}, 32 / 4.8).externalPoints).toBeCloseTo(0.02);
+    // lk888 影片沒拿到 platform_cost：用 cost_usd 估，但不算外部（lk888 的實際扣點已經有它）
+    const v = rowPoints(row({ endpoint: "/api/ai/travel-video", model: "minimax-h3", cost_usd: 0.8, metadata: { platform_cost: null } }), {}, 32 / 4.8);
+    expect(v.points).toBeCloseTo(0.8 * 32 / 4.8);
+    expect(v.external).toBe(false);
     expect(rowPoints(row({ endpoint: "/api/ai/voice-clone", model: "speech-2.8-clone" }), {})).toEqual({ points: 0.1, actual: false });
   });
   it("median of usable token-priced channels", () => {

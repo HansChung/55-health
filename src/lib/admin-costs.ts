@@ -152,9 +152,10 @@ export function rowPoints(
   if (rate) {
     return { points: ((row.input_tokens ?? 0) * rate.input + (row.output_tokens ?? 0) * rate.output) / 1_000_000, actual: false };
   }
-  // 不是 lk888 扣的（Google 直連）：external，lk888 的實際扣點裡沒有這一筆
+  // 用 cost_usd 換算。只有明確是 Google 直連的才是 external（lk888 的實際扣點裡沒有這一筆）；
+  // 其他（例如影片沒拿到 platform_cost）還是 lk888 扣的，只是估算，不能再加一次
   const usd = Number(row.cost_usd ?? 0);
-  return { points: Number.isFinite(usd) && usd > 0 ? usd * usdToPoints : 0, actual: false, external: true };
+  return { points: Number.isFinite(usd) && usd > 0 ? usd * usdToPoints : 0, actual: false, external: viaGoogle };
 }
 
 export interface FeatureCost {
