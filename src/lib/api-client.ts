@@ -597,6 +597,10 @@ export const api = {
     apiFetch<{ exercise: ExerciseRecord }>("/api/exercises", { method: "POST", json: ex }),
 
   // Admin
+  adminCosts: (month?: string) =>
+    apiFetch<AdminCostsResponse>(`/api/admin/costs${month ? `?month=${encodeURIComponent(month)}` : ""}`),
+  saveAdminCostSettings: (settings: import("./admin-costs").CostSettings) =>
+    apiFetch<{ settings: import("./admin-costs").CostSettings }>("/api/admin/costs", { method: "PUT", json: { settings } }),
   adminUsageSummary: (days = 30) =>
     apiFetch<AdminUsageSummary>(`/api/admin/usage?days=${days}`),
 
@@ -887,6 +891,17 @@ export interface FamilyPermissions {
   trips?: boolean;
   /** 出遊影片：家人看得到、可以按讚留言（沒設定＝看得到） */
   videos?: boolean;
+}
+
+/** 後台每月成本（/api/admin/costs） */
+export interface AdminCostsResponse {
+  month: string;
+  months: string[];
+  settings: import("./admin-costs").CostSettings;
+  summary: Omit<import("./admin-costs").CostSummary, "topUsers"> & { topUsers: { user_id: string; points: number; calls: number; email: string | null }[] };
+  rates: Record<string, import("./admin-costs").TokenRate>;
+  lk888: { balance: number | null; monthUsed: { used: number; since: string } | null; daysLeft: number | null };
+  revenue: { basic: number; pro: number; prices: { basic: number; pro: number } };
 }
 
 /** 動動腦的統計（/api/brain） */

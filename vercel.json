@@ -67,6 +67,10 @@
     {
       "path": "/api/cron/clinic-reminders?kind=same_day",
       "schedule": "0 23 * * *"
+    },
+    {
+      "path": "/api/cron/lk888-snapshot",
+      "schedule": "0 15 * * *"
     }
   ]
 }
