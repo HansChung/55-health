@@ -60,6 +60,12 @@ and Stripe. Capacitor/Android is only a packaging target and is not needed for w
   `hypertension` + cold → 量血壓, `diabetes`/`prediabetes` + hot → 白開水, `kidney` + hot → never "多喝水"
   (fluid limits), …; Chinese words are matched too).
   Local test: `CWA_API_BASE` pointed at a fake F-C0032-001 server.
+  **空氣品質** (optional `MOENV_API_KEY`, free from data.moenv.gov.tw): the same cron fetches 環境部 `aqx_p_432` (all
+  stations, one request, `countiesAir`; a bad key answers 200 with plain text → treated as no data). `parseAqx` averages
+  each county's stations (台→臺) and keeps the worst one. AQI ≤ 100 changes nothing; above that `airQualityTip` adds a
+  mask / stay-indoors line (+「藥隨身帶」 for 氣喘／肺／心臟 words in `chronic_conditions`), the title gets
+  「，空氣不太好」／「，空氣不好😷」 and the weather health tip is dropped (it may say 出去走走). No key or a failed fetch →
+  the push is exactly the old weather-only one. Local test: `MOENV_API_BASE` (+ `CWA_API_BASE`) at a fake server.
 
 - **LINE 登入** (needs `supabase/add-line-login.sql` + `LINE_LOGIN_CHANNEL_ID` / `LINE_LOGIN_CHANNEL_SECRET`; without
   them the button and the 我的 row are hidden): Supabase has no LINE provider and LINE's web-login ID token is HS256
