@@ -644,6 +644,10 @@ export const api = {
   updateClinicVisit: (id: string, patch: { doctorNotes?: string; visitDate?: string; department?: string }) =>
     apiFetch<{ visit: import("./clinic").ClinicVisit }>(`/api/clinic/${id}`, { method: "PATCH", json: patch }),
   deleteClinicVisit: (id: string) => apiFetch<{ ok: true }>(`/api/clinic/${id}`, { method: "DELETE" }),
+  // 動動腦（腦力小遊戲）
+  brainStats: () => apiFetch<{ stats: BrainStats }>("/api/brain"),
+  brainAnswer: (input: { kind: string; correct: boolean }) =>
+    apiFetch<{ stats: BrainStats; first: boolean }>("/api/brain", { method: "POST", json: input }),
   // 回診提醒
   listAppointments: () => apiFetch<{ appointments: import("./clinic-appointments").ClinicAppointment[] }>("/api/clinic/appointments"),
   createAppointment: (input: import("./clinic-appointments").AppointmentInput) =>
@@ -883,6 +887,15 @@ export interface FamilyPermissions {
   trips?: boolean;
   /** 出遊影片：家人看得到、可以按讚留言（沒設定＝看得到） */
   videos?: boolean;
+}
+
+/** 動動腦的統計（/api/brain） */
+export interface BrainStats {
+  today: { day: string; played: boolean; correct: boolean | null };
+  streak: number;
+  longest: number;
+  days: number;
+  correctDays: number;
 }
 
 /** 子女儀表板：單一長輩狀態總覽 */

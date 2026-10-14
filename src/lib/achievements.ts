@@ -7,7 +7,7 @@ export interface AchievementDef {
   emoji: string;
   title: string;
   description: string;
-  category: "meal" | "exercise" | "metric" | "medication" | "voice" | "family" | "streak" | "tour";
+  category: "meal" | "exercise" | "metric" | "medication" | "voice" | "family" | "streak" | "tour" | "brain";
 }
 
 export const ACHIEVEMENTS: AchievementDef[] = [
@@ -45,6 +45,11 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: "first_tour_stamp", emoji: "🏮", title: "研學初體驗", description: "在研學團蓋下第一個章", category: "tour" },
   { id: "tour_graduate", emoji: "🎓", title: "研學結業", description: "集滿一趟研學團的所有章", category: "tour" },
   { id: "tour_graduate_3", emoji: "🧭", title: "樂學旅人", description: "完成 3 趟研學團", category: "tour" },
+
+  // 動動腦
+  { id: "brain_first", emoji: "🧩", title: "動動腦", description: "完成第一題每日一題", category: "brain" },
+  { id: "brain_streak_7", emoji: "🧠", title: "一週動腦", description: "連續 7 天玩每日一題", category: "brain" },
+  { id: "brain_30", emoji: "🎓", title: "腦力達人", description: "累積玩 30 天每日一題", category: "brain" },
 ];
 
 export interface AchievementProgress {
@@ -71,6 +76,10 @@ export interface UserStats {
   tour_stamps?: number;
   /** 集滿章、結業的研學團數 */
   tours_completed?: number;
+  /** 腦力小遊戲：玩過幾天、最長連續幾天 */
+  brain_days?: number;
+  brain_longest_streak?: number;
+  brain_streak?: number;
 }
 
 /** 從用戶 stats 算出每個成就的進度 */
@@ -131,6 +140,13 @@ function evalAchievement(
       return done((s.tours_completed ?? 0) >= 1, s.tours_completed ?? 0, 1, "團");
     case "tour_graduate_3":
       return done((s.tours_completed ?? 0) >= 3, s.tours_completed ?? 0, 3, "團");
+
+    case "brain_first":
+      return done((s.brain_days ?? 0) >= 1, s.brain_days ?? 0, 1, "天");
+    case "brain_streak_7":
+      return done((s.brain_longest_streak ?? 0) >= 7, Math.min(s.brain_streak ?? 0, 7), 7, "天");
+    case "brain_30":
+      return done((s.brain_days ?? 0) >= 30, s.brain_days ?? 0, 30, "天");
 
     default:
       return { progress: 0, unlocked: false };

@@ -301,6 +301,18 @@ stack works well for auth + meal/diary CRUD:
 - Home order: greeting → 報平安 → today/tomorrow appointment → calorie ring + 暖暖的建議 → 天氣 offer → 家人狀況 (if
   caring) → 常用 → medicines / alerts → meals → 跟暖暖聊聊・記錄運動.
 
+### 動動腦（腦力小遊戲, `subpage "brain"`, needs `supabase/add-brain-games.sql`）
+- 功能 → 動動腦 → 每日一題 (deep link `/?open=brain`, feature `brain_game`, free, no AI). Questions are generated in
+  `src/lib/brain-games.ts` from a seed: **每日一題 is the same for everyone that Taipei day** (`dailyQuestion(day)`,
+  seed `brain:<day>`), the kind rotates daily (`dailyKind`: 算錢／記數字／找不同／成語填空／數字規律); practice questions use
+  a random seed and are never recorded. All answers are big multiple-choice buttons; 記數字 shows the number for
+  `MEMORY_SECONDS` first; 🔊 reads the prompt with speechSynthesis. Generators are checked for 300 seeds per kind in tests
+  (unique options, valid answer index) — keep that test passing when adding idioms or kinds.
+- `brain_game_plays` = one row per user per Taipei day (`POST /api/brain` upserts with ignoreDuplicates, kind taken from
+  the server's day, so only the first answer counts). `loadBrainStats` → streak (`brainStreak`, today optional) and
+  totals; achievements `brain_first`／`brain_streak_7`／`brain_30` (category `brain`). Without the SQL the GET answers 503
+  and the screen still plays, just without recording.
+
 ### 研學團（study tours）
 - Home 「研學團」/ 我的 → 「研學護照」→ subpages `study-tours` / `study-passport` (free for all tiers).
   Registration only — no payment (`fee_text` is display-only). Admin at `/admin/study-tours`

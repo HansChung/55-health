@@ -10,7 +10,7 @@ export type MenuId =
   | "travel_video" | "greeting_video" | "stories"
   | "study_tours" | "study_passport" | "blueprint" | "book"
   | "caregiver" | "scam_check" | "iot" | "family"
-  | "achievements" | "smart";
+  | "brain_game" | "achievements" | "smart";
 
 export interface MenuItem {
   label: string;
@@ -39,6 +39,7 @@ export const MENU_ITEMS: Record<MenuId, MenuItem> = {
   scam_check: { label: "可疑訊息", emoji: "🛡️", desc: "截圖給暖暖看" },
   iot: { label: "居家守護", emoji: "🏠", desc: "感測器通知家人" },
   family: { label: "家人共享", emoji: "🤝", desc: "邀請家人" },
+  brain_game: { label: "每日一題", emoji: "🧩", desc: "算錢、記數字、成語" },
   achievements: { label: "健康成就", emoji: "🏅", desc: "徽章、連續天數" },
   smart: { label: "幸福檢測", emoji: "🧠", desc: "智慧幸福指數" },
 };
@@ -55,7 +56,7 @@ export const MENU_GROUPS: MenuGroup[] = [
   { id: "memory", label: "🎬 回憶與影片", items: ["travel_video", "greeting_video", "stories"] },
   { id: "outing", label: "🧭 出門走走", items: ["study_tours", "study_passport", "blueprint", "book"] },
   { id: "family", label: "👨‍👩‍👧 家人與安心", items: ["caregiver", "scam_check", "iot", "family"] },
-  { id: "brain", label: "🧠 動動腦", items: ["smart", "achievements"] },
+  { id: "brain", label: "🧠 動動腦", items: ["brain_game", "smart", "achievements"] },
 ];
 
 /** 一開始的「常用」（還沒用過任何功能時） */
