@@ -463,6 +463,15 @@ stack works well for auth + meal/diary CRUD:
 
 ### Book × App light coupling（書本／App）
 - Chapter openings live at `/smart/chapter/[id]` (public, printable). Shared rhythm: **一拍、二問、三記下**.
+- **「一步完成」 first** (2026-10-19, owner: the old pages had too many steps for 60+ readers): every chapter page now
+  opens with `ChapterQuickCard` — one short goal (≤20 字, enforced by a test) and one big button that finishes the
+  practice inside 暖暖; the original long content is still there but collapsed under 「想多了解這一節」 (the footer
+  guide button also expands it). Specs live in `src/lib/chapter-quick.ts` (`CHAPTER_QUICK`, one per built-in chapter —
+  a test fails if a chapter is missing): `guided` (暖暖 asks one question at a time, max three, then sums up —
+  `GUIDED_SUFFIX`), `ask`/`photo` (prompt pre-filled, the reader presses 送出), or a deep link (`camera`, `stories`,
+  `record`, `scam`, `clinic`, `metrics`, `brain`, `video`, `greeting`, `tours`, `voice`). Phone-app chapters (相簿搜尋、
+  備忘錄、修圖、行事曆、Wallet、Maps) map to what 暖暖 can do (故事集、回診提醒、拍照問暖暖、一題一題帶). Admin-added
+  chapters fall back to `defaultQuick` (guided). When adding a built-in chapter, add its quick step too.
 - Optional save: 「把這句話點成光點」→ `/smart/spark?source=chapterXXXX` (sessionStorage seed).
 - Home 「書本練習」→ `/smart/guide`. Deep links `/?open=voice|camera&from=chapterXXXX` show intent tips.
 - Production DB may need `supabase/add-chapter-opening-sources.sql` if the old source check is still in place.
