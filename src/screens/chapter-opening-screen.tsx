@@ -4686,7 +4686,14 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
             chapterId={chapter.id}
             title={chapter.title}
             moreOpen={moreOpen}
-            onToggleMore={() => setMoreOpen((v) => !v)}
+            onToggleMore={() => {
+              // 收起時示範也一起關掉、停止朗讀（不然看不到的示範還在念）
+              if (moreOpen) {
+                setGuideOpen(false);
+                stopGuideSpeech();
+              }
+              setMoreOpen((v) => !v);
+            }}
             onAsk={(prompt, guided) => tryAskNuannuan(prompt, "找不到要問的話。", { guided })}
             onPhotoAsk={(question) => tryPhotoAskNuannuan(question)}
             onOpen={(href) => router.push(href)}
