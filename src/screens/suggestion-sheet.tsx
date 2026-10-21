@@ -26,7 +26,7 @@ export function SuggestionSheet({ onClose, initial }: SuggestionSheetProps) {
     setLoading(true);
     setError("");
     try {
-      const { suggestion } = await api.getSuggestion();
+      const { suggestion } = await api.getSuggestion({ fresh: true });
       setSuggestion(suggestion);
       // 同時清掉首頁的快取，下次刷新會抓新的
       if (typeof window !== "undefined") {

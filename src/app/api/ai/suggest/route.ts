@@ -1,7 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getGeminiModel, isGeminiConfigured, parseModelJson } from "@/lib/ai/gemini";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { trackAiUsage } from "@/lib/ai/usage-tracker";
+import { taipeiDayStartIso } from "@/lib/ask";
+import { cachedSuggestion, suggestionCacheKey, taipeiClock } from "@/lib/suggestion-cache";
+
+const ENDPOINT = "/api/ai/suggest";
 
 const SUGGEST_PROMPT = `你是台灣長者的健康助理「暖暖」。根據用戶**今天的真實情況**給個性化建議。
 
@@ -28,10 +32,12 @@ const SUGGEST_PROMPT = `你是台灣長者的健康助理「暖暖」。根據�
 
 recommendations 沒推薦就回空陣列 []，不要硬塞。`;
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "未登入" }, { status: 401 });
+  /** 「換一個建議」：不用快取 */
+  const fresh = req.nextUrl.searchParams.get("fresh") === "1";
 
   // 收集用戶背景
   const { data: profile } = await supabase
@@ -40,16 +46,33 @@ export async function GET() {
     .eq("id", user.id)
     .single();
 
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
+  // 「今天」和「現在幾點」都用台北時間（Vercel 是 UTC：以前早上 8 點前吃的不算今天、時間也差 8 小時）
+  const dayStart = taipeiDayStartIso();
   const { data: meals } = await supabase
     .from("meals")
     .select("meal_type, items, total_cal, protein_g, carb_g, fat_g")
     .eq("user_id", user.id)
-    .gte("eaten_at", todayStart.toISOString());
+    .gte("eaten_at", dayStart);
 
-  const hour = new Date().getHours();
+  const { day, hour } = taipeiClock();
   const timeOfDay = hour < 11 ? "早上" : hour < 14 ? "中午" : hour < 18 ? "下午" : "晚上";
+
+  // 今天吃的、個人資料都沒變 → 給上次的建議，不叫 AI（首頁每次打開、換手機都不會重算）
+  const cacheKey = suggestionCacheKey({ day, profile, meals });
+  if (!fresh) {
+    const { data: last } = await supabase
+      .from("ai_usage")
+      .select("metadata")
+      .eq("user_id", user.id)
+      .eq("endpoint", ENDPOINT)
+      .eq("success", true)
+      .gte("created_at", dayStart)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const cached = cachedSuggestion(last?.metadata, cacheKey);
+    if (cached) return NextResponse.json({ suggestion: cached, cached: true });
+  }
 
   const context = `
 時間：${timeOfDay} ${hour} 點
@@ -92,9 +115,9 @@ ${meals?.length
       model: config.model,
       inputTokens: usage?.promptTokenCount ?? 0,
       outputTokens: usage?.candidatesTokenCount ?? 0,
-      endpoint: "/api/ai/suggest",
+      endpoint: ENDPOINT,
       success: true,
-      metadata: { provider: config.provider },
+      metadata: { provider: config.provider, cache_key: cacheKey, suggestion },
     });
 
     return NextResponse.json({ suggestion });
