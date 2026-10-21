@@ -3,17 +3,17 @@ import { buildDailyCarePush, byLatestActivity, dailyCareChannel, dailyCareEmailM
 
 describe("dailyCareChannel", () => {
   it("關掉的人什麼都不送", () => {
-    expect(dailyCareChannel({ off: true, hasPush: true, getsWeatherPush: false })).toBe("off");
-    expect(dailyCareChannel({ off: true, hasPush: false, getsWeatherPush: false })).toBe("off");
+    expect(dailyCareChannel({ off: true, hasPush: true, weatherSentToday: false })).toBe("off");
+    expect(dailyCareChannel({ off: true, hasPush: false, weatherSentToday: false })).toBe("off");
   });
-  it("有推播就推播；已經有天氣早安推播的不再多推", () => {
-    expect(dailyCareChannel({ off: false, hasPush: true, getsWeatherPush: false })).toBe("push");
-    expect(dailyCareChannel({ off: false, hasPush: true, getsWeatherPush: true })).toBe("weather");
+  it("有推播就推播；今天天氣推播真的送到了才不再多推", () => {
+    expect(dailyCareChannel({ off: false, hasPush: true, weatherSentToday: false })).toBe("push");
+    expect(dailyCareChannel({ off: false, hasPush: true, weatherSentToday: true })).toBe("weather");
   });
   it("沒推播才寄 Email", () => {
-    expect(dailyCareChannel({ off: false, hasPush: false, getsWeatherPush: false })).toBe("email");
-    // 沒訂閱推播就收不到天氣推播，照樣寄
-    expect(dailyCareChannel({ off: false, hasPush: false, getsWeatherPush: true })).toBe("email");
+    expect(dailyCareChannel({ off: false, hasPush: false, weatherSentToday: false })).toBe("email");
+    // 記號還在但現在沒有訂閱了（例如剛清掉）→ 照樣寄
+    expect(dailyCareChannel({ off: false, hasPush: false, weatherSentToday: true })).toBe("email");
   });
 });
 

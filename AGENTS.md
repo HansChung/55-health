@@ -101,10 +101,12 @@ and Stripe. Capacitor/Android is only a packaging target and is not needed for w
 
 - **Cost guards**: 首頁 AI 建議 (`/api/ai/suggest`) has a server cache — the last successful `ai_usage` row stores
   `metadata.cache_key` + `suggestion`; the key (`suggestionCacheKey`) is the Taipei day + today's meals + profile, so
-  reopening the app or another device never re-calls the model; only a new/deleted meal or a profile change does, and
+  reopening the app or another device never re-calls the model; only a new/deleted meal or a profile change does (two
+  requests that miss the cache at the same instant may both call it — ~0.004 算力, not worth a lock table), and
   「換一個建議」 sends `?fresh=1`. The route uses Taipei time (`taipeiClock`, `taipeiDayStartIso`) — Vercel runs in UTC.
-  Cron `daily-care` (07:00 Taipei) pushes instead of emailing when the user has a push subscription, skips users
-  who already get the 07:00 daily-weather push, and only emails the rest, at most `DAILY_CARE_EMAIL_MAX` (default
+  Cron `daily-care` (`0 0 * * *` = 08:00 Taipei, after daily-weather's 07:00 hour) pushes instead of emailing when the
+  user has a push subscription, skips users whose weather push actually went out today (`daily_weather_sent_on` =
+  today; daily-weather clears its claim when no push was delivered), and only emails the rest, at most `DAILY_CARE_EMAIL_MAX` (default
   60) per run, most recently active first — Resend's free plan stops at 100 emails/day (OTP, alerts and weekly
   reports share it). **lk888 channel strategy**: a key on 「综合最优」 fails over to pricier groups for every
   model (minimax-h3 0.095 → 0.792 /s; gem-3.8-flash up to ~43×). Use 「自定义」 and pick groups for **every** model

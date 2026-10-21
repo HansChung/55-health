@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/cron/daily-care",
-      "schedule": "0 23 * * *"
+      "schedule": "0 0 * * *"
     },
     {
       "path": "/api/cron/study-tour-reminders?kind=day_before",

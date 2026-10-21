@@ -1,7 +1,8 @@
 // ────────────────────────────────────────────────
 // 每日關懷問候
 // 每天早上給「近 30 天有使用」的長輩一句個人化問候，提升黏著
-// 有推播訂閱 → 推播（免費）；已開「每天早上天氣」的人已經有早安推播，不再多推
+// 有推播訂閱 → 推播（免費）；今天天氣推播已經送到的人（daily_weather_sent_on＝今天）不再多推
+// 排在 08:00（天氣是 07:00，Hobby 方案會在那個小時內任何時間跑），天氣一定先跑完
 // 沒推播 → 寄 Email，每天最多 DAILY_CARE_EMAIL_MAX 封（預設 60，Resend 免費版每天只能寄 100 封），最近有在用的人優先
 // 由 Vercel Cron 觸發（見 vercel.json），CRON_SECRET 保護
 // ────────────────────────────────────────────────
@@ -11,8 +12,7 @@ import { sendEmail } from "@/lib/email/send";
 import { buildDailyCareEmail } from "@/lib/email/templates";
 import { mapWithConcurrency, createDeadline } from "@/lib/concurrency";
 import { isWebPushConfigured, sendPushToUser } from "@/lib/push/send";
-import { isWeatherConfigured } from "@/lib/weather-server";
-import { dailyWeatherCounty, taipeiDate } from "@/lib/daily-weather";
+import { taipeiDate } from "@/lib/daily-weather";
 import { isPlaceholderEmail } from "@/lib/line-login";
 import { buildDailyCarePush, byLatestActivity, dailyCareChannel, dailyCareEmailMax } from "@/lib/daily-care";
 
@@ -31,6 +31,7 @@ interface ProfileRow {
   display_name?: string | null;
   medications?: unknown;
   notification_settings?: unknown;
+  daily_weather_sent_on?: string | null;
 }
 
 const TIPS = [
@@ -82,7 +83,6 @@ export async function GET(req: NextRequest) {
   let skippedForTime = 0;
   let emailLeft = dailyCareEmailMax();
   const pushReady = isWebPushConfigured();
-  const weatherReady = isWeatherConfigured() && pushReady;
   const today = taipeiDate(now);
 
   const userIds = byLatestActivity(latest).slice(0, 500);
@@ -92,7 +92,7 @@ export async function GET(req: NextRequest) {
   const [profilesRes, emailMap] = await Promise.all([
     supabase
       .from("profiles")
-      .select("id, display_name, medications, notification_settings")
+      .select("id, display_name, medications, notification_settings, daily_weather_sent_on")
       .in("id", userIds),
     loadUserEmails(supabase),
   ]);
@@ -123,11 +123,11 @@ export async function GET(req: NextRequest) {
     if (!profile) return;
 
     // 尊重關閉設定（預設開啟）
-    const ns = (profile.notification_settings ?? {}) as Parameters<typeof dailyWeatherCounty>[0] & { daily_care?: { on?: boolean } };
+    const ns = (profile.notification_settings ?? {}) as { daily_care?: { on?: boolean } };
     const channel = dailyCareChannel({
-      off: ns?.daily_care?.on === false,
+      off: ns.daily_care?.on === false,
       hasPush: hasPush.has(userId),
-      getsWeatherPush: weatherReady && dailyWeatherCounty(ns) !== null,
+      weatherSentToday: profile.daily_weather_sent_on === today,
     });
     if (channel === "off") return;
     if (channel === "weather") {

@@ -1,7 +1,8 @@
 // ────────────────────────────────────────────────
 // 每天早上的關懷問候：有推播就推播（免費）；沒推播才寄 Email，而且每天寄的封數有上限
 // Resend 免費版每天只能寄 100 封（還要留給登入驗證碼、異常通知、週報），超過的信會寄不出去
-// 已經開「每天早上天氣」的人，同一時間已經收到一則早安推播 → 不再多推一則
+// 今天早上已經收到天氣推播的人（daily_weather_sent_on＝今天）→ 不再多推一則
+// 每日關懷排在天氣之後（08:00，天氣是 07:00），所以看得到天氣那邊真的送出了沒；沒送到天氣會把記號還回去
 // ────────────────────────────────────────────────
 
 /** 每天最多寄幾封關懷 Email（DAILY_CARE_EMAIL_MAX 可以改；0＝完全不寄） */
@@ -21,11 +22,11 @@ export function dailyCareChannel(opts: {
   off: boolean;
   /** 這個人有推播訂閱 */
   hasPush: boolean;
-  /** 這個人今天早上會收到天氣推播（有開、選了縣市，而且伺服器有設氣象署金鑰） */
-  getsWeatherPush: boolean;
+  /** 今天的天氣推播真的送到了（profiles.daily_weather_sent_on 是今天） */
+  weatherSentToday: boolean;
 }): DailyCareChannel {
   if (opts.off) return "off";
-  if (opts.hasPush) return opts.getsWeatherPush ? "weather" : "push";
+  if (opts.hasPush) return opts.weatherSentToday ? "weather" : "push";
   return "email";
 }
 
