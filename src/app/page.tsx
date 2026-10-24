@@ -560,7 +560,7 @@ export default function Page() {
     }
   };
 
-  // 載入 AI 建議（有 localStorage 快取，1 小時內不重複呼叫）
+  // 載入 AI 建議（有 localStorage 快取，1 小時內不重複呼叫；伺服器另有快取：今天吃的沒變就不會重叫 AI）
   const SUGGEST_CACHE_KEY = "nuannuan_suggestion_v1";
   const SUGGEST_CACHE_MS = 60 * 60 * 1000; // 1 小時
 

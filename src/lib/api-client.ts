@@ -125,8 +125,9 @@ export const api = {
       quota: { used: number; limit: number; tier: string };
     }>("/api/ai/analyze-food", { method: "POST", json: photo, timeoutMs: 45000 }),
 
-  getSuggestion: () =>
-    apiFetch<{ suggestion: AiSuggestion }>("/api/ai/suggest"),
+  /** fresh＝「換一個建議」：伺服器不用快取、一定重新產生 */
+  getSuggestion: (opts: { fresh?: boolean } = {}) =>
+    apiFetch<{ suggestion: AiSuggestion }>(opts.fresh ? "/api/ai/suggest?fresh=1" : "/api/ai/suggest"),
 
   // 出遊回憶影片（MiniMax）；列表會順便同步進行中的影片，做好時要轉存影片 → 給長一點的逾時
   listTravelVideos: () =>

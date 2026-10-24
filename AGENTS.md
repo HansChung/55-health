@@ -99,6 +99,21 @@ and Stripe. Capacitor/Android is only a packaging target and is not needed for w
   check-in turns the elder's status to 「需要關心」 (`alert`). Local test: web-push only speaks https, so the fake push service
   needs a self-signed cert + `NODE_TLS_REJECT_UNAUTHORIZED=0` in the scratch `.env.local`.
 
+- **Cost guards**: 首頁 AI 建議 (`/api/ai/suggest`) has a server cache — the last successful `ai_usage` row stores
+  `metadata.cache_key` + `suggestion`; the key (`suggestionCacheKey`) is the Taipei day + today's meals + profile, so
+  reopening the app or another device never re-calls the model; only a new/deleted meal or a profile change does (two
+  requests that miss the cache at the same instant may both call it — ~0.004 算力, not worth a lock table), and
+  「換一個建議」 sends `?fresh=1`. The route uses Taipei time (`taipeiClock`, `taipeiDayStartIso`) — Vercel runs in UTC.
+  Cron `daily-care` (`0 0 * * *` = 08:00 Taipei, after daily-weather's 07:00 hour) pushes instead of emailing when the
+  user has a push subscription, skips users whose weather push actually went out today (`daily_weather_sent_on` =
+  today; daily-weather clears its claim when no push was delivered), and only emails the rest, at most `DAILY_CARE_EMAIL_MAX` (default
+  60) per run, most recently active first — Resend's free plan stops at 100 emails/day (OTP, alerts and weekly
+  reports share it). **lk888 channel strategy**: a key on 「综合最优」 fails over to pricier groups for every
+  model (minimax-h3 0.095 → 0.792 /s; gem-3.8-flash up to ~43×). Use 「自定义」 and pick groups for **every** model
+  the app calls (gem-3.8-flash, gem-3.5-flash-lite, gem-3.1-tts, speech-2.8, suno-v4.5, minimax-h3) — a model with
+  no groups returns 403. minimax-h3 must use a group that supports 首尾帧 (`mode=shouweizhen`); MC-H3特价 does not.
+  Check with the free `GET /v1/skills/models/{model}/pricing` (`key_channel_strategy`, `in_key_whitelist`).
+
 ### Running a real backend locally (no cloud Supabase needed)
 The app requires a live Supabase API to do anything past the login screen (auth is forced). A local
 stack works well for auth + meal/diary CRUD:

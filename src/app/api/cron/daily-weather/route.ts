@@ -114,7 +114,15 @@ export async function GET(req: NextRequest) {
       console.warn("[cron] daily-weather push:", e);
       return { sent: 0 };
     });
-    if (res.sent > 0) sent++;
+    if (res.sent > 0) {
+      sent++;
+      return;
+    }
+    // 一則都沒送到（訂閱都失效）→ 把今天的記號還回去：重跑還能再發，每日關懷也知道這個人早上沒收到
+    const { error: undoErr } = await admin
+      .from("profiles").update({ daily_weather_sent_on: null })
+      .eq("id", p.id).eq("daily_weather_sent_on", today);
+    if (undoErr) console.warn("[cron] daily-weather unclaim:", undoErr.message);
   });
 
   if (skippedForTime > 0) console.error(`[cron] 天氣提醒時間不足，${skippedForTime} 位未發（總數 ${targets.length}）`);
