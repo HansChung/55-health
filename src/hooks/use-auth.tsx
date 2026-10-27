@@ -138,6 +138,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .filter((k) => k.startsWith("nuannuan_ask") || k.startsWith("nuannuan_photo_ask"))
         .forEach((k) => sessionStorage.removeItem(k));
     } catch { /* ignore */ }
+    // 這台裝置不再收這個人的通知（例如女兒在媽媽手機登入過；最多等 3 秒，失敗也照樣登出）
+    await Promise.race([
+      import("@/lib/push/client").then((m) => m.releaseWebPushSubscription()).catch(() => undefined),
+      new Promise((r) => setTimeout(r, 3000)),
+    ]);
     await supabase.auth.signOut();
     setUser(null);
     setProfile(null);

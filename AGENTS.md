@@ -114,6 +114,26 @@ and Stripe. Capacitor/Android is only a packaging target and is not needed for w
   no groups returns 403. minimax-h3 must use a group that supports 首尾帧 (`mode=shouweizhen`); MC-H3特价 does not.
   Check with the free `GET /v1/skills/models/{model}/pricing` (`key_channel_strategy`, `in_key_whitelist`).
 
+- **Database privileges** (`supabase/fix-privilege-escalation.sql`, needs `add-stripe-customer.sql` first): the anon
+  key is public, so anything enforced only in an API route can be bypassed with PostgREST + the user's own JWT.
+  A `before insert or update` trigger on `profiles` keeps `is_admin` / `subscription_*` / `stripe_customer_id` unless
+  `auth.role() = 'service_role'` (admin pages and the Stripe webhook use the service role). New tables must enable RLS;
+  never add a broad `select` policy on a public bucket (it allows listing every file).
+- **家人邀請碼** (`src/lib/family-invite.ts`): the elder makes an 8-digit code (`1234-5678`, `crypto.randomInt`,
+  24 h) in 家人共享; the family member types it in 家人狀況 → `POST /api/family/accept` (service role, conditional
+  update `status='pending' and family_user_id is null`, so a code works once). Older 6-digit codes are still accepted.
+  Users may only insert pending links with no member (RLS). Accepting pushes the elder.
+- **用藥** (`src/lib/medication-utils.ts`): doses are tracked per reminder time per Taipei day in
+  `medications[].taken_times = { day, times }` (old rows with only `last_taken_at` count as all taken that day).
+  「已吃」 and 拍藥袋 go through `POST /api/profile/medications` (`take` / `add`), which edits the latest list on the
+  server instead of PATCHing a possibly stale copy. The medication zod schema lives in `src/lib/medication-schema.ts`
+  (fields missing there are silently dropped). Family 「今天已服用」 is computed with `isTakenToday`, never `taken_today`.
+- **Push on a shared phone**: `/api/push/subscribe` upserts with the service role so the device's endpoint moves to
+  whoever is logged in; the app re-posts the existing subscription on login (`syncWebPushSubscription`) and
+  `signOut` deletes it first (`releaseWebPushSubscription`). Endpoints must be public https URLs.
+- **Weekly report to family** only includes what the elder shares: `diary` → meal days/count, exercise and the
+  diary lines; `calories` → average kcal; `alerts` → the BP/glucose line (`family_summary_by_kind`).
+
 ### Running a real backend locally (no cloud Supabase needed)
 The app requires a live Supabase API to do anything past the login screen (auth is forced). A local
 stack works well for auth + meal/diary CRUD:

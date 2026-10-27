@@ -45,6 +45,29 @@ export async function unsubscribeWebPush(): Promise<boolean> {
   return true;
 }
 
+/**
+ * 登入後：這台裝置已經有訂閱、也允許通知 → 綁到現在登入的人（同一支手機換人用時，通知跟著人走）
+ */
+export async function syncWebPushSubscription(): Promise<void> {
+  if (!isWebPushSupported() || Notification.permission !== "granted") return;
+  const reg = await navigator.serviceWorker.getRegistration();
+  const json = (await reg?.pushManager.getSubscription())?.toJSON();
+  if (!json?.endpoint || !json.keys?.p256dh || !json.keys?.auth) return;
+  await api.subscribePush({
+    endpoint: json.endpoint,
+    keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
+    userAgent: navigator.userAgent.slice(0, 400),
+  });
+}
+
+/** 登出前：伺服器不再把這個人的通知送到這台裝置（瀏覽器的訂閱留著，下一個登入的人會接手） */
+export async function releaseWebPushSubscription(): Promise<void> {
+  if (!isWebPushSupported()) return;
+  const reg = await navigator.serviceWorker.getRegistration();
+  const sub = await reg?.pushManager.getSubscription();
+  if (sub) await api.unsubscribePush(sub.endpoint);
+}
+
 /** 這個瀏覽器能不能收推播（iPhone 需先「加入主畫面」才支援） */
 export function isWebPushSupported(): boolean {
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { deadlineLabel, taipeiClock } from "@/lib/daily-checkin";
 import { appointmentPlace, appointmentTimeLabel, relativeDayLabel } from "@/lib/clinic-appointments";
 import { SubPage } from "@/components/sub-page";
@@ -9,6 +9,7 @@ import { FamilyVideos } from "@/components/family-videos";
 import { FamilyStories } from "@/components/family-stories";
 import { FamilyScamChecks } from "@/components/family-scam-checks";
 import { FamilyHealthTrends } from "@/components/family-health-trends";
+import { useToast } from "@/hooks/use-toast";
 
 interface CaregiverScreenProps {
   onBack: () => void;
@@ -26,12 +27,13 @@ export function CaregiverScreen({ onBack, onOpenAlerts }: CaregiverScreenProps) 
   const [elders, setElders] = useState<ElderOverview[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     api.familyOverview()
       .then(({ elders }) => setElders(elders))
       .catch((e) => console.warn(e))
       .finally(() => setLoading(false));
   }, []);
+  useEffect(() => { load(); }, [load]);
 
   return (
     <SubPage
@@ -51,8 +53,8 @@ export function CaregiverScreen({ onBack, onOpenAlerts }: CaregiverScreenProps) 
             還沒有關心中的長輩
           </div>
           <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.5 }}>
-            請長輩在他的暖暖「家人共享」中邀請您，<br />
-            並輸入邀請碼接受後，這裡就會顯示他的狀況。
+            請長輩在他的暖暖「家人共享」產生邀請碼，<br />
+            在下面輸入後，這裡就會顯示他的狀況。
           </div>
         </div>
       ) : (
@@ -70,12 +72,83 @@ export function CaregiverScreen({ onBack, onOpenAlerts }: CaregiverScreenProps) 
           ))}
         </div>
       )}
+      <InviteCodeCard first={!loading && elders.length === 0} onAccepted={load} />
       {/* 長輩按「通知家人幫我看」的可疑訊息（沒有就不顯示） */}
       <FamilyScamChecks />
       {/* 長輩做的出遊影片：按讚、留言（沒有影片就不顯示） */}
       <FamilyVideos />
       <FamilyStories />
     </SubPage>
+  );
+}
+
+/** 輸入長輩給的邀請碼（還沒有長輩時直接展開；有了就收成一個「再加一位長輩」按鈕） */
+function InviteCodeCard({ first, onAccepted }: { first: boolean; onAccepted: () => void }) {
+  const toast = useToast();
+  const [open, setOpen] = useState(false);
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const busyRef = useRef(false);
+  const show = first || open;
+
+  const submit = async () => {
+    if (busyRef.current || !code.trim()) return;
+    busyRef.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      const { elderName } = await api.acceptFamilyInvite(code);
+      toast.success(`已經連上 ${elderName} 了`);
+      setCode("");
+      setOpen(false);
+      onAccepted();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "沒有連上，請再試一次");
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
+  };
+
+  if (!show) {
+    return (
+      <button type="button" className="btn-ghost" onClick={() => setOpen(true)}
+        style={{ width: "100%", minHeight: 52, marginTop: 16 }}>
+        ➕ 輸入邀請碼，再加一位長輩
+      </button>
+    );
+  }
+  return (
+    <form
+      className="card"
+      onSubmit={(e) => { e.preventDefault(); submit(); }}
+      style={{ marginTop: 16, padding: 18, display: "flex", flexDirection: "column", gap: 12 }}
+    >
+      <label htmlFor="family-invite-code" style={{ fontSize: "var(--fs-base)", fontWeight: 800 }}>
+        輸入長輩給你的邀請碼
+      </label>
+      <input
+        id="family-invite-code"
+        value={code}
+        onChange={(e) => { setCode(e.target.value); setError(""); }}
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        placeholder="1234-5678"
+        maxLength={20}
+        style={{
+          fontSize: "var(--fs-2xl)", fontWeight: 800, letterSpacing: 4, textAlign: "center",
+          padding: "12px 14px", borderRadius: "var(--r-md)", border: "2px solid var(--line-strong)",
+          background: "var(--surface)", color: "var(--ink-1)", fontFamily: "ui-monospace, monospace",
+        }}
+      />
+      {error && (
+        <div role="alert" style={{ fontSize: "var(--fs-sm)", color: "#B23A4E", lineHeight: 1.5 }}>{error}</div>
+      )}
+      <button type="submit" className="btn-primary" disabled={busy || !code.trim()} style={{ minHeight: 56 }}>
+        {busy ? "連線中…" : "連上長輩"}
+      </button>
+    </form>
   );
 }
 

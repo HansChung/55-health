@@ -115,3 +115,17 @@ describe("generateHealthAlerts", () => {
     expect(ids(alerts)).toContain("meal_missing");
   });
 });
+
+describe("偏低也要提醒", () => {
+  const ids = (metrics: HealthMetric[]) =>
+    generateHealthAlerts({ meals: [meal()], metrics, medications: [], now: NOW }).map((a) => a.id);
+  it("血糖低於 70 → 血糖偏低", () => {
+    expect(ids([glucose(55)])).toContain("blood_glucose_low");
+    expect(ids([glucose(70)])).not.toContain("blood_glucose_low");
+  });
+  it("血壓低於 90/60 → 血壓偏低；偏高照舊", () => {
+    expect(ids([bp(85, 55)])).toContain("blood_pressure_low");
+    expect(ids([bp(150, 95)])).toContain("blood_pressure_high");
+    expect(ids([bp(120, 80)])).not.toContain("blood_pressure_low");
+  });
+});

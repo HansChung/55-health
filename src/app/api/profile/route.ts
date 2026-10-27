@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { z } from "zod";
+import { MedicationListSchema } from "@/lib/medication-schema";
 
 const PatchSchema = z.object({
   display_name: z.string().min(1).max(50).optional(),
@@ -13,21 +14,7 @@ const PatchSchema = z.object({
   font_scale: z.enum(["base", "lg"]).optional(),
   high_contrast: z.boolean().optional(),
   chronic_conditions: z.array(z.string()).optional(),
-  medications: z.array(z.object({
-    name: z.string(),
-    dose: z.string().optional(),
-    time: z.string().optional(),
-    english_name: z.string().optional(),
-    purpose: z.string().optional(),
-    warnings: z.array(z.string()).optional(),
-    side_effects: z.array(z.string()).optional(),
-    added_at: z.string().optional(),
-    photo_url: z.string().optional(),
-    reminder_enabled: z.boolean().optional(),
-    reminder_times: z.array(z.string()).optional(),
-    taken_today: z.boolean().optional(),
-    last_taken_at: z.string().optional(),
-  })).optional(),
+  medications: MedicationListSchema.optional(),
   notification_settings: z.record(z.string(), z.any()).optional(),
   alert_thresholds: z
     .object({

@@ -43,6 +43,8 @@ export interface WeeklyReport {
   };
   tips: string[];
   family_summary: string[];
+  /** 同一份家人摘要，依長輩在「家人共享」開的權限分開：diary＝飲食和活動，health＝血壓血糖 */
+  family_summary_by_kind: { diary: string[]; health: string[] };
 }
 
 /** 計算某位用戶過去 7 天的週報。回傳 null 代表查詢失敗。 */
@@ -150,7 +152,8 @@ export async function computeWeeklyReport(
         : null,
     },
     tips,
-    family_summary: familySummary,
+    family_summary: [...familySummary.diary.slice(0, 2), ...familySummary.health, ...familySummary.diary.slice(2)],
+    family_summary_by_kind: familySummary,
   };
 }
 
@@ -205,8 +208,9 @@ function buildFamilySummary(input: {
   exerciseMinutes: number;
   latestBloodPressure: MetricRow | null;
   latestBloodGlucose: MetricRow | null;
-}) {
+}): { diary: string[]; health: string[] } {
   const summary: string[] = [];
+  const health: string[] = [];
   summary.push(
     input.mealDays >= 5
       ? `這週有 ${input.mealDays} 天有飲食記錄，習慣維持得不錯，家人可以給一點鼓勵。`
@@ -219,10 +223,13 @@ function buildFamilySummary(input: {
   );
   const bpStatus = input.latestBloodPressure ? getBloodPressureStatus(input.latestBloodPressure) : "尚無足夠資料";
   const glucoseStatus = input.latestBloodGlucose ? getGlucoseStatus(input.latestBloodGlucose) : "尚無足夠資料";
-  if (bpStatus === "偏高" || glucoseStatus === "偏高") {
-    summary.push(`最近血壓狀態：${bpStatus}；血糖狀態：${glucoseStatus}。請協助留意是否有按時量測、按時用藥，若持續異常建議諮詢醫師。`);
+  if (glucoseStatus === "偏低") {
+    // 低血糖比高血糖急：會頭暈、冒冷汗、跌倒
+    health.push(`最近血壓狀態：${bpStatus}；血糖狀態：偏低。低血糖可能頭暈、冒冷汗甚至跌倒，請提醒長輩身邊準備糖果或果汁，並把這個數字告訴醫師（可能要調整藥量）。`);
+  } else if (bpStatus === "偏高" || glucoseStatus === "偏高" || bpStatus === "偏低") {
+    health.push(`最近血壓狀態：${bpStatus}；血糖狀態：${glucoseStatus}。請協助留意是否有按時量測、按時用藥，若持續異常建議諮詢醫師。`);
   } else {
-    summary.push(`最近血壓狀態：${bpStatus}；血糖狀態：${glucoseStatus}。目前沒有明顯警訊，持續記錄會讓判斷更準。`);
+    health.push(`最近血壓狀態：${bpStatus}；血糖狀態：${glucoseStatus}。目前沒有明顯警訊，持續記錄會讓判斷更準。`);
   }
   if (input.mealsCount === 0) {
     summary.push("這週還沒有餐點記錄，建議先協助設定常吃餐點，降低記錄門檻。");
@@ -231,5 +238,5 @@ function buildFamilySummary(input: {
   } else {
     summary.push("下週可以延續目前節奏，重點放在規律記錄與少鹽、少糖的小調整。");
   }
-  return summary;
+  return { diary: summary, health };
 }
