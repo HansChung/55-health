@@ -25,6 +25,7 @@ import { EditProfileScreen } from "@/screens/edit-profile-screen";
 import { HealthMetricsScreen } from "@/screens/health-metrics-screen";
 import { FeaturesScreen, type MenuActions } from "@/screens/features-screen";
 import { BrainGameScreen } from "@/screens/brain-game-screen";
+import { BusinessCardScreen } from "@/screens/business-card-screen";
 import { PrescriptionScanScreen } from "@/screens/prescription-scan-screen";
 import { WeeklyReportScreen } from "@/screens/weekly-report-screen";
 import { AlertsCenterScreen } from "@/screens/alerts-center-screen";
@@ -138,7 +139,7 @@ export default function Page() {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     const open = url.searchParams.get("open");
-    if (open && ["voice", "camera", "photo", "travel-video", "study-tours", "photo-ask", "caregiver", "ask", "stories", "scam-check", "clinic", "health-metrics", "brain"].includes(open)) {
+    if (open && ["voice", "camera", "photo", "travel-video", "study-tours", "photo-ask", "caregiver", "ask", "stories", "scam-check", "clinic", "health-metrics", "brain", "business-card"].includes(open)) {
       pendingOpenRef.current = open;
     }
     // 研學團站點 QR：/?stamp=代碼 → 先記下來（還沒登入的話登入後再蓋），網址上的代碼馬上拿掉
@@ -202,6 +203,10 @@ export default function Page() {
     // 動動腦（每日一題）：後台關掉就不開，方案不夠就說要升級
     else if (open === "brain") {
       if (featureEnabled("brain_game")) requireFeature("brain_game", () => setSubpage("brain"));
+    }
+    // 數位名片（別人名片分享頁上的「我也想做一張」）
+    else if (open === "business-card") {
+      if (featureEnabled("business_card")) requireFeature("business_card", () => setSubpage("business-card"));
     }
     // 打字問暖暖（書本練習的「打字問暖暖」：範例放在 sessionStorage，登入畫面也帶得過去）
     // 我的故事集（家人留言、按讚的推播點進來）
@@ -808,6 +813,7 @@ export default function Page() {
     scam_check: featureEnabled("scam_check") ? () => requireFeature("scam_check", () => setSubpage("scam-check")) : undefined,
     iot: () => setSubpage("iot"),
     family: () => setSubpage("family"),
+    business_card: featureEnabled("business_card") ? () => requireFeature("business_card", () => setSubpage("business-card")) : undefined,
     brain_game: featureEnabled("brain_game") ? () => requireFeature("brain_game", () => setSubpage("brain")) : undefined,
     achievements: () => setSubpage("achievements"),
     smart: () => setSubpage("smart"),
@@ -908,6 +914,7 @@ export default function Page() {
       )}
       {subpage === "health-metrics" && <HealthMetricsScreen onBack={() => setSubpage(null)} />}
       {subpage === "brain" && <BrainGameScreen onBack={() => setSubpage(null)} />}
+      {subpage === "business-card" && <BusinessCardScreen onBack={() => setSubpage(null)} />}
       {subpage === "weekly-report" && <WeeklyReportScreen tier={tier} onBack={() => setSubpage(null)} />}
       {subpage === "alerts-center" && (
         <AlertsCenterScreen

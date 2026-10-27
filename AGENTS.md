@@ -339,6 +339,26 @@ stack works well for auth + meal/diary CRUD:
 - Home order: greeting → 報平安 → today/tomorrow appointment → calorie ring + 暖暖的建議 → 天氣 offer → 家人狀況 (if
   caring) → 常用 → medicines / alerts → meals → 跟暖暖聊聊・記錄運動.
 
+### 數位名片（`subpage "business-card"`, needs `supabase/add-business-cards.sql`）
+- 功能 → 家人與安心 → 數位名片 (deep link `/?open=business-card`, feature `business_card`, free, no AI). One card per user in
+  `business_cards` (server-only RLS): 名字／稱呼／一句介紹（≤100, dictation）／興趣（「、」separated → chips）, a photo in the
+  **public** bucket `business-cards` (`{user}/{uuid}.jpg`, random path, the old file is deleted on replace; no select
+  policy), phone／LINE ID or line.me link／email, and ≤3 精選作品 (`works` = `[{kind: video|story, id}]`).
+  All rules are in `normalizeCardInput` (`src/lib/business-card.ts`); the server also keeps only works the user owns
+  that still exist (`ownedWorkRefs`), and re-checks them every time the card is shown.
+- **Privacy**: contacts are hidden by default (`show_*`, and an empty field can never be shown); no address or age
+  fields. The card has no link until the elder presses 「開始分享」 (`is_public`); 「停止分享」 hides it, 「換新連結」
+  replaces `slug` (12 chars, no 0/o/1/l) so old links/QRs stop working. Picking a story that was not 「給家人看」 shows a
+  warning — its full text goes on the card.
+- Share page `/c/<slug>` (`src/app/c/[slug]/page.tsx`, `noindex`, `openGraph` = 「王美玉（美玉阿姨）的名片」 + intro +
+  photo) renders `BusinessCardView` — the in-app preview uses the same component and `toPublicCard`, so the elder sees
+  exactly what others see. Video works link to `/v/<id>`; stories expand inline. 「存到手機通訊錄」 =
+  `/c/<slug>/vcard` (`buildVCard`, public contacts only). The app shows the QR (`qrcode`, URL from
+  `NEXT_PUBLIC_APP_URL`), 「用 LINE 傳給朋友」 (`navigator.share`) and 「印紙本」 (`body.printing-card`).
+- Without the SQL: `GET /api/business-card` answers 503 (screen says 「還在準備中」) and `/c/<slug>` says the card isn't
+  public. The local `supabase` CLI binary is killed by macOS on the dev Mac (exit 137), so the SQL was checked in a
+  plain `postgres:16-alpine` container with stub `auth.users` / `storage.buckets`.
+
 ### 動動腦（腦力小遊戲, `subpage "brain"`, needs `supabase/add-brain-games.sql`）
 - 功能 → 動動腦 → 每日一題 (deep link `/?open=brain`, feature `brain_game`, free, no AI). Questions are generated in
   `src/lib/brain-games.ts` from a seed: **每日一題 is the same for everyone that Taipei day** (`dailyQuestion(day)`,

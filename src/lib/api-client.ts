@@ -667,6 +667,22 @@ export const api = {
   brainStats: () => apiFetch<{ stats: BrainStats }>("/api/brain"),
   brainAnswer: (input: { kind: string; correct: boolean }) =>
     apiFetch<{ stats: BrainStats; first: boolean }>("/api/brain", { method: "POST", json: input }),
+  // 數位名片
+  getBusinessCard: () =>
+    apiFetch<{
+      card: import("./business-card").BusinessCard | null;
+      works: import("./business-card").CardWork[];
+      choices: import("./business-card").CardWorkChoice[];
+      suggestedName: string;
+    }>("/api/business-card"),
+  saveBusinessCard: (fields: import("./business-card").CardFields) =>
+    apiFetch<{ card: import("./business-card").BusinessCard; works: import("./business-card").CardWork[] }>("/api/business-card", { method: "PUT", json: fields }),
+  businessCardSharing: (action: "share" | "unshare" | "new_link") =>
+    apiFetch<{ card: import("./business-card").BusinessCard }>("/api/business-card", { method: "POST", json: { action } }),
+  setBusinessCardPhoto: (photo: { photoPath: string } | { imageBase64: string; mimeType: string }) =>
+    apiFetch<{ card: import("./business-card").BusinessCard }>("/api/business-card/photo", { method: "POST", json: photo, timeoutMs: 30000 }),
+  removeBusinessCardPhoto: () =>
+    apiFetch<{ card: import("./business-card").BusinessCard | null }>("/api/business-card/photo", { method: "DELETE" }),
   // 回診提醒
   listAppointments: () => apiFetch<{ appointments: import("./clinic-appointments").ClinicAppointment[] }>("/api/clinic/appointments"),
   createAppointment: (input: import("./clinic-appointments").AppointmentInput) =>
