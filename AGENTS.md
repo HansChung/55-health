@@ -137,6 +137,17 @@ and Stripe. Capacitor/Android is only a packaging target and is not needed for w
 - **Weekly report to family** only includes what the elder shares: `diary` → meal days/count, exercise and the
   diary lines; `calories` → average kcal; `alerts` → the BP/glucose line (`family_summary_by_kind`).
 
+- **Stripe** (needs `supabase/add-stripe-subscription.sql`): `profiles.stripe_subscription_id` is the one
+  subscription a member is on. The webhook handles `checkout.session.completed` and
+  `customer.subscription.created|updated|deleted`, always re-reads the subscription from Stripe
+  (`syncSubscription`, so event order doesn't matter) and maps price → plan (`STRIPE_PRICE_BASIC/PRO`). Live =
+  active/trialing/past_due; it only downgrades when the **current** subscription ends, so switching plans or
+  admin-granted tiers are never knocked to free. DB errors return 500 so Stripe retries. Checkout reuses the
+  Stripe customer and, for members with a live subscription, returns the Billing Portal URL instead of a second
+  subscription; `/api/stripe/portal` = 「管理我的訂閱」 on /pricing (the Customer Portal must be enabled in Stripe).
+- 首頁 AI 建議 regenerations are capped at 20 per Taipei day via `reserveDailySlot`; over the cap the latest
+  suggestion of the day is returned (`limited: true`).
+
 ### Running a real backend locally (no cloud Supabase needed)
 The app requires a live Supabase API to do anything past the login screen (auth is forced). A local
 stack works well for auth + meal/diary CRUD:

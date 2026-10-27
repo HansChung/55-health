@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGeminiModel, isGeminiConfigured, parseModelJson, modelText } from "@/lib/ai/gemini";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { trackAiUsage } from "@/lib/ai/usage-tracker";
+import { finishReservedUsage, releaseReservedUsage, reserveDailySlot } from "@/lib/ai/usage-tracker";
 import { taipeiDayStartIso } from "@/lib/ask";
 import { cachedSuggestion, suggestionCacheKey, taipeiClock } from "@/lib/suggestion-cache";
 
 const ENDPOINT = "/api/ai/suggest";
+/** 每人每天最多重新產生幾次（記餐、改資料、按「換一個建議」都算）；超過就給今天最後那一則 */
+const SUGGEST_DAILY_LIMIT = 20;
 
 const SUGGEST_PROMPT = `你是台灣長者的健康助理「暖暖」。根據用戶**今天的真實情況**給個性化建議。
 
@@ -59,17 +61,19 @@ export async function GET(req: NextRequest) {
 
   // 今天吃的、個人資料都沒變 → 給上次的建議，不叫 AI（首頁每次打開、換手機都不會重算）
   const cacheKey = suggestionCacheKey({ day, profile, meals });
+  // 今天最後一則產生好的建議（略過還在產生中、只佔了位子的那筆）
+  const { data: last } = await supabase
+    .from("ai_usage")
+    .select("metadata")
+    .eq("user_id", user.id)
+    .eq("endpoint", ENDPOINT)
+    .eq("success", true)
+    .gte("created_at", dayStart)
+    .not("metadata->suggestion", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
   if (!fresh) {
-    const { data: last } = await supabase
-      .from("ai_usage")
-      .select("metadata")
-      .eq("user_id", user.id)
-      .eq("endpoint", ENDPOINT)
-      .eq("success", true)
-      .gte("created_at", dayStart)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
     const cached = cachedSuggestion(last?.metadata, cacheKey);
     if (cached) return NextResponse.json({ suggestion: cached, cached: true });
   }
@@ -93,6 +97,22 @@ ${meals?.length
     return NextResponse.json({ error: "建議服務暫停中，請稍後再試" }, { status: 503 });
   }
 
+  // 先佔今天的一格（同時好幾個請求也不會超過上限）；佔不到 → 給今天最後那一則，不再叫 AI
+  let slot: string | null;
+  try {
+    ({ id: slot } = await reserveDailySlot({
+      userId: user.id, service: "gemini_text", endpoint: ENDPOINT, sinceIso: dayStart, limit: SUGGEST_DAILY_LIMIT,
+    }));
+  } catch (e) {
+    console.error("[api] AI 建議佔次數失敗:", e);
+    return NextResponse.json({ error: "建議生成失敗，請稍後再試" }, { status: 500 });
+  }
+  if (!slot) {
+    const latest = (last?.metadata as { suggestion?: unknown } | null)?.suggestion;
+    if (latest) return NextResponse.json({ suggestion: latest, cached: true, limited: true });
+    return NextResponse.json({ error: "今天的建議換太多次了，明天再來看新的喔" }, { status: 429 });
+  }
+
   try {
     // 有 LK888_API_KEY 走邁笙（gem-3.5-flash-lite）；Google 直連用 lite 即可，額度更大（15k/day）
     const { model: m, config } = getGeminiModel(
@@ -109,19 +129,16 @@ ${meals?.length
     const suggestion = parseModelJson(text);
     const usage = result.response.usageMetadata;
 
-    await trackAiUsage({
-      userId: user.id,
-      service: "gemini_text",
+    await finishReservedUsage(slot, {
       model: config.model,
       inputTokens: usage?.promptTokenCount ?? 0,
       outputTokens: usage?.candidatesTokenCount ?? 0,
-      endpoint: ENDPOINT,
-      success: true,
       metadata: { provider: config.provider, cache_key: cacheKey, suggestion },
     });
 
     return NextResponse.json({ suggestion });
   } catch (e) {
+    await releaseReservedUsage(slot);
     console.error("[api] AI 建議生成失敗:", e);
     return NextResponse.json({ error: "建議生成失敗，請稍後再試" }, { status: 500 });
   }
