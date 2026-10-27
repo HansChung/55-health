@@ -417,7 +417,7 @@ function InviteCodeModal({ link, onClose }: { link: FamilyLink; onClose: () => v
           邀請已建立
         </h2>
         <p style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", margin: "0 0 24px" }}>
-          請家人打開暖暖，到「家人狀況」輸入邀請碼
+          請家人打開暖暖，到「全部功能」→「家人狀況」輸入邀請碼
         </p>
 
         <div style={{

@@ -803,7 +803,8 @@ export default function Page() {
     blueprint: () => setSubpage("blueprint"),
     book: () => { window.location.href = "/smart/guide"; },
     // 只有真的在關心長輩的人才有「家人狀況」（長輩自己看是空的）
-    caregiver: careElderCount > 0 ? () => setSubpage("caregiver") : undefined,
+    // 一直顯示：還沒連上長輩的家人要從這裡輸入邀請碼
+    caregiver: () => setSubpage("caregiver"),
     scam_check: featureEnabled("scam_check") ? () => requireFeature("scam_check", () => setSubpage("scam-check")) : undefined,
     iot: () => setSubpage("iot"),
     family: () => setSubpage("family"),

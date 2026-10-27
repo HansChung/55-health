@@ -35,7 +35,7 @@ export const MENU_ITEMS: Record<MenuId, MenuItem> = {
   study_passport: { label: "研學護照", emoji: "🏮", desc: "章和結業證書" },
   blueprint: { label: "圓夢藍圖", emoji: "✨", desc: "點亮 SMART 光點" },
   book: { label: "書本練習", emoji: "📚", desc: "一拍、二問、三記下" },
-  caregiver: { label: "家人狀況", emoji: "👨‍👩‍👧", desc: "關心的長輩" },
+  caregiver: { label: "家人狀況", emoji: "👨‍👩‍👧", desc: "看長輩、輸入邀請碼" },
   scam_check: { label: "可疑訊息", emoji: "🛡️", desc: "截圖給暖暖看" },
   iot: { label: "居家守護", emoji: "🏠", desc: "感測器通知家人" },
   family: { label: "家人共享", emoji: "🤝", desc: "邀請家人" },

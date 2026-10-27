@@ -30,34 +30,43 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: "送出的資料格式有誤" }, { status: 400 });
   const body = parsed.data;
 
-  const { data: current, error: readErr } = await supabase
-    .from("profiles").select("medications").eq("id", user.id).single();
-  if (readErr) {
-    console.error("[api] medications read:", readErr);
-    return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
-  }
-  const meds = (Array.isArray(current?.medications) ? current.medications : []) as ProfileMedication[];
-
-  let next: ProfileMedication[];
-  if (body.action === "take") {
-    const target = { name: body.name, added_at: body.added_at };
-    if (!meds.some((m) => sameMedication(m, target))) {
-      return NextResponse.json({ error: "找不到這個藥，可能已經從清單刪掉了" }, { status: 404 });
+  // 讀最新清單 → 改 → 只有在這段時間沒人改過（updated_at 沒變）才寫回；被搶先就重讀再做一次
+  // （同時按兩個「已吃」、兩支手機同時按，兩次都會留下來，不會互相蓋掉）
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { data: current, error: readErr } = await supabase
+      .from("profiles").select("medications, updated_at").eq("id", user.id).single();
+    if (readErr) {
+      console.error("[api] medications read:", readErr);
+      return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
     }
-    next = meds.map((m) => (sameMedication(m, target) ? markDoseTaken(m, body.time ?? null) : m));
-  } else {
-    next = [...meds, ...body.medications].slice(0, 50);
-  }
+    const meds = (Array.isArray(current?.medications) ? current.medications : []) as ProfileMedication[];
 
-  const { data, error } = await supabase
-    .from("profiles")
-    .update({ medications: next, updated_at: new Date().toISOString() })
-    .eq("id", user.id)
-    .select()
-    .single();
-  if (error) {
-    console.error("[api] medications update:", error);
-    return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
+    let next: ProfileMedication[];
+    if (body.action === "take") {
+      const target = { name: body.name, added_at: body.added_at };
+      if (!meds.some((m) => sameMedication(m, target))) {
+        return NextResponse.json({ error: "找不到這個藥，可能已經從清單刪掉了" }, { status: 404 });
+      }
+      next = meds.map((m) => (sameMedication(m, target) ? markDoseTaken(m, body.time ?? null) : m));
+    } else {
+      next = [...meds, ...body.medications].slice(0, 50);
+    }
+
+    const prev = (current?.updated_at as string | null) ?? null;
+    // 新的 updated_at 一定要比舊的晚（時鐘差一點也不會寫出一樣的值）
+    const stamp = new Date(Math.max(Date.now(), prev ? new Date(prev).getTime() + 1 : 0)).toISOString();
+    const update = supabase
+      .from("profiles")
+      .update({ medications: next, updated_at: stamp })
+      .eq("id", user.id);
+    const { data, error } = await (prev === null ? update.is("updated_at", null) : update.eq("updated_at", prev))
+      .select()
+      .maybeSingle();
+    if (error) {
+      console.error("[api] medications update:", error);
+      return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
+    }
+    if (data) return NextResponse.json({ profile: data });
   }
-  return NextResponse.json({ profile: data });
+  return NextResponse.json({ error: "現在有點忙，請再按一次" }, { status: 409 });
 }
