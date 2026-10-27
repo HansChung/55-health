@@ -41,12 +41,15 @@ export async function GET() {
   if (blocked || !user) return blocked ?? NextResponse.json({ error: "未登入" }, { status: 401 });
   const admin = createSupabaseAdmin();
   try {
-    const [card, choices, profile] = await Promise.all([
+    const [card, profile] = await Promise.all([
       loadOwnCard(admin, user.id),
-      loadWorkChoices(admin, user.id),
       admin.from("profiles").select("display_name").eq("id", user.id).maybeSingle(),
     ]);
-    const works = card ? await loadCardWorks(admin, user.id, card.works) : [];
+    // 名片上的作品就算比較舊（不在最新 30 件裡）也要列出來，才拿得掉
+    const [choices, works] = await Promise.all([
+      loadWorkChoices(admin, user.id, card?.works ?? []),
+      card ? loadCardWorks(admin, user.id, card.works) : Promise.resolve([]),
+    ]);
     const suggestedName = typeof profile.data?.display_name === "string" ? profile.data.display_name.slice(0, 20) : "";
     return NextResponse.json({ card, works, choices, suggestedName });
   } catch (e) {

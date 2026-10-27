@@ -194,12 +194,26 @@ async function loadStories(admin: Admin, userId: string, ids?: string[]): Promis
     console.warn("[business-card] load stories:", error.message);
     return [];
   }
-  return (data ?? []) as StoryRow[];
+  // 只有錄音、沒有文字的聲音故事不能放（名片上只放文字，錄音是私人連結）
+  return ((data ?? []) as StoryRow[]).filter((s) => typeof s.body === "string" && s.body.trim() !== "");
 }
 
-/** 可以放上名片的作品：做好的影片、沒刪掉的故事（各最多 30 件，新的在前面） */
-export async function loadWorkChoices(admin: Admin, userId: string): Promise<CardWorkChoice[]> {
-  const [videos, stories] = await Promise.all([loadVideos(admin, userId), loadStories(admin, userId)]);
+/**
+ * 可以放上名片的作品：做好的影片、有文字的故事（各最新 30 件），
+ * 再補上已經放在名片上、但比較舊的（不然編輯畫面看不到、拿不掉）
+ */
+export async function loadWorkChoices(admin: Admin, userId: string, selected: CardWorkRef[] = []): Promise<CardWorkChoice[]> {
+  const [latestVideos, latestStories] = await Promise.all([loadVideos(admin, userId), loadStories(admin, userId)]);
+  const missing = (kind: CardWorkRef["kind"], have: { id: string }[]) =>
+    selected.filter((r) => r.kind === kind && !have.some((x) => x.id === r.id)).map((r) => r.id);
+  const olderVideoIds = missing("video", latestVideos);
+  const olderStoryIds = missing("story", latestStories);
+  const [olderVideos, olderStories] = await Promise.all([
+    olderVideoIds.length ? loadVideos(admin, userId, olderVideoIds) : Promise.resolve([]),
+    olderStoryIds.length ? loadStories(admin, userId, olderStoryIds) : Promise.resolve([]),
+  ]);
+  const videos = [...latestVideos, ...olderVideos];
+  const stories = [...latestStories, ...olderStories];
   return [
     ...videos.map((row): CardWorkChoice => {
       const v = toClientVideo(admin, row);

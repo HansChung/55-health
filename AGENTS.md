@@ -345,7 +345,9 @@ stack works well for auth + meal/diary CRUD:
   **public** bucket `business-cards` (`{user}/{uuid}.jpg`, random path, the old file is deleted on replace; no select
   policy), phone／LINE ID or line.me link／email, and ≤3 精選作品 (`works` = `[{kind: video|story, id}]`).
   All rules are in `normalizeCardInput` (`src/lib/business-card.ts`); the server also keeps only works the user owns
-  that still exist (`ownedWorkRefs`), and re-checks them every time the card is shown.
+  that still exist (`ownedWorkRefs`), and re-checks them every time the card is shown. Audio-only stories (empty
+  body) are never offered or shown; the editor's list = the latest 30 of each kind **plus** whatever is already on the
+  card (`loadWorkChoices(…, selected)`), so an older pick can still be removed.
 - **Privacy**: contacts are hidden by default (`show_*`, and an empty field can never be shown); no address or age
   fields. The card has no link until the elder presses 「開始分享」 (`is_public`); 「停止分享」 hides it, 「換新連結」
   replaces `slug` (12 chars, no 0/o/1/l) so old links/QRs stop working. Picking a story that was not 「給家人看」 shows a
