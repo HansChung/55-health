@@ -4660,7 +4660,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
       }}>
         <SubPage
           title={chapter.subtitle}
-          onBack={() => router.push("/")}
+          onBack={() => router.push("/smart/guide")}
           accent={`linear-gradient(180deg, ${bookPalette?.soft ?? "#E8F4FA"} 0%, transparent 70%)`}
           footer={
             <button
