@@ -1,13 +1,14 @@
 // ────────────────────────────────────────────────
 // 每天早上的天氣＋健康提醒（Web Push）
 // 對象：notification_settings.daily_weather 有開、選了縣市、這台裝置有訂閱推播的人
-// 一個請求查全部縣市的氣象署預報；每人先「搶」今天的記號（daily_weather_sent_on）才發，同一天不重複
+// 一個請求查全部縣市的氣象署預報（同時查環境部的空氣品質，空氣不好就加一句）；每人先「搶」今天的記號（daily_weather_sent_on）才發，同一天不重複
 // 由 Vercel Cron 觸發（見 vercel.json，23:00 UTC＝台灣 7 點），CRON_SECRET 保護；需要 CWA_API_KEY、VAPID
 // ────────────────────────────────────────────────
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase/server";
 import { isWebPushConfigured, sendPushToUser } from "@/lib/push/send";
 import { countiesForecast, isWeatherConfigured } from "@/lib/weather-server";
+import { countiesAir } from "@/lib/air-quality-server";
 import { buildDailyWeatherPush, dailyWeatherCounty, taipeiDate, todayAndTonight } from "@/lib/daily-weather";
 import { createDeadline, mapWithConcurrency } from "@/lib/concurrency";
 import type { TaiwanCounty } from "@/lib/weather";
@@ -19,6 +20,8 @@ const USER_CONCURRENCY = 8;
 const TIME_BUDGET_MS = 45_000;
 const MAX_USERS = 2000;
 const ID_CHUNK = 300;
+/** 空氣品質最多等幾毫秒（天氣預報本身最多等 12 秒） */
+const AIR_WAIT_MS = 4_000;
 
 interface ProfileRow {
   id: string;
@@ -70,7 +73,16 @@ export async function GET(req: NextRequest) {
   const targets = candidates.filter((p) => subscribed.has(p.id));
   if (targets.length === 0) return NextResponse.json({ ok: true, candidates: candidates.length, sent: 0 });
 
+  // 天氣、空氣品質同時查。空氣品質是加分的：等天氣查完再看它好了沒——
+  // 從開始算最多等 AIR_WAIT_MS；天氣查比較久的話，那段時間內到的空氣品質照樣用，不會多等
+  const airStarted = Date.now();
+  const airTask = countiesAir();
   const forecasts = await countiesForecast(targets.map((p) => p.county));
+  const airLeft = Math.max(0, AIR_WAIT_MS - (Date.now() - airStarted));
+  const air = await Promise.race([
+    airTask,
+    new Promise<Awaited<ReturnType<typeof countiesAir>>>((r) => setTimeout(() => r(new Map()), airLeft)),
+  ]);
   let sent = 0;
   let noForecast = 0;
   let skippedForTime = 0;
@@ -97,12 +109,20 @@ export async function GET(req: NextRequest) {
       if (claimErr) console.warn("[cron] daily-weather claim:", claimErr.message);
       return;
     }
-    const msg = buildDailyWeatherPush({ county: p.county, ...pair, conditions: p.chronic_conditions ?? [] });
+    const msg = buildDailyWeatherPush({ county: p.county, ...pair, conditions: p.chronic_conditions ?? [], air: air.get(p.county) ?? null });
     const res = await sendPushToUser(p.id, { ...msg, url: "/", tag: `daily-weather-${today}` }).catch((e) => {
       console.warn("[cron] daily-weather push:", e);
       return { sent: 0 };
     });
-    if (res.sent > 0) sent++;
+    if (res.sent > 0) {
+      sent++;
+      return;
+    }
+    // 一則都沒送到（訂閱都失效）→ 把今天的記號還回去：重跑還能再發，每日關懷也知道這個人早上沒收到
+    const { error: undoErr } = await admin
+      .from("profiles").update({ daily_weather_sent_on: null })
+      .eq("id", p.id).eq("daily_weather_sent_on", today);
+    if (undoErr) console.warn("[cron] daily-weather unclaim:", undoErr.message);
   });
 
   if (skippedForTime > 0) console.error(`[cron] 天氣提醒時間不足，${skippedForTime} 位未發（總數 ${targets.length}）`);
@@ -111,6 +131,7 @@ export async function GET(req: NextRequest) {
     candidates: candidates.length,
     targets: targets.length,
     counties: forecasts.size,
+    air_counties: air.size,
     sent,
     no_forecast: noForecast,
     skipped_for_time: skippedForTime,

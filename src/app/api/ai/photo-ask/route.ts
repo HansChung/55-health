@@ -14,11 +14,11 @@ import {
 import { taipeiDayStartIso } from "@/lib/ask";
 import {
   DEFAULT_PHOTO_QUESTION,
-  PHOTO_ASK_FREE_DAILY,
   PHOTO_ASK_PLACE_MAX,
   PHOTO_ASK_QUESTION_MAX,
   sanitizeAskText,
 } from "@/lib/photo-ask";
+import { blockedResponse } from "@/lib/plan-access-server";
 
 // 看圖模型實測約 10～15 秒，預留空間
 export const maxDuration = 60;
@@ -36,7 +36,7 @@ const RequestSchema = z.object({
 
 /**
  * 拍照問暖暖：看照片回答長輩的問題。所有人都能用（書本練習的拍照範例也用這個）：
- * 免費會員每天 PHOTO_ASK_FREE_DAILY 次；標準版以上和拍照記餐共用每月拍照次數
+ * 免費會員每天幾次（後台「方案與次數」）；標準版以上和拍照記餐共用每月拍照次數
  */
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseServer();
@@ -60,6 +60,9 @@ export async function POST(req: NextRequest) {
   }
 
   const quota = await checkUserQuota(user.id, "photo");
+  const blocked = blockedResponse(quota.access, "photo_ask");
+  if (blocked) return blocked;
+  const freeDaily = quota.access.limit("photo_ask_free_daily");
   // 免費會員：只看「每天幾次」（不看每月拍照次數），先佔一格再問：同時送出、開好幾個分頁也不會超過
   let slot: { id: string | null; used: number } | null = null;
   if (quota.tier === "free") {
@@ -69,7 +72,7 @@ export async function POST(req: NextRequest) {
         service: "gemini_vision",
         endpoint: ENDPOINT,
         sinceIso: taipeiDayStartIso(),
-        limit: PHOTO_ASK_FREE_DAILY,
+        limit: freeDaily,
       });
     } catch (e) {
       console.error("[api] photo-ask daily slot:", e);
@@ -78,8 +81,8 @@ export async function POST(req: NextRequest) {
     if (!slot.id) {
       return NextResponse.json(
         {
-          error: `免費會員每天可以拍照問 ${PHOTO_ASK_FREE_DAILY} 次，今天問完了，明天再來`,
-          quota: { used: PHOTO_ASK_FREE_DAILY, limit: PHOTO_ASK_FREE_DAILY, tier: quota.tier, period: "day" },
+          error: `免費會員每天可以拍照問 ${freeDaily} 次，今天問完了，明天再來`,
+          quota: { used: freeDaily, limit: freeDaily, tier: quota.tier, period: "day" },
           upgradeUrl: "/pricing",
         },
         { status: 429 }
@@ -120,7 +123,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       result,
       quota: slot
-        ? { used: slot.used, limit: PHOTO_ASK_FREE_DAILY, tier: quota.tier, period: "day" }
+        ? { used: slot.used, limit: freeDaily, tier: quota.tier, period: "day" }
         : { used: quota.used + 1, limit: quota.limit, tier: quota.tier, period: "month" },
     });
   } catch (error: unknown) {

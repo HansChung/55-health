@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { deadlineLabel, taipeiClock } from "@/lib/daily-checkin";
+import { appointmentPlace, appointmentTimeLabel, relativeDayLabel } from "@/lib/clinic-appointments";
 import { SubPage } from "@/components/sub-page";
 import { api, type ElderOverview } from "@/lib/api-client";
 import { FamilyVideos } from "@/components/family-videos";
 import { FamilyStories } from "@/components/family-stories";
+import { FamilyScamChecks } from "@/components/family-scam-checks";
+import { FamilyHealthTrends } from "@/components/family-health-trends";
 
 interface CaregiverScreenProps {
   onBack: () => void;
@@ -66,6 +70,8 @@ export function CaregiverScreen({ onBack, onOpenAlerts }: CaregiverScreenProps) 
           ))}
         </div>
       )}
+      {/* 長輩按「通知家人幫我看」的可疑訊息（沒有就不顯示） */}
+      <FamilyScamChecks />
       {/* 長輩做的出遊影片：按讚、留言（沒有影片就不顯示） */}
       <FamilyVideos />
       <FamilyStories />
@@ -83,6 +89,7 @@ function ElderCard({
   const st = STATUS[elder.overall] ?? STATUS.normal;
   const perms = elder.permissions ?? {};
   const canHealth = !!perms.alerts;
+  const [trends, setTrends] = useState(false);
 
   return (
     <div className="card" style={{ padding: 0, overflow: "hidden" }}>
@@ -139,6 +146,27 @@ function ElderCard({
 
       {/* 狀態列表 */}
       <div style={{ padding: "8px 18px 16px" }}>
+        {elder.checkin && (
+          <StatusRow icon="👋" label="報平安"
+            value={
+              elder.checkin.checked_at
+                ? `今天 ${taipeiClock(elder.checkin.checked_at)} 報過平安`
+                : elder.checkin.state === "late"
+                  ? `過了${deadlineLabel(elder.checkin.deadline)}還沒報平安`
+                  : `今天還沒報（${deadlineLabel(elder.checkin.deadline)}前）`
+            }
+            warn={elder.checkin.state === "late"}
+          />
+        )}
+        {elder.next_appointment && (
+          <StatusRow icon={elder.next_appointment.kind === "refill" ? "💊" : "📅"} label={elder.next_appointment.kind === "refill" ? "領藥" : "回診"}
+            value={[
+              relativeDayLabel(elder.next_appointment.appt_date),
+              appointmentTimeLabel(elder.next_appointment.appt_time),
+              appointmentPlace(elder.next_appointment),
+            ].filter(Boolean).join(" ")}
+          />
+        )}
         {elder.iot && (
           <StatusRow
             icon="🏠" label="居家"
@@ -169,6 +197,21 @@ function ElderCard({
         {canHealth && elder.shi != null && (
           <StatusRow icon="🧭" label="幸福指數" value={`${elder.shi} 分`} />
         )}
+        {canHealth && (
+          <button
+            type="button"
+            onClick={() => setTrends(true)}
+            style={{
+              width: "100%", marginTop: 8, padding: "12px 14px",
+              borderRadius: 12, border: "1px solid var(--line-strong)",
+              background: "var(--surface)", fontSize: "var(--fs-sm)", fontWeight: 800, color: "var(--primary-deep)",
+              cursor: "pointer", fontFamily: "inherit",
+            }}
+          >
+            📈 看血壓、血糖趨勢
+          </button>
+        )}
+        {trends && <FamilyHealthTrends elderId={elder.elder_id} elderName={elder.name} onClose={() => setTrends(false)} />}
         {!canHealth && (
           <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-3)", padding: "6px 0" }}>
             （長輩尚未開放健康與守護資訊的查看權限）

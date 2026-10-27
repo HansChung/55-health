@@ -23,6 +23,8 @@ import { ExerciseScreen } from "@/screens/exercise-screen";
 import { FontSizeScreen } from "@/screens/font-size-screen";
 import { EditProfileScreen } from "@/screens/edit-profile-screen";
 import { HealthMetricsScreen } from "@/screens/health-metrics-screen";
+import { FeaturesScreen, type MenuActions } from "@/screens/features-screen";
+import { BrainGameScreen } from "@/screens/brain-game-screen";
 import { PrescriptionScanScreen } from "@/screens/prescription-scan-screen";
 import { WeeklyReportScreen } from "@/screens/weekly-report-screen";
 import { AlertsCenterScreen } from "@/screens/alerts-center-screen";
@@ -36,9 +38,12 @@ import { StudyToursScreen } from "@/screens/study-tours-screen";
 import { PhotoAskScreen } from "@/screens/photo-ask-screen";
 import { AskScreen } from "@/screens/ask-screen";
 import { StoriesScreen } from "@/screens/stories-screen";
+import { ScamCheckScreen } from "@/screens/scam-check-screen";
+import { ClinicScreen } from "@/screens/clinic-screen";
 import { photoPayload } from "@/lib/direct-upload";
 import { takeAskSeed, type AskSeed } from "@/lib/ask";
 import { takePhotoAskSeed } from "@/lib/photo-ask";
+import { lineErrorMessage } from "@/lib/line-login";
 import { StampResultSheet, type StampSheetState } from "@/components/stamp-result-sheet";
 import { MealDetailSheet } from "@/screens/meal-detail-sheet";
 import { PhotoSourceSheet } from "@/components/photo-source-sheet";
@@ -55,7 +60,7 @@ import { uploadMealPhoto } from "@/lib/upload-photo";
 import type { FoodItem } from "@/lib/types";
 import { getPendingMedicationReminders, isSameLocalDay } from "@/lib/medication-utils";
 import { generateHealthAlerts } from "@/lib/health-alerts";
-import { hasFeature, requiredTierLabel, type FeatureKey, type SubscriptionTier } from "@/lib/feature-gates";
+import { applyPlanSettings, featureEnabled, hasFeature, requiredTierLabel, type FeatureKey, type SubscriptionTier } from "@/lib/feature-gates";
 import {
   CHAPTER_INTENT_KEY,
   getChapterDeepLinkHint,
@@ -125,13 +130,15 @@ export default function Page() {
   });
   // 打字問暖暖：書本範例帶來的那一句（讀一次就用掉）
   const [askSeed, setAskSeed] = useState<AskSeed | null>(null);
+  // 我的故事集：書本 1105「讓聲音留下來」帶 &audio=1，直接打開錄音
+  const [storiesAudio, setStoriesAudio] = useState(false);
 
   // 章節開篇 QR 深連結：/?open=voice|camera|photo&from=chapter0100
   useEffect(() => {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     const open = url.searchParams.get("open");
-    if (open && ["voice", "camera", "photo", "travel-video", "study-tours", "photo-ask", "caregiver", "ask", "stories"].includes(open)) {
+    if (open && ["voice", "camera", "photo", "travel-video", "study-tours", "photo-ask", "caregiver", "ask", "stories", "scam-check", "clinic", "health-metrics", "brain"].includes(open)) {
       pendingOpenRef.current = open;
     }
     // 研學團站點 QR：/?stamp=代碼 → 先記下來（還沒登入的話登入後再蓋），網址上的代碼馬上拿掉
@@ -145,7 +152,7 @@ export default function Page() {
       window.history.replaceState({}, "", url.pathname + (qs ? `?${qs}` : ""));
     }
     const from = url.searchParams.get("from");
-    const hint = getChapterDeepLinkHint(from);
+    const hint = getChapterDeepLinkHint(from, url.searchParams.get("open"));
     if (hint) {
       try {
         sessionStorage.setItem(CHAPTER_INTENT_KEY, JSON.stringify(hint));
@@ -164,7 +171,7 @@ export default function Page() {
     if (from) trackEvent("chapter_entry_open", { from, open });
 
     // 若首屏 effect 尚未寫入，再補一次意圖
-    const hint = getChapterDeepLinkHint(from) ?? chapterIntent;
+    const hint = getChapterDeepLinkHint(from, open) ?? chapterIntent;
     if (hint) {
       try {
         sessionStorage.setItem(CHAPTER_INTENT_KEY, JSON.stringify(hint));
@@ -176,7 +183,12 @@ export default function Page() {
     else if (open === "camera") setModal("camera");
     else if (open === "photo") setShowPhotoSource(true);
     // 出遊影片做好的推播點進來（不在這裡擋方案：profile 可能還沒載完；配額由伺服器把關）
-    else if (open === "travel-video") setSubpage("travel-video");
+    // &mode=yearly 直接打開「年度回憶」分頁
+    else if (open === "travel-video") {
+      const mode = url.searchParams.get("mode");
+      setTravelVideoMode(mode === "yearly" || mode === "montage" || mode === "mv" || mode === "greeting" ? mode : null);
+      setSubpage("travel-video");
+    }
     // 研學團：分享連結／候補轉正推播（&tour=活動 id 直接打開那一團）
     else if (open === "study-tours") {
       setStudyTourId(url.searchParams.get("tour"));
@@ -185,9 +197,22 @@ export default function Page() {
     }
     // 家人收到「長輩已抵達」通知點進來 → 家人狀況
     else if (open === "caregiver") setSubpage("caregiver");
+    // 健康紀錄（血壓、血糖趨勢）
+    else if (open === "health-metrics") setSubpage("health-metrics");
+    // 動動腦（每日一題）：後台關掉就不開，方案不夠就說要升級
+    else if (open === "brain") {
+      if (featureEnabled("brain_game")) requireFeature("brain_game", () => setSubpage("brain"));
+    }
     // 打字問暖暖（書本練習的「打字問暖暖」：範例放在 sessionStorage，登入畫面也帶得過去）
     // 我的故事集（家人留言、按讚的推播點進來）
-    else if (open === "stories") setSubpage("stories");
+    else if (open === "stories") {
+      setStoriesAudio(url.searchParams.get("audio") === "1");
+      setSubpage("stories");
+    }
+    // 這則訊息可疑嗎？（書本第五章、安心保鑣的按鈕）
+    else if (open === "scam-check") setSubpage("scam-check");
+    // 看診小幫手
+    else if (open === "clinic") setSubpage("clinic");
     else if (open === "ask") {
       setAskSeed(takeAskSeed());
       setSubpage("ask");
@@ -208,6 +233,7 @@ export default function Page() {
     url.searchParams.delete("open");
     url.searchParams.delete("from");
     url.searchParams.delete("tour");
+    url.searchParams.delete("audio");
     const qs = url.searchParams.toString();
     window.history.replaceState({}, "", url.pathname + (qs ? `?${qs}` : ""));
   }, [loading, user]);
@@ -235,12 +261,30 @@ export default function Page() {
   const totalCal = useMemo(() => meals.reduce((s, m) => s + (m.cal || 0), 0), [meals]);
   const calorieGoal = profile?.calorie_goal ?? 1800;
   const tier = (profile?.subscription_tier ?? "free") as SubscriptionTier;
+  // 後台「方案與次數」：登入後載入一次（功能開關、最低方案、自己的個別開通）；planTier 是 "admin" 時全部可用
+  const [planTier, setPlanTier] = useState<SubscriptionTier | "admin" | null>(null);
+  const [planVersion, setPlanVersion] = useState(0);
+  const [travelVideoMode, setTravelVideoMode] = useState<"montage" | "mv" | "yearly" | "greeting" | null>(null);
+  useEffect(() => {
+    if (!user) return;
+    let alive = true;
+    api.planSettings()
+      .then((r) => {
+        if (!alive) return;
+        applyPlanSettings(r.settings, r.grants);
+        setPlanTier(r.tier);
+        setPlanVersion((v) => v + 1);
+      })
+      .catch(() => undefined); // 載不到就用預設規則（伺服器仍會把關）
+    return () => { alive = false; };
+  }, [user, profile?.subscription_tier]);
+  const gateTier = planTier ?? tier;
   const medicationReminders = useMemo(
     () =>
-      hasFeature(tier, "medication_reminders")
+      hasFeature(gateTier, "medication_reminders")
         ? getPendingMedicationReminders(profile?.medications ?? []).slice(0, 3)
         : [],
-    [tier, profile?.medications]
+    [gateTier, planVersion, profile?.medications]
   );
   const allHealthAlerts = useMemo(
     () =>
@@ -252,13 +296,17 @@ export default function Page() {
     [recentDbMeals, recentMetrics, profile?.medications]
   );
   const healthAlerts = useMemo(
-    () => (hasFeature(tier, "health_alerts") ? allHealthAlerts.slice(0, 3) : []),
-    [tier, allHealthAlerts]
+    () => (hasFeature(gateTier, "health_alerts") ? allHealthAlerts.slice(0, 3) : []),
+    [gateTier, planVersion, allHealthAlerts]
   );
 
   const requireFeature = (feature: FeatureKey, action: () => void) => {
-    if (hasFeature(tier, feature)) {
+    if (hasFeature(gateTier, feature)) {
       action();
+      return;
+    }
+    if (!featureEnabled(feature)) {
+      toast.info("這個功能暫時停用，請稍後再試。");
       return;
     }
     toast.info(`這是${requiredTierLabel(feature)}功能，升級後就可以使用。`);
@@ -287,7 +335,7 @@ export default function Page() {
   };
 
   const reloadFavoriteMeals = async () => {
-    if (!hasFeature(tier, "favorite_meals")) {
+    if (!hasFeature(gateTier, "favorite_meals")) {
       setFavoriteMeals([]);
       return;
     }
@@ -300,7 +348,7 @@ export default function Page() {
   };
 
   const reloadPartnerCampaigns = async () => {
-    if (!hasFeature(tier, "partner_offers")) {
+    if (!hasFeature(gateTier, "partner_offers")) {
       setPartnerCampaigns([]);
       return;
     }
@@ -465,7 +513,7 @@ export default function Page() {
   }, [user, recentDbMeals.length, recentMetrics.length, profile?.medications?.length, subpage]);
 
   const handleSaveFavoriteMeal = async (meal: MealRecord) => {
-    if (!hasFeature(tier, "favorite_meals")) {
+    if (!hasFeature(gateTier, "favorite_meals")) {
       requireFeature("favorite_meals", () => {});
       return;
     }
@@ -489,7 +537,7 @@ export default function Page() {
   };
 
   const handleUseFavoriteMeal = async (favorite: FavoriteMeal) => {
-    if (!hasFeature(tier, "favorite_meals")) {
+    if (!hasFeature(gateTier, "favorite_meals")) {
       requireFeature("favorite_meals", () => {});
       return;
     }
@@ -512,7 +560,7 @@ export default function Page() {
     }
   };
 
-  // 載入 AI 建議（有 localStorage 快取，1 小時內不重複呼叫）
+  // 載入 AI 建議（有 localStorage 快取，1 小時內不重複呼叫；伺服器另有快取：今天吃的沒變就不會重叫 AI）
   const SUGGEST_CACHE_KEY = "nuannuan_suggestion_v1";
   const SUGGEST_CACHE_MS = 60 * 60 * 1000; // 1 小時
 
@@ -553,6 +601,22 @@ export default function Page() {
     if (!user) return;
     loadSuggestion();
   }, [user]);
+
+  // 「我的」按連結 LINE 回來：成功或失敗都提示，切到「我的」（沒登入時由登入畫面顯示原因）
+  useEffect(() => {
+    if (loading || !user) return;
+    const url = new URL(window.location.href);
+    const linked = url.searchParams.get("line") === "linked";
+    const err = lineErrorMessage(url.searchParams.get("line_error"));
+    if (!linked && !err) return;
+    if (linked) toast.success("已經連結 LINE，下次可以直接用 LINE 登入");
+    else if (err) toast.error(err);
+    setTab("profile");
+    url.searchParams.delete("line");
+    url.searchParams.delete("line_error");
+    const qs = url.searchParams.toString();
+    window.history.replaceState({}, "", url.pathname + (qs ? `?${qs}` : ""));
+  }, [loading, user]);
 
   // 強制登入
   useEffect(() => {
@@ -698,6 +762,51 @@ export default function Page() {
     );
   }
 
+  // ── 功能入口：首頁「常用」、底部「功能」分頁共用（沒給的＝後台關掉，不顯示；方案不夠的照樣顯示，按下去再說要升級） ──
+  const openTravelVideo =
+    featureEnabled("travel_video") || featureEnabled("travel_montage") || featureEnabled("travel_mv") || featureEnabled("travel_yearly") || featureEnabled("greeting_video")
+      ? () =>
+          // 單張影片、遊記、MV、年度回憶、祝福影片有一種能用就打開（各分頁自己看次數；年度回憶、祝福影片免費版也能用）
+          hasFeature(gateTier, "travel_montage") || hasFeature(gateTier, "travel_mv") || hasFeature(gateTier, "travel_yearly") || hasFeature(gateTier, "greeting_video")
+            ? setSubpage("travel-video")
+            : requireFeature("travel_video", () => setSubpage("travel-video"))
+      : undefined;
+  const openClinic = featureEnabled("clinic") ? () => requireFeature("clinic", () => setSubpage("clinic")) : undefined;
+  const menuActions: MenuActions = {
+    clinic: openClinic,
+    health_metrics: () => setSubpage("health-metrics"),
+    chronic: () => setSubpage("chronic"),
+    exercise: () => setSubpage("exercise"),
+    weekly_report: featureEnabled("weekly_report") ? () => requireFeature("weekly_report", () => setSubpage("weekly-report")) : undefined,
+    ask: featureEnabled("ask") ? () => requireFeature("ask", () => { setAskSeed(null); setSubpage("ask"); }) : undefined,
+    voice: featureEnabled("ai_voice") ? () => requireFeature("ai_voice", () => setModal("voice")) : undefined,
+    photo_ask: featureEnabled("photo_ask") ? () => requireFeature("photo_ask", () => {
+      setPhotoAsk({ place: null, returnTo: null, tourId: null });
+      setSubpage("photo-ask");
+    }) : undefined,
+    travel_video: openTravelVideo,
+    greeting_video: featureEnabled("greeting_video")
+      ? () => requireFeature("greeting_video", () => { setTravelVideoMode("greeting"); setSubpage("travel-video"); })
+      : undefined,
+    stories: featureEnabled("life_stories") ? () => requireFeature("life_stories", () => { setStoriesAudio(false); setSubpage("stories"); }) : undefined,
+    study_tours: () => {
+      setStudyTourId(null);
+      setStudyToursKey((k) => k + 1);
+      setSubpage("study-tours");
+    },
+    study_passport: () => setSubpage("study-passport"),
+    blueprint: () => setSubpage("blueprint"),
+    book: () => { window.location.href = "/smart/guide"; },
+    // 只有真的在關心長輩的人才有「家人狀況」（長輩自己看是空的）
+    caregiver: careElderCount > 0 ? () => setSubpage("caregiver") : undefined,
+    scam_check: featureEnabled("scam_check") ? () => requireFeature("scam_check", () => setSubpage("scam-check")) : undefined,
+    iot: () => setSubpage("iot"),
+    family: () => setSubpage("family"),
+    brain_game: featureEnabled("brain_game") ? () => requireFeature("brain_game", () => setSubpage("brain")) : undefined,
+    achievements: () => setSubpage("achievements"),
+    smart: () => setSubpage("smart"),
+  };
+
   return (
     <div className="app-root">
       <div className="safe-top" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -733,38 +842,15 @@ export default function Page() {
               api.trackPartnerCampaign(campaign.id, "click").catch(console.error);
               if (campaign.cta_url) window.open(campaign.cta_url, "_blank", "noopener,noreferrer");
             }}
-            achievementsSummary={achievements ? {
-              unlockedCount: achievements.unlocked_count,
-              totalCount: achievements.total_count,
-              latestEmoji: achievements.achievements.filter((a) => a.unlocked).slice(-1)[0]?.achievement.emoji,
-              streak: achievements.stats.meal_streak,
-            } : null}
-            onAchievements={() => setSubpage("achievements")}
-            smartSummary={{ shi: smartShi }}
-            onSmart={() => setSubpage("smart")}
-            onBlueprint={() => setSubpage("blueprint")}
-            onBookPractice={() => { window.location.href = "/smart/guide"; }}
-            onIot={() => setSubpage("iot")}
-            onTravelVideo={() => requireFeature("travel_video", () => setSubpage("travel-video"))}
-            onStudyTours={() => {
-              setStudyTourId(null);
-              setStudyToursKey((k) => k + 1);
-              setSubpage("study-tours");
-            }}
-            onPhotoAsk={() => {
-              setPhotoAsk({ place: null, returnTo: null, tourId: null });
-              setSubpage("photo-ask");
-            }}
-            onAsk={() => {
-              setAskSeed(null);
-              setSubpage("ask");
-            }}
-            onStories={() => setSubpage("stories")}
+            menuActions={menuActions}
+            onAllFeatures={() => setTab("features")}
+            onClinic={openClinic}
             caregiver={careElderCount > 0 ? { count: careElderCount, needsAttention: careNeedsAttention } : null}
             onCaregiver={() => setSubpage("caregiver")}
           />
         )}
         {tab === "history" && <HistoryScreen onMeal={(meal) => setSelectedMeal(meal)} />}
+        {tab === "features" && <FeaturesScreen actions={menuActions} />}
         {tab === "profile" && (
           <ProfileScreen
             onSubpage={(page) => {
@@ -800,7 +886,6 @@ export default function Page() {
           tab={tab}
           setTab={setTab}
           onCamera={() => requireFeature("ai_photo", () => setShowPhotoSource(true))}
-          onVoice={() => requireFeature("ai_voice", () => setModal("voice"))}
         />
       )}
 
@@ -816,6 +901,7 @@ export default function Page() {
         />
       )}
       {subpage === "health-metrics" && <HealthMetricsScreen onBack={() => setSubpage(null)} />}
+      {subpage === "brain" && <BrainGameScreen onBack={() => setSubpage(null)} />}
       {subpage === "weekly-report" && <WeeklyReportScreen tier={tier} onBack={() => setSubpage(null)} />}
       {subpage === "alerts-center" && (
         <AlertsCenterScreen
@@ -839,7 +925,9 @@ export default function Page() {
       )}
       {subpage === "blueprint" && <BlueprintScreen onBack={() => setSubpage(null)} />}
       {subpage === "iot" && <IotScreen onBack={() => setSubpage(null)} />}
-      {subpage === "travel-video" && <TravelVideoScreen onBack={() => setSubpage(null)} />}
+      {subpage === "travel-video" && (
+        <TravelVideoScreen initialMode={travelVideoMode} onBack={() => { setTravelVideoMode(null); setSubpage(null); }} />
+      )}
       {(subpage === "study-tours" || subpage === "study-passport") && (
         <StudyToursScreen
           key={`${subpage}-${studyToursKey}`}
@@ -851,6 +939,7 @@ export default function Page() {
             setPhotoAsk({ place: place ?? null, returnTo: subpage, tourId: tourId ?? null });
             setSubpage("photo-ask");
           }}
+          onOpenVideos={() => setSubpage("travel-video")}
         />
       )}
       {subpage === "photo-ask" && (
@@ -869,7 +958,11 @@ export default function Page() {
         />
       )}
       {subpage === "ask" && <AskScreen seed={askSeed} onBack={() => setSubpage(null)} />}
-      {subpage === "stories" && <StoriesScreen onBack={() => setSubpage(null)} />}
+      {subpage === "stories" && (
+        <StoriesScreen key={storiesAudio ? "audio" : "list"} initialAudio={storiesAudio} onBack={() => setSubpage(null)} />
+      )}
+      {subpage === "scam-check" && <ScamCheckScreen onBack={() => setSubpage(null)} />}
+      {subpage === "clinic" && <ClinicScreen onBack={() => setSubpage(null)} />}
       {subpage === "caregiver" && (
         <CaregiverScreen
           onBack={() => setSubpage(null)}

@@ -9,6 +9,7 @@ import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
 import { loadCommentsViews } from "@/lib/video-comments-server";
 import { syncMv } from "@/lib/ai/travel-mv-server";
+import { syncYearly } from "@/lib/ai/travel-yearly-server";
 import { checkUserQuota, trackAiUsage } from "@/lib/ai/usage-tracker";
 import {
   createImageToVideoTask,
@@ -34,12 +35,14 @@ import {
   NARRATION_VOICE_CHOICES,
   TRAVEL_VIDEO_STYLE_IDS,
   buildTravelVideoPrompt,
+  isCompilationKind,
   isTravelVideoPending,
   narrationTooLong,
   sanitizeNarration,
   sanitizePlace,
   videoSecondsForNarration,
 } from "@/lib/travel-video";
+import { blockedResponse } from "@/lib/plan-access-server";
 
 // 成功時要下載影片再轉存 Storage
 export const maxDuration = 60;
@@ -86,14 +89,22 @@ export async function GET(req: NextRequest) {
 
   const enabled = isVideoProviderConfigured();
   let rows = (data ?? []) as TravelVideoRow[];
-  if (enabled) {
+  if (rows.some((r) => isTravelVideoPending(r.status))) {
     rows = await Promise.all(
       rows.map((r) => {
         if (!isTravelVideoPending(r.status)) return r;
+        // 年度回憶影片只用 ffmpeg，不需要影片平台：沒設定 LK888 也要推進；其他種類要平台
+        if (!enabled && !isCompilationKind(r.kind)) return r;
         // 遊記在自己伺服器做（配音→剪輯→合成），每次輪詢推進一段；單張影片向平台查進度
         const origin = new URL(req.url).origin;
         const step =
-          r.kind === "montage" ? syncMontage(r, { origin }) : r.kind === "mv" ? syncMv(r, { origin }) : syncTravelVideo(r);
+          r.kind === "montage"
+            ? syncMontage(r, { origin })
+            : r.kind === "mv"
+              ? syncMv(r, { origin })
+              : isCompilationKind(r.kind)
+                ? syncYearly(r, { origin })
+                : syncTravelVideo(r);
         return step.catch(() => r);
       })
     );
@@ -152,6 +163,8 @@ export async function POST(req: NextRequest) {
 
   // 3. 配額檢查（失敗的影片不算次數）
   const quota = await checkUserQuota(user.id, "video");
+  const blocked = blockedResponse(quota.access, "travel_video");
+  if (blocked) return blocked;
   if (!quota.allowed) {
     return NextResponse.json(
       {

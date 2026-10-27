@@ -41,6 +41,10 @@ export interface LifeStory {
   era: string | null;
   body: string;
   photos: StoryPhoto[];
+  /** 聲音故事：長輩自己錄的或上傳的錄音（播放網址 1 小時有效） */
+  audio: { url: string; seconds: number } | null;
+  /** AI 用長輩自己的聲音念的錄音（專業版）；outdated＝念好之後文字又改過 */
+  voice_reading?: { url: string; seconds: number; outdated: boolean } | null;
   share_with_family: boolean;
   created_at: string;
   updated_at: string;
@@ -83,6 +87,7 @@ export function sanitizeStoryBody(v: unknown): string {
 
 /** 念給我聽：一段一段念 */
 export function storySpeech(story: Pick<LifeStory, "title" | "era" | "body">): string[] {
+  // 聲音故事可能沒有文字：只念標題、年代
   return [story.title, story.era ?? "", ...story.body.split(/\n+/)].map((s) => s.trim()).filter(Boolean);
 }
 

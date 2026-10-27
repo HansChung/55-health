@@ -1,7 +1,7 @@
 // 管理員：讀取／儲存／還原（或刪除）單一章節
 //   內建章節：存「覆蓋」，DELETE＝還原預設
 //   後台新增的章節：存整章內容＋發布狀態，DELETE＝刪除整章
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/admin-guard";
 import { createSupabaseAdmin } from "@/lib/supabase/server";
@@ -12,6 +12,7 @@ import {
   extractEditableDefaults,
   customChapterBase,
 } from "@/lib/chapter-content";
+import { CHAPTER_AUDIO_GRACE_MS, pruneChapterAudio, referencedAudioUrls } from "@/lib/chapter-audio-server";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -80,6 +81,8 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
       console.error("[admin/chapters] 儲存失敗:", error);
       return NextResponse.json({ error: "儲存失敗，請稍後再試" }, { status: 500 });
     }
+    // 換掉、刪掉的 Podcast 舊音檔清掉（剛上傳還沒存的先留著）
+    after(() => pruneChapterAudio(supabase, id, referencedAudioUrls(overrides), CHAPTER_AUDIO_GRACE_MS));
     return NextResponse.json({ overrides: data.overrides, updated_at: data.updated_at, published: true });
   }
 
@@ -102,6 +105,7 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
     console.error("[admin/chapters] 儲存失敗:", error);
     return NextResponse.json({ error: "儲存失敗，請稍後再試" }, { status: 500 });
   }
+  after(() => pruneChapterAudio(supabase, id, referencedAudioUrls(overrides), CHAPTER_AUDIO_GRACE_MS));
   return NextResponse.json({ overrides: data.overrides, updated_at: data.updated_at, published: data.published });
 }
 
@@ -114,5 +118,7 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
   const supabase = createSupabaseAdmin();
   const { error } = await supabase.from("chapter_content").delete().eq("chapter_id", id);
   if (error) return NextResponse.json({ error: "操作失敗" }, { status: 500 });
+  // 還原預設／刪掉整章：這一章的 Podcast 音檔都用不到了
+  after(() => pruneChapterAudio(supabase, id, new Set(), 0));
   return NextResponse.json({ ok: true });
 }

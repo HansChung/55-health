@@ -97,10 +97,10 @@ export const CHAPTER_0502: ChapterOpening = {
   reflectPlaceholder: "例如：我最需要練習「不點連結」…",
   continueTitle: "暖暖陪您繼續",
   continueBody:
-    "本頁完成第一反射練習；也可進「安心保鑣」複習先暫停。真實截圖請先遮蔽個資。",
+    "本頁完成第一反射練習。收到真的可疑訊息，可以截圖用暖暖的「這則訊息可疑嗎？」列出疑點、通知家人；也可進「安心保鑣」複習先暫停。",
   practiceWhere: "mixed",
   capabilityNote:
-    "練習用模擬訊息即可。暖暖不自動判斷簡訊真偽；真實截圖請先遮蔽個資、金額與網址。",
+    "練習用模擬訊息即可。暖暖只幫您找疑點、不保證真偽；不確定就打 165 反詐騙專線。",
   printCardTitle: "防詐第一反射卡",
   printCardDescription: "可列印：不點／不回／不輸入、我最需要練習的一項。",
   printButtonLabel: "列印第一反射卡",
@@ -126,7 +126,7 @@ export const CHAPTER_0502: ChapterOpening = {
       reflectNote: "最需要練習的是不點連結，先打原本銀行電話。",
     },
   ],
-  appDeepLink: { href: "/smart/fraud", label: "打開安心保鑣｜先暫停練習 →" },
+  appDeepLink: { href: "/?open=scam-check&from=chapter0502", label: "打開「這則訊息可疑嗎？」｜截圖給暖暖看 →" },
 };
 
 export const CHAPTER_0503: ChapterOpening = {

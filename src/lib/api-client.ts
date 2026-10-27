@@ -125,21 +125,9 @@ export const api = {
       quota: { used: number; limit: number; tier: string };
     }>("/api/ai/analyze-food", { method: "POST", json: photo, timeoutMs: 45000 }),
 
-  createRealtimeSession: () =>
-    apiFetch<{
-      session: { client_secret: { value: string }; id: string; model?: string };
-      quota: { used: number; limit: number; tier: string };
-      max_seconds: number;
-    }>("/api/ai/realtime-session", { method: "POST" }),
-
-  trackRealtimeUsage: (input: { seconds: number; model?: string; session_id?: string; reason?: "manual" | "time_limit" | "close" | "unload" | "error" }) =>
-    apiFetch<{ ok: true; id: string; seconds: number; cost_usd: number }>("/api/ai/realtime-usage", {
-      method: "POST",
-      json: input,
-    }),
-
-  getSuggestion: () =>
-    apiFetch<{ suggestion: AiSuggestion }>("/api/ai/suggest"),
+  /** fresh＝「換一個建議」：伺服器不用快取、一定重新產生 */
+  getSuggestion: (opts: { fresh?: boolean } = {}) =>
+    apiFetch<{ suggestion: AiSuggestion }>(opts.fresh ? "/api/ai/suggest?fresh=1" : "/api/ai/suggest"),
 
   // 出遊回憶影片（MiniMax）；列表會順便同步進行中的影片，做好時要轉存影片 → 給長一點的逾時
   listTravelVideos: () =>
@@ -174,6 +162,51 @@ export const api = {
     place?: string;
   }) =>
     apiFetch<{ video: TravelVideo; quota: TravelVideoQuota }>("/api/ai/travel-video/montage", {
+      method: "POST",
+      json: input,
+      timeoutMs: 70000,
+    }),
+
+  // 年度回憶影片：候選照片（今年／去年）、建立（照片複製好就回來，剪輯在背景做）
+  yearlyCandidates: (year?: number) =>
+    apiFetch<{
+      year: number;
+      years: number[];
+      candidates: import("./travel-yearly").YearlyCandidate[];
+      defaultPicks: string[];
+      quota: TravelVideoQuota;
+    }>(`/api/ai/travel-video/yearly${year ? `?year=${year}` : ""}`, { timeoutMs: 30000 }),
+  // 研學團共享相簿、全團遊記影片
+  tourAlbum: (tourId: string) =>
+    apiFetch<{ album: import("./tour-album").TourAlbumView }>(`/api/study-tours/${tourId}/album`),
+  addTourAlbumPhoto: (tourId: string, photo: { photoPath: string; width: number; height: number }) =>
+    apiFetch<{ album: import("./tour-album").TourAlbumView }>(`/api/study-tours/${tourId}/album`, { method: "POST", json: photo, timeoutMs: 30000 }),
+  deleteTourAlbumPhoto: (tourId: string, photoId: string) =>
+    apiFetch<{ album: import("./tour-album").TourAlbumView }>(`/api/study-tours/${tourId}/album/${photoId}`, { method: "DELETE" }),
+  tourVideoCandidates: (tourId: string) =>
+    apiFetch<{
+      title: string;
+      candidates: import("./travel-yearly").YearlyCandidate[];
+      defaultPicks: string[];
+      quota: TravelVideoQuota;
+    }>(`/api/study-tours/${tourId}/album/video`, { timeoutMs: 30000 }),
+  createTourVideo: (tourId: string, input: { title: string; music: MontageMusicId; picks: { key: string; caption: string }[] }) =>
+    apiFetch<{ video: TravelVideo; quota: TravelVideoQuota }>(`/api/study-tours/${tourId}/album/video`, {
+      method: "POST",
+      json: input,
+      timeoutMs: 70000,
+    }),
+  greetingQuota: () => apiFetch<{ quota: TravelVideoQuota }>("/api/ai/travel-video/greeting"),
+  createGreetingVideo: (input: {
+    occasion: import("./greeting-video").GreetingOccasion;
+    to: string;
+    from: string;
+    music: MontageMusicId;
+    photos: { photoPath: string; width: number; height: number; caption: string }[];
+  }) =>
+    apiFetch<{ video: TravelVideo; quota: TravelVideoQuota }>("/api/ai/travel-video/greeting", { method: "POST", json: input, timeoutMs: 70000 }),
+  createYearlyVideo: (input: { year: number; title: string; music: MontageMusicId; picks: { key: string; caption: string }[] }) =>
+    apiFetch<{ video: TravelVideo; quota: TravelVideoQuota }>("/api/ai/travel-video/yearly", {
       method: "POST",
       json: input,
       timeoutMs: 70000,
@@ -243,10 +276,30 @@ export const api = {
     photoPaths?: string[];
     photoSizes?: { width: number; height: number }[];
     interview?: import("./ask").AskMessage[];
-  }) => apiFetch<{ story: import("./life-stories").LifeStory }>("/api/stories", { method: "POST", json: input, timeoutMs: 30000 }),
+    /** 聲音故事：已經用 storyAudioUpload 傳好的暫存路徑（App 裡錄的要轉檔，等久一點） */
+    audioPath?: string;
+    audioSeconds?: number;
+  }) =>
+    apiFetch<{ story: import("./life-stories").LifeStory }>("/api/stories", {
+      method: "POST",
+      json: input,
+      timeoutMs: input.audioPath ? 120000 : 30000,
+    }),
+  storyAudioUpload: (input: { fileName: string; size: number; type: string }) =>
+    apiFetch<{ path: string; token: string; contentType: string }>("/api/stories/audio-upload", { method: "POST", json: input }),
   updateStory: (id: string, patch: { title?: string; era?: string; body?: string; shareWithFamily?: boolean }) =>
     apiFetch<{ story: import("./life-stories").LifeStory }>(`/api/stories/${id}`, { method: "PATCH", json: patch }),
   deleteStory: (id: string) => apiFetch<{ ok: true }>(`/api/stories/${id}`, { method: "DELETE" }),
+  // 故事用自己的聲音念（專業版）：一段段合成再接起來，3000 字約 1～2 分鐘
+  storyVoiceQuota: (id: string) =>
+    apiFetch<{ quota: { used: number; limit: number } }>(`/api/stories/${id}/voice`),
+  readStoryInMyVoice: (id: string) =>
+    apiFetch<{ story: import("./life-stories").LifeStory; quota: { used: number; limit: number } }>(`/api/stories/${id}/voice`, {
+      method: "POST",
+      timeoutMs: 300000,
+    }),
+  deleteStoryVoice: (id: string) =>
+    apiFetch<{ story: import("./life-stories").LifeStory }>(`/api/stories/${id}/voice`, { method: "DELETE" }),
   reactToStory: (id: string, emoji: VideoReaction) =>
     apiFetch<{ comments: VideoCommentsView }>(`/api/stories/${id}/comments`, { method: "POST", json: { emoji } }),
   commentOnStory: (id: string, body: string) =>
@@ -255,6 +308,21 @@ export const api = {
     apiFetch<{ comments: VideoCommentsView }>(`/api/stories/${id}/comments/${commentId}`, { method: "DELETE" }),
   familyStories: () =>
     apiFetch<{ elders: { elder_id: string; name: string; stories: import("./life-stories").LifeStory[] }[] }>("/api/family/stories"),
+
+  // 這則訊息可疑嗎？（截圖或文字給暖暖看；所有方案每天幾次）
+  listScamChecks: () =>
+    apiFetch<{ checks: import("./scam-check").ScamCheck[]; quota: { used: number; limit: number } }>("/api/scam-check"),
+  checkScam: (input: Partial<{ photoPath: string; imageBase64: string; mimeType: string }> & { text?: string; source?: string }) =>
+    apiFetch<{ check: import("./scam-check").ScamCheck; quota: { used: number; limit: number } }>("/api/scam-check", {
+      method: "POST",
+      json: input,
+      timeoutMs: 45000,
+    }),
+  shareScamCheck: (id: string) =>
+    apiFetch<{ family: number; pushed: number; already?: boolean }>(`/api/scam-check/${id}/share`, { method: "POST" }),
+  deleteScamCheck: (id: string) => apiFetch<{ ok: true }>(`/api/scam-check/${id}`, { method: "DELETE" }),
+  familyScamChecks: () =>
+    apiFetch<{ elders: { elder_id: string; name: string; checks: import("./scam-check").ScamCheck[] }[] }>("/api/family/scam-checks"),
 
   // 出遊影片的按讚、留言（影片本人或看得到影片的家人）
   reactToVideo: (id: string, emoji: VideoReaction) =>
@@ -277,6 +345,13 @@ export const api = {
 
   // 我的聲音（專業版）：錄一段自己的聲音，影片口白用自己的聲音念
   getMyVoice: () => apiFetch<{ status: MyVoiceStatus }>("/api/ai/voice-clone"),
+  // 後台「方案與次數」：功能開關、最低方案、自己的個別開通
+  planSettings: () =>
+    apiFetch<{
+      settings: import("./plan-settings").PlanSettings;
+      grants: import("./plan-settings").FeatureGrant[];
+      tier: import("./plan-settings").SubscriptionTier | "admin";
+    }>("/api/plan-settings"),
   // 轉檔＋送去平台複製約 10～30 秒
   createMyVoice: (input: ({ audioPath: string } | { audio: string }) & { consent: true }) =>
     apiFetch<{ status: MyVoiceStatus }>("/api/ai/voice-clone", { method: "POST", json: input, timeoutMs: 65000 }),
@@ -295,6 +370,25 @@ export const api = {
       method: "POST",
       json: input,
       timeoutMs: 60000,
+    }),
+
+  // 說話變文字（伺服器聽寫）：App 的 WebView、Firefox 沒有內建語音辨識時用
+  transcribe: (input: ({ audioPath: string } | { audio: string }) & { where?: string }) =>
+    apiFetch<{ text: string; quota: { used: number; limit: number } }>("/api/ai/transcribe", {
+      method: "POST",
+      json: input,
+      timeoutMs: 45000,
+    }),
+
+  // 跟暖暖聊聊（語音）：錄音 → 暖暖聽懂並回答；和問暖暖共用每天的題數
+  voiceTurn: (input: ({ audioPath: string } | { audio: string }) & {
+    history: import("./ask").AskMessage[];
+    chapterTitle?: string | null;
+  }) =>
+    apiFetch<{ heard: string; reply: string; quota: { used: number; limit: number } }>("/api/ai/voice-turn", {
+      method: "POST",
+      json: input,
+      timeoutMs: 65000,
     }),
 
   // 拍照問暖暖：看圖模型約 10～15 秒；和拍照記餐共用每月拍照次數
@@ -441,6 +535,9 @@ export const api = {
   createMetric: (input: Partial<HealthMetric>) =>
     apiFetch<{ metric: HealthMetric }>("/api/health-metrics", { method: "POST", json: input }),
 
+  familyMetrics: (elderId: string, type: "weight" | "blood_pressure" | "blood_glucose", days: number) =>
+    apiFetch<{ metrics: HealthMetric[] }>(`/api/family/health-metrics?${new URLSearchParams({ elder: elderId, type, days: String(days) })}`),
+
   deleteMetric: (id: string) =>
     apiFetch<{ ok: true }>(`/api/health-metrics/${id}`, { method: "DELETE" }),
 
@@ -462,6 +559,10 @@ export const api = {
     apiFetch<{ profile: ProfileData }>("/api/profile", { method: "PATCH", json: patch }),
 
   dailyWeatherStatus: () => apiFetch<{ available: boolean }>("/api/daily-weather"),
+
+  // 每日平安打卡
+  checkinToday: () => apiFetch<{ checkedAt: string | null }>("/api/checkin"),
+  checkin: () => apiFetch<{ checkedAt: string; first: boolean }>("/api/checkin", { method: "POST" }),
 
   getVapidPublicKey: () =>
     apiFetch<{ configured: boolean; publicKey: string | null }>("/api/push/vapid-public-key"),
@@ -497,6 +598,10 @@ export const api = {
     apiFetch<{ exercise: ExerciseRecord }>("/api/exercises", { method: "POST", json: ex }),
 
   // Admin
+  adminCosts: (month?: string) =>
+    apiFetch<AdminCostsResponse>(`/api/admin/costs${month ? `?month=${encodeURIComponent(month)}` : ""}`),
+  saveAdminCostSettings: (settings: import("./admin-costs").CostSettings) =>
+    apiFetch<{ settings: import("./admin-costs").CostSettings }>("/api/admin/costs", { method: "PUT", json: { settings } }),
   adminUsageSummary: (days = 30) =>
     apiFetch<AdminUsageSummary>(`/api/admin/usage?days=${days}`),
 
@@ -530,6 +635,53 @@ export const api = {
   // 書本目錄（公開）：已發布的新章節＋改過的標題
   chapterCatalog: () =>
     apiFetch<{ custom: { id: string; title: string }[]; titles: Record<string, string> }>("/api/chapters/catalog"),
+
+  // 看診小幫手（回診前整理看診小卡、看懂檢驗報告）
+  listClinicVisits: () => apiFetch<{ visits: import("./clinic").ClinicVisit[] }>("/api/clinic"),
+  prepareClinicVisit: (input: { department?: string; symptoms: string; since?: string; questions?: string }) =>
+    apiFetch<{ visit: import("./clinic").ClinicVisit; quota: { used: number; limit: number } }>("/api/clinic/prepare", {
+      method: "POST",
+      json: input,
+      timeoutMs: 60000,
+    }),
+  readClinicReport: (visitId: string | "new", input: Partial<{ photoPath: string; imageBase64: string; mimeType: string }>) =>
+    apiFetch<{ visit: import("./clinic").ClinicVisit }>(`/api/clinic/${visitId}/report`, { method: "POST", json: input, timeoutMs: 60000 }),
+  updateClinicVisit: (id: string, patch: { doctorNotes?: string; visitDate?: string; department?: string }) =>
+    apiFetch<{ visit: import("./clinic").ClinicVisit }>(`/api/clinic/${id}`, { method: "PATCH", json: patch }),
+  deleteClinicVisit: (id: string) => apiFetch<{ ok: true }>(`/api/clinic/${id}`, { method: "DELETE" }),
+  // 動動腦（腦力小遊戲）
+  brainStats: () => apiFetch<{ stats: BrainStats }>("/api/brain"),
+  brainAnswer: (input: { kind: string; correct: boolean }) =>
+    apiFetch<{ stats: BrainStats; first: boolean }>("/api/brain", { method: "POST", json: input }),
+  // 回診提醒
+  listAppointments: () => apiFetch<{ appointments: import("./clinic-appointments").ClinicAppointment[] }>("/api/clinic/appointments"),
+  createAppointment: (input: import("./clinic-appointments").AppointmentInput) =>
+    apiFetch<{ appointment: import("./clinic-appointments").ClinicAppointment }>("/api/clinic/appointments", { method: "POST", json: input }),
+  updateAppointment: (id: string, input: import("./clinic-appointments").AppointmentInput) =>
+    apiFetch<{ appointment: import("./clinic-appointments").ClinicAppointment }>(`/api/clinic/appointments/${id}`, { method: "PUT", json: input }),
+  deleteAppointment: (id: string) => apiFetch<{ ok: true }>(`/api/clinic/appointments/${id}`, { method: "DELETE" }),
+
+  // 書本章節的 Podcast：拿簽名上傳網址，瀏覽器直接傳到 Supabase
+  adminChapterAudioUpload: (input: { chapterId: string; fileName: string; size: number; type: string }) =>
+    apiFetch<{ path: string; token: string; publicUrl: string; contentType: string }>("/api/admin/chapter-audio", {
+      method: "POST",
+      json: input,
+    }),
+
+  adminPlanSettings: () =>
+    apiFetch<{
+      settings: import("./plan-settings").PlanSettings;
+      defaults: import("./plan-settings").PlanSettings;
+      updatedAt: string | null;
+      ready: boolean;
+    }>("/api/admin/plan-settings"),
+  adminSavePlanSettings: (settings: import("./plan-settings").PlanSettings) =>
+    apiFetch<{ settings: import("./plan-settings").PlanSettings }>("/api/admin/plan-settings", { method: "PUT", json: { settings } }),
+  adminFeatureGrants: () => apiFetch<{ grants: AdminFeatureGrant[]; ready: boolean }>("/api/admin/feature-grants"),
+  adminGrantFeature: (input: { email: string; feature: string; tier: string; expiresAt?: string | null; note?: string }) =>
+    apiFetch<{ grant: AdminFeatureGrant }>("/api/admin/feature-grants", { method: "POST", json: input }),
+  adminRevokeFeature: (id: string) =>
+    apiFetch<{ ok: true }>(`/api/admin/feature-grants?id=${encodeURIComponent(id)}`, { method: "DELETE" }),
 
   adminListUsers: () =>
     apiFetch<{ users: AdminUserRow[] }>("/api/admin/users"),
@@ -721,6 +873,8 @@ export interface NotificationSettings {
   web_push?: { on: boolean };
   /** 每天早上 7 點的天氣＋健康提醒（推播）；選好縣市就開 */
   daily_weather?: { on: boolean; county: string | null };
+  /** 每日平安打卡：到 deadline 點（台北時間）還沒按「我今天很好」→ 提醒自己，兩小時後通知家人 */
+  daily_checkin?: { on: boolean; deadline: number };
 }
 
 export interface AiSuggestion {
@@ -740,6 +894,26 @@ export interface FamilyPermissions {
   videos?: boolean;
 }
 
+/** 後台每月成本（/api/admin/costs） */
+export interface AdminCostsResponse {
+  month: string;
+  months: string[];
+  settings: import("./admin-costs").CostSettings;
+  summary: Omit<import("./admin-costs").CostSummary, "topUsers"> & { topUsers: { user_id: string; points: number; calls: number; email: string | null }[] };
+  rates: Record<string, import("./admin-costs").TokenRate>;
+  lk888: { balance: number | null; monthUsed: { used: number; since: string } | null; daysLeft: number | null };
+  revenue: { basic: number; pro: number; prices: { basic: number; pro: number } };
+}
+
+/** 動動腦的統計（/api/brain） */
+export interface BrainStats {
+  today: { day: string; played: boolean; correct: boolean | null };
+  streak: number;
+  longest: number;
+  days: number;
+  correctDays: number;
+}
+
 /** 子女儀表板：單一長輩狀態總覽 */
 export interface ElderOverview {
   elder_id: string;
@@ -755,6 +929,10 @@ export interface ElderOverview {
   latest_alert: { title: string; severity: string; created_at: string } | null;
   iot: { lastActivityAt: string | null; temp: number | null; recentCritical: boolean } | null;
   shi: number | null;
+  /** 每日平安打卡（長輩沒開就是 null） */
+  checkin: { deadline: number; checked_at: string | null; state: "done" | "waiting" | "late" } | null;
+  /** 14 天內的下一次回診（長輩選了讓家人知道的才有） */
+  next_appointment: import("./clinic-appointments").ClinicAppointment | null;
 }
 
 /** 書本練習內容（管理員） */
@@ -973,6 +1151,19 @@ export interface AdminUsageSummary {
   byService: { service: string; count: number; cost: number; tokens: number }[];
   daily: { date: string; cost: number; count: number }[];
   topUsers: { user_id: string; email: string | null; cost: number; count: number }[];
+}
+
+export interface AdminFeatureGrant {
+  id: string;
+  user_id: string;
+  feature: string;
+  tier: string;
+  expires_at: string | null;
+  note: string | null;
+  created_at: string;
+  email: string | null;
+  display_name?: string | null;
+  user_tier?: string;
 }
 
 export interface AdminUserRow {

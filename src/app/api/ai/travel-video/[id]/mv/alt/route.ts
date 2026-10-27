@@ -11,6 +11,8 @@ import { download } from "@/lib/ai/travel-montage-server";
 import { mvPhotoPath, mvSongPath, syncMv } from "@/lib/ai/travel-mv-server";
 import { TRAVEL_VIDEO_BUCKET, toClientVideo, type TravelVideoRow } from "@/lib/ai/travel-video-server";
 import { MV_MAX_SECONDS, mvSegments, type MvState } from "@/lib/travel-video";
+import { blockedResponse } from "@/lib/plan-access-server";
+import { checkUserQuota } from "@/lib/ai/usage-tracker";
 
 export const maxDuration = 60;
 
@@ -18,6 +20,9 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "未登入" }, { status: 401 });
+  // 換版本不扣次數，但 MV 功能關掉時也不能換
+  const blocked = blockedResponse((await checkUserQuota(user.id, "mv")).access, "travel_mv");
+  if (blocked) return blocked;
   const { id } = await ctx.params;
   if (!z.string().uuid().safeParse(id).success) return NextResponse.json({ error: "找不到這支 MV" }, { status: 404 });
 

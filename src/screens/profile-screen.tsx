@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Icon } from "@/components/icons";
 import { Subpage } from "@/lib/types";
 import { useAuth } from "@/hooks/use-auth";
 import { tierLabel } from "@/lib/feature-gates";
+import { isPlaceholderEmail } from "@/lib/line-login";
 
 interface ProfileScreenProps {
   onSubpage: (page: Subpage) => void;
@@ -105,7 +107,7 @@ export function ProfileScreen({ onSubpage, onOnboarding }: ProfileScreenProps) {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: "var(--fs-lg)", fontWeight: 700 }}>{name}</div>
             <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {user?.email}
+              {isPlaceholderEmail(user?.email) ? "用 LINE 登入" : user?.email}
             </div>
             <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
               {subtitle || "尚未設定個人資料"}　·　已使用 {memberDays} 天
@@ -117,19 +119,14 @@ export function ProfileScreen({ onSubpage, onOnboarding }: ProfileScreenProps) {
         </div>
       </div>
 
-      <Section title="健康狀況">
+      {/* 功能入口都在底部「功能」分頁；這裡只放自己的資料和設定 */}
+      <Section title="我的資料">
         <Row icon="heart" iconColor="var(--berry)" label="慢性病與用藥" value={conditionLabel} arrow onClick={() => onSubpage("chronic")} />
         <Row icon="target" iconColor="var(--primary)" label="今日目標" value={`${profile?.calorie_goal ?? 1800} 大卡`} arrow />
-        <Row icon="heart" iconColor="#7AA779" label="體重 / 血壓 / 血糖" value="健康數值追蹤" arrow onClick={() => onSubpage("health-metrics")} />
-        <Row icon="flame" iconColor="var(--gold)" label="運動記錄" value="查看詳細" arrow onClick={() => onSubpage("exercise")} />
         <Row icon="book" iconColor="var(--primary-deep)" label="每週健康報告" value="查看本週摘要" arrow onClick={() => onSubpage("weekly-report")} />
-        <Row icon="sparkle" iconColor="var(--gold)" label="健康成就" value="查看徽章與連續記錄" arrow onClick={() => onSubpage("achievements")} />
-        <Row icon="book" iconColor="#5E9A5C" label="研學護照" value="集章與結業證書" arrow onClick={() => onSubpage("study-passport")} />
-        <Row icon="sparkle" iconColor="#E8845A" label="圓夢藍圖" value="點亮日常 SMART 光點" arrow onClick={() => onSubpage("blueprint")} />
-        <Row icon="target" iconColor="#5BA0C9" label="智慧幸福檢測" value="SHI 指數與雷達圖" arrow onClick={() => onSubpage("smart")} />
-        <Row icon="heart" iconColor="#2E7CB8" label="居家守護" value="感測器自動通知家人" arrow onClick={() => onSubpage("iot")} />
-        <Row icon="user" iconColor="var(--sage)" label="家人狀況" value="查看我關心的長輩" arrow onClick={() => onSubpage("caregiver")} />
       </Section>
+
+      <LineLinkSection />
 
       <Section title="訂閱方案">
         <Row icon="sparkle" iconColor="var(--primary)" label="目前方案" value={currentTierLabel} arrow onClick={() => window.location.href = "/pricing"} />
@@ -163,6 +160,59 @@ export function ProfileScreen({ onSubpage, onOnboarding }: ProfileScreenProps) {
         暖暖 v1.0
       </div>
     </div>
+  );
+}
+
+/** 登入方式：連結 LINE 之後就能直接用 LINE 登入（LINE 登入還沒設定好就不顯示） */
+function LineLinkSection() {
+  const [status, setStatus] = useState<{ configured: boolean; linked: boolean; name?: string | null; canUnlink?: boolean } | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = () =>
+    fetch("/api/auth/line", { credentials: "same-origin" })
+      .then((r) => r.json())
+      .then(setStatus)
+      .catch(() => setStatus(null));
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  if (!status?.configured) return null;
+
+  const onClick = async () => {
+    if (busy) return;
+    if (!status.linked) {
+      window.location.href = "/api/auth/line/start?mode=link&next=/";
+      return;
+    }
+    if (!status.canUnlink) {
+      alert("這個帳號是用 LINE 登入的，所以不能解除連結。");
+      return;
+    }
+    if (!confirm("要解除和 LINE 的連結嗎？之後就要用 Email 或 Google 登入。")) return;
+    setBusy(true);
+    const res = await fetch("/api/auth/line", { method: "DELETE", credentials: "same-origin" }).catch(() => null);
+    if (!res?.ok) alert("沒有解除成功，請再試一次。");
+    await load();
+    setBusy(false);
+  };
+
+  return (
+    <Section title="登入方式">
+      <Row
+        icon="user"
+        iconColor="#06C755"
+        label="LINE 帳號"
+        value={
+          status.linked
+            ? `已連結${status.name ? `：${status.name}` : ""}${status.canUnlink ? "（按這裡可以解除）" : ""}`
+            : "還沒連結，連好之後就能用 LINE 登入"
+        }
+        arrow
+        onClick={onClick}
+      />
+    </Section>
   );
 }
 

@@ -14,7 +14,6 @@ import {
   buildMontageScriptPrompt,
   montageProgress,
   montageProgressLabel,
-  montageQuota,
   montageStage,
   sanitizeMontageLine,
   type MontageState,
@@ -146,12 +145,6 @@ describe("遊記影片：進度與設定", () => {
   it("每句最多 20 字、去掉引號換行", () => {
     expect(sanitizeMontageLine("「今天\n來到日月潭」")).toBe("今天 來到日月潭");
     expect([...sanitizeMontageLine("字".repeat(40))]).toHaveLength(20);
-  });
-
-  it("每月遊記支數：免費版不能做", () => {
-    expect(montageQuota("free")).toBe(0);
-    expect(montageQuota("basic")).toBe(10);
-    expect(montageQuota("unknown")).toBe(0);
   });
 
   it("AI 寫稿提示詞：張數、地點、字數", () => {

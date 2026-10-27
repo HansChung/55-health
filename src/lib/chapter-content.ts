@@ -108,6 +108,8 @@ export const chapterBlockSchema = z.discriminatedUnion("type", [
     note: z.string().max(500).optional(),
   }),
   z.object({ id: blockId, type: z.literal("link"), label: z.string().min(1).max(80), url: safeHref }),
+  // Podcast／音檔：後台上傳到 chapter-audio（公開），或貼外部 mp3／m4a 網址
+  z.object({ id: blockId, type: z.literal("audio"), url: httpUrl, title: z.string().max(120).optional(), caption }),
 ]);
 export type ChapterBlock = z.infer<typeof chapterBlockSchema>;
 export type ChapterBlockType = ChapterBlock["type"];
@@ -119,13 +121,14 @@ export const BLOCK_TYPE_LABELS: Record<ChapterBlockType, { label: string; icon: 
   video: { label: "YouTube 影片", icon: "🎬" },
   example: { label: "練習範例", icon: "💬" },
   link: { label: "連結按鈕", icon: "🔗" },
+  audio: { label: "Podcast／音檔", icon: "🎧" },
 };
 
 /** 區塊是否有實質內容（空白區塊儲存時會被丟掉） */
 export function isBlockFilled(b: ChapterBlock): boolean {
   switch (b.type) {
     case "text": return !!b.body.trim();
-    case "image": case "video": return !!b.url.trim();
+    case "image": case "video": case "audio": return !!b.url.trim();
     case "example": return !!b.prompt.trim();
     case "link": return !!b.label.trim() && !!b.url.trim();
   }

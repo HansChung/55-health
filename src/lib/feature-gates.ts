@@ -1,53 +1,44 @@
-export type SubscriptionTier = "free" | "basic" | "pro";
+// ────────────────────────────────────────────────
+// 前端判斷功能能不能用：照後台「方案與次數」的設定（登入後載入一次，見 applyPlanSettings）
+// 還沒載入時用預設值（＝原本寫死的規則）。伺服器端不要用這裡（設定是整個程式共用的），改用 plan-access-server
+// ────────────────────────────────────────────────
 
-export type FeatureKey =
-  | "ai_photo"
-  | "ai_voice"
-  | "medication_reminders"
-  | "favorite_meals"
-  | "health_alerts"
-  | "weekly_report"
-  | "family_summary"
-  | "line_share"
-  | "partner_offers"
-  | "alerts_center"
-  | "travel_video"
-  | "voice_clone"
-  | "travel_mv";
+import {
+  defaultPlanSettings,
+  featureBlock,
+  tierLabel,
+  type FeatureGrant,
+  type FeatureKey,
+  type PlanSettings,
+  type SubscriptionTier,
+} from "./plan-settings";
 
-const TIER_RANK: Record<SubscriptionTier, number> = {
-  free: 0,
-  basic: 1,
-  pro: 2,
-};
+export type { FeatureKey, SubscriptionTier } from "./plan-settings";
+export { tierLabel } from "./plan-settings";
 
-export const FEATURE_MIN_TIER: Record<FeatureKey, SubscriptionTier> = {
-  ai_photo: "basic",
-  ai_voice: "basic",
-  medication_reminders: "basic",
-  favorite_meals: "basic",
-  health_alerts: "basic",
-  weekly_report: "pro",
-  family_summary: "pro",
-  line_share: "pro",
-  partner_offers: "pro",
-  alerts_center: "pro",
-  travel_video: "basic",
-  // 出遊影片用自己的聲音念：每個聲音第一次使用平台要收一筆啟用費，只開給專業版
-  voice_clone: "pro",
-  // 遊記做成 MV（Suno 做歌，每首約 0.54 算力）
-  travel_mv: "pro",
-};
+let activeSettings: PlanSettings = defaultPlanSettings();
+let activeGrants: FeatureGrant[] = [];
 
-export function hasFeature(tier: SubscriptionTier | null | undefined, feature: FeatureKey) {
-  const current = tier ?? "free";
-  return TIER_RANK[current] >= TIER_RANK[FEATURE_MIN_TIER[feature]];
+/** 前端：登入後載入的設定和自己的開通（只在瀏覽器呼叫） */
+export function applyPlanSettings(settings: PlanSettings, grants: FeatureGrant[] = []) {
+  activeSettings = settings;
+  activeGrants = grants;
 }
 
-export function tierLabel(tier: SubscriptionTier) {
-  return ({ free: "免費版", basic: "標準版", pro: "專業版" } as const)[tier];
+/** 每個功能最低要哪個方案（目前的設定） */
+export function featureMinTier(feature: FeatureKey): SubscriptionTier {
+  return activeSettings.features[feature].min_tier;
+}
+
+/** 整個功能有沒有開（關掉的入口直接不顯示） */
+export function featureEnabled(feature: FeatureKey): boolean {
+  return activeSettings.features[feature].enabled;
+}
+
+export function hasFeature(tier: SubscriptionTier | "admin" | null | undefined, feature: FeatureKey) {
+  return featureBlock(activeSettings, tier ?? "free", feature, activeGrants) === null;
 }
 
 export function requiredTierLabel(feature: FeatureKey) {
-  return tierLabel(FEATURE_MIN_TIER[feature]);
+  return tierLabel(featureMinTier(feature));
 }

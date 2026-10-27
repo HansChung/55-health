@@ -4,6 +4,7 @@
  */
 
 import { createSupabaseAdmin } from "../supabase/server";
+import { yearlyProgress, type YearlyState } from "../travel-yearly";
 import { trackAiUsage } from "./usage-tracker";
 import { calculateCost } from "./pricing";
 import { queryVideoTask, VIDEO_RESOLUTION } from "./lk888-video";
@@ -22,6 +23,7 @@ import {
   type TravelVideoKind,
   type TravelVideoStatus,
   type TravelVideoStyleId,
+  isCompilationKind,
 } from "../travel-video";
 
 export const TRAVEL_VIDEO_BUCKET = "travel-videos";
@@ -129,6 +131,8 @@ export interface TravelVideoRow {
   montage?: MontageState | null;
   /** add-travel-video-mv.sql：MV 的歌詞、歌、片段 */
   mv?: MvState | null;
+  /** add-travel-video-yearly.sql：年度回憶影片的照片與片段 */
+  yearly?: YearlyState | null;
   lease_until?: string | null;
 }
 
@@ -149,7 +153,7 @@ export function toClientVideo(admin: Admin, row: TravelVideoRow): TravelVideo {
     created_at: row.created_at,
     completed_at: row.completed_at,
     narration_text: row.narration_text ?? null,
-    kind: row.kind === "montage" || row.kind === "mv" ? row.kind : "single",
+    kind: row.kind === "montage" || row.kind === "mv" || isCompilationKind(row.kind) ? row.kind : "single",
     montage_lines: row.kind === "montage" && row.montage ? row.montage.photos.map((p) => p.line) : null,
     montage_progress:
       row.kind === "montage" && row.montage && isTravelVideoPending(row.status) ? montageProgress(row.montage) : null,
@@ -165,6 +169,10 @@ export function toClientVideo(admin: Admin, row: TravelVideoRow): TravelVideo {
           }
         : null,
     mv_progress: row.kind === "mv" && row.mv && isTravelVideoPending(row.status) ? mvProgress(row.mv) : null,
+    // 年度回憶、全團遊記、祝福影片（同一套剪輯，狀態都放在 yearly 欄位）
+    yearly: isCompilationKind(row.kind) && row.yearly ? { year: row.yearly.year, title: row.yearly.title } : null,
+    yearly_progress:
+      isCompilationKind(row.kind) && row.yearly && isTravelVideoPending(row.status) ? yearlyProgress(row.yearly) : null,
   };
 }
 
@@ -195,7 +203,19 @@ export async function notifyOwner(row: TravelVideoRow): Promise<void> {
   const montage = row.kind === "montage";
   const mvTitle = row.mv?.title ? `「${row.mv.title}」` : "";
   const message =
-    row.kind === "mv"
+    row.kind === "greeting"
+      ? row.status === "succeeded"
+        ? { title: "🎁 祝福影片做好了！", body: `${row.yearly?.title ? `「${row.yearly.title}」` : ""}做好了，點這裡播放，傳給要祝福的人` }
+        : { title: "祝福影片這次沒做成功", body: "不會扣次數，請再做一次試試看" }
+      : row.kind === "tour"
+      ? row.status === "succeeded"
+        ? { title: "🧭 研學團遊記做好了！", body: `${row.yearly?.title ? `「${row.yearly.title}」` : ""}全團的照片做成影片了，點這裡播放、分享給家人` }
+        : { title: "研學團遊記這次沒做成功", body: "不會扣次數，請再做一次試試看" }
+      : row.kind === "yearly"
+      ? row.status === "succeeded"
+        ? { title: "📅 年度回憶影片做好了！", body: `${row.yearly?.title ? `「${row.yearly.title}」` : ""}做好了，點這裡播放、分享給家人` }
+        : { title: "年度回憶影片這次沒做成功", body: "不會扣次數，請再做一次試試看" }
+      : row.kind === "mv"
       ? row.status === "succeeded"
         ? { title: "🎵 MV 做好了！", body: `${mvTitle}MV 做好了，點這裡播放、分享給家人` }
         : { title: "MV 這次沒做成功", body: "不會扣次數，請再做一次試試看" }

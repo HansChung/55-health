@@ -12,6 +12,7 @@ import {
   bookPaletteForChapterId,
   bookThemeCss,
 } from "@/lib/book-palette";
+import { ChapterQuickCard } from "@/components/chapter-quick-card";
 import { Icon } from "@/components/icons";
 import {
   canSpeakGuide,
@@ -298,6 +299,8 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const [picked, setPicked] = useState<string | null>(null);
   const [reflectNote, setReflectNote] = useState("");
   const [guideOpen, setGuideOpen] = useState(false);
+  // 原本的長篇說明預設收起來，最上面只放「一步完成」（看示範時也會打開）
+  const [moreOpen, setMoreOpen] = useState(false);
   const [guideSpeaking, setGuideSpeaking] = useState(false);
   const [cloudSaving, setCloudSaving] = useState(false);
   const [cloudHasDraft, setCloudHasDraft] = useState(false);
@@ -4658,12 +4661,16 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         <SubPage
           title={chapter.subtitle}
           onBack={() => router.push("/")}
-          accent={`linear-gradient(180deg, ${bookPalette?.soft ?? "var(--book-soft, #E8F4FA)"} 0%, transparent 70%)`}
+          accent={`linear-gradient(180deg, ${bookPalette?.soft ?? "#E8F4FA"} 0%, transparent 70%)`}
           footer={
             <button
-              className="btn-primary"
+              // 主要的按鈕是上面的「一步完成」；這顆看示範的改成淡一點
+              className="btn-ghost"
               style={{ width: "100%" }}
-              onClick={() => setGuideOpen((v) => !v)}
+              onClick={() => {
+                setMoreOpen(true);
+                setGuideOpen((v) => !v);
+              }}
             >
               {guideOpen ? "收合示範" : guideBtnLabel}
             </button>
@@ -4717,6 +4724,24 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
             )}
           </div>
 
+          <ChapterQuickCard
+            chapterId={chapter.id}
+            title={chapter.title}
+            moreOpen={moreOpen}
+            onToggleMore={() => {
+              // 收起時示範也一起關掉、停止朗讀（不然看不到的示範還在念）
+              if (moreOpen) {
+                setGuideOpen(false);
+                stopGuideSpeech();
+              }
+              setMoreOpen((v) => !v);
+            }}
+            onAsk={(prompt, guided) => tryAskNuannuan(prompt, "找不到要問的話。", { guided })}
+            onPhotoAsk={(question) => tryPhotoAskNuannuan(question)}
+            onOpen={(href) => router.push(href)}
+          />
+
+          {moreOpen && (<>
           {chapter.heroImageUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -10692,6 +10717,8 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
               {chapter.printButtonLabel ?? "列印卡片"}
             </button>
           </div>
+
+          </>)}
 
           <div style={{
             textAlign: "center", fontSize: "var(--fs-xs)", color: "var(--ink-3)",

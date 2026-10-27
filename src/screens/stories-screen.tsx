@@ -3,13 +3,19 @@
 // ────────────────────────────────────────────────
 // 我的故事集：說一段人生故事給暖暖聽（暖暖一題一題問）→ 整理成文章 → 改好、配照片、存下來
 // 每篇自己決定給不給家人看（預設給）；家人可以按讚留言；可以念給我聽、印成一本小書（/stories/book）
+// 也可以用自己的聲音說（聲音故事：在 App 裡錄或上傳錄音檔，見 AudioStoryForm）
+// 專業版：寫好的故事可以讓 AI 用「我的聲音」念成錄音（StoryVoiceCard）
 // ────────────────────────────────────────────────
 
 import { useEffect, useRef, useState } from "react";
+import { StoryAudiobook } from "@/components/story-audiobook";
 import { SubPage } from "@/components/sub-page";
 import { Mascot } from "@/components/mascot";
 import { DictationButton } from "@/components/dictation-button";
 import { VideoComments } from "@/components/video-comments";
+import { AudioStoryForm } from "@/components/audio-story-form";
+import { StoryVoiceCard } from "@/components/story-voice-card";
+import { formatAudioDuration } from "@/lib/story-audio";
 import { api, ApiError } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -33,7 +39,7 @@ import {
   type StoryDraft,
 } from "@/lib/life-stories";
 
-type View = "list" | "interview" | "draft" | "detail" | "edit";
+type View = "list" | "interview" | "draft" | "detail" | "edit" | "audio";
 
 interface DraftPhoto {
   preview: string;
@@ -98,12 +104,14 @@ const smallBtn: React.CSSProperties = {
 
 const label: React.CSSProperties = { fontWeight: 800, fontSize: "var(--fs-sm)", color: "var(--ink-2)", marginBottom: 6 };
 
-export function StoriesScreen({ onBack }: { onBack: () => void }) {
+export function StoriesScreen({ onBack, initialAudio = false }: { onBack: () => void; /** 書本 1105「讓聲音留下來」：直接打開錄音 */ initialAudio?: boolean }) {
   const toast = useToast();
   const { user } = useAuth();
   const uid = user?.id ?? null;
-  const [view, setView] = useState<View>("list");
+  const [view, setView] = useState<View>(initialAudio ? "audio" : "list");
   const [stories, setStories] = useState<LifeStory[] | null>(null);
+  // 回憶錄有聲書（整本一篇接一篇念）
+  const [audiobook, setAudiobook] = useState(false);
   const [current, setCurrent] = useState<LifeStory | null>(null);
   const [work, setWork] = useState<Work>(EMPTY_WORK);
   const [input, setInput] = useState("");
@@ -348,7 +356,23 @@ export function StoriesScreen({ onBack }: { onBack: () => void }) {
               不要了，重新開始
             </button>
           )}
+          <button type="button" className="btn-ghost" style={{ width: "100%", marginTop: 12, minHeight: 56 }} onClick={() => setView("audio")}>
+            🎧 用自己的聲音說（錄音或上傳錄音檔）
+          </button>
 
+          {stories && stories.length > 0 && (
+            <button type="button" className="btn-ghost" style={{ width: "100%", marginTop: 12, minHeight: 56 }} onClick={() => setAudiobook(true)}>
+              🎧 聽整本有聲書
+            </button>
+          )}
+          {audiobook && stories && (
+            <StoryAudiobook
+              stories={stories}
+              title="我的回憶錄"
+              onClose={() => setAudiobook(false)}
+              onRefresh={() => api.listStories().then((r) => { setStories(r.stories); return r.stories; })}
+            />
+          )}
           {stories && stories.length > 0 && (
             <a href="/stories/book" className="btn-ghost" style={{ display: "block", textAlign: "center", textDecoration: "none", marginTop: 12 }}>
               📖 印成一本小書
@@ -375,12 +399,12 @@ export function StoriesScreen({ onBack }: { onBack: () => void }) {
                   {s.photos[0] ? (
                     <img src={s.photos[0].url} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 10, flexShrink: 0 }} />
                   ) : (
-                    <span style={{ width: 64, height: 64, borderRadius: 10, background: "var(--bg-deep)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0 }} aria-hidden="true">📖</span>
+                    <span style={{ width: 64, height: 64, borderRadius: 10, background: "var(--bg-deep)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0 }} aria-hidden="true">{s.audio ? "🎧" : "📖"}</span>
                   )}
                   <span style={{ flex: 1, minWidth: 0 }}>
                     <span style={{ display: "block", fontWeight: 800, color: "var(--ink-1)" }}>{s.title}</span>
                     <span style={{ display: "block", fontSize: "var(--fs-xs)", color: "var(--ink-3)", marginTop: 2 }}>
-                      {s.era ? `${s.era}・` : ""}{formatDay(s.created_at)}・{s.share_with_family ? "👪 家人看得到" : "🔒 只有我"}
+                      {s.audio ? `🎧 ${formatAudioDuration(s.audio.seconds)}・` : ""}{s.era ? `${s.era}・` : ""}{formatDay(s.created_at)}・{s.share_with_family ? "👪 家人看得到" : "🔒 只有我"}
                     </span>
                   </span>
                 </button>
@@ -388,6 +412,17 @@ export function StoriesScreen({ onBack }: { onBack: () => void }) {
             </div>
           )}
         </>
+      )}
+
+      {view === "audio" && (
+        <AudioStoryForm
+          onCancel={() => setView("list")}
+          onSaved={(story) => {
+            setStories((s) => [story, ...(s ?? [])]);
+            setCurrent(story);
+            setView("detail");
+          }}
+        />
       )}
 
       {view === "interview" && (
@@ -571,10 +606,26 @@ export function StoriesScreen({ onBack }: { onBack: () => void }) {
               {current.era ? `${current.era}・` : ""}記於 {formatDay(current.created_at)}
             </div>
           </div>
-          <div style={{ fontSize: "var(--fs-base)", lineHeight: 1.9, whiteSpace: "pre-wrap" }}>{current.body}</div>
+          {current.audio && (
+            <div className="card" style={{ padding: 14, background: "var(--surface-warm)" }}>
+              <div style={{ fontWeight: 800, marginBottom: 8 }}>🎧 聽我說（{formatAudioDuration(current.audio.seconds)}）</div>
+              <audio controls preload="metadata" src={current.audio.url} style={{ width: "100%" }} />
+            </div>
+          )}
+          {current.body && <div style={{ fontSize: "var(--fs-base)", lineHeight: 1.9, whiteSpace: "pre-wrap" }}>{current.body}</div>}
 
-          <div style={{ display: "grid", gridTemplateColumns: canSpeakGuide() ? "1fr 1fr" : "1fr", gap: 10 }}>
-            {canSpeakGuide() && (
+          <StoryVoiceCard
+            key={current.id}
+            story={current}
+            onStory={(s) => {
+              const merged = { ...s, comments: current.comments };
+              setCurrent(merged);
+              setStories((list) => (list ?? []).map((x) => (x.id === merged.id ? merged : x)));
+            }}
+          />
+
+          <div style={{ display: "grid", gridTemplateColumns: canSpeakGuide() && current.body ? "1fr 1fr" : "1fr", gap: 10 }}>
+            {canSpeakGuide() && current.body && (
               <button type="button" className="btn-ghost" onClick={toggleSpeak}>{speaking ? "⏹ 停止" : "🔊 念給我聽"}</button>
             )}
             <button
@@ -621,7 +672,7 @@ export function StoriesScreen({ onBack }: { onBack: () => void }) {
             <input value={edit.era} onChange={(e) => setEdit({ ...edit, era: [...e.target.value].slice(0, STORY_ERA_MAX).join("") })} style={inputStyle} aria-label="年代" />
           </div>
           <div>
-            <div style={label}>內容</div>
+            <div style={label}>{current.audio ? "文字內容（聲音故事可不填）" : "內容"}</div>
             <textarea value={edit.body} onChange={(e) => setEdit({ ...edit, body: [...e.target.value].slice(0, STORY_BODY_MAX).join("") })} rows={14} style={{ ...inputStyle, resize: "vertical" }} aria-label="故事內容" />
           </div>
           <button

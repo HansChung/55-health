@@ -5,7 +5,7 @@
 ### What this repo is
 Single **Next.js 15 (App Router) + React 19 + TypeScript** web app ("暖暖 55+", a Traditional-Chinese
 diet-tracking app for seniors). There is no separate backend service in this repo — the "backend" is
-**Supabase** (Postgres + Auth + Storage) plus external AI providers (Google Gemini, OpenAI Realtime)
+**Supabase** (Postgres + Auth + Storage) plus external AI providers (Google Gemini — mostly via the lk888 aggregator)
 and Stripe. Capacitor/Android is only a packaging target and is not needed for web development.
 
 ### Standard commands (see `package.json` scripts and `.github/workflows/ci.yml`)
@@ -20,7 +20,7 @@ and Stripe. Capacitor/Android is only a packaging target and is not needed for w
 - Copy `.env.example` → `.env.local` (gitignored). The dev server reads env **only at startup**, so
   **restart `npm run dev` after editing `.env.local`**.
 - Full product features need real credentials (add them as Cursor Secrets if you have them):
-  `GEMINI_API_KEY` (photo food analysis), `OPENAI_API_KEY` (voice), `STRIPE_SECRET_KEY` (subscriptions),
+  `GEMINI_API_KEY` (photo food analysis), `STRIPE_SECRET_KEY` (subscriptions),
   `LK888_API_KEY` (邁笙 lk888 aggregator: 出遊回憶影片 `minimax-h3`, and — when set — every Gemini call
   goes through its Gemini-compatible endpoint: food/prescription photos `gem-3.8-flash`, AI 建議
   `gem-3.5-flash-lite`; `GEMINI_PROVIDER=google` forces Google direct with `GEMINI_API_KEY`), and a real
@@ -60,6 +60,59 @@ and Stripe. Capacitor/Android is only a packaging target and is not needed for w
   `hypertension` + cold → 量血壓, `diabetes`/`prediabetes` + hot → 白開水, `kidney` + hot → never "多喝水"
   (fluid limits), …; Chinese words are matched too).
   Local test: `CWA_API_BASE` pointed at a fake F-C0032-001 server.
+  **空氣品質** (optional `MOENV_API_KEY`, free from data.moenv.gov.tw): the same cron fetches 環境部 `aqx_p_432` (all
+  stations, one request, `countiesAir`; a bad key answers 200 with plain text → treated as no data). `parseAqx` averages
+  each county's stations (台→臺) and keeps the worst one. AQI ≤ 100 changes nothing; above that `airQualityTip` adds a
+  mask / stay-indoors line (+「藥隨身帶」 for 氣喘／肺／心臟 words in `chronic_conditions`), the title gets
+  「，空氣不太好」／「，空氣不好😷」 and the weather health tip is dropped (it may say 出去走走). No key or a failed fetch →
+  the push is exactly the old weather-only one. Local test: `MOENV_API_BASE` (+ `CWA_API_BASE`) at a fake server.
+
+- **LINE 登入** (needs `supabase/add-line-login.sql` + `LINE_LOGIN_CHANNEL_ID` / `LINE_LOGIN_CHANNEL_SECRET`; without
+  them the button and the 我的 row are hidden): Supabase has no LINE provider and LINE's web-login ID token is HS256
+  with the channel secret (no JWKS), so we run the flow ourselves. `/api/auth/line/start?mode=login|link` stores
+  state + nonce in an httpOnly cookie (path `/api/auth/line`, 10 min) and always runs on `NEXT_PUBLIC_APP_URL` (the
+  only callback registered at LINE). `/api/auth/line/callback` checks state, exchanges the code, verifies the ID token
+  with LINE's `/oauth2/v2.1/verify` (+ aud/nonce), then: **login** = account linked in `line_accounts` → sign in;
+  otherwise create a user (LINE's email if granted and unused; if that email already has an account → `email_exists`,
+  never auto-merge; no email → `line-<sub>@line-login.invalid`). A `createUser` collision first waits for a
+  concurrent login to finish linking (GoTrue then often says only "Database error creating new user"); a collision on
+  the placeholder address re-links that account (`adoptPlaceholderUser` — it can only belong to this LINE id).
+  Sign-in = admin `generateLink(magiclink)` → `verifyOtp(token_hash)` on the server client, which writes the session
+  cookies (no email is sent). Each new link invalidates the previous one, so simultaneous logins of one account retry
+  with jitter. **link** = must be
+  logged in; one LINE ↔ one account (`taken` / `already_linked`). Errors come back as `?line_error=<code>`
+  (`LINE_ERRORS`, shown by the login screen or as a toast); success of linking as `?line=linked`. LINE-only accounts
+  can't unlink and `sendEmail` skips their placeholder address. `LINE_LOGIN_REQUEST_EMAIL=1` only after LINE approves
+  the email permission. Local test: `LINE_ACCESS_BASE` / `LINE_API_BASE` point at a fake LINE server.
+
+- **每日平安打卡** (needs `supabase/add-daily-checkin.sql` + VAPID + `CRON_SECRET`): the elder presses 「👋 我今天很好」 on
+  the home card (`DailyCheckinCard`, asked once like the weather card; 「不用了」 stores `on:false`, 提醒通知 → 每日平安打卡
+  turns it back on / changes the time). Setting = `notification_settings.daily_checkin = { on, deadline }`, deadline
+  9／12／15／18 (Taipei). One row per Taipei day in `daily_checkins` (server-only; a second press keeps the first time).
+  Cron `/api/cron/daily-checkin?step=remind|alert&slot=N`: 8 entries in `vercel.json` — `remind` at the deadline hour
+  pushes the elder, `alert` **two** hours later pushes every accepted family member (Hobby crons fire anywhere in their
+  hour, so a 1-hour gap could be a minute). Each step claims `profiles.checkin_reminded_on` / `checkin_alerted_on`
+  before pushing, then re-reads today's check-in and skips if it now exists (a later check-in sees the claim and
+  sends the 「報平安了」 push); profiles are paged (no fixed cap) and a failed check-in read aborts the run (500) rather
+  than alerting everyone. A missing deadline counts as 12. If family were already alerted, the check-in pushes them
+  「報平安了」 from `after()`. 家人狀況 shows a 報平安 row (not gated by permissions — the elder opted in), and a late
+  check-in turns the elder's status to 「需要關心」 (`alert`). Local test: web-push only speaks https, so the fake push service
+  needs a self-signed cert + `NODE_TLS_REJECT_UNAUTHORIZED=0` in the scratch `.env.local`.
+
+- **Cost guards**: 首頁 AI 建議 (`/api/ai/suggest`) has a server cache — the last successful `ai_usage` row stores
+  `metadata.cache_key` + `suggestion`; the key (`suggestionCacheKey`) is the Taipei day + today's meals + profile, so
+  reopening the app or another device never re-calls the model; only a new/deleted meal or a profile change does (two
+  requests that miss the cache at the same instant may both call it — ~0.004 算力, not worth a lock table), and
+  「換一個建議」 sends `?fresh=1`. The route uses Taipei time (`taipeiClock`, `taipeiDayStartIso`) — Vercel runs in UTC.
+  Cron `daily-care` (`0 0 * * *` = 08:00 Taipei, after daily-weather's 07:00 hour) pushes instead of emailing when the
+  user has a push subscription, skips users whose weather push actually went out today (`daily_weather_sent_on` =
+  today; daily-weather clears its claim when no push was delivered), and only emails the rest, at most `DAILY_CARE_EMAIL_MAX` (default
+  60) per run, most recently active first — Resend's free plan stops at 100 emails/day (OTP, alerts and weekly
+  reports share it). **lk888 channel strategy**: a key on 「综合最优」 fails over to pricier groups for every
+  model (minimax-h3 0.095 → 0.792 /s; gem-3.8-flash up to ~43×). Use 「自定义」 and pick groups for **every** model
+  the app calls (gem-3.8-flash, gem-3.5-flash-lite, gem-3.1-tts, speech-2.8, suno-v4.5, minimax-h3) — a model with
+  no groups returns 403. minimax-h3 must use a group that supports 首尾帧 (`mode=shouweizhen`); MC-H3特价 does not.
+  Check with the free `GET /v1/skills/models/{model}/pricing` (`key_channel_strategy`, `in_key_whitelist`).
 
 ### Running a real backend locally (no cloud Supabase needed)
 The app requires a live Supabase API to do anything past the login screen (auth is forced). A local
@@ -123,7 +176,7 @@ stack works well for auth + meal/diary CRUD:
   ffmpeg killed at the step deadline counts as "out of time", not a failure; (3) Vercel answers a self-call
   chain with **508 Loop Detected** after ~4 hops, so `montage-step` runs `maxDuration = 300` (Hobby + Fluid
   max) with a 240 s budget and a matching lease (`leaseMsFor`) — an MV finishes in 2–3 hops. Needs
-  `supabase/add-travel-video-montage.sql`. Separate monthly quota (`DEFAULT_MONTAGE_QUOTA`), costs only TTS
+  `supabase/add-travel-video-montage.sql`. Separate monthly quota (`montage_monthly` in 方案與次數), costs only TTS
   (~0.01 算力 per line). The Linux ffmpeg has every filter used (verified in Docker amazonlinux).
 - **口音與「我的聲音」** (needs `supabase/add-narration-voices.sql`): the four AI voices take an accent
   (`NARRATION_ACCENTS`: 台灣口音 default / 台灣國語 / 客家腔 / 廣東腔 / 四川腔 / 山東腔) — still Mandarin, just
@@ -144,12 +197,18 @@ stack works well for auth + meal/diary CRUD:
   forwarded; `robots: noindex`). Anyone with the link can watch (same exposure as the old public mp4 link);
   only the owner / family who can see videos (logged in) get reactions & comments, everyone else gets an
   「打開暖暖」 button (`/?open=caregiver`). Deleted or unfinished videos show a "deleted" message.
-- **說話變文字** (`DictationButton` / `useDictation`): 「🗣️ 用說的」 on video comments, the single-video narration
-  and each montage line, using the browser's own `SpeechRecognition`/`webkitSpeechRecognition` (`zh-TW`,
-  one sentence per tap, free; Chrome sends audio to Google, Safari to Apple). It only renders when the API
-  exists — not in the Capacitor Android WebView or Firefox, where people just type. Newer Chrome exposes the
-  unprefixed `SpeechRecognition`, so mocks in tests must replace both names.
-- **遊記 MV** (`kind='mv'`, Pro only, 6/month via `mvQuota`; needs `supabase/add-travel-video-mv.sql`): from a
+- **說話變文字** (`DictationButton` / `useDictation`): 「🗣️ 用說的」 on 問暖暖, comments, narration, montage lines,
+  stories, scam check, clinic… Two modes: **native** = the browser's `SpeechRecognition`/`webkitSpeechRecognition`
+  (`zh-TW`, one sentence per tap, free; Chrome sends audio to Google, Safari to Apple); **record** = where that API
+  is missing (the Capacitor Android WebView, Firefox) the hook records one sentence with MediaRecorder (an
+  AnalyserNode stops it 1.4 s after the voice ends, 7 s with no voice, 30 s max) → `audioPayload` →
+  `POST /api/ai/transcribe` → ffmpeg mp3 → lk888 Gemini (`TRANSCRIBE_PROMPT`, ~0.0007 算力, ~1.3 s; measured 2026-10-13).
+  Feature `dictation` + daily limit `dictation_daily` in 方案與次數; silence / "no voice" answers aren't counted.
+  The Android app needs `RECORD_AUDIO` + `MODIFY_AUDIO_SETTINGS` in `AndroidManifest.xml` (Capacitor's
+  `BridgeWebChromeClient` asks for the runtime permission when the page calls getUserMedia) — that also makes
+  voice chat, voice comments and 「我的聲音」 work in the app. Newer Chrome exposes the unprefixed
+  `SpeechRecognition`, so mocks in tests must replace both names.
+- **遊記 MV** (`kind='mv'`, Pro only, 6/month via `mv_monthly` in 方案與次數; needs `supabase/add-travel-video-mv.sql`): from a
   finished 遊記, `POST /api/ai/travel-video/[id]/mv/lyrics` has Gemini write title + lyrics (國語 or 台語 — the 台語
   prompt needs the 華語→台語 word list or the model just echoes the Mandarin trip lines), the elder edits, then
   `POST …/mv` copies the montage photos, inserts the row (one pending MV per user via the kind index) and starts
@@ -195,10 +254,44 @@ stack works well for auth + meal/diary CRUD:
   the owner's own plays aren't recorded). `loadCommentsViews` attaches `viewers` **only to the owner's own
   videos**, so the elder sees 「👀 王小美（女兒）看過了」 under the reactions and family never see who else
   watched. Unlinked family are dropped (not in `authorDirectory`). Missing table → treated as no views.
+- **年度回憶影片** (`kind='yearly'`, needs `supabase/add-travel-video-yearly.sql`; feature `travel_yearly`, limit
+  `yearly_per_year` counted from the Taipei Jan 1 — defaults free 1 / basic 3 / pro 5; **no AI platform call, ffmpeg only**):
+  the 「📅 年度回憶」 tab (deep link `/?open=travel-video&mode=yearly`) → `GET /api/ai/travel-video/yearly?year=`
+  lists this or last year's photos (`collectYearlySources`: succeeded montage photos, single-video `photo_path`,
+  life-story photos via signed URLs; MV/yearly rows are copies so they're skipped). Defaults to last year in Jan–Feb
+  (made for 過年) and, with >16 photos, `defaultYearlyPicks` spreads 16 across the year. `POST` only accepts the
+  server's own `key`s (never client paths), copies the photos to `{user}/{video}/photo-N.jpg` (story photos are
+  downloaded + uploaded — different bucket) and `syncYearly` (`travel-yearly-server.ts`) reuses the montage lease /
+  `montage-step` relay: title clip 《2026 我的一年》 + one 5 s Ken Burns clip per photo with a caption
+  (「3 月・阿里山」, editable, ≤14 chars, **emoji stripped** — the subtitle font has none) → concat + a looped library
+  track (`buildYearlyMuxArgs`; silent track if the file is missing). ≤16 photos keeps it under the 90 s track.
 - Needs `supabase/add-travel-videos.sql` (table, bucket, `ai_usage` service `minimax_video`,
   `subscription_plans.ai_video_quota`). Quota counts non-failed rows incl. soft-deleted ones.
   "One pending video per user" is enforced by the partial unique index
   `travel_videos_one_pending_per_user` (insert → 23505 → 409), so concurrent POSTs can't double-charge.
+
+### 存到手機相簿（`SaveToPhoneButton`, `src/lib/save-media.ts`）
+- On every finished video (own list, 家人狀況, share page `/v/<id>`) and in the 團體相簿 photo viewer. Three modes
+  (`saveMode()`): **native** = Capacitor Android → the app's own `GallerySaver` plugin
+  (`android/app/src/main/java/com/nuannuan/app/GallerySaverPlugin.java`, registered in `MainActivity` before
+  `super.onCreate`) downloads the URL and writes it into the gallery under Movies/暖暖 or Pictures/暖暖 (MediaStore on
+  Android 10+, no permission; Android 7–9 asks for `WRITE_EXTERNAL_STORAGE`, declared with `maxSdkVersion=28`);
+  **share** = browsers where `navigator.canShare({files})` (iPhone Safari, Android Chrome): the first tap fetches the
+  file, the button turns into 「📲 存到相簿」 and the **second tap** opens the share sheet (Safari only allows
+  `navigator.share` inside a user gesture — fetching first and sharing in the same tap gets blocked);
+  **download** = everything else (blob + `<a download>` with a readable name from `videoSaveName` / `mediaFilename`).
+  Supabase public/signed storage URLs allow CORS, so `fetch` works from the app origin. The plugin has not been
+  compiled on the dev Mac (no JDK/Android SDK) — build it in Android Studio before shipping the app.
+- **祝福影片** (`kind='greeting'`, needs `supabase/add-greeting-video.sql`; feature `greeting_video`, limit
+  `greeting_monthly` free 3／basic 10／pro 30): the 「🎁 祝福影片」 tab of the travel-video screen (home card, deep link
+  `/?open=travel-video&mode=greeting`, `GreetingComposer`). Occasion (`GREETING_OCCASIONS`: title template, default lines,
+  default music), 給誰／你是誰, 1–10 photos uploaded straight to `user-uploads` with one line each.
+  `POST /api/ai/travel-video/greeting` reads each staged photo with `readUserImage` (owner + magic bytes — the
+  travel-videos bucket is public, so never `copyUserUpload` arbitrary files into it), stores it as
+  `{user}/{video}/photo-N.jpg` and inserts via `insertCompilationRow`. Segments = 《title》 + one per photo + 「愛你的 ○○」
+  closing on the last photo (`greetingSegments`). Everything else (clips, mux, lease, `montage-step` relay, delete,
+  family push) is the yearly pipeline — use `isCompilationKind()` (`COMPILATION_KINDS` = yearly／tour／greeting) instead
+  of listing kinds.
 
 ### 後台（/admin）手機版
 - Admin pages keep their desktop styles inline; below 768px `src/app/admin/admin.css` overrides them via
@@ -207,6 +300,49 @@ stack works well for auth + meal/diary CRUD:
   `adm-card-row` / `adm-card-thumb` / `adm-card-actions`, `adm-row-wrap` + `adm-row-tools`, and every
   `<table>` is wrapped in `.adm-table-scroll` (scrolls sideways). The layout swaps the sidebar for a
   sticky top bar + ☰ drawer. New admin pages should reuse these classes.
+
+### 介面：首頁「今天」、底部「功能」分頁（2026-10-14 改版）
+- Bottom nav = 首頁／日記／📷／**功能**／我的 (the old 「對話」 tab is gone: voice chat is 「跟暖暖聊聊」 on the home
+  screen and in 功能 → 問暖暖; book chapter 0102 says so).
+- **Every feature entry lives in one registry**: `src/lib/feature-menu.ts` (`MenuId`, `MENU_ITEMS` label/emoji/desc,
+  `MENU_GROUPS` = 健康照顧／問暖暖／回憶與影片／出門走走／家人與安心／動動腦). `page.tsx` builds `menuActions`
+  (`MenuActions`, one function per id; **undefined = hidden**, e.g. feature switched off in /admin/plans or 家人狀況 for
+  someone who cares for nobody; tier-gated items stay visible and `requireFeature` shows the upgrade prompt).
+  `FeaturesScreen` (tab `features`) renders the groups; the home screen only shows `FavoriteFeatures`: 4 tiles chosen by
+  `pickFavorites` from per-device usage in localStorage (`recordMenuUse`; defaults 問暖暖／拍照問暖暖／可疑訊息／看診小幫手
+  get +1.5 so a feature needs 2 uses to replace one; shown in menu order so tiles don't jump around).
+- **Adding a feature**: add a `MenuId` + `MENU_ITEMS` entry, put it in a group, add its action in `menuActions`. Don't
+  add another `NavCard` to the home screen and don't add feature rows to 我的 (它只放資料和設定).
+- Home order: greeting → 報平安 → today/tomorrow appointment → calorie ring + 暖暖的建議 → 天氣 offer → 家人狀況 (if
+  caring) → 常用 → medicines / alerts → meals → 跟暖暖聊聊・記錄運動.
+
+### 動動腦（腦力小遊戲, `subpage "brain"`, needs `supabase/add-brain-games.sql`）
+- 功能 → 動動腦 → 每日一題 (deep link `/?open=brain`, feature `brain_game`, free, no AI). Questions are generated in
+  `src/lib/brain-games.ts` from a seed: **每日一題 is the same for everyone that Taipei day** (`dailyQuestion(day)`,
+  seed `brain:<day>`), the kind rotates daily (`dailyKind`: 算錢／記數字／找不同／成語填空／數字規律); practice questions use
+  a random seed and are never recorded. All answers are big multiple-choice buttons; 記數字 shows the number for
+  `MEMORY_SECONDS` first; 🔊 reads the prompt with speechSynthesis. Generators are checked for 300 seeds per kind in tests
+  (unique options, valid answer index) — keep that test passing when adding idioms or kinds.
+- `brain_game_plays` = one row per user per Taipei day (`POST /api/brain` upserts with ignoreDuplicates, kind taken from
+  the server's day, so only the first answer counts). `loadBrainStats` → streak (`brainStreak`, today optional) and
+  totals; achievements `brain_first`／`brain_streak_7`／`brain_30` (category `brain`). Without the SQL the GET answers 503
+  and the screen still plays, just without recording.
+
+### 後台「每月成本」（`/admin/costs`, needs `supabase/add-cost-tracking.sql`）
+- AI cost per month and per feature from `ai_usage` (`src/lib/admin-costs.ts`): rows with `metadata.platform_cost`
+  (lk888 video／TTS／Suno／voice: the real 算力 the platform charged) count as **actual**; token-only rows (Gemini via
+  lk888) are **estimated** with lk888's own per-model prices — `GET /v1/skills/models/{model}/pricing` (算力 per 1M
+  tokens, median of the key's usable 按token channels, cached 6 h; `FALLBACK_TOKEN_RATES` if unreachable). Google-direct
+  rows (`metadata.provider = google`, no lk888 price) use `cost_usd` × (USD→NT$ ÷ 算力價格); fixed-price calls without
+  tokens are in `FIXED_CALL_POINTS` (voice clone 0.1). Failed and `reserved` rows cost 0. Endpoint → 中文功能名 in `FEATURE_LABELS` (add new AI endpoints there).
+- **Real monthly spend**: `GET /v1/skills/balance` → `{ balance, api_key_quota.used }` (read-only, free). Cron
+  `/api/cron/lk888-snapshot` (15:00 UTC = Taipei 23:xx) and every page load upsert one row per Taipei day into
+  `lk888_usage_snapshots`, so **a row = the last value seen that Taipei day (end of day)**. `lk888MonthUsed` = last
+  in-month row (or live now) − the previous month's last row; null if any value in that window decreases (key rotated). The page uses that for the AI total when it covers the whole month, otherwise the itemized sum, and
+  shows both as 對帳. `daysLeft` = balance ÷ last-7-day average.
+- Settings in `app_settings` key `costs` (`normalizeCostSettings`): 1 算力 = NT$ (default 4.8 = NT$96／20 點), USD→NT$,
+  金流手續費 %, fixed monthly costs (default Vercel Pro 20 + Supabase Pro 25 USD). Revenue = paying profiles (not admins)
+  × `subscription_plans.price_monthly_twd` — an estimate (admin-granted tiers count too).
 
 ### 研學團（study tours）
 - Home 「研學團」/ 我的 → 「研學護照」→ subpages `study-tours` / `study-passport` (free for all tiers).
@@ -252,10 +388,22 @@ stack works well for auth + meal/diary CRUD:
     a stamp is new. `family_links` has only select/insert RLS policies, so `PATCH`/`DELETE /api/family/[id]`
     write with the service role filtered by `owner_id = user.id`.
 
+### 研學團共享相簿（needs `supabase/add-study-tour-album.sql`; feature `tour_album`, limit `tour_video_monthly`）
+- Tour detail → 「📸 團體相簿」 (`TourAlbum`). Members = a `confirmed` registration (incl. on-site) for the tour as
+  `user_id` **or** `registered_by` (the family member who signed the elder up); admins see/delete everything
+  (`loadAlbumAccess`). Non-members get 404 and the section stays hidden. Uploads open 3 h before start until 30 days
+  after the end (`tourAlbumOpen`), ≤30 photos per person per tour (insert-then-count like comments), up to 5 per batch:
+  browser → `user-uploads` staging → `copyUserUpload` into the private `study-tour-photos` bucket at
+  `{tour}/{user}/{id}.jpg`, read back through 1 h signed URLs. Delete = own photo (admins: any), soft delete + file.
+- 「🎬 做成研學團遊記影片」 reuses the 年度回憶 composer (`YearlyComposer tour={…}`) and pipeline: `kind='tour'` rows
+  keep their state in the `yearly` column, `insertCompilationVideo` (shared with yearly) copies the picked album
+  photos into the video folder, captions default to 「王阿嬤拍的」, title = tour title; `syncYearly` / `montage-step`
+  render it (ffmpeg only, no AI cost). The video lands in the creator's own 出遊回憶影片 list.
+
 ### 拍照問暖暖（photo ask）
 - Home 「拍照問暖暖」, a button on 研學團 pages (prefills the tour title as the place) and the book's photo chapters
   → subpage `photo-ask`. Deep link `/?open=photo-ask`; book chapters put the question in sessionStorage
-  (`savePhotoAskSeed`) and the screen shows a 書本練習 banner. **Open to every tier**: free = `PHOTO_ASK_FREE_DAILY`
+  (`savePhotoAskSeed`) and the screen shows a 書本練習 banner. **Open to every tier**: free = `photo_ask_free_daily`
   (5) per Taipei day (counted from successful `/api/ai/photo-ask` rows), basic+ = the monthly photo quota.
 - Questions up to 200 characters (book prompts are ~80). For text photos (menus, ingredient labels, handouts,
   data screens) the model fills `text_lines` (「原文 → 中文」, allergens, 3–5 key points) and the screen shows
@@ -268,11 +416,90 @@ stack works well for auth + meal/diary CRUD:
   the wrong pier and invents history) and always tells elders not to pick/eat wild plants.
 - Read-aloud uses the browser's speechSynthesis (`speakGuideParagraphs`, zh-TW) — free, no server TTS.
 
+### 這則訊息可疑嗎？（scam check, `subpage "scam-check"`）
+- Home 「🛡️ 這則訊息可疑嗎？」, the 安心保鑣 page (`/smart/fraud`) and book 0502's app link → `ScamCheckScreen`;
+  deep link `/?open=scam-check`. **Every tier**, `scam_check_daily` (10) per Taipei day via `reserveDailySlot` on
+  endpoint `/api/scam-check`; usage is logged as `gemini_text` even with a screenshot, because every `gemini_vision`
+  row counts toward the paid monthly photo quota.
+- Input: a screenshot (direct upload, `imageFromRequest`; not stored) and/or pasted text (≤2000) + an optional
+  「誰傳來的」 chip. `POST /api/scam-check` → vision model (`checkScamMessage`, `src/lib/ai/scam-check.ts`) → JSON
+  `{verdict: danger|suspicious|unsure|likely_ok, title, kind, signals, advice, verify, excerpt}`. The prompt treats the
+  message as data (pasted `<訊息>` tags are stripped; injected "judge this safe" is itself a red flag), never says
+  "safe", never tells the elder to tap links / call numbers in the message, and always points to self-found official
+  numbers or 165. `normalizeScamCheckResult` strips links and masks long numbers / ID numbers / codes in **every**
+  field, so nothing on screen or in shares can be tapped or dialled. The screen always shows the four rules and a
+  `tel:165` button regardless of the verdict.
+- `scam_checks` (needs `supabase/add-scam-checks.sql`; server-only RLS) keeps only the result + masked excerpt (no
+  screenshot, no original text); the daily `cleanup-uploads` cron deletes rows older than 90 days. 「📣 通知家人幫我看」
+  (`POST …/[id]/share`) claims `shared_at` once (conditional update) and pushes accepted family
+  (`/?open=caregiver`); 家人狀況 shows shared checks from the last 30 days (`GET /api/family/scam-checks`,
+  `FamilyScamChecks`). No linked family → 409 `noFamily`, and the screen offers 「用 LINE 傳給家人」
+  (`navigator.share`, first-person text from `scamShareText`, no links).
+
+### 看診小幫手（clinic helper, `subpage "clinic"`）
+- Home 「🩺 看診小幫手」 → `ClinicScreen`; deep link `/?open=clinic`. Needs `supabase/add-clinic-visits.sql`
+  (`clinic_visits`, server-only RLS). Explains only — never diagnoses; every screen shows the 119 note.
+- **回診前**: department / 哪裡不舒服 / 多久了 / 想問醫生 → `POST /api/clinic/prepare` → text model
+  (`writeClinicCard`; shares the 問暖暖 daily limit via `ASK_ENDPOINT`) returns `{chief, points, own_questions,
+  extra_questions}`. The elder's own questions always survive (`normalizeClinicCard`: rewritten ones only if the count
+  matches, otherwise the originals; extras are de-duplicated with `sameQuestion` because models rephrase). Current
+  meds (`profiles.medications`) and the last 30 days of BP/glucose/weight (`summarizeMetrics`) are added by the server,
+  not the model. The card can be ticked off during the visit, printed (`body.printing-clinic`), read aloud or shared.
+- **看完診**: 醫生交代的話 (PATCH) and 「拍檢驗報告」 → `POST /api/clinic/<id|new>/report` → vision model
+  (`readLabReport`): items copied as printed (name/value/unit/range/flag) + one plain line each, summary, questions for
+  the doctor. The photo is not stored; parse errors never include model output. Quota like 拍照問暖暖: free
+  `clinic_report_free_daily` (3)/day, paid = monthly photo quota. `compareLab` matches items across reports by
+  `labKey` (NFKC, no spaces/brackets) against `previousReport`, ordered by the date printed on the report (`reportDay`,
+  ROC years handled), not by record creation time.
+- **回診提醒** (needs `supabase/add-clinic-appointments.sql` + VAPID + `CRON_SECRET`): 「📅 回診提醒」 section in the
+  clinic screen (`ClinicAppointments`; hidden when the GET answers 503 = SQL not run). Rows in `clinic_appointments`
+  (server-only RLS): `kind` visit｜refill (領慢箋藥), Taipei `appt_date` + optional `appt_time` HH:MM, hospital,
+  department, note, `notify_family` (default on). ≤20 upcoming per user, ≤400 days ahead, past dates rejected
+  (`normalizeAppointmentInput`). Editing date/time clears the reminder claims so the new day is reminded again.
+  Cron `/api/cron/clinic-reminders?kind=day_before` (12:00 UTC = 20:00 Taipei, tomorrow's rows) and `?kind=same_day`
+  (23:00 UTC = 07:00, today's rows): each row is claimed via `reminded_*_at is null` before pushing the elder and, if
+  `notify_family`, every accepted family member. 看完診 → 「📅 設定下次回診提醒」 opens the form with the visit's
+  department. Home shows `UpcomingAppointmentCard` only for today/tomorrow; 家人狀況 shows the next `notify_family`
+  appointment within 14 days (not gated by permissions — the elder chose to tell family).
+
+### 血壓血糖趨勢（health trends）
+- 我的 → 體重／血壓／血糖 (`HealthMetricsScreen`, deep link `/?open=health-metrics`) and 家人狀況 → 「📈 看血壓、血糖趨勢」
+  (`FamilyHealthTrends`) both render `HealthTrends`. No SQL, no AI — all numbers come from `src/lib/health-trends.ts`.
+- 7／30／90 days; the screens fetch **2× the range** so `splitPeriods` can compare with the previous period (`MIN_COMPARE`).
+  Responses from an older tab/range request are dropped (`requestId`). Levels match the old screen badges (`bpLevel`: ≥140/90 high, ≥130/85 warn,
+  <90/60 low; `glucoseLevel` by context: fasting/before-meal ≥126/≥100, after-meal ≥200/≥140, <70 low everywhere,
+  bedtime only flags lows). Morning = 04:00–11:59, evening = 18:00–03:59 Taipei; a comparison needs ≥3 readings in both periods. Summaries are plain sentences (`bpLines`,
+  `glucoseLines`, `weightLines`) plus the 722 tip and a "not a diagnosis" note.
+- Chart is a hand-drawn SVG: >7 days BP/weight plot one daily average per Taipei day (`dailyAverage`; per-reading
+  morning/evening zig-zag was unreadable); glucose is always dots only (fasting + after-meal on one line is
+  meaningless). 「🖨️ 列印給醫生看」 prints chart + summary + every reading (`body.printing-trends`).
+- `GET /api/family/health-metrics?elder=&type=&days=` (≤180 days) needs an accepted link **and**
+  `permissions.alerts`, same rule as the health rows in 家人狀況.
+
 ### Book × App light coupling（書本／App）
 - Chapter openings live at `/smart/chapter/[id]` (public, printable). Shared rhythm: **一拍、二問、三記下**.
+- **「一步完成」 first** (2026-10-19, owner: the old pages had too many steps for 60+ readers): every chapter page now
+  opens with `ChapterQuickCard` — one short goal (≤20 字, enforced by a test) and one big button that finishes the
+  practice inside 暖暖; the original long content is still there but collapsed under 「想多了解這一節」 (the footer
+  guide button also expands it). Specs live in `src/lib/chapter-quick.ts` (`CHAPTER_QUICK`, one per built-in chapter —
+  a test fails if a chapter is missing): `guided` (暖暖 asks one question at a time, max three, then sums up —
+  `GUIDED_SUFFIX`), `ask`/`photo` (prompt pre-filled, the reader presses 送出), or a deep link (`camera`, `stories`,
+  `record`, `scam`, `clinic`, `metrics`, `brain`, `video`, `greeting`, `tours`, `voice`). Phone-app chapters (相簿搜尋、
+  備忘錄、修圖、行事曆、Wallet、Maps) map to what 暖暖 can do (故事集、回診提醒、拍照問暖暖、一題一題帶). Admin-added
+  chapters fall back to `defaultQuick` (guided). When adding a built-in chapter, add its quick step too.
 - Optional save: 「把這句話點成光點」→ `/smart/spark?source=chapterXXXX` (sessionStorage seed).
 - Home 「書本練習」→ `/smart/guide`. Deep links `/?open=voice|camera&from=chapterXXXX` show intent tips.
 - Production DB may need `supabase/add-chapter-opening-sources.sql` if the old source check is still in place.
+- **章節 Podcast** (block type `audio`, 「🎧 Podcast／音檔」 in /admin/chapters → 新增內容區塊): the admin picks an mp3/m4a/
+  aac/wav (≤ `CHAPTER_AUDIO_MAX_BYTES` 50 MB = Supabase free-plan file limit); `POST /api/admin/chapter-audio` (admin
+  only) returns a signed upload URL and the **browser uploads straight to the public `chapter-audio` bucket**
+  (`uploadToSignedUrl`; big files never touch Vercel). The bucket is created on first use (no SQL). Paths never contain
+  the file name (`buildChapterAudioPath`). External audio URLs can be pasted instead. Readers get `<audio preload="none">`
+  with 慢一點／正常／快一點 (`ChapterBlocks` → `AudioBlock`); hidden when printing. Playback egress is Supabase's.
+  The file is re-wrapped as a Blob with the normalized type (browsers report `audio/x-m4a`, `audio/mp3` or nothing,
+  which the bucket allowlist rejects); the upload result is applied by block id to the latest form state. Saving a
+  chapter prunes unreferenced files in `chapters/<id>/` older than 6 h (`pruneChapterAudio` in `after()`); 還原預設／
+  刪除章節 removes them all.
 - **No external AI in the book** (owner's decision, 2026-10-07): examples never send people to Gemini／ChatGPT／Siri;
   `external-ai.ts` is gone. Text examples use 「✍️ 打字問暖暖」 (`AskNuannuanRow` / the `example` block's
   `onTryAsk`) → `saveAskSeed` (sessionStorage, survives login) → `/?open=ask&from=chapterXXXX`. Photo examples
@@ -281,7 +508,7 @@ stack works well for auth + meal/diary CRUD:
 ### 打字問暖暖（text chat, `subpage "ask"`）
 - Home 「問暖暖」, the voice screen's 「改用打字問暖暖」 and book examples open `AskScreen`. Typed or dictated
   (`DictationButton`), follow-ups allowed, answers read aloud with speechSynthesis. **Everyone can use it**
-  (free tier too) with a daily limit per Taipei day (`ASK_DAILY_LIMITS`: free 20 / basic 50 / pro 100 messages;
+  (free tier too) with a daily limit per Taipei day (`ask_daily`: free 20 / basic 50 / pro 100 messages;
   counted from successful `ai_usage` rows with endpoint `/api/ai/chat`).
 - `POST /api/ai/chat` is stateless: the client sends the recent history (`trimAskHistory`, ≤40 messages) and the
   server adds 暖暖's instructions (`buildAskSystemPrompt`: Traditional Chinese, short, no Markdown, no diagnosis,
@@ -294,7 +521,7 @@ stack works well for auth + meal/diary CRUD:
 
 ### 我的故事集（life stories, `subpage "stories"`）
 - Home 「我的故事集」 → `StoriesScreen`; deep link `/?open=stories`. Free for every tier; uses the shared 問暖暖
-  daily limit (`ASK_DAILY_LIMITS`): every interview reply is a normal `POST /api/ai/chat` with `mode: "story"`
+  daily limit (`ask_daily`): every interview reply is a normal `POST /api/ai/chat` with `mode: "story"`
   (`STORY_INTERVIEW_RULES`: one question at a time, never invent), and 「整理成文章」 (`POST /api/stories/write`,
   needs ≥3 answers) reserves one more slot (`reserveDailySlot` on endpoint `/api/ai/chat`) and asks Gemini for
   JSON `{title, era, body}` (first person, only what the elder said, 300–800 字, `normalizeStoryDraft`).
@@ -308,3 +535,72 @@ stack works well for auth + meal/diary CRUD:
   (`/?open=stories`), elder reply → family who commented. Delete = soft delete + photos removed.
 - 「念給我聽」 uses speechSynthesis (`storySpeech`). `/stories/book` (server page, noindex) is the printable
   回憶錄: cover, 目錄, one story per page with photos; 「列印／存成 PDF」 = `window.print()`.
+- **聲音故事** (needs `supabase/add-story-audio.sql`: `life_stories.audio` jsonb, body may be empty when there is
+  audio, private bucket `story-audio` 50 MB, table `story_audio_upload_claims` + RPCs `claim_story_audio_upload` /
+  `stale_story_audio`): 「🎧 用自己的聲音說」
+  (`AudioStoryForm`) records in-app (`useVoiceRecorder`, ≤15 min) or takes an mp3/m4a/aac/wav file. The browser gets a
+  signed upload URL (`POST /api/stories/audio-upload`, ≤10/day, claimed atomically **when the URL is issued** —
+  counting uploaded objects let concurrent requests through; without the newer SQL it falls back to that count) and
+  uploads straight to
+  `story-audio/{user}/pending/{uuid}.ext` — never through Vercel. `POST /api/stories {audioPath, audioSeconds}`
+  (`finalizeStoryAudio`) moves it to `{user}/{story}/audio.ext`; in-app **webm/ogg recordings are converted to m4a**
+  with ffmpeg (iPhone can't play webm; length from ffmpeg's last `time=`), so `/api/stories` traces ffmpeg and has
+  `maxDuration = 120`. Uploaded files keep their format; their length comes from the browser, or — when the browser
+  can't read it (Safari `Infinity`, timeouts) — from ffmpeg's `Duration:` header (`probeSeconds`; unreadable file →
+  422). The form reuses an already-uploaded file when saving is retried. Playback = 1-hour signed
+  URLs (`signStoryMedia` signs photos + audio); family hear it in 長輩的故事; the printed book notes 「有聲音版」.
+  Deleting a story removes the audio; the daily `cleanup-uploads` cron removes pending files older than a day.
+  Book 1105 「讓聲音留下來」 links to `/?open=stories&audio=1` (opens the recorder).
+
+### 跟暖暖聊聊（語音對話, `modal "voice"`）
+- **No more OpenAI Realtime** (removed 2026-10-12; `OPENAI_API_KEY` / `OPENAI_REALTIME_MODEL` are unused). lk888 has
+  no realtime voice API, so it's push-to-talk: tap to record (`useVoiceRecorder`, ≤60 s), tap again → `audioPayload`
+  (direct upload, data-URL fallback) → `POST /api/ai/voice-turn` → ffmpeg `toWav` (length ≥0.8 s, RMS silence check)
+  → `wavToMp3` → one Gemini call (`answerVoiceTurn`, text model `gem-3.5-flash-lite`, audio as `inlineData`) that both
+  transcribes and answers as two lines 「聽到：…／回答：…」 (`parseVoiceReply`). The reply is read aloud with the
+  browser's speechSynthesis (free); tapping the mic while it speaks interrupts it.
+- Tested 2026-10-11 against lk888: **webm sent as-is was misheard, mp3/ogg were heard correctly** (~1.5–1.9 s,
+  ~0.001 算力 per turn) — keep the mp3 conversion. The route needs ffmpeg in `outputFileTracingIncludes`.
+- Shares the daily ask quota with 打字問暖暖 (`ENDPOINT = "/api/ai/chat"`, `ask_daily`), reserved with
+  `reserveDailySlot` and released on failure. The client sends the last `VOICE_HISTORY_MAX` turns as text; the
+  recording is never stored (direct-upload staging is taken + deleted by `takeUserAudio`). Turns are still logged
+  to `conversations` via `api.logConversation`.
+- **用我的聲音念（專業版，needs `supabase/add-story-voice.sql`）**: `StoryVoiceCard` on a story with text → `POST /api/stories/[id]/voice`
+  (`maxDuration = 300`, ffmpeg traced). Text = `storyVoiceText` (title, era, body) → `splitForVoice` (≤300 chars per
+  piece, split at 。！？, then commas, then hard) → `synthesizeNarration` with the elder's clone (`speech-2.8` HD, 3 in
+  parallel; a not-yet-activated voice does the first piece alone after `claimFirstUse`, so the 18.8 算力 activation
+  happens once) → `buildVoiceConcatArgs` (24 k mono, 0.5 s pauses, AAC 64k) → `story-audio/{user}/{story}/voice-{hash}.m4a`,
+  stored in `life_stories.voice_reading` `{path, seconds, text_hash, clone_id}`. `voice_reading_lease` (conditional
+  update) stops double clicks paying twice; same text + same voice returns the existing file free. Monthly cap
+  `story_voice_monthly` (4) via `reserveDailySlot` on endpoint `/api/stories/voice` since the Taipei month start;
+  failures release the slot. Cost estimate from the price list (not measured yet): speech-2.8 HD ≈ 720 算力 per 1M
+  chars → ~2–4 算力 for a 3000-char story. Editing title/body marks it `outdated` (owner sees 「照新的內容重念」;
+  family only sees current readings, labelled 「AI 合成」). Deleting the story removes the file.
+- **回憶錄有聲書** (no SQL, no extra AI): 「🎧 聽整本有聲書」 in the stories list and 「🎧 聽○○的回憶錄有聲書」 in 家人狀況
+  (shared stories only) open `StoryAudiobook`. `audiobookChapters` orders stories oldest-first and picks per chapter:
+  the elder's own recording → a current (not outdated) 用我的聲音念 reading → the phone's speechSynthesis reading
+  `storySpeech` paragraphs (skipped if the browser can't speak). Device speech is chained **one sentence per
+  utterance** (`speechChunks`, ≤80 chars; long utterances stop halfway in some browsers) with a per-sentence watchdog
+  that moves on if `onend` never fires; a token ref invalidates callbacks on pause/skip, and only `NotAllowedError`
+  from `audio.play()` flips the button back to ▶️. Closing clears the Media Session metadata and handlers.
+  Audio URLs are 1-hour signed URLs: on an `<audio>` error the player refetches the stories once (`onRefresh`) and
+  replays only if the URL changed; otherwise that source is marked broken (`brokenAudioKey(id, source)`) and the chapter
+  falls through to the next source (recording → voice reading → phone speech), skipped only when none is left. Every async step re-checks the play token so a pause/skip meanwhile wins. Auto-advances, prev/next, 0.8／1／1.2 speed, Media Session metadata for the lock screen.
+
+### 方案與次數（後台 `/admin/plans`, needs `supabase/add-plan-settings.sql`）
+- **Every feature switch, minimum tier and quota lives in one place**: `src/lib/plan-settings.ts` (`FEATURE_DEFS`,
+  `LIMIT_DEFS` with defaults = the old hard-coded numbers). Admins edit them at `/admin/plans`; they're stored in
+  `app_settings` (`key='plan'`, normalised by `normalizePlanSettings`, so partial/old JSON is fine). Photo / video
+  defaults come from `subscription_plans.ai_photo_quota` / `ai_video_quota` (`baseSettings`). Without the SQL
+  everything falls back to defaults (admin page says so).
+- **Server**: never hard-code a limit or tier again. `loadAsker(...).access` / `checkUserQuota(...).access` give a
+  `PlanAccess` (`plan-access-server.ts`, settings cached 30 s per instance): `blockedResponse(access, feature)` (503 =
+  switched off, 403 + `upgradeUrl` = tier too low; admins are never blocked) and `access.limit("ask_daily")` etc.
+  Every AI / video creation route checks its feature; background jobs (montage/MV steps) don't, so switching a
+  feature off lets started videos finish.
+- **Per-user grants** (`user_feature_grants`, unique per user+feature, optional `expires_at`): the user is treated as
+  that tier **for that feature and its limits only** (`effectiveTier`). Admin form looks the user up by email.
+- **Client**: `page.tsx` loads `GET /api/plan-settings` after login → `applyPlanSettings` (module-level state in
+  `feature-gates.ts`; never call it on the server — it would leak grants between requests). `hasFeature` /
+  `featureEnabled` / `requiredTierLabel` read it; switched-off home entries are hidden; the travel-video screen hides
+  switched-off tabs; `/pricing` lists `pricingFeatures(settings, tier)`.

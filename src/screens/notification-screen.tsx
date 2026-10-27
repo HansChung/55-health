@@ -10,6 +10,8 @@ import { enableWebPush, unsubscribeWebPush } from "@/lib/push/client";
 import { TAIWAN_COUNTIES } from "@/lib/weather";
 import { DAILY_WEATHER_HOUR } from "@/lib/daily-weather";
 import { dailyWeatherAvailable, saveDailyWeather } from "@/lib/daily-weather-client";
+import { CHECKIN_DEADLINES, checkinSetting, deadlineLabel, isCheckinDeadline, type CheckinDeadline } from "@/lib/daily-checkin";
+import { saveDailyCheckin } from "@/lib/daily-checkin-client";
 
 interface NotificationScreenProps {
   onBack: () => void;
@@ -36,6 +38,7 @@ export function NotificationScreen({ onBack }: NotificationScreenProps) {
   const [weatherAvailable, setWeatherAvailable] = useState(false);
   const [weatherBusy, setWeatherBusy] = useState(false);
   const [weatherPicking, setWeatherPicking] = useState(false);
+  const [checkinBusy, setCheckinBusy] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -71,6 +74,26 @@ export function NotificationScreen({ onBack }: NotificationScreenProps) {
       toast.error(on ? "要按「允許」通知才收得到，請再試一次" : "沒存成功，請再試一次。");
     }
     setWeatherBusy(false);
+  };
+  // 每日平安打卡：開關、換時間（關掉時時間留著）
+  const checkin = checkinSetting(settings.daily_checkin);
+  const saveCheckin = async (on: boolean, deadline: CheckinDeadline) => {
+    setCheckinBusy(true);
+    try {
+      const { profile, pushOk } = await saveDailyCheckin({ on, deadline });
+      setSettings({ ...DEFAULT_SETTINGS, ...(profile.notification_settings ?? {}) });
+      if (on) {
+        toast.success(
+          pushOk
+            ? `${deadlineLabel(deadline)}前沒按「我今天很好」，先提醒你，兩小時後通知家人`
+            : `${deadlineLabel(deadline)}前沒按會通知家人（這支手機沒開通知，收不到提醒）`
+        );
+      }
+    } catch (e) {
+      console.error("儲存平安打卡失敗:", e);
+      toast.error("沒存成功，請再試一次。");
+    }
+    setCheckinBusy(false);
   };
   const weatherCounty = settings.daily_weather?.county ?? null;
   const weatherOn = Boolean(settings.daily_weather?.on && weatherCounty);
@@ -228,6 +251,35 @@ export function NotificationScreen({ onBack }: NotificationScreenProps) {
               </Card>
             </>
           )}
+
+          <SectionTitle>每日平安打卡</SectionTitle>
+          <Card>
+            <NotifRow icon="👋" label="沒報平安就通知家人"
+              time={checkinBusy ? "處理中…" : `每天${deadlineLabel(checkin.deadline)}前按「我今天很好」`}
+              on={checkin.on}
+              onChange={(on) => saveCheckin(on, checkin.deadline)}
+              last={!checkin.on}
+            />
+            {checkin.on && (
+              <label style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", fontSize: "var(--fs-base)" }}>
+                <span style={{ flexShrink: 0, color: "var(--ink-2)" }}>幾點前</span>
+                <select
+                  value={checkin.deadline}
+                  disabled={checkinBusy}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    if (isCheckinDeadline(v)) void saveCheckin(true, v);
+                  }}
+                  style={{
+                    flex: 1, minHeight: 48, padding: "8px 10px", borderRadius: 12, fontSize: "var(--fs-base)",
+                    border: "2px solid var(--line-strong)", background: "var(--surface)", color: "var(--ink-1)",
+                  }}
+                >
+                  {CHECKIN_DEADLINES.map((h) => <option key={h} value={h}>{deadlineLabel(h)}</option>)}
+                </select>
+              </label>
+            )}
+          </Card>
 
           <SectionTitle>家人通知</SectionTitle>
           <Card>

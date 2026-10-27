@@ -4,7 +4,7 @@ export const metadata = {
 };
 
 export default function PrivacyPage() {
-  const updated = "2026 年 9 月 30 日";
+  const updated = "2026 年 10 月 13 日";
 
   return (
     <div style={{
@@ -24,6 +24,13 @@ export default function PrivacyPage() {
           <p>暖暖（以下簡稱「本服務」）為了提供飲食追蹤、AI 健康建議等功能，會收集以下資訊：</p>
           <ul>
             <li><strong>帳號資訊</strong>：透過 Google OAuth 登入時取得您的 email、姓名、頭像。</li>
+            <li id="line-login">
+              <strong>LINE 登入</strong>：使用「用 LINE 登入」或在「我的」連結 LINE 時，經您在 LINE 畫面上同意後，取得您的
+              LINE 使用者識別碼、顯示名稱、大頭貼；若您同意提供，另取得<strong>您在 LINE 登錄的 Email</strong>。Email 只用於：建立與辨識您的
+              暖暖帳號、讓您也能用 Email 驗證碼登入、寄送您訂閱的健康報告與安全通知。我們不會用這個 Email 寄送廣告，也不會提供給第三方。
+              未取得 Email 的帳號只能用 LINE 登入，也不會收到電子郵件。已有其他登入方式的帳號可在「我的 → 登入方式」解除連結；
+              您也可以依第 4 節要求刪除帳號資料。
+            </li>
             <li><strong>健康資料</strong>：您自行輸入的年齡、性別、慢性病、目標卡路里等。</li>
             <li><strong>飲食記錄</strong>：您拍攝的食物照片、辨識結果、用餐時間。</li>
             <li><strong>運動記錄</strong>：您手動記錄的運動類型與時間。</li>
@@ -48,9 +55,11 @@ export default function PrivacyPage() {
           <p>本服務使用以下第三方供應商處理資料：</p>
           <ul>
             <li><strong>Supabase</strong>：資料庫與認證服務（資料儲存於亞洲區域）。</li>
+            <li><strong>LY Corporation（LINE）</strong>：LINE 登入（僅在您選擇用 LINE 登入或連結時，由 LINE 驗證您的身分）。</li>
             <li><strong>邁笙 AI 影音創作平台（lk888）／Google Gemini</strong>：食物與藥袋照片 AI 辨識、「拍照問暖暖」的景物解說、每日飲食建議（照片、您輸入的問題與地點，以及稱呼、年齡、慢性病與當日飲食摘要，會經由該平台傳送給 Gemini 模型處理；「拍照問暖暖」的照片不會存到本服務）。</li>
-            <li><strong>OpenAI</strong>：語音對話功能（依 OpenAI API Data Policy，輸入不用於模型訓練）。</li>
+            <li><strong>邁笙 AI 影音創作平台（lk888）／Google Gemini</strong>：「問暖暖」打字對話與「跟暖暖聊聊」語音對話（您輸入的文字或說話的錄音，以及稱呼、年齡、慢性病，會經由該平台傳送給 Gemini 模型理解並回答；錄音在伺服器轉檔送出後就刪除，不會保存；回答由您手機內建的語音念出來）。</li>
             <li><strong>邁笙 AI 影音創作平台（lk888）／MiniMax</strong>：出遊回憶影片（您選擇的照片會經由該平台傳送給 MiniMax 海螺模型生成影片；若選擇口白，口白文字會傳送給 Gemini 配音模型，照片也可能用於 AI 撰寫口白；完成的影片與口白音檔存放在本服務的儲存空間）；多張照片遊記影片：照片會經由該平台傳送給 Gemini 模型協助撰寫每張的一句話（若您按「AI 幫我寫」），口白文字傳送給配音模型，影片本身在本服務的伺服器上製作。</li>
+            <li><strong>邁笙 AI 影音創作平台（lk888）／MiniMax 海螺語音</strong>：專業版「我的聲音」（您勾選同意後錄的一段聲音，會經由該平台傳送給 MiniMax 複製成配音用的聲音，原始錄音不保存）；之後用這個聲音念遊記口白或「我的故事集」的故事時，要念的文字會傳送給該平台合成，做好的錄音存放在本服務的儲存空間，並標示為 AI 合成。</li>
             <li><strong>Vercel</strong>：網站託管。</li>
             <li><strong>Resend</strong>：電子郵件寄送（如使用 Email 登入）。</li>
             <li><strong>Stripe</strong>：訂閱付款處理（如訂閱付費方案）。</li>

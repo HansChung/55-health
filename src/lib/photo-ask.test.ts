@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  PHOTO_ASK_FREE_DAILY,
   PHOTO_ASK_QUESTION_MAX,
   normalizePhotoAskResult,
   photoAskSpeech,
@@ -50,7 +49,6 @@ describe("拍照問暖暖：整理模型回覆", () => {
   it("書本帶來的長問題（菜單翻譯＋飲食需要約 80 字）不會被截斷", () => {
     const q = "請翻譯照片裡這段菜單的菜名與主要食材，用簡單中文。如果不確定，請說明不確定的部分。 我的飲食需要：少油、不要太辣";
     expect(sanitizeAskText(q, PHOTO_ASK_QUESTION_MAX)).toBe(q);
-    expect(PHOTO_ASK_FREE_DAILY).toBe(5);
   });
 
   it("什麼都沒有 → 當作失敗（不要顯示空白卡片）", () => {

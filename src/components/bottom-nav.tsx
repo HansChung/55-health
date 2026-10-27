@@ -7,21 +7,20 @@ interface BottomNavProps {
   tab: Tab;
   setTab: (t: Tab) => void;
   onCamera: () => void;
-  onVoice: () => void;
 }
 
-export function BottomNav({ tab, setTab, onCamera, onVoice }: BottomNavProps) {
+// 「對話」搬到「功能 → 問暖暖」和首頁（跟暖暖說話）；這一格改成全部功能
+export function BottomNav({ tab, setTab, onCamera }: BottomNavProps) {
   const tabs = [
     { id: "home" as const, label: "首頁", icon: "home" },
     { id: "history" as const, label: "日記", icon: "calendar" },
     { id: "camera" as const, label: "", icon: "camera", fab: true },
-    { id: "voice" as const, label: "對話", icon: "mic" },
+    { id: "features" as const, label: "功能", icon: "keypad" },
     { id: "profile" as const, label: "我的", icon: "user" },
   ];
 
   const handle = (id: string) => {
     if (id === "camera") return onCamera();
-    if (id === "voice") return onVoice();
     setTab(id as Tab);
   };
 

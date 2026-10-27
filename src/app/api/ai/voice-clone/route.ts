@@ -6,6 +6,7 @@
 // 錄音只轉成 WAV 送去平台，我們不保存原始錄音
 // ────────────────────────────────────────────────
 import { takeUserAudio, UserUploadError } from "@/lib/ai/user-uploads-server";
+import type { PlanAccess } from "@/lib/plan-access-server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
@@ -74,11 +75,12 @@ async function currentUser() {
   return user;
 }
 
-async function buildStatus(userId: string, tier: string): Promise<MyVoiceStatus> {
+async function buildStatus(userId: string, access: PlanAccess): Promise<MyVoiceStatus> {
+  const tier = access.tier;
   const admin = createSupabaseAdmin();
-  const [row, remaining] = await Promise.all([loadActiveVoice(admin, userId), remainingClones(admin, userId)]);
+  const [row, remaining] = await Promise.all([loadActiveVoice(admin, userId), remainingClones(admin, userId, access.limit("voice_clones_30d"))]);
   return {
-    allowed: voiceCloneAllowed(tier),
+    allowed: voiceCloneAllowed(access),
     voice: row ? toMyVoice(row) : null,
     remaining: tier === "admin" ? Math.max(remaining, 1) : remaining,
   };
@@ -87,9 +89,9 @@ async function buildStatus(userId: string, tier: string): Promise<MyVoiceStatus>
 export async function GET() {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "未登入" }, { status: 401 });
-  const { tier } = await checkUserQuota(user.id, "video");
+  const { access } = await checkUserQuota(user.id, "video");
   try {
-    return NextResponse.json({ status: await buildStatus(user.id, tier) });
+    return NextResponse.json({ status: await buildStatus(user.id, access) });
   } catch (e) {
     // 還沒跑 add-narration-voices.sql：當作沒有錄過
     console.warn("[api] voice clone status:", e instanceof Error ? e.message : e);
@@ -104,8 +106,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "這個功能還在準備中，請稍後再試" }, { status: 503 });
   }
 
-  const { tier } = await checkUserQuota(user.id, "video");
-  if (!voiceCloneAllowed(tier)) {
+  const { tier, access } = await checkUserQuota(user.id, "video");
+  if (!voiceCloneAllowed(access)) {
     return NextResponse.json(
       { error: "用自己的聲音念是專業版功能，升級後就可以使用", upgradeUrl: "/pricing" },
       { status: 403 }
@@ -132,7 +134,7 @@ export async function POST(req: NextRequest) {
   } else {
     raw = Buffer.from(body.audio!.match(AUDIO_DATA_URL)![1], "base64");
   }
-  if (tier !== "admin" && (await remainingClones(admin, user.id)) <= 0) {
+  if (tier !== "admin" && (await remainingClones(admin, user.id, access.limit("voice_clones_30d"))) <= 0) {
     return NextResponse.json({ error: "這個月重錄的次數用完了，下個月再來錄喔" }, { status: 429 });
   }
 
@@ -175,7 +177,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
   }
   const dropReservation = () => admin.from("voice_clones").delete().eq("id", cloneId).then(() => undefined);
-  if (tier !== "admin" && !(await reservationWithinLimit(admin, user.id, cloneId))) {
+  if (tier !== "admin" && !(await reservationWithinLimit(admin, user.id, cloneId, access.limit("voice_clones_30d")))) {
     await dropReservation();
     return NextResponse.json({ error: "這個月重錄的次數用完了，下個月再來錄喔" }, { status: 429 });
   }
@@ -252,7 +254,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
   }
 
-  return NextResponse.json({ status: await buildStatus(user.id, tier) });
+  return NextResponse.json({ status: await buildStatus(user.id, access) });
 }
 
 export async function DELETE() {
@@ -268,6 +270,6 @@ export async function DELETE() {
     console.error("[api] voice clone delete:", error);
     return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
   }
-  const { tier } = await checkUserQuota(user.id, "video");
-  return NextResponse.json({ status: await buildStatus(user.id, tier) });
+  const { access } = await checkUserQuota(user.id, "video");
+  return NextResponse.json({ status: await buildStatus(user.id, access) });
 }

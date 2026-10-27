@@ -17,11 +17,16 @@ import { enableWebPush, hasWebPushSubscription, isWebPushSupported } from "@/lib
 import { TravelMontageForm } from "@/components/travel-montage-form";
 import { VideoComments } from "@/components/video-comments";
 import { MvComposerSheet } from "@/components/mv-composer-sheet";
+import { YearlyComposer } from "@/components/yearly-composer";
+import { GreetingComposer } from "@/components/greeting-composer";
+import { yearlyProgressLabel } from "@/lib/travel-yearly";
 import { DictationButton } from "@/components/dictation-button";
 import { appendDictation } from "@/lib/dictation";
 import { publicAppOrigin } from "@/lib/study-tours";
 import { NarrationVoicePicker, myVoiceReady } from "@/components/narration-voice-picker";
 import { MyVoiceSheet } from "@/components/my-voice-sheet";
+import { featureEnabled, requiredTierLabel } from "@/lib/feature-gates";
+import { videoSaveName } from "@/lib/travel-video";
 import {
   DEFAULT_NARRATION_ACCENT,
   MY_VOICE,
@@ -30,6 +35,7 @@ import {
   TRAVEL_VIDEO_PLACE_MAX,
   TRAVEL_VIDEO_STYLES,
   checkVideoImageSize,
+  isCompilationKind,
   isTravelVideoPending,
   montageProgressLabel,
   mvProgressLabel,
@@ -44,11 +50,14 @@ import {
   type TravelVideoStatus,
   type TravelVideoStyleId,
 } from "@/lib/travel-video";
+import { SaveToPhoneButton } from "@/components/save-to-phone-button";
 
 const POLL_MS = 10_000;
 
 interface TravelVideoScreenProps {
   onBack: () => void;
+  /** 推播／深連結指定先打開哪個分頁（例如 ?open=travel-video&mode=yearly） */
+  initialMode?: "single" | "montage" | "mv" | "yearly" | "greeting" | null;
 }
 
 function imageSize(src: string): Promise<{ width: number; height: number }> {
@@ -91,7 +100,7 @@ const sectionTitle: React.CSSProperties = {
   fontSize: "var(--fs-base)", fontWeight: 800, color: "var(--ink-1)", margin: "24px 0 12px",
 };
 
-export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
+export function TravelVideoScreen({ onBack, initialMode }: TravelVideoScreenProps) {
   const toast = useToast();
   const [videos, setVideos] = useState<TravelVideo[]>([]);
   const [quota, setQuota] = useState<TravelVideoQuota | null>(null);
@@ -100,7 +109,15 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
   const [mvQuota, setMvQuota] = useState<TravelVideoQuota | null>(null);
   const [mvFor, setMvFor] = useState<TravelVideo | null>(null);
   // 一張照片（AI 影片平台做動畫）／多張照片遊記（自己伺服器做）
-  const [mode, setMode] = useState<"single" | "montage" | "mv">("single");
+  // 後台關掉的分頁不顯示（單張／遊記／MV）；一打開就落在第一個開著的分頁
+  const modes = ([
+    { id: "single", feature: "travel_video", emoji: "🎬", label: "一張照片", desc: "照片動起來" },
+    { id: "montage", feature: "travel_montage", emoji: "📚", label: "多張照片", desc: "做成遊記" },
+    { id: "mv", feature: "travel_mv", emoji: "🎵", label: "做 MV", desc: "遊記寫成歌" },
+    { id: "yearly", feature: "travel_yearly", emoji: "📅", label: "年度回憶", desc: "一年串一支" },
+    { id: "greeting", feature: "greeting_video", emoji: "🎁", label: "祝福影片", desc: "送給家人" },
+  ] as const).filter((m) => featureEnabled(m.feature));
+  const [mode, setMode] = useState<"single" | "montage" | "mv" | "yearly" | "greeting">(() => (initialMode && modes.some((m) => m.id === initialMode) ? initialMode : modes[0]?.id ?? "single"));
   const [enabled, setEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
@@ -150,7 +167,13 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
           const montage = v.kind === "montage";
           if (v.status === "succeeded") {
             toast.success(
-              v.kind === "mv"
+              v.kind === "greeting"
+                ? "祝福影片做好了！可以播放、傳給要祝福的人"
+                : v.kind === "tour"
+                ? "研學團遊記做好了！可以播放、分享給家人"
+                : v.kind === "yearly"
+                ? "年度回憶影片做好了！可以播放、分享給家人"
+                : v.kind === "mv"
                 ? "MV 做好了！可以播放、分享給家人"
                 : montage
                   ? "遊記影片做好了！可以播放、分享給家人"
@@ -159,7 +182,13 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
           }
           else if (v.status === "failed") {
             toast.info(
-              v.kind === "mv"
+              v.kind === "greeting"
+                ? "祝福影片沒做成功，不會扣次數，請再做一次"
+                : v.kind === "tour"
+                ? "研學團遊記沒做成功，不會扣次數，請再做一次"
+                : v.kind === "yearly"
+                ? "年度回憶影片沒做成功，不會扣次數，請再做一次"
+                : v.kind === "mv"
                 ? "有一支 MV 沒做成功，不會扣次數，請再做一次"
                 : montage
                   ? "有一支遊記沒做成功，不會扣次數，請再做一次"
@@ -403,8 +432,10 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
 
   const handleShare = async (v: TravelVideo) => {
     if (!v.video_url) return;
-    const kindLabel = v.kind === "montage" ? "遊記影片" : "出遊回憶影片";
-    const text = `我用暖暖做了一支${kindLabel}${v.place ? `（${v.place}）` : ""}，給你看看！`;
+    const kindLabel = v.kind === "montage" ? "遊記影片" : v.kind === "yearly" ? "年度回憶影片" : v.kind === "tour" ? "研學團遊記" : v.kind === "greeting" ? "祝福影片" : "出遊回憶影片";
+    const text = v.kind === "greeting" && v.yearly?.title
+      ? `${v.yearly.title}！我用暖暖做了一支祝福影片給你 🎁`
+      : `我用暖暖做了一支${kindLabel}${v.place ? `（${v.place}）` : ""}，給你看看！`;
     // 分享頁（LINE 會顯示縮圖和標題，打開就能播放；家人還能按讚留言）。App 裡 origin 是 localhost → 用正式網址
     const url = `${publicAppOrigin(process.env.NEXT_PUBLIC_APP_URL, window.location.origin)}${videoSharePath(v.id)}`;
     trackEvent("travel_video_share", { style: v.style, kind: v.kind });
@@ -417,7 +448,7 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
       toast.success("已複製影片連結，可以貼到 LINE 給家人");
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") return; // 自己取消分享
-      toast.error("分享沒成功，可以改用「存到手機」再傳給家人");
+      toast.error("分享沒成功，可以改用「存到手機相簿」再傳給家人");
     }
   };
 
@@ -470,6 +501,10 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
             <>拍一張出遊的照片，暖暖幫你變成 <strong>{TRAVEL_VIDEO_DURATION_SECONDS} 秒小影片</strong>，傳給家人一起看！</>
           ) : mode === "montage" ? (
             <>選幾張出遊照片，暖暖做成<strong>有配音、有字幕的遊記影片</strong>，照片會慢慢移動！</>
+          ) : mode === "greeting" ? (
+            <>生日、過年、母親節……放幾張照片、每張一句祝福，暖暖做成<strong>有字幕、有配樂的祝福影片</strong>，傳給孫子、家人！</>
+          ) : mode === "yearly" ? (
+            <>把這一年的遊記、出遊影片、故事照片<strong>串成一支年度回憶影片</strong>，有字幕、有配樂，過年放給家人看！</>
           ) : (
             <>把做好的遊記寫成<strong>一首歌</strong>（國語、台語都可以），配上遊記的照片做成 2～3 分鐘的 MV！</>
           )}
@@ -481,7 +516,7 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
           {mode === "mv" && mvQuota && (
             <div style={{ marginTop: 6, fontWeight: 700, color: "var(--primary-deep)" }}>
               {mvQuota.limit === 0
-                ? "專業版功能（每月 6 首）"
+                ? `${requiredTierLabel("travel_mv")}功能，升級後就可以做`
                 : mvQuota.limit >= 9999
                   ? "管理員不限次數"
                   : `本月還可以做 ${Math.max(0, mvQuota.limit - mvQuota.used)} 首（共 ${mvQuota.limit} 首）`}
@@ -496,12 +531,9 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
       </div>
 
       {/* 一張／多張 */}
-      <div role="tablist" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 16 }}>
-        {([
-          { id: "single", emoji: "🎬", label: "一張照片", desc: "照片動起來" },
-          { id: "montage", emoji: "📚", label: "多張照片", desc: "做成遊記" },
-          { id: "mv", emoji: "🎵", label: "做 MV", desc: "遊記寫成歌" },
-        ] as const).map((m) => (
+      {modes.length > 1 && (
+      <div role="tablist" style={{ display: "grid", gridTemplateColumns: `repeat(${modes.length === 4 ? 2 : modes.length >= 5 ? 3 : modes.length}, 1fr)`, gap: 8, marginTop: 16 }}>
+        {modes.map((m) => (
           <button
             key={m.id}
             role="tab"
@@ -519,8 +551,28 @@ export function TravelVideoScreen({ onBack }: TravelVideoScreenProps) {
           </button>
         ))}
       </div>
+      )}
 
-      {mode === "mv" ? (
+      {mode === "greeting" ? (
+        <GreetingComposer
+          pending={videos.some((v) => v.kind === "greeting" && isTravelVideoPending(v.status))}
+          onCreated={(video) => {
+            lastStatus.current[video.id] = video.status;
+            setVideos((prev) => [video, ...prev]);
+            toast.success("開始做了！做好會通知你，可以先離開這個畫面");
+          }}
+        />
+      ) : mode === "yearly" ? (
+        <YearlyComposer
+          pendingYearly={videos.some((v) => v.kind === "yearly" && isTravelVideoPending(v.status))}
+          onMakeMontage={() => setMode("montage")}
+          onCreated={(video) => {
+            lastStatus.current[video.id] = video.status;
+            setVideos((prev) => [video, ...prev]);
+            toast.success("開始做了！做好會通知你，可以先離開這個畫面");
+          }}
+        />
+      ) : mode === "mv" ? (
         <MvPicker
           montages={videos.filter((v) => v.kind === "montage" && v.status === "succeeded" && v.video_url)}
           onPick={(v) => setMvFor(v)}
@@ -827,6 +879,10 @@ function VideoCard({
   const pending = isTravelVideoPending(v.status);
   const montage = v.kind === "montage";
   const mv = v.kind === "mv";
+  // 年度回憶、全團遊記、祝福影片同一套剪輯
+  const yearly = isCompilationKind(v.kind);
+  const greeting = v.kind === "greeting";
+  const tour = v.kind === "tour";
   const [showLyrics, setShowLyrics] = useState(false);
 
   return (
@@ -870,15 +926,17 @@ function VideoCard({
                   }}
                 />
                 <div role="status">
-                  {mv && v.mv_progress
+                  {yearly && v.yearly_progress
+                    ? yearlyProgressLabel(v.yearly_progress)
+                    : mv && v.mv_progress
                     ? mvProgressLabel(v.mv_progress)
                     : montage && v.montage_progress
                       ? montageProgressLabel(v.montage_progress)
                       : "暖暖正在做影片…"}
                 </div>
                 <div style={{ fontWeight: 500, fontSize: "var(--fs-xs)" }}>
-                  {mv
-                    ? "通常 5～10 分鐘，可以先去做別的事，做好會通知你"
+                  {mv || yearly
+                    ? "通常 5～15 分鐘，可以先去做別的事，做好會通知你"
                     : montage
                       ? "通常 1～3 分鐘，停在這頁會做得比較快"
                       : "通常要 5～60 分鐘，可以先去做別的事"}
@@ -886,9 +944,9 @@ function VideoCard({
               </>
             ) : (
               <div role="status">
-                {mv ? "這支 MV 沒做成功（不會扣次數）" : montage ? "這支遊記沒做成功（不會扣次數）" : "這支沒做成功（不會扣次數）"}
+                {yearly ? `${greeting ? "祝福影片" : tour ? "研學團遊記" : "年度回憶影片"}沒做成功（不會扣次數）` : mv ? "這支 MV 沒做成功（不會扣次數）" : montage ? "這支遊記沒做成功（不會扣次數）" : "這支沒做成功（不會扣次數）"}
                 <br />
-                {mv || montage ? "請再做一次" : "換張照片再試試"}
+                {mv || montage || yearly ? "請再做一次" : "換張照片再試試"}
               </div>
             )}
           </div>
@@ -896,9 +954,11 @@ function VideoCard({
       )}
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, fontSize: "var(--fs-sm)", color: "var(--ink-2)" }}>
-        <span aria-hidden="true">{mv ? "🎵" : montage ? "📚" : styleMeta?.emoji ?? "🎬"}</span>
+        <span aria-hidden="true">{greeting ? "🎁" : tour ? "🧭" : yearly ? "📅" : mv ? "🎵" : montage ? "📚" : styleMeta?.emoji ?? "🎬"}</span>
         <span style={{ fontWeight: 700, color: "var(--ink-1)" }}>
-          {mv
+          {yearly
+            ? `${greeting ? "祝福影片" : tour ? "研學團遊記" : "年度回憶"}：${v.yearly?.title ?? ""}`
+            : mv
             ? `MV：${v.mv?.title ?? ""}${v.place ? `（${v.place}）` : ""}`
             : v.place || (montage ? `遊記影片（${v.montage_lines?.length ?? 0} 張）` : styleMeta?.label || "出遊影片")}
           {mv && v.mv?.is_variant && (
@@ -944,13 +1004,7 @@ function VideoCard({
           <button onClick={onShare} className="btn-primary" style={{ width: "100%", fontSize: "var(--fs-base)", minHeight: 56 }}>
             📤 分享給家人
           </button>
-          <a
-            href={v.download_url ?? v.video_url}
-            className="btn-ghost"
-            style={{ width: "100%", boxSizing: "border-box", textDecoration: "none" }}
-          >
-            ⬇️ 存到手機
-          </a>
+          <SaveToPhoneButton url={v.video_url} mime="video/mp4" name={`暖暖-${videoSaveName(v)}`} where="my_video" />
           {montage && onMakeMv && (
             <button onClick={onMakeMv} className="btn-ghost" style={{ width: "100%", fontSize: "var(--fs-base)" }}>
               🎵 把這趟寫成一首歌（MV）

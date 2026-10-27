@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Mascot } from "@/components/mascot";
 import { Icon } from "@/components/icons";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 import { useBrand } from "@/hooks/use-brand";
+import { lineErrorMessage } from "@/lib/line-login";
 
 interface LoginScreenProps {
   onDone: () => void;
@@ -18,6 +19,33 @@ export function LoginScreen({ onDone }: LoginScreenProps) {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // LINE 登入有設定好才顯示按鈕
+  const [lineEnabled, setLineEnabled] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/line", { credentials: "same-origin" })
+      .then((r) => r.json())
+      .then((d: { configured?: boolean }) => setLineEnabled(Boolean(d.configured)))
+      .catch(() => setLineEnabled(false));
+    // LINE／Google 登入沒成功轉回來：顯示原因，網址上的代碼拿掉
+    const url = new URL(window.location.href);
+    const lineErr = lineErrorMessage(url.searchParams.get("line_error"));
+    const authErr = url.searchParams.get("auth_error");
+    if (lineErr) setError(lineErr);
+    else if (authErr) setError("登入沒有成功，請再試一次，或改用 Email 登入。");
+    if (lineErr || authErr) {
+      url.searchParams.delete("line_error");
+      url.searchParams.delete("auth_error");
+      const qs = url.searchParams.toString();
+      window.history.replaceState({}, "", url.pathname + (qs ? `?${qs}` : ""));
+    }
+  }, []);
+
+  const signInWithLine = () => {
+    setError("");
+    setLoading(true);
+    window.location.href = "/api/auth/line/start?mode=login&next=/";
+  };
 
   const sendOtp = async () => {
     setError("");
@@ -71,6 +99,8 @@ export function LoginScreen({ onDone }: LoginScreenProps) {
       position: "absolute", inset: 0, zIndex: 70,
       background: "linear-gradient(180deg, #FFF3DF 0%, var(--bg) 70%)",
       display: "flex", flexDirection: "column", paddingTop: 16,
+      // 矮的手機或字放大時，下面的 Email 登入要捲得到
+      overflowY: "auto", WebkitOverflowScrolling: "touch",
     }}>
       {step === "email" && (
         <>
@@ -97,6 +127,37 @@ export function LoginScreen({ onDone }: LoginScreenProps) {
           </div>
 
           <div style={{ padding: "24px 24px 32px", display: "flex", flexDirection: "column", gap: 14 }}>
+            {/* LINE 登入（長輩多半有 LINE，不用記密碼、不用收驗證碼） */}
+            {lineEnabled && (
+              <button
+                onClick={signInWithLine}
+                disabled={loading}
+                style={{
+                  width: "100%", padding: "18px",
+                  background: "#06C755",
+                  border: "none",
+                  borderRadius: "var(--r-pill)",
+                  fontSize: "var(--fs-base)", fontWeight: 800,
+                  color: "#fff",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 12,
+                  cursor: "pointer", opacity: loading ? 0.5 : 1,
+                  boxShadow: "var(--shadow-sm)",
+                }}
+              >
+                <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
+                  <path fill="#fff" d="M12 3C6.48 3 2 6.58 2 11c0 3.95 3.56 7.26 8.37 7.88.33.07.77.22.88.5.1.25.07.65.03.9l-.14.86c-.04.25-.2.99.87.54 1.07-.45 5.77-3.4 7.87-5.82C21.32 14.27 22 12.72 22 11c0-4.42-4.48-8-10-8z" />
+                  <path fill="#06C755" d="M7.2 13.2H5.6V8.9h.9v3.5h.7zm1.7 0H8V8.9h.9zm3.9 0h-.8l-1.6-2.3v2.3h-.9V8.9h.8l1.6 2.3V8.9h.9zm3 0h-2.4V8.9h2.4v.8h-1.5v.9h1.5v.8h-1.5v.9h1.5z" />
+                </svg>
+                {loading ? "登入中…" : "用 LINE 登入"}
+              </button>
+            )}
+            {lineEnabled && (
+              <p style={{ fontSize: "var(--fs-xs)", color: "var(--ink-3)", textAlign: "center", margin: "-4px 0 0", lineHeight: 1.5 }}>
+                用 LINE 登入時，經你同意後會取得 LINE 名稱和大頭貼（有提供 Email 的話也會取得），只用來建立帳號、寄健康報告與安全通知，不會寄廣告。
+                <a href="/privacy#line-login" style={{ color: "var(--primary-deep)", marginLeft: 4 }}>隱私權政策</a>
+              </p>
+            )}
+
             {/* Google 登入 */}
             <button
               onClick={signInWithGoogle}

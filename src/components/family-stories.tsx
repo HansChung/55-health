@@ -7,13 +7,17 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api-client";
 import { VideoComments } from "@/components/video-comments";
+import { StoryAudiobook } from "@/components/story-audiobook";
 import type { LifeStory } from "@/lib/life-stories";
+import { formatAudioDuration } from "@/lib/story-audio";
 
 type Elder = { elder_id: string; name: string; stories: LifeStory[] };
 
 export function FamilyStories() {
   const [elders, setElders] = useState<Elder[] | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
+  // 正在聽哪一位長輩的有聲書
+  const [listening, setListening] = useState<Elder | null>(null);
 
   useEffect(() => {
     api.familyStories()
@@ -26,6 +30,26 @@ export function FamilyStories() {
   return (
     <section style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 24 }} aria-label="長輩的故事">
       <div style={{ fontSize: "var(--fs-lg)", fontWeight: 800 }}>📖 長輩的故事</div>
+      {elders.filter((e) => e.stories.length > 0).map((e) => (
+        <button key={`book-${e.elder_id}`} type="button" className="btn-ghost" style={{ width: "100%", minHeight: 56 }} onClick={() => setListening(e)}>
+          🎧 聽{e.name}的回憶錄有聲書（{e.stories.length} 篇）
+        </button>
+      ))}
+      {listening && (
+        <StoryAudiobook
+          stories={listening.stories}
+          title={`${listening.name}的回憶錄`}
+          author={listening.name}
+          onClose={() => setListening(null)}
+          onRefresh={() =>
+            api.familyStories().then((r) => {
+              setElders(r.elders);
+              const fresh = r.elders.find((x) => x.elder_id === listening.elder_id)?.stories ?? [];
+              return fresh;
+            })
+          }
+        />
+      )}
       {elders.map((e) =>
         e.stories.map((s) => {
           const open = openId === s.id;
@@ -40,22 +64,31 @@ export function FamilyStories() {
                 {s.photos[0] ? (
                   <img src={s.photos[0].url} alt="" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 10, flexShrink: 0 }} />
                 ) : (
-                  <span style={{ fontSize: 28 }} aria-hidden="true">📖</span>
+                  <span style={{ fontSize: 28 }} aria-hidden="true">{s.audio ? "🎧" : "📖"}</span>
                 )}
                 <span style={{ flex: 1 }}>
                   <span style={{ display: "block", fontWeight: 800, color: "var(--ink-1)" }}>{e.name}・{s.title}</span>
                   <span style={{ display: "block", fontSize: "var(--fs-xs)", color: "var(--ink-3)" }}>
-                    {s.era ? `${s.era}・` : ""}{new Date(s.created_at).toLocaleDateString("zh-TW", { month: "numeric", day: "numeric" })}
+                    {s.audio ? `🎧 ${formatAudioDuration(s.audio.seconds)}・` : ""}{s.era ? `${s.era}・` : ""}{new Date(s.created_at).toLocaleDateString("zh-TW", { month: "numeric", day: "numeric" })}
                   </span>
                 </span>
-                <span style={{ color: "var(--ink-3)" }}>{open ? "收起" : "閱讀"}</span>
+                <span style={{ color: "var(--ink-3)" }}>{open ? "收起" : s.audio || (s.voice_reading && !s.voice_reading.outdated) ? "收聽" : "閱讀"}</span>
               </button>
               {open && (
                 <>
                   {s.photos.map((p, i) => (
                     <img key={i} src={p.url} alt="" style={{ width: "100%", maxHeight: 320, objectFit: "contain", borderRadius: "var(--r-md)", background: "var(--bg-deep)" }} />
                   ))}
-                  <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.85 }}>{s.body}</div>
+                  {s.audio && <audio controls preload="metadata" src={s.audio.url} style={{ width: "100%" }} />}
+                  {s.voice_reading && !s.voice_reading.outdated && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)" }}>
+                        🎙️ 用{e.name}的聲音念（AI 合成・{formatAudioDuration(s.voice_reading.seconds)}）
+                      </div>
+                      <audio controls preload="metadata" src={s.voice_reading.url} style={{ width: "100%" }} />
+                    </div>
+                  )}
+                  {s.body && <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.85 }}>{s.body}</div>}
                 </>
               )}
               <VideoComments kind="story" videoId={s.id} initial={s.comments} viewer="family" />

@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
     "/api/ai/travel-video": ["./node_modules/ffmpeg-static/ffmpeg", "./public/music/*.m4a"],
     // 多張照片遊記：建立後在背景先開始做（配音、剪輯要用 ffmpeg）
     "/api/ai/travel-video/montage": ["./node_modules/ffmpeg-static/ffmpeg", "./public/music/*.m4a"],
+    "/api/ai/travel-video/yearly": ["./node_modules/ffmpeg-static/ffmpeg", "./public/music/*.m4a"],
+    "/api/ai/travel-video/greeting": ["./node_modules/ffmpeg-static/ffmpeg", "./public/music/*.m4a"],
+    "/api/study-tours/[id]/album/video": ["./node_modules/ffmpeg-static/ffmpeg", "./public/music/*.m4a"],
     "/api/cron/montage-step": ["./node_modules/ffmpeg-static/ffmpeg", "./public/music/*.m4a"],
     // 遊記 MV：建立後在背景先開始等歌、轉檔、剪輯
     "/api/ai/travel-video/[id]/mv": ["./node_modules/ffmpeg-static/ffmpeg"],
@@ -18,6 +21,11 @@ const nextConfig: NextConfig = {
     "/api/ai/travel-video/narration": ["./node_modules/ffmpeg-static/ffmpeg"],
     // 語音留言：瀏覽器錄音 → m4a
     "/api/ai/travel-video/[id]/comments": ["./node_modules/ffmpeg-static/ffmpeg"],
+    // 聲音故事：App 裡錄的 webm → m4a
+    "/api/stories": ["./node_modules/ffmpeg-static/ffmpeg"],
+    "/api/stories/[id]/voice": ["./node_modules/ffmpeg-static/ffmpeg"],
+    "/api/ai/voice-turn": ["./node_modules/ffmpeg-static/ffmpeg"],
+    "/api/ai/transcribe": ["./node_modules/ffmpeg-static/ffmpeg"],
   },
   // Capacitor build 時透過 BUILD_TARGET=mobile 切換成 static export
   ...(process.env.BUILD_TARGET === "mobile" && {

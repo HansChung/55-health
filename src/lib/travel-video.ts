@@ -167,8 +167,6 @@ export const NARRATION_VOICE_CHOICES = [...NARRATION_VOICE_IDS, MY_VOICE] as [
 /** 錄音複製聲音：平台要求至少 10 秒，太長也沒幫助（建議 10～60 秒） */
 export const VOICE_SAMPLE_MIN_SECONDS = 12;
 export const VOICE_SAMPLE_MAX_SECONDS = 60;
-/** 每 30 天最多重錄幾次（每個新聲音第一次使用都要付一次啟用費） */
-export const VOICE_CLONES_PER_30_DAYS = 2;
 /** 錄音時請長輩念這段（開頭是同意聲明，後面讓錄音夠長、有各種聲調） */
 export const VOICE_SAMPLE_SCRIPT =
   "我同意暖暖用我自己的聲音，念我自己的出遊影片。今天天氣很好，我們一家人去山上走走，看到好多花，風景好漂亮。中午吃了一碗熱熱的麵，下午在湖邊喝茶聊天，下次還要再來。";
@@ -272,23 +270,18 @@ export function checkVideoImageSize(
   return { ok: true };
 }
 
-/**
- * 每月影片支數預設值（subscription_plans.ai_video_quota 沒設定時用）
- * 邁笙 minimax-h3 768P 0.095 算力/秒 → 一支 10 秒約 0.95 算力（晚上 10 點後有折扣）
- */
-export const DEFAULT_VIDEO_QUOTA: Record<string, number> = {
-  free: 0,
-  basic: 2,
-  pro: 6,
-};
-
-export function defaultVideoQuota(tier: string): number {
-  return DEFAULT_VIDEO_QUOTA[tier] ?? 0;
-}
+// 每月影片、遊記、MV 支數：後台「方案與次數」（video_monthly／montage_monthly／mv_monthly，預設值見 plan-settings.ts）
 
 // ── 多張照片遊記影片（montage）：照片慢慢移動＋每張一句配音與字幕，伺服器 ffmpeg 合成 ──
 
-export type TravelVideoKind = "single" | "montage" | "mv";
+export type TravelVideoKind = "single" | "montage" | "mv" | "yearly" | "tour" | "greeting";
+
+/** 合輯影片：年度回憶、全團遊記、祝福影片——同一套剪輯（照片＋字幕＋曲庫配樂），狀態都在 travel_videos.yearly */
+export const COMPILATION_KINDS = ["yearly", "tour", "greeting"] as const;
+export type CompilationKind = (typeof COMPILATION_KINDS)[number];
+export function isCompilationKind(kind: string | null | undefined): kind is CompilationKind {
+  return (COMPILATION_KINDS as readonly string[]).includes(kind ?? "");
+}
 export const MONTAGE_MIN_PHOTOS = 3;
 export const MONTAGE_MAX_PHOTOS = 5;
 /** 一次送出的照片（base64 data URL）合計上限：Vercel request body 上限 4.5MB */
@@ -298,16 +291,6 @@ export const MONTAGE_CLIENT_TARGET_CHARS = 3_800_000;
 /** 每張照片的一句話：約 2.2 字／秒 → 最多約 9 秒 */
 export const MONTAGE_LINE_MAX = 20;
 
-/** 每月遊記支數（只花配音費，一支約 0.1 算力） */
-export const DEFAULT_MONTAGE_QUOTA: Record<string, number> = { free: 0, basic: 10, pro: 30 };
-/** 遊記 MV（Suno 做歌，每首約 0.54 算力）：只給專業版 */
-export const DEFAULT_MV_QUOTA: Record<string, number> = { free: 0, basic: 0, pro: 6 };
-export function mvQuota(tier: string): number {
-  return DEFAULT_MV_QUOTA[tier] ?? 0;
-}
-export function montageQuota(tier: string): number {
-  return DEFAULT_MONTAGE_QUOTA[tier] ?? 0;
-}
 
 export function sanitizeMontageLine(text: string | null | undefined): string {
   return [...sanitizeNarration(text)].slice(0, MONTAGE_LINE_MAX).join("");
@@ -584,6 +567,9 @@ export interface TravelVideo {
     alt_available: boolean;
   } | null;
   mv_progress?: { stage: MvStage; done: number; total: number } | null;
+  /** 年度回憶影片：年份、標題、製作進度 */
+  yearly?: { year: number; title: string } | null;
+  yearly_progress?: { stage: import("./travel-yearly").YearlyStage; done: number; total: number } | null;
 }
 
 /** 試聽過的口白（音檔已存在伺服器，送出影片時帶 id） */
@@ -611,13 +597,25 @@ export function videoSharePath(id: string): string {
 }
 
 /** 分享頁的標題與說明（LINE／FB 預覽用）。不放長輩的名字：連結可能被轉傳出去 */
-export function videoShareMeta(v: Pick<TravelVideo, "kind" | "place" | "narration_text" | "montage_lines"> & { mv?: TravelVideo["mv"] }): {
+export function videoShareMeta(
+  v: Pick<TravelVideo, "kind" | "place" | "narration_text" | "montage_lines"> & { mv?: TravelVideo["mv"]; yearly?: TravelVideo["yearly"] }
+): {
   title: string;
   description: string;
 } {
-  const what = v.kind === "mv" ? "MV" : v.kind === "montage" ? "遊記影片" : "出遊回憶影片";
+  const what = v.kind === "mv" ? "MV" : v.kind === "montage" ? "遊記影片" : v.kind === "yearly" ? "年度回憶影片" : v.kind === "tour" ? "研學團遊記" : v.kind === "greeting" ? "祝福影片" : "出遊回憶影片";
   const title =
-    v.kind === "mv" && v.mv?.title ? `🎵 ${v.mv.title}${v.place ? `・${v.place}` : ""}` : v.place ? `${v.place}・${what}` : what;
+    v.kind === "greeting" && v.yearly?.title
+      ? `🎁 ${v.yearly.title}`
+      : v.kind === "yearly" && v.yearly?.title
+      ? `📅 ${v.yearly.title}`
+      : v.kind === "tour" && v.yearly?.title
+      ? `🧭 ${v.yearly.title}・研學團遊記`
+      : v.kind === "mv" && v.mv?.title
+        ? `🎵 ${v.mv.title}${v.place ? `・${v.place}` : ""}`
+        : v.place
+          ? `${v.place}・${what}`
+          : what;
   const lines =
     v.kind === "mv"
       ? (v.mv?.lyrics ?? "").split("\n").filter((l) => l && !/^\[.*\]$/.test(l.trim())).slice(0, 2)
@@ -629,4 +627,15 @@ export function videoShareMeta(v: Pick<TravelVideo, "kind" | "place" | "narratio
   const said = lines.filter(Boolean).join("／");
   const description = said ? `「${said.length > 60 ? `${said.slice(0, 60)}…` : said}」用暖暖做的${what}` : `用暖暖做的${what}，點開來看看`;
   return { title, description };
+}
+
+/** 存到手機時的檔名（不含副檔名）：MV 用歌名、年度／研學團用標題、其他用地點，再加上日期 */
+export function videoSaveName(v: Pick<TravelVideo, "kind" | "place" | "created_at"> & { mv?: TravelVideo["mv"]; yearly?: TravelVideo["yearly"] }): string {
+  const d = new Date(new Date(v.created_at).getTime() + 8 * 3600_000);
+  const day = `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, "0")}${String(d.getUTCDate()).padStart(2, "0")}`;
+  const what =
+    v.kind === "mv" ? v.mv?.title || "MV"
+    : isCompilationKind(v.kind) ? v.yearly?.title || (v.kind === "tour" ? "研學團遊記" : v.kind === "greeting" ? "祝福影片" : "年度回憶")
+    : v.place || (v.kind === "montage" ? "遊記" : "出遊影片");
+  return `${what}-${day}`;
 }
