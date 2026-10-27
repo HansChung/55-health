@@ -7,7 +7,7 @@ import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
 import { readUserImage, UserUploadError } from "@/lib/ai/user-uploads-server";
 import { checkUserQuota, countMonthlyEndpointUsage, trackAiUsage } from "@/lib/ai/usage-tracker";
-import { getGeminiModel, isGeminiConfigured, parseModelJson, resolveGeminiConfig } from "@/lib/ai/gemini";
+import { getGeminiModel, isGeminiConfigured, parseModelJson, resolveGeminiConfig, modelText } from "@/lib/ai/gemini";
 import {
   MONTAGE_MAX_PHOTOS,
   MONTAGE_MAX_TOTAL_CHARS,
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
       { text: buildMontageScriptPrompt(count, sanitizePlace(body.place)) },
       ...images.map((img) => ({ inlineData: img })),
     ]);
-    const raw = parseModelJson<{ lines?: unknown }>(result.response.text()).lines;
+    const raw = parseModelJson<{ lines?: unknown }>(modelText(result.response)).lines;
     const lines = (Array.isArray(raw) ? raw : []).map((l) => sanitizeMontageLine(typeof l === "string" ? l : "")).slice(0, count);
     const usage = result.response.usageMetadata;
     const ok = lines.length === count && lines.every(Boolean);

@@ -100,6 +100,6 @@ export async function POST(req: NextRequest) {
       );
     }
     console.error("[api] AI 食物分析失敗:", msg);
-    return NextResponse.json({ error: "照片分析失敗，換一張清楚一點的再試試" }, { status: 500 });
+    return NextResponse.json({ error: "暖暖這次沒有辨識成功，請再按一次；一直不行的話稍後再試" }, { status: 500 });
   }
 }

@@ -1,5 +1,5 @@
 // 這則訊息可疑嗎？：看截圖或文字，列出詐騙疑點（看圖模型；只有文字時也用同一個模型，判斷比較穩）
-import { getGeminiModel, parseModelJson, type GeminiProvider } from "./gemini";
+import { getGeminiModel, parseModelJson, type GeminiProvider, modelText } from "./gemini";
 import { normalizeScamCheckResult, type ScamCheckResult } from "@/lib/scam-check";
 
 export function buildScamCheckPrompt(opts: { text?: string; source?: string; hasImage: boolean }): string {
@@ -57,7 +57,7 @@ export async function checkScamMessage(input: {
   const response = await model.generateContent(
     input.image ? [{ text: prompt }, { inlineData: { data: input.image.base64, mimeType: input.image.mimeType } }] : prompt
   );
-  const text = response.response.text();
+  const text = modelText(response.response);
   let result: ScamCheckResult;
   try {
     result = normalizeScamCheckResult(parseModelJson<unknown>(text));

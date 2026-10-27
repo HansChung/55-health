@@ -2,7 +2,7 @@
 // 打字問暖暖：把對話送給文字模型（有 LK888_API_KEY 走邁笙 gem-3.5-flash-lite，否則 Google 直連）
 // ────────────────────────────────────────────────
 import type { Content } from "@google/generative-ai";
-import { getGeminiModel, type GeminiProvider } from "./gemini";
+import { getGeminiModel, type GeminiProvider, modelText } from "./gemini";
 import { buildAskSystemPrompt, cleanAskReply, type AskMessage, type AskPromptContext } from "../ask";
 
 /** 摘要模式：在對話最後補一句「請整理」，讓模型照 system 的摘要規則回覆 */
@@ -32,7 +32,7 @@ export async function askNuannuan(
     systemInstruction: { role: "system", parts: [{ text: buildAskSystemPrompt(ctx) }] },
     contents: toGeminiContents(messages, ctx.mode),
   });
-  const reply = cleanAskReply(response.response.text() ?? "");
+  const reply = cleanAskReply(modelText(response.response) ?? "");
   if (!reply) throw new Error("ask: empty reply");
   const meta = response.response.usageMetadata;
   return {

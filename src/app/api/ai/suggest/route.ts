@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getGeminiModel, isGeminiConfigured, parseModelJson } from "@/lib/ai/gemini";
+import { getGeminiModel, isGeminiConfigured, parseModelJson, modelText } from "@/lib/ai/gemini";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { trackAiUsage } from "@/lib/ai/usage-tracker";
 import { taipeiDayStartIso } from "@/lib/ask";
@@ -105,7 +105,7 @@ ${meals?.length
       { text: "用戶背景：\n" + context },
     ]);
 
-    const text = result.response.text();
+    const text = modelText(result.response);
     const suggestion = parseModelJson(text);
     const usage = result.response.usageMetadata;
 

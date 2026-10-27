@@ -7,7 +7,7 @@ import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
 import { readUserImage, UserUploadError } from "@/lib/ai/user-uploads-server";
 import { checkUserQuota, countMonthlyEndpointUsage, trackAiUsage } from "@/lib/ai/usage-tracker";
-import { getGeminiModel, isGeminiConfigured, parseModelJson, resolveGeminiConfig } from "@/lib/ai/gemini";
+import { getGeminiModel, isGeminiConfigured, parseModelJson, resolveGeminiConfig, modelText } from "@/lib/ai/gemini";
 import {
   NARRATION_MAX_CHARS,
   TRAVEL_VIDEO_STYLES,
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
       { text: buildScriptPrompt(sanitizePlace(body.place), styleLabel) },
       { inlineData: { data: b64, mimeType: `image/${mime}` } },
     ]);
-    const text = sanitizeNarration(parseModelJson<{ text?: string }>(result.response.text()).text);
+    const text = sanitizeNarration(parseModelJson<{ text?: string }>(modelText(result.response)).text);
     const usage = result.response.usageMetadata;
     await trackAiUsage({
       userId: user.id,

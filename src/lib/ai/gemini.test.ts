@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { analyzeFoodImage, getGeminiModel, parseModelJson, resolveGeminiConfig } from "./gemini";
+import { analyzeFoodImage, getGeminiModel, modelText, parseModelJson, resolveGeminiConfig } from "./gemini";
 
 describe("resolveGeminiConfig", () => {
   it("有 LK888_API_KEY → 走邁笙，預設 gem-3.8-flash", () => {
@@ -143,5 +143,40 @@ describe("getGeminiModel 文字任務走邁笙", () => {
       vi.unstubAllEnvs();
       vi.unstubAllGlobals();
     }
+  });
+});
+
+describe("modelText：跳過「思考過程」段落（lk888 AM-cli 會一起回傳）", () => {
+  const response = (parts: { text?: string; thought?: boolean }[]) => ({
+    candidates: [{ content: { parts } }],
+    text: () => parts.map((p) => p.text ?? "").join(""),
+  });
+  it("只留真正的回答（2026-10-27 拍照全部失敗的實際回應）", () => {
+    expect(modelText(response([
+      { thought: true, text: "**Analyzing the Image of the Orange**\n\nOkay, the user wants me to analyze..." },
+      { text: '{"items":[{"name":"橘子"}]}' },
+    ]))).toBe('{"items":[{"name":"橘子"}]}');
+  });
+  it("沒有思考段落時照舊", () => {
+    expect(modelText(response([{ text: "您好" }, { text: "呀" }]))).toBe("您好呀");
+  });
+  it("沒有 candidates 時退回 SDK 的 text()", () => {
+    expect(modelText({ text: () => "備用" })).toBe("備用");
+  });
+});
+
+describe("parseModelJson：前後多了文字也拿得到 JSON", () => {
+  it("純 JSON、```json 區塊", () => {
+    expect(parseModelJson('{"a":1}')).toEqual({ a: 1 });
+    expect(parseModelJson('```json\n{"a":1}\n```')).toEqual({ a: 1 });
+  });
+  it("前面有說明文字", () => {
+    expect(parseModelJson('Okay, here it is:\n{"items":[{"name":"橘子"}]}')).toEqual({ items: [{ name: "橘子" }] });
+  });
+  it("前面有文字、後面是 ```json 區塊 → 取最後一個區塊", () => {
+    expect(parseModelJson('想一想 {不是 JSON}\n```json\n{"a":2}\n```')).toEqual({ a: 2 });
+  });
+  it("真的不是 JSON 還是丟錯", () => {
+    expect(() => parseModelJson("看不懂")).toThrow();
   });
 });

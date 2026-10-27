@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getGeminiModel, isGeminiConfigured, parseModelJson, resolveGeminiConfig } from "@/lib/ai/gemini";
+import { getGeminiModel, isGeminiConfigured, parseModelJson, resolveGeminiConfig, modelText } from "@/lib/ai/gemini";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
 import { imageFromRequest, UserUploadError } from "@/lib/ai/user-uploads-server";
 import { trackAiUsage, checkUserQuota } from "@/lib/ai/usage-tracker";
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
       { inlineData: { data: image.base64, mimeType: image.mimeType } },
     ]);
 
-    const text = result.response.text();
+    const text = modelText(result.response);
     let parsed: PrescriptionAnalysisResult & { error?: string };
     try {
       parsed = parseModelJson<PrescriptionAnalysisResult & { error?: string }>(text);

@@ -1,6 +1,6 @@
 // 語音對話：一段 mp3 ＋ 前文 → lk888 的 Gemini 聽懂並回答（一次呼叫）
 import type { Content } from "@google/generative-ai";
-import { getGeminiModel, type GeminiProvider } from "./gemini";
+import { getGeminiModel, type GeminiProvider, modelText } from "./gemini";
 import { buildAskSystemPrompt, type AskMessage, type AskPromptContext } from "@/lib/ask";
 import { VOICE_RULES, parseVoiceReply } from "@/lib/voice-chat";
 
@@ -22,7 +22,7 @@ export async function answerVoiceTurn(
     systemInstruction: { role: "system", parts: [{ text: buildVoiceSystemPrompt(ctx) }] },
     contents,
   });
-  const { heard, reply } = parseVoiceReply(res.response.text() ?? "");
+  const { heard, reply } = parseVoiceReply(modelText(res.response) ?? "");
   if (!reply) throw new Error("voice: empty reply");
   const meta = res.response.usageMetadata;
   return {
