@@ -1,7 +1,5 @@
 import type { ChapterOpening } from "./chapter-opening";
 
-const CH6_ACCENT = "linear-gradient(180deg, #E8F4F0 0%, #FFF8EE 55%)";
-
 export const CHAPTER_0600: ChapterOpening = {
   id: "0600",
   qrCode: "0600",
@@ -9,7 +7,6 @@ export const CHAPTER_0600: ChapterOpening = {
   subtitle: "第六章｜章節開篇",
   layout: "routes",
   headerEmoji: "🏃",
-  accentGradient: CH6_ACCENT,
   quote: "身體穩了，生活半徑也會慢慢打開。",
   atAGlance:
     "從數據導航、Mode A、Mode B 到身體會議，點亮自主、信賴與韌性。AI 是冷靜的數據翻譯者，不是醫師、監工，也不替您打分數。",
@@ -75,7 +72,6 @@ export const CHAPTER_0601: ChapterOpening = {
   subtitle: "第六章｜第一節",
   layout: "mindset-shift",
   headerEmoji: "🌱",
-  accentGradient: CH6_ACCENT,
   quote: "真正的運動不是硬撐，而是用更聰明的方式，讓身體穩定續航。",
   atAGlance:
     "運動從硬撐、流汗、比較，轉向穩定、理解與長期保養。數據不是壓力分數，只是身體留下的小提醒。",
@@ -118,7 +114,6 @@ export const CHAPTER_0602: ChapterOpening = {
   subtitle: "第六章｜第一節",
   layout: "dual-signal",
   headerEmoji: "⚖",
-  accentGradient: CH6_ACCENT,
   quote: "感覺很重要，但數據能提醒我們，看見感覺沒說完的地方。",
   atAGlance:
     "感覺與數據不是互相否定，而是彼此補充。流汗、痠痛、喘或不喘，都真實，但不一定完整。",
@@ -162,7 +157,6 @@ export const CHAPTER_0603: ChapterOpening = {
   subtitle: "第六章｜第二節 Mode A",
   layout: "ground-snap",
   headerEmoji: "📷",
-  accentGradient: CH6_ACCENT,
   quote: "不用先懂所有數據，先把身體留下的訊號保存下來。",
   atAGlance:
     "一個簡單動作，就能把身體當下的訊號留下來。跑步機、血壓計、健康 App——先拍下來，訊號才不會悄悄消失。",
@@ -206,7 +200,6 @@ export const CHAPTER_0604: ChapterOpening = {
   subtitle: "第六章｜第二節 Mode A",
   layout: "curiosity-ask",
   headerEmoji: "💬",
-  accentGradient: CH6_ACCENT,
   quote: "數字本身不是答案；被理解之後，才會成為方向。",
   atAGlance:
     "冷冰冰的數據，可以轉成自己聽得懂的身體提醒。AI 是冷靜的數據翻譯者，不是醫師，也不是監工。",
@@ -253,7 +246,6 @@ export const CHAPTER_0605: ChapterOpening = {
   subtitle: "第六章｜第二節 Mode A",
   layout: "week-rhythm",
   headerEmoji: "📅",
-  accentGradient: CH6_ACCENT,
   quote: "一次數據是提醒，一段趨勢才會慢慢形成方向。",
   atAGlance:
     "單日數字不用急著下結論，放進一週才看得出節奏。不需要每天填表，週末留下幾句話就夠。",
@@ -310,7 +302,6 @@ export const CHAPTER_0606: ChapterOpening = {
   subtitle: "第六章｜第三節 Mode B",
   layout: "kinetic-guide",
   headerEmoji: "📘",
-  accentGradient: CH6_ACCENT,
   quote: "真正的智慧陪伴，不是每次重新解釋自己，而是先把自己的節奏寫進指南裡。",
   atAGlance:
     "動能指南是默契書，不是病歷。先把目標、節奏與邊界說清楚，AI 的回應才會更貼近自己。",
@@ -356,7 +347,6 @@ export const CHAPTER_0607: ChapterOpening = {
   subtitle: "第六章｜第三節 Mode B",
   layout: "curiosity-ask",
   headerEmoji: "✨",
-  accentGradient: CH6_ACCENT,
   quote: "好的 AI 陪伴，不是工具替您決定，而是它開始懂得配合您的節奏。",
   atAGlance:
     "清楚的啟動句，可以讓 AI 根據您的指南整理提醒。重點不是工具多厲害，而是您知道怎麼讓工具配合自己。",
@@ -403,7 +393,6 @@ export const CHAPTER_0608: ChapterOpening = {
   subtitle: "第六章｜第三節 Mode B",
   layout: "week-rhythm",
   headerEmoji: "📊",
-  accentGradient: CH6_ACCENT,
   quote: "動能週報不是成績單，而是幫我們看見：身體這週如何陪我們走過來。",
   atAGlance:
     "零散身體訊號，可以整理成一份溫柔回顧：亮點、需要留意的提醒、下週一個安全低壓力的小微調。",
@@ -460,7 +449,6 @@ export const CHAPTER_0609: ChapterOpening = {
   subtitle: "第六章｜第四節",
   layout: "week-rhythm",
   headerEmoji: "🍵",
-  accentGradient: CH6_ACCENT,
   quote: "身體會議不是檢討自己，而是聽見身體後，做出下一週更溫和的決定。",
   atAGlance:
     "一個安靜的週末時刻，可以重新聽見身體。謝謝你這週陪我走過來——下週只調整一點點就好。",
@@ -516,7 +504,6 @@ export const CHAPTER_0610: ChapterOpening = {
   subtitle: "第六章｜第四節",
   layout: "atr-light",
   headerEmoji: "🔺",
-  accentGradient: CH6_ACCENT,
   quote: "真正的動能，不是一天拚到極限，而是能長久照顧自己、信任身體、穩定回來。",
   atAGlance:
     "從硬撐運動，走向更成熟的身體動能管理。A 自主、T 信賴、R 韌性——本章的動能黃金三角。",

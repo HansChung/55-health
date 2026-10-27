@@ -1,7 +1,5 @@
 import type { ChapterOpening } from "./chapter-opening";
 
-const CH2_ACCENT = "linear-gradient(180deg, #E8F5EE 0%, #FFF8EE 55%)";
-
 export const CHAPTER_0200: ChapterOpening = {
   id: "0200",
   qrCode: "0200",
@@ -9,7 +7,6 @@ export const CHAPTER_0200: ChapterOpening = {
   subtitle: "第二章｜章節開篇",
   layout: "routes",
   headerEmoji: "🌿",
-  accentGradient: CH2_ACCENT,
   quote: "看見世界、問問世界、記下世界，AI 才會成為可重複的生活節奏。",
   atAGlance:
     "這一章用一個簡單節奏，重新打開與世界相遇的方式：拍下不懂的事物、用自然的話問一句、留下真正有用的一句。牽涉食用、安全、健康或重要決定時，仍要查看可靠來源。",
@@ -51,7 +48,6 @@ export const CHAPTER_0201: ChapterOpening = {
   subtitle: "第二章",
   layout: "smart-flow",
   headerEmoji: "💃",
-  accentGradient: CH2_ACCENT,
   quote: "一拍、二問、三記下，讓 AI 成為新的生活直覺。",
   atAGlance:
     "「二問」是第二個步驟的名稱，不是規定問兩次。拍下、理解、保存串成一條可重複的流程，好奇心就變成日常動作。",
@@ -97,7 +93,6 @@ export const CHAPTER_0202: ChapterOpening = {
   subtitle: "第二章",
   layout: "vision-identify",
   headerEmoji: "🌸",
-  accentGradient: "linear-gradient(180deg, #E8F5EE 0%, transparent 55%)",
   quote: "當花有了名字，世界就多了一位朋友；重要用途仍要再查證。",
   atAGlance:
     "在不影響植物與環境的距離拍下花朵，請 AI 說明可能名稱與特徵。若牽涉食用、藥用或寵物風險，請查閱可靠圖鑑或詢問專業人員。",
@@ -154,7 +149,6 @@ export const CHAPTER_0203: ChapterOpening = {
   subtitle: "第二章",
   layout: "menu-translate",
   headerEmoji: "🍽",
-  accentGradient: "linear-gradient(180deg, #FFF0E8 0%, transparent 55%)",
   quote: "先翻譯、再問需要、現場確認，陌生菜單就能變成安心選擇。",
   atAGlance:
     "拍清楚菜單一小段，請 AI 翻譯菜名與食材，再補上清淡、少辣、過敏等需要。真正點餐前，請向現場人員確認。",
@@ -198,7 +192,6 @@ export const CHAPTER_0204: ChapterOpening = {
   subtitle: "第二章",
   layout: "product-compare",
   headerEmoji: "🏷",
-  accentGradient: CH2_ACCENT,
   quote: "AI 幫忙整理差異；需要、適合與值得，仍由您判斷。",
   atAGlance:
     "拍下公開的商品標籤或規格，請 AI 整理用途、差異與待確認事項。請勿上傳收據個資、會員或付款資訊。",
@@ -243,7 +236,6 @@ export const CHAPTER_0205: ChapterOpening = {
   subtitle: "第二章",
   layout: "curiosity-ask",
   headerEmoji: "✨",
-  accentGradient: "linear-gradient(180deg, #E8F0FA 0%, transparent 55%)",
   quote: "每天保留一個真心想問的問題，世界就會持續打開。",
   atAGlance:
     "把問題用自己的話說出來，請 AI 用簡單中文解釋，再追問與生活的關係。遇到歷史、科學、法律、醫療或最新消息，應再查看可靠來源。",
@@ -285,7 +277,6 @@ export const CHAPTER_0206: ChapterOpening = {
   subtitle: "第二章",
   layout: "vision-identify",
   headerEmoji: "🥗",
-  accentGradient: "linear-gradient(180deg, #FFF8E8 0%, transparent 55%)",
   quote: "先看懂一道菜，再做適合自己的選擇；AI 不是醫療或營養診斷。",
   atAGlance:
     "拍下餐點請 AI 整理可能食材與烹調特色。若有過敏、慢性病或特殊飲食需求，請查看標示並諮詢合格專業人員。",
@@ -342,7 +333,6 @@ export const CHAPTER_0207: ChapterOpening = {
   subtitle: "第二章",
   layout: "recipe-card",
   headerEmoji: "🌈",
-  accentGradient: CH2_ACCENT,
   quote: "少量、可回看的記錄，比一次精密卻難持續的計算更有用。",
   atAGlance:
     "用容易完成的格式記下一道料理：名稱、主要顏色、可能的蔬菜或全穀來源、一句感受。這不是健康評分，也不需要每天打卡。",
@@ -386,7 +376,6 @@ export const CHAPTER_0208: ChapterOpening = {
   subtitle: "第二章",
   layout: "photo-search",
   headerEmoji: "🔍",
-  accentGradient: "linear-gradient(180deg, #F5EEF8 0%, transparent 55%)",
   quote: "一個有溫度的詞，可以讓被埋沒的回憶重新浮現。",
   atAGlance:
     "請在手機「照片／相簿」App 搜尋海邊、生日、台南、朋友等詞。暖暖尚無相簿搜尋；回來後可在本頁寫回憶與列印。",
@@ -431,7 +420,6 @@ export const CHAPTER_0209: ChapterOpening = {
   subtitle: "第二章",
   layout: "photo-edit-safe",
   headerEmoji: "✨",
-  accentGradient: CH2_ACCENT,
   quote: "先備份原檔，再移除干擾；修圖可以整理回憶，不應改寫事實。",
   atAGlance:
     "請用手機系統的照片編輯功能練習。開始前先複製一份或確認原檔仍在。證件、新聞、交易或需真實性的照片，不應誤導。",
@@ -475,7 +463,6 @@ export const CHAPTER_0210: ChapterOpening = {
   subtitle: "第二章",
   layout: "photo-curate",
   headerEmoji: "🖼",
-  accentGradient: "linear-gradient(180deg, #E8F0FA 0%, transparent 55%)",
   quote: "三張照片、一個主題，就能把零散記錄變成自己的生活作品。",
   atAGlance:
     "在手機相簿選三張照片，回到本頁取一個主題、為每張寫一句說明。不需要公開，也不必上傳照片到暖暖。",
@@ -522,7 +509,6 @@ export const CHAPTER_0211: ChapterOpening = {
   subtitle: "第二章",
   layout: "sensory-habit",
   headerEmoji: "🌟",
-  accentGradient: CH2_ACCENT,
   quote: "感官全開不是每天打卡，而是隨時能重新開始看見、提問與保存。",
   atAGlance:
     "走過全章，練習的是共同節奏：看見、提問、保存。未來七天任選三天各完成一次即可，不需連續；中斷後隨時可再開始。",

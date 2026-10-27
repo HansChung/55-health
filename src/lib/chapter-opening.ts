@@ -10,6 +10,7 @@ import { CHAPTER_9_OPENINGS } from "./chapter-opening-ch9";
 import { CHAPTER_10_OPENINGS } from "./chapter-opening-ch10";
 import { CHAPTER_11_OPENINGS } from "./chapter-opening-ch11";
 import { CHAPTER_12_OPENINGS } from "./chapter-opening-ch12";
+import { BOOK_PART_PALETTES, bookPaletteForChapterId, bookPartForChapter } from "./book-palette";
 
 export type ChapterLayout =
   | "routes"
@@ -1249,7 +1250,6 @@ export interface ChapterOpening {
   subtitle: string;
   layout?: ChapterLayout;
   headerEmoji?: string;
-  accentGradient?: string;
   /** 選填；無則不顯示「先帶走這一句」 */
   quote?: string;
   atAGlance?: string;
@@ -1498,7 +1498,6 @@ export const CHAPTER_0102: ChapterOpening = {
   subtitle: "章節開篇",
   layout: "ai-entry",
   headerEmoji: "📱",
-  accentGradient: "linear-gradient(180deg, #F0E8FF 0%, transparent 55%)",
   atAGlance:
     "這一章只做一件事：在手機裡找到暖暖，並試問第一句。打字或用說的都可以，下面有文字版指引。",
   tryPrompt:
@@ -1576,7 +1575,6 @@ export const CHAPTER_0103: ChapterOpening = {
   subtitle: "章節開篇",
   layout: "question-rewrite",
   headerEmoji: "💬",
-  accentGradient: "linear-gradient(180deg, #FFF0E8 0%, transparent 55%)",
   quote: "好問題不必像口令；把真實需要說清楚，AI 才能真正幫上忙。",
   atAGlance:
     "很多人習慣只丟三個關鍵字給 AI，像在下口令。這一章練習把關鍵字改寫成完整的生活提問，並補上一點背景，讓回答更貼近您真正需要。",
@@ -1641,7 +1639,6 @@ export const CHAPTER_0104: ChapterOpening = {
   subtitle: "章節開篇",
   layout: "organize-decide",
   headerEmoji: "🧠",
-  accentGradient: "linear-gradient(180deg, #E8F5EE 0%, transparent 55%)",
   quote: "AI 可以整理資訊；方向、價值與最後決定，仍然由您掌握。",
   atAGlance:
     "這一章練習把「覺得繁雜」的事交給 AI 整理成三個重點與一個小步驟——但決定權留在您手上。請選不含敏感資料的生活小事來試。",
@@ -1706,7 +1703,6 @@ export const CHAPTER_0105: ChapterOpening = {
   subtitle: "章節開篇",
   layout: "vision-identify",
   headerEmoji: "👁",
-  accentGradient: "linear-gradient(180deg, #E8F0FA 0%, transparent 55%)",
   quote: "手機多一雙眼睛，生活就多一個理解世界的入口。",
   atAGlance:
     "這一章練習用手機拍照，請 AI 用簡單中文說明「看得見、但叫不出名字」的低風險物品——並學會分辨：哪些回答可以直接欣賞，哪些還需要查證。",
@@ -1778,7 +1774,6 @@ export const CHAPTER_0106: ChapterOpening = {
   subtitle: "章節開篇",
   layout: "photo-search",
   headerEmoji: "🖼",
-  accentGradient: "linear-gradient(180deg, #F5EEF8 0%, transparent 55%)",
   quote: "照片不只是檔案；一個有溫度的詞，可以喚回一段記憶。",
   atAGlance:
     "這一章練習用「有溫度的詞」在相簿裡搜尋——海邊、生日、台南、咖啡、朋友——讓被淹沒的回憶重新浮上來。搜尋結果可能受備份設定與辨識準確度影響，私人照片請先確認雲端同步與分享權限。",
@@ -1830,7 +1825,6 @@ export const CHAPTER_0107: ChapterOpening = {
   subtitle: "章節開篇",
   layout: "note-capture",
   headerEmoji: "📝",
-  accentGradient: "linear-gradient(180deg, #FFF8E8 0%, transparent 55%)",
   quote: "靈感不必靠硬記；留下一句、加一個標籤，日後就找得到。",
   atAGlance:
     "這一章練習把稍縱即逝的靈感，用最小單位存進數位便條：一個標題、一句話、一個簡單標籤。請避免把密碼、驗證碼或完整敏感資料放進一般筆記。",
@@ -1889,7 +1883,6 @@ export const CHAPTER_0108: ChapterOpening = {
   subtitle: "章節開篇",
   layout: "smart-flow",
   headerEmoji: "🚀",
-  accentGradient: "linear-gradient(180deg, #E8F4FA 0%, #FFF8EE 100%)",
   quote: "一拍、二問、三記下：看見、理解、保存，完成第一個 AI 生活流程。",
   atAGlance:
     "這一章把「一拍、二問、三記下」串成第一條可重複的生活流線：先拍下低風險事物，用自然的話問 AI，再把最有用的一句存進便條。「二問」是第二步的名稱，不是規定一定要問兩次。",
@@ -1971,19 +1964,19 @@ export interface BookGuideSection {
   id: BookGuideSectionId;
   title: string;
   intro: string;
+  /** 這一部的顏色（照書：一部一色） */
   accent: string;
+  /** 淺色底（目錄的部別標籤用） */
+  accentSoft: string;
+  /** 「第一部」… */
+  partLabel: string;
   chapters: BookGuideChapterLink[];
 }
 
-const BOOK_GUIDE_COLORS = [
-  "#5BA0C9",
-  "#9B7AD4",
-  "#E8845A",
-  "var(--sage)",
-  "#7B5BB8",
-  "var(--primary-deep)",
-  "#8B6F47",
-] as const;
+function bookGuidePartStyle(chapter: number): Pick<BookGuideSection, "accent" | "accentSoft" | "partLabel"> {
+  const p = BOOK_PART_PALETTES[bookPartForChapter(chapter)];
+  return { accent: p.deep, accentSoft: p.soft, partLabel: p.partLabel };
+}
 
 const BOOK_GUIDE_ALIASES: Record<string, string[]> = {
   "0100": ["智慧啟航", "開篇", "風帆"],
@@ -2174,8 +2167,8 @@ export function getBookGuideSections(extras: BookGuideExtras = {}): BookGuideSec
   for (const ch of all) {
     const sectionId = bookGuideSectionForId(ch.id);
     if (!sectionId) continue;
-    const color =
-      BOOK_GUIDE_COLORS[buckets[sectionId].length % BOOK_GUIDE_COLORS.length];
+    // 照書：同一部的章節同一個顏色
+    const color = bookPaletteForChapterId(ch.id)?.deep ?? "var(--primary-deep)";
     buckets[sectionId].push({
       id: ch.id,
       qrCode: ch.qrCode,
@@ -2191,84 +2184,84 @@ export function getBookGuideSections(extras: BookGuideExtras = {}): BookGuideSec
       id: "ch1",
       title: "第一章｜智慧啟航",
       intro: "先找得到 AI，再慢慢練提問、整理、拍照與記下。",
-      accent: "#5BA0C9",
+      ...bookGuidePartStyle(1),
       chapters: buckets.ch1,
     },
     {
       id: "ch2",
       title: "第二章｜感官覺醒",
       intro: "書教節奏，暖暖留下痕跡。共同節奏：一拍、二問、三記下。",
-      accent: "var(--sage)",
+      ...bookGuidePartStyle(2),
       chapters: buckets.ch2,
     },
     {
       id: "ch3",
       title: "第三章｜優雅導航",
       intro: "用 AI 電梯與 SMART 五方向，找到屬於自己的生活羅盤。",
-      accent: "#5B8FC9",
+      ...bookGuidePartStyle(3),
       chapters: buckets.ch3,
     },
     {
       id: "ch4",
       title: "第四章｜飲食文化",
       intro: "餐桌自主與日常韌性：邊界、雙軌，與 Plan B。",
-      accent: "#C98B5B",
+      ...bookGuidePartStyle(4),
       chapters: buckets.ch4,
     },
     {
       id: "ch5",
       title: "第五章｜理財防詐",
       intro: "先暫停、後查證；練出防詐肌肉與信任名單。",
-      accent: "#C95B5B",
+      ...bookGuidePartStyle(5),
       chapters: buckets.ch5,
     },
     {
       id: "ch6",
       title: "第六章｜運動健身",
       intro: "動能維修：用溫和數據提醒，建立可持續的身體節奏。",
-      accent: "#5BC98B",
+      ...bookGuidePartStyle(6),
       chapters: buckets.ch6,
     },
     {
       id: "ch7",
       title: "第七章｜城市漫遊",
       intro: "一日生活圈的數位優雅：彩排、通行、休息與備案。",
-      accent: "#8B5BC9",
+      ...bookGuidePartStyle(7),
       chapters: buckets.ch7,
     },
     {
       id: "ch8",
       title: "第八章｜財富智囊",
       intro: "資訊可由 AI 整理；生活的答案，不能外包。不推薦商品、不預測報酬。",
-      accent: "#8B6F47",
+      ...bookGuidePartStyle(8),
       chapters: buckets.ch8,
     },
     {
       id: "ch9",
       title: "第九章｜全人健康",
       intro: "資料是線索，不是判決；先理解一段生活，再準備一場健康對話。不診斷、不建議改藥。",
-      accent: "#5B9A8B",
+      ...bookGuidePartStyle(9),
       chapters: buckets.ch9,
     },
     {
       id: "ch10",
       title: "第十章｜旅遊研學",
       intro: "先決定為何值得，再安排去哪裡；動態資訊出發前重查官方來源。",
-      accent: "#5B8FC9",
+      ...bookGuidePartStyle(10),
       chapters: buckets.ch10,
     },
     {
       id: "ch11",
       title: "第十一章｜故事傳承",
       intro: "把生命經驗完成為可珍藏的作品；先珍藏，再由自己決定分享距離。",
-      accent: "#8B6F47",
+      ...bookGuidePartStyle(11),
       chapters: buckets.ch11,
     },
     {
       id: "ch12",
       title: "第十二章｜世界舞台",
       intro: "讓作品在合適的距離被看見；先點亮私人故事館，再由自己決定分享距離。",
-      accent: "#5B7A8B",
+      ...bookGuidePartStyle(12),
       chapters: buckets.ch12,
     },
   ];

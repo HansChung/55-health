@@ -153,9 +153,18 @@ export default function SmartGuidePage() {
         {sections.map((section) => (
           <section key={section.id} style={{ marginTop: 20 }}>
             <div style={{
+              display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
               fontSize: "var(--fs-sm)", fontWeight: 800, color: section.accent,
-              marginBottom: 10,
+              marginBottom: 10, paddingBottom: 6,
+              borderBottom: `2px solid ${section.accentSoft}`,
             }}>
+              <span style={{
+                padding: "2px 10px", borderRadius: 6,
+                background: section.accent, color: "#fff",
+                fontSize: "var(--fs-xs)",
+              }}>
+                {section.partLabel}
+              </span>
               {section.title}
             </div>
             {!searching && (

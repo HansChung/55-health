@@ -1,6 +1,4 @@
 import type { ChapterOpening } from "./chapter-opening";
-
-const CH9_ACCENT = "linear-gradient(180deg, #EAF3F0 0%, #FFF8EE 55%)";
 const CH9_DISCLAIMER =
   "本章提供一般性的生活觀察與對話準備，不構成診斷、病因判斷、治療或藥物建議。";
 
@@ -11,7 +9,6 @@ export const CHAPTER_0900: ChapterOpening = {
   subtitle: "第九章｜章節開篇",
   layout: "health-start",
   headerEmoji: "🌿",
-  accentGradient: CH9_ACCENT,
   quote: "資料是線索，不是判決；先理解一段生活，再準備一場健康對話。",
   atAGlance:
     "本章路線：看見線索 → 整理脈絡 → 設計微調 → 準備對話。十個小步陪您走到一頁《55+ 全人健康戰略白皮書》。" +
@@ -88,7 +85,6 @@ export const CHAPTER_0901: ChapterOpening = {
   subtitle: "第九章",
   layout: "judgment-rewrite",
   headerEmoji: "🪟",
-  accentGradient: CH9_ACCENT,
   quote: "一個數字可以提醒您觀察，不能替您評價自己。",
   atAGlance:
     "先用紅帽承認感受，再用白帽分開已知與未知，最後把「我是不是變差了」改寫成有時間範圍、可繼續觀察的問題。" +
@@ -135,7 +131,6 @@ export const CHAPTER_0902: ChapterOpening = {
   subtitle: "第九章",
   layout: "seven-day-clues",
   headerEmoji: "📋",
-  accentGradient: CH9_ACCENT,
   quote: "先整理發生過什麼，再討論可能原因。",
   atAGlance:
     "選最近七天，分開觀察事實、生活事件、感受與未知；標出一個例外與一個仍不知道的地方。不把「接著發生」寫成「因此造成」。" +
@@ -181,7 +176,6 @@ export const CHAPTER_0903: ChapterOpening = {
   subtitle: "第九章",
   layout: "timeline-nodes",
   headerEmoji: "⏳",
-  accentGradient: CH9_ACCENT,
   quote: "時間軸的價值在順序與空白，不在填滿或證明原因。",
   atAGlance:
     "從最近七天選三至五個節點，放回大約時間；每點只留事件、感受、行動與後續。不確定就寫「約略／待確認」。" +
@@ -226,7 +220,6 @@ export const CHAPTER_0904: ChapterOpening = {
   subtitle: "第九章",
   layout: "cross-observe",
   headerEmoji: "🕸",
-  accentGradient: CH9_ACCENT,
   quote: "全人健康不是找一條唯一原因，而是看見多條線索如何靠近、分開與留下空白。",
   atAGlance:
     "飲食、活動、睡眠與身心各留一條可回查線索；標出同步片段、相反例／不同步、資料缺口，並寫「目前不能證明什麼」。" +
@@ -273,7 +266,6 @@ export const CHAPTER_0905: ChapterOpening = {
   subtitle: "第九章",
   layout: "four-signals",
   headerEmoji: "🫙",
-  accentGradient: CH9_ACCENT,
   quote: "四種訊息各有位置；分開後，健康對話才不會從猜測開始。",
   atAGlance:
     "把一句混雜說法拆成事實、感受、猜測與待確認。事實要能回查；猜測加上「可能」；未知改成可詢問的問題。" +
@@ -320,7 +312,6 @@ export const CHAPTER_0906: ChapterOpening = {
   subtitle: "第九章",
   layout: "source-review",
   headerEmoji: "📓",
-  accentGradient: CH9_ACCENT,
   quote: "來源筆記工具整理已選定的材料，不替身體歸因。",
   atAGlance:
     "資料累積到數週或數月時，才讓來源筆記工具協助跨期回看。只放入低敏材料，逐句回查；不足時可以寫「目前看不出穩定趨勢」。" +
@@ -366,7 +357,6 @@ export const CHAPTER_0907: ChapterOpening = {
   subtitle: "第九章",
   layout: "gentle-tweak",
   headerEmoji: "🌱",
-  accentGradient: CH9_ACCENT,
   quote: "好的微調不是更用力，而是有價值、能承受、可停止、可重看。",
   atAGlance:
     "只選一個非治療、負擔低、可以停止的微調；寫下價值、負擔／停止／求助、第三條路與重看日期。不確定就改為先問專業。" +
@@ -415,7 +405,6 @@ export const CHAPTER_0908: ChapterOpening = {
   subtitle: "第九章",
   layout: "noncausal-summary",
   headerEmoji: "🌊",
-  accentGradient: CH9_ACCENT,
   quote: "把線索放在一起，是為了看得完整，不是為了更快下診斷。",
   atAGlance:
     "寫三至五句非因果摘要：同步片段、不同步／反例／空白、限制句；刪除「造成、證明、一定、有效」等越界語句。" +
@@ -461,7 +450,6 @@ export const CHAPTER_0909: ChapterOpening = {
   subtitle: "第九章",
   layout: "health-questions",
   headerEmoji: "💬",
-  accentGradient: CH9_ACCENT,
   quote: "把觀察說清楚，比急著猜答案更有力量；真正重要的問題，三至五題就夠。",
   atAGlance:
     "準備三十秒開場與三至五個問題；標出必問、有時間再問、可帶回觀察。至少詢問一個資訊缺口，以及何時需提早求助或重看。" +
@@ -509,7 +497,6 @@ export const CHAPTER_0910: ChapterOpening = {
   subtitle: "第九章",
   layout: "health-whitepaper",
   headerEmoji: "📄",
-  accentGradient: CH9_ACCENT,
   quote: "真正的戰略不是知道所有答案，而是把線索、未知、行動與求助整理成一頁。",
   atAGlance:
     "白皮書至少保留生活問題、四面向線索、來源與反例、非因果摘要、可承受行動、停止與求助、專業問題與重看日期。由您確認、修改、決定分享並親自署名。" +

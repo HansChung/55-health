@@ -1,6 +1,4 @@
 import type { ChapterOpening } from "./chapter-opening";
-
-const CH10_ACCENT = "linear-gradient(180deg, #E8F1F6 0%, #FFF8EE 55%)";
 const CH10_DISCLAIMER =
   "交通、票價、開放時間、天候與入境規則會變動；重要資訊請在出發前回到最新官方來源重查。不輸入護照、票券碼、付款資料、完整地址或不必要的健康細節。";
 
@@ -11,7 +9,6 @@ export const CHAPTER_1000: ChapterOpening = {
   subtitle: "第十章｜章節開篇",
   layout: "travel-start",
   headerEmoji: "🧭",
-  accentGradient: CH10_ACCENT,
   quote: "先決定為何值得，再安排去哪裡；先守住旅程主線，再為驚艷留下空間。",
   atAGlance:
     "本章路線：從排行程到旅遊研學策展。十個小步把意義、基線、來源、同行價值、取捨、七段節奏、備援與地方閱讀線收進《55+ 旅遊研學策展書》。" +
@@ -88,7 +85,6 @@ export const CHAPTER_1001: ChapterOpening = {
   subtitle: "第十章",
   layout: "travel-meaning",
   headerEmoji: "🌱",
-  accentGradient: CH10_ACCENT,
   quote: "先決定這段時間為何值得，再決定去哪裡。",
   atAGlance:
     "先收束三個問題：為何出發、希望帶回什麼、什麼不能犧牲。把答案收成一則意義種子句；少去一個熱門景點後仍要成立。" +
@@ -135,7 +131,6 @@ export const CHAPTER_1002: ChapterOpening = {
   subtitle: "第十章",
   layout: "ground-baseline",
   headerEmoji: "📋",
-  accentGradient: CH10_ACCENT,
   quote: "先把真實條件說清楚，人工智慧的建議才有可用的地面。",
   atAGlance:
     "把條件分成固定、可調與未知。後續每項建議都必須回到這張現況基線卡接受檢驗。" +
@@ -181,7 +176,6 @@ export const CHAPTER_1003: ChapterOpening = {
   subtitle: "第十章",
   layout: "source-map",
   headerEmoji: "🗺",
-  accentGradient: CH10_ACCENT,
   quote: "可信不等於永遠有效；來源與重查日期同樣重要。",
   atAGlance:
     "建立官方、文化與經驗三張來源卡：留下日期、適用範圍、限制與重查點。衝突只並列，不猜誰正確。" +
@@ -227,7 +221,6 @@ export const CHAPTER_1004: ChapterOpening = {
   subtitle: "第十章",
   layout: "feeling-table",
   headerEmoji: "🪑",
-  accentGradient: CH10_ACCENT,
   quote: "最好的路線不只走得通，也要讓同行者願意一起走。",
   atAGlance:
     "完成感受與價值四句：最期待、最擔心、最值得保留的體驗，以及希望保留的留白或私人界線。" +
@@ -273,7 +266,6 @@ export const CHAPTER_1005: ChapterOpening = {
   subtitle: "第十章",
   layout: "value-cost",
   headerEmoji: "⚖",
-  accentGradient: CH10_ACCENT,
   quote: "每加入一個安排，都要知道它會拿走哪一段時間與餘裕。",
   atAGlance:
     "比較三項候選：支持哪個核心價值、最大代價與依賴、取消後主線如何繼續。只保留能支持意義且有停止條件的安排。" +
@@ -318,7 +310,6 @@ export const CHAPTER_1006: ChapterOpening = {
   subtitle: "第十章",
   layout: "seven-rhythm",
   headerEmoji: "⏱",
-  accentGradient: CH10_ACCENT,
   quote: "留白不是沒有安排，而是把選擇權留在現場。",
   atAGlance:
     "把一天整理成七段：安頓、定位、閱讀、探索、補給、回看、收束。每天只保留一個真正高潮，並標出休息灣、緩衝與可取消段。" +
@@ -363,7 +354,6 @@ export const CHAPTER_1007: ChapterOpening = {
   subtitle: "第十章",
   layout: "travel-plan-b",
   headerEmoji: "🔀",
-  accentGradient: CH10_ACCENT,
   quote: "好的備援方案保留旅程意義，不必保留原來每個景點。",
   atAGlance:
     "完成備援轉向卡：啟動條件與共同確認、轉向後仍保留的核心價值、需重查／取消／通知的項目。" +
@@ -408,7 +398,6 @@ export const CHAPTER_1008: ChapterOpening = {
   subtitle: "第十章",
   layout: "place-reading",
   headerEmoji: "📖",
-  accentGradient: CH10_ACCENT,
   quote: "真正的旅遊研學，不只抵達一個地方，也讀懂它如何成為今天的樣子。",
   atAGlance:
     "完成三至五站地方閱讀線：每站一個核心問題、可信來源、現場觀察與回看問題。衝突並列，重要句子回原頁。" +
@@ -454,7 +443,6 @@ export const CHAPTER_1009: ChapterOpening = {
   subtitle: "第十章",
   layout: "coauthor-pen",
   headerEmoji: "✍️",
-  accentGradient: CH10_ACCENT,
   quote: "分享企劃的目的，不是展示用心，而是把第二支筆真正留給同行者。",
   atAGlance:
     "完成同行者共編摘要：最期待、想修改、保持私人；保留確認／待決定／不參與／保持私人／撤回五種狀態。" +
@@ -499,7 +487,6 @@ export const CHAPTER_1010: ChapterOpening = {
   subtitle: "第十章",
   layout: "travel-portfolio",
   headerEmoji: "📔",
-  accentGradient: CH10_ACCENT,
   quote: "真正可執行，不是全部確定，而是意義清楚、來源可查、遇到變化仍有下一步。",
   atAGlance:
     "整合意義、現況基線、來源、七段節奏與備援方案；標示已確認、待確認、來源衝突與重查日期。由您與同行者確認、修改、決定分享並親自署名。" +

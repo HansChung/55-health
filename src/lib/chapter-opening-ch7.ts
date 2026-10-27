@@ -1,7 +1,5 @@
 import type { ChapterOpening } from "./chapter-opening";
 
-const CH7_ACCENT = "linear-gradient(180deg, #EAF2F8 0%, #FFF8EE 55%)";
-
 export const CHAPTER_0700: ChapterOpening = {
   id: "0700",
   qrCode: "0700",
@@ -9,7 +7,6 @@ export const CHAPTER_0700: ChapterOpening = {
   subtitle: "第七章｜章節開篇",
   layout: "routes",
   headerEmoji: "🏙",
-  accentGradient: CH7_ACCENT,
   quote: "安心，比效率更重要；餘裕，比塞滿更珍貴。",
   atAGlance:
     "本章路線：彩排一天 → 安放時間與票券 → 找到安心路線 → 優雅重排 → 留下見聞。AI 是行前參謀，不是替您決定生活的人。",
@@ -74,7 +71,6 @@ export const CHAPTER_0701: ChapterOpening = {
   subtitle: "第七章｜第一節",
   layout: "city-radius",
   headerEmoji: "🚪",
-  accentGradient: CH7_ACCENT,
   quote: "城市不是遠方，而是可以一步一步重新打開的生活圈。",
   atAGlance:
     "當出門阻力被整理，世界就會重新靠近。一日生活圈不一定要很多行程；重點是重新感覺到：我還可以和城市連上線。",
@@ -116,7 +112,6 @@ export const CHAPTER_0702: ChapterOpening = {
   subtitle: "第七章｜第一節",
   layout: "day-rehearsal",
   headerEmoji: "🎬",
-  accentGradient: CH7_ACCENT,
   quote: "出門前先彩排一天，不是為了控制行程，而是讓自己多一份安心與餘裕。",
   atAGlance:
     "彩排不是把行程塞滿，而是讓心裡先有畫面：出發、交通、休息點、備案，以及什麼情況下可以放慢或改期。",
@@ -165,7 +160,6 @@ export const CHAPTER_0703: ChapterOpening = {
   subtitle: "第七章｜第二節",
   layout: "moment-place",
   headerEmoji: "📅",
-  accentGradient: CH7_ACCENT,
   quote: "Calendar 不是把一天塞滿，而是讓重要時刻有地方安放。",
   atAGlance:
     "優雅不是慢慢來，而是不再被時間追著跑。出門、抵達、活動、休息與回程，都可以先放進一天的節奏裡。",
@@ -211,7 +205,6 @@ export const CHAPTER_0704: ChapterOpening = {
   subtitle: "第七章｜第二節",
   layout: "pass-prep",
   headerEmoji: "🎫",
-  accentGradient: CH7_ACCENT,
   quote: "票券先安放好，入口那一刻，就少一點慌張，多一點從容。",
   atAGlance:
     "不是所有票券都能放進 Wallet。出門前先確認：票在哪裡？開得出來嗎？是否需要網路？是否要備截圖或紙本？",
@@ -256,7 +249,6 @@ export const CHAPTER_0705: ChapterOpening = {
   subtitle: "第七章｜第二節",
   layout: "safe-corner",
   headerEmoji: "🗺",
-  accentGradient: CH7_ACCENT,
   quote: "好的路線不只是最快到達，而是途中知道哪裡可以安心停下來。",
   atAGlance:
     "對 55+ 來說，好的城市漫遊不是一路衝到底，而是知道哪裡可以慢下來：座位、咖啡館、公園、明亮出口。",
@@ -301,7 +293,6 @@ export const CHAPTER_0706: ChapterOpening = {
   subtitle: "第七章｜第三節",
   layout: "activity-guide",
   headerEmoji: "📘",
-  accentGradient: CH7_ACCENT,
   quote: "好的活動參與，不是勉強自己跟上，而是先知道什麼節奏適合自己。",
   atAGlance:
     "活動不是任務，是生活選擇。先寫下類型、時長、休息、交通與同行偏好，選擇才會更清楚。",
@@ -347,7 +338,6 @@ export const CHAPTER_0707: ChapterOpening = {
   subtitle: "第七章｜第三節",
   layout: "curiosity-ask",
   headerEmoji: "✨",
-  accentGradient: CH7_ACCENT,
   quote: "一日生活圈不是把行程塞滿，而是安排一個走得出去、也能從容回來的生活節奏。",
   atAGlance:
     "讓 AI 依照您的活動參與指南整理草案；節奏仍由您決定。地點可寫大範圍，不必輸入精確住址。",
@@ -395,7 +385,6 @@ export const CHAPTER_0708: ChapterOpening = {
   subtitle: "第七章｜第三節",
   layout: "elegant-replan",
   headerEmoji: "🌦",
-  accentGradient: CH7_ACCENT,
   quote: "優雅重排不是放棄，而是在變數出現時，為自己保留更好的選擇。",
   atAGlance:
     "能改變，不是退縮，是韌性。天氣、交通、人潮或身體提醒出現時，可以縮短、改道，甚至優雅地改天再來。",
@@ -440,7 +429,6 @@ export const CHAPTER_0709: ChapterOpening = {
   subtitle: "第七章｜第四節",
   layout: "three-sight",
   headerEmoji: "🖼",
-  accentGradient: CH7_ACCENT,
   quote: "數位見聞錄不是社群打卡，而是把一次走出去的生活感，溫柔保存下來。",
   atAGlance:
     "不是炫耀，而是保存：今天看見什麼？哪一刻讓城市又親近一點？想帶回生活裡的是什麼？",
@@ -484,7 +472,6 @@ export const CHAPTER_0710: ChapterOpening = {
   subtitle: "第七章｜第四節",
   layout: "city-lights",
   headerEmoji: "🌟",
-  accentGradient: CH7_ACCENT,
   quote: "城市通行感，不是走得多遠，而是能安心安排、從容移動、溫柔回來。",
   atAGlance:
     "我可以安排、查證、選擇、重排，也可以留下。AI 仍是行前參謀；真正決定的人，始終是您。",

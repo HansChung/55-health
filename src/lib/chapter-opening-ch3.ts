@@ -1,7 +1,5 @@
 import type { ChapterOpening, SmartDirectionOption } from "./chapter-opening";
 
-const CH3_ACCENT = "linear-gradient(180deg, #E8F0FA 0%, #FFF8EE 55%)";
-
 /** Chapter 3 書本 SMART 五方向（與 App 雷達語意對齊，文案依書） */
 export const CH3_SMART_DIRECTIONS: SmartDirectionOption[] = [
   { id: "S", letter: "S", label: "分享與連結", hint: "關心、陪伴、智慧流動" },
@@ -18,7 +16,6 @@ export const CHAPTER_0300: ChapterOpening = {
   subtitle: "第三章｜章節開篇",
   layout: "routes",
   headerEmoji: "🧭",
-  accentGradient: CH3_ACCENT,
   quote: "優雅導航不是做更多，而是知道自己要往哪裡走。",
   atAGlance:
     "這一章先用「AI 電梯」降低重新學習的焦慮，再認識 SMART 五個方向與生活羅盤。不必一次學會所有工具，只要知道方向已經出現。",
@@ -59,7 +56,6 @@ export const CHAPTER_0301: ChapterOpening = {
   subtitle: "第三章",
   layout: "elevator-wish",
   headerEmoji: "🛗",
-  accentGradient: CH3_ACCENT,
   quote: "AI 降低門檻；您決定方向。",
   atAGlance:
     "AI 更像一部電梯，協助跨過繁瑣門檻，把已經擁有的智慧帶到新樓層。電梯不替您選樓層——方向仍由您決定。",
@@ -103,7 +99,6 @@ export const CHAPTER_0302: ChapterOpening = {
   subtitle: "第三章",
   layout: "five-reflect",
   headerEmoji: "🔤",
-  accentGradient: CH3_ACCENT,
   quote: "SMART 是五個人生方向，不是五項必須滿分的考試。",
   atAGlance:
     "S 分享、M 意義、A 自主、R 韌性與安全、T 信賴與科技。五個方向像羅盤方位，不需要同時完美。",
@@ -156,7 +151,6 @@ export const CHAPTER_0303: ChapterOpening = {
   subtitle: "第三章",
   layout: "life-match",
   headerEmoji: "🧰",
-  accentGradient: CH3_ACCENT,
   quote: "不要先背 App；先說生活卡點，再找一位能幫忙的夥伴。",
   atAGlance:
     "把搜尋、地圖、行事曆、相簿、文件看成生活安頓隊伍。工具可能改名，生活任務仍然清楚：找路、整理、提醒、保存或查證。",
@@ -206,7 +200,6 @@ export const CHAPTER_0304: ChapterOpening = {
   subtitle: "第三章",
   layout: "meaning-seed",
   headerEmoji: "🎨",
-  accentGradient: CH3_ACCENT,
   quote: "AI 可以協助形式；真正值得留下的內容，來自您的人生。",
   atAGlance:
     "口述可整理成文字，照片可編成小冊，旅行記憶可成簡報或短片。本課只打開 Meaning 的門，不要求現在完成作品。",
@@ -250,7 +243,6 @@ export const CHAPTER_0305: ChapterOpening = {
   subtitle: "第三章",
   layout: "five-reflect",
   headerEmoji: "📡",
-  accentGradient: CH3_ACCENT,
   quote: "SMART RADAR 是生活羅盤，不是分數表；只需看見一個下一步。",
   atAGlance:
     "RADAR 不是成績單。它讓您看見哪裡穩定、哪裡需要支持。不必公開，也不必與人比較。",
@@ -304,7 +296,6 @@ export const CHAPTER_0306: ChapterOpening = {
   subtitle: "第三章",
   layout: "five-reflect",
   headerEmoji: "📅",
-  accentGradient: CH3_ACCENT,
   quote: "SHI 是每週溫柔回顧，不排名、不公開，也不追求滿分。",
   atAGlance:
     "每週花幾分鐘，以低、中、高或短句回看五方向。同一週只選一件願意做的小事。持續困擾請尋求專業協助。",
@@ -355,7 +346,6 @@ export const CHAPTER_0307: ChapterOpening = {
   subtitle: "第三章",
   layout: "three-steps",
   headerEmoji: "🌿",
-  accentGradient: CH3_ACCENT,
   quote: "日子先順一點，夢想才有地方安穩落腳。",
   atAGlance:
     "選一個最貼近生活的小任務，請 AI 拆成三個不費力步驟。不必同時改變很多。",
@@ -398,7 +388,6 @@ export const CHAPTER_0308: ChapterOpening = {
   subtitle: "第三章",
   layout: "meaning-seed",
   headerEmoji: "🌱",
-  accentGradient: CH3_ACCENT,
   quote: "圓夢可以從一份小素材開始，不必等到準備完全。",
   atAGlance:
     "從一張照片、一段口述、一份食譜或未完成願望開始。先替素材取名，寫下「我想留下它，因為＿＿」。",
@@ -442,7 +431,6 @@ export const CHAPTER_0309: ChapterOpening = {
   subtitle: "第三章",
   layout: "share-intent",
   headerEmoji: "🌏",
-  accentGradient: CH3_ACCENT,
   quote: "共好從自願分享開始；私人羅盤不公開、不排名。",
   atAGlance:
     "可以只分享一個方法、一段故事或一次陪伴。SMART RADAR 與 SHI 的私人記錄不應被默認上傳。",
@@ -486,7 +474,6 @@ export const CHAPTER_0310: ChapterOpening = {
   subtitle: "第三章",
   layout: "embark-card",
   headerEmoji: "🚀",
-  accentGradient: CH3_ACCENT,
   quote: "羅盤在手，不必一次走完全程；選一個方向，從一小步出發。",
   atAGlance:
     "章末不增加新系統，也不公開分數。完成啟程卡：方向、第一小步、希望 AI 如何陪伴。",
