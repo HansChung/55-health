@@ -27,6 +27,7 @@ export const FEATURE_DEFS = [
   { key: "scam_check", label: "這則訊息可疑嗎？", group: "ai", minTier: "free" },
   { key: "clinic", label: "看診小幫手", group: "ai", minTier: "free" },
   { key: "brain_game", label: "動動腦（每日一題）", group: "app", minTier: "free", note: "不花算力" },
+  { key: "business_card", label: "數位名片", group: "app", minTier: "free", note: "不花算力" },
   { key: "life_stories", label: "我的故事集（AI 訪談、整理文章）", group: "ai", minTier: "free" },
   { key: "dictation", label: "用說的打字（App 裡、沒有內建語音辨識的瀏覽器）", group: "ai", minTier: "free", note: "每句約 0.001 算力；手機瀏覽器內建的語音辨識免費、不算次數" },
   { key: "travel_video", label: "出遊回憶影片（單張照片）", group: "video", minTier: "basic", note: "每支約 1 算力" },
