@@ -343,7 +343,8 @@ stack works well for auth + meal/diary CRUD:
 - 功能 → 家人與安心 → 數位名片 (deep link `/?open=business-card`, feature `business_card`, free, no AI). One card per user in
   `business_cards` (server-only RLS): 名字／稱呼／一句介紹（≤100, dictation）／興趣（「、」separated → chips）, a photo in the
   **public** bucket `business-cards` (`{user}/{uuid}.jpg`, random path, the old file is deleted on replace; no select
-  policy), phone／LINE ID or line.me link／email, and ≤3 精選作品 (`works` = `[{kind: video|story, id}]`).
+  policy; uploaded with `cacheControl: 3600` so a removed photo leaves the CDN within an hour — the CDN keeps deleted
+  files until it expires), phone／LINE ID or line.me link／email, and ≤3 精選作品 (`works` = `[{kind: video|story, id}]`).
   All rules are in `normalizeCardInput` (`src/lib/business-card.ts`); the server also keeps only works the user owns
   that still exist (`ownedWorkRefs`), and re-checks them every time the card is shown. Audio-only stories (empty
   body) are never offered or shown; the editor's list = the latest 30 of each kind **plus** whatever is already on the
