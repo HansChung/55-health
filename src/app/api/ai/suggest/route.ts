@@ -2,12 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getGeminiModel, isGeminiConfigured, parseModelJson, modelText } from "@/lib/ai/gemini";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { finishReservedUsage, releaseReservedUsage, reserveDailySlot } from "@/lib/ai/usage-tracker";
+import { loadAsker } from "@/lib/ai/ask-quota-server";
 import { taipeiDayStartIso } from "@/lib/ask";
 import { cachedSuggestion, suggestionCacheKey, taipeiClock } from "@/lib/suggestion-cache";
 
 const ENDPOINT = "/api/ai/suggest";
-/** 每人每天最多重新產生幾次（記餐、改資料、按「換一個建議」都算）；超過就給今天最後那一則 */
-const SUGGEST_DAILY_LIMIT = 20;
 
 const SUGGEST_PROMPT = `你是台灣長者的健康助理「暖暖」。根據用戶**今天的真實情況**給個性化建議。
 
@@ -98,10 +97,12 @@ ${meals?.length
   }
 
   // 先佔今天的一格（同時好幾個請求也不會超過上限）；佔不到 → 給今天最後那一則，不再叫 AI
+  // 每天幾次照後台「方案與次數」的「首頁 AI 建議」（預設 20；管理員不限）
   let slot: string | null;
   try {
+    const { access } = await loadAsker(user.id, user.email);
     ({ id: slot } = await reserveDailySlot({
-      userId: user.id, service: "gemini_text", endpoint: ENDPOINT, sinceIso: dayStart, limit: SUGGEST_DAILY_LIMIT,
+      userId: user.id, service: "gemini_text", endpoint: ENDPOINT, sinceIso: dayStart, limit: access.limit("suggest_daily"),
     }));
   } catch (e) {
     console.error("[api] AI 建議佔次數失敗:", e);

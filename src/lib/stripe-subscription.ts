@@ -42,7 +42,13 @@ export type ProfileChange =
  * 依訂閱現況決定要不要改會員的方案
  * storedSubscriptionId＝資料庫裡這位會員現在綁的訂閱
  */
-export function decideProfileChange(sub: SubscriptionSnapshot, storedSubscriptionId: string | null, env: Env = process.env): ProfileChange {
+export function decideProfileChange(
+  sub: SubscriptionSnapshot,
+  storedSubscriptionId: string | null,
+  env: Env = process.env,
+  /** 沒記到訂閱（改版前訂閱的人）時，客戶對得上也算現在這一份 */
+  match: { storedCustomerId?: string | null; customerId?: string | null } = {},
+): ProfileChange {
   if (isLiveStatus(sub.status)) {
     const plan = planForPrice(sub.priceId, env);
     if (!plan) return { kind: "none", reason: `unknown price ${sub.priceId}` };
@@ -55,7 +61,9 @@ export function decideProfileChange(sub: SubscriptionSnapshot, storedSubscriptio
   }
   if (ENDED.has(sub.status)) {
     // 只有「現在綁的那一份」結束才降級；換方案時舊的那份被取消不影響
-    if (storedSubscriptionId !== sub.id) return { kind: "none", reason: "not the current subscription" };
+    // 沒記到訂閱的舊會員：客戶對得上才算（後台手動給的方案沒有 Stripe 客戶，不會被降級）
+    const legacyMatch = storedSubscriptionId === null && Boolean(match.storedCustomerId) && match.storedCustomerId === match.customerId;
+    if (storedSubscriptionId !== sub.id && !legacyMatch) return { kind: "none", reason: "not the current subscription" };
     return { kind: "set", tier: "free", subscriptionId: null, expiresAt: null };
   }
   // incomplete：第一次付款還沒完成，等下一個事件

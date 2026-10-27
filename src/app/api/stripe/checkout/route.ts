@@ -5,8 +5,9 @@
 // ────────────────────────────────────────────────
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { createSupabaseServer } from "@/lib/supabase/server";
-import { appUrl, hasLiveSubscription, portalUrl } from "@/lib/stripe-portal-server";
+import { createSupabaseAdmin, createSupabaseServer } from "@/lib/supabase/server";
+import { appUrl, findLiveSubscription, portalUrl } from "@/lib/stripe-portal-server";
+import { syncSubscription } from "@/lib/stripe-subscription-server";
 
 const PLAN_PRICE: Record<string, string | undefined> = {
   basic: process.env.STRIPE_PRICE_BASIC,
@@ -45,8 +46,12 @@ export async function POST(req: NextRequest) {
   const subscriptionId = (profile?.stripe_subscription_id as string | null) ?? null;
 
   try {
-    if (customerId && (await hasLiveSubscription(stripe, subscriptionId))) {
-      return NextResponse.json({ url: await portalUrl(stripe, customerId), portal: true });
+    // 已經在訂閱（包含這次改版前訂閱、資料庫沒記到的人）→ 補記到資料庫，送去訂閱管理頁換方案
+    const live = await findLiveSubscription(stripe, { subscriptionId, customerId, email: user.email });
+    if (live) {
+      const liveCustomer = typeof live.customer === "string" ? live.customer : live.customer.id;
+      await syncSubscription(stripe, createSupabaseAdmin(), live.id, user.id);
+      return NextResponse.json({ url: await portalUrl(stripe, liveCustomer), portal: true });
     }
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",

@@ -145,8 +145,13 @@ and Stripe. Capacitor/Android is only a packaging target and is not needed for w
   admin-granted tiers are never knocked to free. DB errors return 500 so Stripe retries. Checkout reuses the
   Stripe customer and, for members with a live subscription, returns the Billing Portal URL instead of a second
   subscription; `/api/stripe/portal` = 「管理我的訂閱」 on /pricing (the Customer Portal must be enabled in Stripe).
-- 首頁 AI 建議 regenerations are capped at 20 per Taipei day via `reserveDailySlot`; over the cap the latest
-  suggestion of the day is returned (`limited: true`).
+  Checkout looks for a live subscription by stored id, then Stripe customer, then email
+  (`findLiveSubscription`, for members who paid before `stripe_subscription_id` existed), re-syncs it and sends
+  them to the portal; a Stripe lookup error fails closed (500), never opens a second subscription. An ended
+  subscription also downgrades when no id is stored but the Stripe customer matches.
+- 首頁 AI 建議 regenerations are capped per Taipei day via `reserveDailySlot` with the plan limit
+  `suggest_daily` (後台「方案與次數」, default 20, admins unlimited); over the cap the latest suggestion of the
+  day is returned (`limited: true`).
 
 ### Running a real backend locally (no cloud Supabase needed)
 The app requires a live Supabase API to do anything past the login screen (auth is forced). A local

@@ -47,17 +47,21 @@ export async function syncSubscription(
   }
 
   const { data: profile, error: readErr } = await admin
-    .from("profiles").select("stripe_subscription_id").eq("id", userId).maybeSingle();
+    .from("profiles").select("stripe_subscription_id, stripe_customer_id").eq("id", userId).maybeSingle();
   if (readErr) throw new Error(`read profile: ${readErr.message}`);
   if (!profile) {
     console.error("[stripe] 會員不存在:", userId, subscriptionId);
     return { userId, change: "no profile" };
   }
 
-  const decision = decideProfileChange(snapshotOf(sub), (profile as { stripe_subscription_id: string | null }).stripe_subscription_id ?? null);
+  const stored = profile as { stripe_subscription_id: string | null; stripe_customer_id: string | null };
+  const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer?.id ?? null;
+  const decision = decideProfileChange(snapshotOf(sub), stored.stripe_subscription_id ?? null, process.env, {
+    storedCustomerId: stored.stripe_customer_id ?? null,
+    customerId,
+  });
   if (decision.kind === "none") return { userId, change: decision.reason };
 
-  const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer?.id ?? null;
   const { error } = await admin
     .from("profiles")
     .update({

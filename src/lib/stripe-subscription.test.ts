@@ -81,3 +81,53 @@ describe("syncSubscription", () => {
     vi.unstubAllEnvs();
   });
 });
+
+describe("decideProfileChange：改版前訂閱、資料庫沒記到訂閱的人", () => {
+  it("客戶對得上 → 取消時照樣降級", () => {
+    expect(decideProfileChange(sub({ status: "canceled" }), null, env, { storedCustomerId: "cus_1", customerId: "cus_1" }))
+      .toMatchObject({ kind: "set", tier: "free" });
+  });
+  it("客戶對不上、或根本沒有客戶（後台手動給的方案）→ 不動", () => {
+    expect(decideProfileChange(sub({ status: "canceled" }), null, env, { storedCustomerId: "cus_2", customerId: "cus_1" }).kind).toBe("none");
+    expect(decideProfileChange(sub({ status: "canceled" }), null, env, { storedCustomerId: null, customerId: "cus_1" }).kind).toBe("none");
+  });
+});
+
+describe("findLiveSubscription", async () => {
+  const { findLiveSubscription } = await import("./stripe-portal-server");
+  const stripe = (over: Record<string, unknown>) => ({
+    subscriptions: { retrieve: vi.fn(), list: vi.fn().mockResolvedValue({ data: [] }), ...((over.subscriptions as object) ?? {}) },
+    customers: { list: vi.fn().mockResolvedValue({ data: [] }), ...((over.customers as object) ?? {}) },
+  });
+
+  it("資料庫記的那一份還有效 → 就是它", async () => {
+    const s = stripe({ subscriptions: { retrieve: vi.fn().mockResolvedValue({ id: "sub_1", status: "active" }) } });
+    expect(await findLiveSubscription(s as never, { subscriptionId: "sub_1", customerId: "cus_1", email: "a@x" })).toMatchObject({ id: "sub_1" });
+  });
+
+  it("Stripe 暫時連不上 → 丟錯（不放行開第二份）", async () => {
+    const s = stripe({ subscriptions: { retrieve: vi.fn().mockRejectedValue(Object.assign(new Error("timeout"), { code: "api_connection_error" })) } });
+    await expect(findLiveSubscription(s as never, { subscriptionId: "sub_1", customerId: "cus_1", email: "a@x" })).rejects.toThrow("timeout");
+  });
+
+  it("記的那份被刪掉了 → 再用客戶找", async () => {
+    const s = stripe({
+      subscriptions: {
+        retrieve: vi.fn().mockRejectedValue(Object.assign(new Error("No such subscription"), { code: "resource_missing" })),
+        list: vi.fn().mockResolvedValue({ data: [{ id: "sub_2", status: "canceled" }, { id: "sub_3", status: "past_due" }] }),
+      },
+    });
+    expect(await findLiveSubscription(s as never, { subscriptionId: "sub_1", customerId: "cus_1", email: "a@x" })).toMatchObject({ id: "sub_3" });
+  });
+
+  it("改版前訂閱、什麼都沒記 → 用 Email 找 Stripe 客戶", async () => {
+    const list = vi.fn().mockResolvedValue({ data: [{ id: "sub_9", status: "active" }] });
+    const s = stripe({ subscriptions: { list }, customers: { list: vi.fn().mockResolvedValue({ data: [{ id: "cus_old" }] }) } });
+    expect(await findLiveSubscription(s as never, { subscriptionId: null, customerId: null, email: "a@x" })).toMatchObject({ id: "sub_9" });
+    expect(list).toHaveBeenCalledWith({ customer: "cus_old", status: "all", limit: 20 });
+  });
+
+  it("都沒有 → null（可以開新的）", async () => {
+    expect(await findLiveSubscription(stripe({}) as never, { subscriptionId: null, customerId: null, email: "a@x" })).toBeNull();
+  });
+});
