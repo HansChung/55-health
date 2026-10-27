@@ -358,6 +358,14 @@ stack works well for auth + meal/diary CRUD:
   exactly what others see. Video works link to `/v/<id>`; stories expand inline. 「存到手機通訊錄」 =
   `/c/<slug>/vcard` (`buildVCard`, public contacts only). The app shows the QR (`qrcode`, URL from
   `NEXT_PUBLIC_APP_URL`), 「用 LINE 傳給朋友」 (`navigator.share`) and 「印紙本」 (`body.printing-card`).
+- **名片樣子** (needs `supabase/add-business-card-design.sql`: `theme` + `layout` text columns): 改名片 → ⑥ 名片樣子
+  (or 「🎨 換樣子」 on the card screen) picks 直式／橫式 (`CARD_LAYOUTS`; 橫式 = photo left, text right, like a printed
+  card) and a color (`CARD_THEMES`: 暖橘 default = the original look, the four book-part colors from `book-palette.ts`,
+  喜氣紅, 素雅灰; a test keeps every `deep` ≥ 4.5:1 on white and on `paper`). Unknown values fall back to the default
+  (`cardTheme` / `cardLayout`). `BusinessCardFace` is the top card (also the live preview in the editor); the share
+  page background is the theme's `paper`. Without the SQL, `withDesign` in `business-card-server.ts` sees the missing
+  column (42703 / PGRST204), retries without `theme, layout` and skips them for 5 minutes — cards keep working in the
+  default look and a chosen look just isn't saved.
 - Without the SQL: `GET /api/business-card` answers 503 (screen says 「還在準備中」) and `/c/<slug>` says the card isn't
   public. The local `supabase` CLI binary is killed by macOS on the dev Mac (exit 137), so the SQL was checked in a
   plain `postgres:16-alpine` container with stub `auth.users` / `storage.buckets`.

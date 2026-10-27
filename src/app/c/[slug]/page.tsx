@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { loadPublicCard } from "@/lib/business-card-server";
-import { cardShareMeta, cardSharePath } from "@/lib/business-card";
+import { cardShareMeta, cardSharePath, cardTheme } from "@/lib/business-card";
 import { BusinessCardView } from "@/components/business-card-view";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -36,7 +36,7 @@ export default async function BusinessCardPage({ params }: Props) {
   const { slug } = await params;
   const card = await loadPublicCard(slug);
   return (
-    <main style={{ minHeight: "100dvh", background: "var(--bg, #FAF5EC)", padding: "20px 16px 40px" }}>
+    <main style={{ minHeight: "100dvh", background: card ? cardTheme(card.theme).paper : "var(--bg, #FAF5EC)", padding: "20px 16px 40px" }}>
       <div style={{ maxWidth: 520, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
         <a href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", color: "var(--ink-2)", fontWeight: 800 }}>
           <span aria-hidden="true" style={{ fontSize: 22 }}>🧡</span> 暖暖 55+

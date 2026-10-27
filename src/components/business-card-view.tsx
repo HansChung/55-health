@@ -1,9 +1,10 @@
 // ────────────────────────────────────────────────
 // 數位名片的樣子：分享頁 /c/<slug> 和 App 裡的預覽共用（預覽看到的＝別人看到的）
 // 只顯示公開的聯絡方式（PublicBusinessCard 裡沒公開的是 null）
+// 樣子：配色（CARD_THEMES）× 直式／橫式（橫式像紙本名片：照片在左、字在右）
 // ────────────────────────────────────────────────
 
-import { cardSharePath, cardTitle, lineAddHref, telHref, type PublicBusinessCard } from "@/lib/business-card";
+import { cardSharePath, cardTheme, cardTitle, lineAddHref, telHref, type CardTheme, type PublicBusinessCard } from "@/lib/business-card";
 
 const contactBtn: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: 14,
@@ -22,51 +23,105 @@ function ContactText({ action, value }: { action: string; value?: string }) {
   );
 }
 
-export function BusinessCardView({ card, preview }: { card: PublicBusinessCard; preview?: boolean }) {
+function Photo({ card, name, theme, size, round }: { card: PublicBusinessCard; name: string; theme: CardTheme; size: number; round: boolean }) {
+  return (
+    <div style={{
+      width: size, height: size, flexShrink: 0, borderRadius: round ? "50%" : 18, overflow: "hidden",
+      border: `${round ? 5 : 3}px solid ${round ? "var(--surface)" : theme.soft}`, background: theme.soft, boxShadow: "var(--shadow-sm)",
+      display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.46,
+    }}>
+      {card.photo_url
+        // eslint-disable-next-line @next/next/no-img-element
+        ? <img src={card.photo_url} alt={`${name}的照片`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        : <span aria-hidden="true">🙂</span>}
+    </div>
+  );
+}
+
+function Interests({ items, theme, center }: { items: string[]; theme: CardTheme; center: boolean }) {
+  if (items.length === 0) return null;
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", justifyContent: center ? "center" : "flex-start", gap: 8, marginTop: 6 }} aria-label="興趣">
+      {items.map((t) => (
+        <span key={t} style={{
+          padding: "6px 14px", borderRadius: "var(--r-pill)", background: theme.chip,
+          fontSize: "var(--fs-base)", fontWeight: 700, color: "var(--ink-1)",
+        }}>❤️ {t}</span>
+      ))}
+    </div>
+  );
+}
+
+/** 名片最上面那張（照片、名字、介紹、興趣）；編輯畫面選樣子時也只預覽這張 */
+export function BusinessCardFace({ card }: { card: PublicBusinessCard }) {
   const name = cardTitle(card);
+  const theme = cardTheme(card.theme);
   const interests = card.interests.split(/[、,，/／]+/).map((s) => s.trim()).filter(Boolean);
+  const displayName = card.display_name || card.nickname || "還沒填名字";
+  const showNick = Boolean(card.display_name && card.nickname && card.nickname !== card.display_name);
+
+  if (card.layout === "horizontal") {
+    return (
+      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <div style={{ height: 14, background: theme.band }} />
+        <div style={{ padding: "18px 18px 20px" }}>
+          <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+            <Photo card={card} name={name} theme={theme} size={96} round={false} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h1 style={{ margin: 0, fontSize: "var(--fs-xl, 24px)", fontWeight: 900, lineHeight: 1.3, color: "var(--ink-1)", wordBreak: "break-word" }}>
+                {displayName}
+              </h1>
+              {showNick && (
+                <div style={{ marginTop: 2, fontSize: "var(--fs-base)", fontWeight: 700, lineHeight: 1.4, color: theme.deep }}>大家叫我「{card.nickname}」</div>
+              )}
+            </div>
+          </div>
+          {(card.intro || interests.length > 0) && (
+            <div aria-hidden="true" style={{ height: 3, borderRadius: 2, background: theme.band, margin: "14px 0 10px" }} />
+          )}
+          {card.intro && (
+            <p style={{ margin: 0, fontSize: "var(--fs-base)", lineHeight: 1.7, color: "var(--ink-2)" }}>{card.intro}</p>
+          )}
+          <Interests items={interests} theme={theme} center={false} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+      <div style={{ height: 72, background: theme.band }} />
+      <div style={{ padding: "0 20px 22px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 8 }}>
+        <div style={{ marginTop: -64 }}>
+          <Photo card={card} name={name} theme={theme} size={128} round />
+        </div>
+        <h1 style={{ margin: "4px 0 0", fontSize: "var(--fs-2xl, 28px)", fontWeight: 900, lineHeight: 1.3, color: "var(--ink-1)" }}>
+          {displayName}
+        </h1>
+        {showNick && (
+          <div style={{ fontSize: "var(--fs-lg)", fontWeight: 700, color: theme.deep }}>大家叫我「{card.nickname}」</div>
+        )}
+        {card.intro && (
+          <p style={{ margin: "6px 0 0", fontSize: "var(--fs-lg)", lineHeight: 1.7, color: "var(--ink-2)" }}>{card.intro}</p>
+        )}
+        <Interests items={interests} theme={theme} center />
+      </div>
+    </div>
+  );
+}
+
+export function BusinessCardView({ card, preview }: { card: PublicBusinessCard; preview?: boolean }) {
+  const theme = cardTheme(card.theme);
   const hasContact = Boolean(card.phone || card.line_id || card.email);
+  const heading: React.CSSProperties = { fontSize: "var(--fs-base)", fontWeight: 800, color: theme.deep };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ height: 72, background: "linear-gradient(135deg, #F6C7A6 0%, #F3DDB5 60%, #DDE8CF 100%)" }} />
-        <div style={{ padding: "0 20px 22px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 8 }}>
-          <div style={{
-            width: 128, height: 128, marginTop: -64, borderRadius: "50%", overflow: "hidden",
-            border: "5px solid var(--surface)", background: "var(--primary-soft, #FBE6D4)", boxShadow: "var(--shadow-sm)",
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 60,
-          }}>
-            {card.photo_url
-              // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={card.photo_url} alt={`${name}的照片`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              : <span aria-hidden="true">🙂</span>}
-          </div>
-          <h1 style={{ margin: "4px 0 0", fontSize: "var(--fs-2xl, 28px)", fontWeight: 900, lineHeight: 1.3, color: "var(--ink-1)" }}>
-            {card.display_name || card.nickname || "還沒填名字"}
-          </h1>
-          {card.display_name && card.nickname && card.nickname !== card.display_name && (
-            <div style={{ fontSize: "var(--fs-lg)", fontWeight: 700, color: "var(--primary-deep, #B5532E)" }}>大家叫我「{card.nickname}」</div>
-          )}
-          {card.intro && (
-            <p style={{ margin: "6px 0 0", fontSize: "var(--fs-lg)", lineHeight: 1.7, color: "var(--ink-2)" }}>{card.intro}</p>
-          )}
-          {interests.length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8, marginTop: 6 }} aria-label="興趣">
-              {interests.map((t) => (
-                <span key={t} style={{
-                  padding: "6px 14px", borderRadius: "var(--r-pill)", background: "var(--sage-soft, #E6EFDC)",
-                  fontSize: "var(--fs-base)", fontWeight: 700, color: "var(--ink-1)",
-                }}>❤️ {t}</span>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+      <BusinessCardFace card={card} />
 
       {hasContact && (
         <div className="card" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <div style={{ fontSize: "var(--fs-base)", fontWeight: 800, color: "var(--ink-2)" }}>聯絡我</div>
+          <div style={heading}>聯絡我</div>
           {card.phone && (
             <a href={telHref(card.phone)} style={contactBtn}><span aria-hidden="true" style={{ fontSize: 28 }}>📞</span><ContactText action="打電話給我" value={card.phone} /></a>
           )}
@@ -88,7 +143,7 @@ export function BusinessCardView({ card, preview }: { card: PublicBusinessCard; 
 
       {card.works.length > 0 && (
         <div className="card" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div style={{ fontSize: "var(--fs-base)", fontWeight: 800, color: "var(--ink-2)" }}>我的作品</div>
+          <div style={heading}>我的作品</div>
           {card.works.map((w) => w.kind === "video" ? (
             <a key={`v:${w.id}`} href={w.href ?? "#"} target={preview ? "_blank" : undefined} rel="noopener" style={{
               display: "flex", gap: 12, alignItems: "center", textDecoration: "none", color: "var(--ink-1)",

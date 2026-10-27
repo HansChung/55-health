@@ -3,8 +3,57 @@
 // 聯絡方式預設不公開；公開的版本（PublicBusinessCard）只帶長輩打開的那幾項
 // ────────────────────────────────────────────────
 
+import { BOOK_PART_PALETTES, type BookPartPalette } from "./book-palette";
+
 export const CARD_LIMITS = { display_name: 20, nickname: 20, intro: 100, interests: 60, phone: 20, line_id: 80, email: 80 } as const;
 export const CARD_WORKS_MAX = 3;
+
+/** 名片配色：band 上方色帶、deep 文字（白底對比 ≥ 4.5）、soft 照片底色、chip 興趣標籤底色、paper 分享頁底色、swatch 選色按鈕 */
+export interface CardTheme {
+  id: string;
+  label: string;
+  band: string;
+  deep: string;
+  soft: string;
+  chip: string;
+  paper: string;
+  swatch: string;
+}
+
+/** 書本四部的顏色也拿來當名片配色（跟書一致） */
+function bookTheme(id: string, label: string, p: BookPartPalette): CardTheme {
+  return { id, label, band: `linear-gradient(135deg, ${p.main} 0%, ${p.soft} 100%)`, deep: p.deep, soft: p.soft, chip: p.soft, paper: p.paper, swatch: p.main };
+}
+
+export const CARD_THEMES = [
+  // 第一個是預設（＝原本的樣子）
+  { id: "warm", label: "暖橘", band: "linear-gradient(135deg, #F6C7A6 0%, #F3DDB5 60%, #DDE8CF 100%)", deep: "#B5532E", soft: "#FBE6D4", chip: "#DCEBD8", paper: "#FAF5EC", swatch: "#E8845A" },
+  bookTheme("indigo", "靛藍", BOOK_PART_PALETTES[1]),
+  bookTheme("teal", "青綠", BOOK_PART_PALETTES[2]),
+  bookTheme("lavender", "薰衣紫", BOOK_PART_PALETTES[3]),
+  bookTheme("rosewood", "豆沙紅", BOOK_PART_PALETTES[4]),
+  { id: "festive", label: "喜氣紅", band: "linear-gradient(135deg, #C8463D 0%, #E58A5C 60%, #F2C58A 100%)", deep: "#A0322A", soft: "#F8DEDA", chip: "#F8DEDA", paper: "#FBF3EF", swatch: "#C8463D" },
+  { id: "slate", label: "素雅灰", band: "linear-gradient(135deg, #5B6670 0%, #A3ABB2 100%)", deep: "#3E4750", soft: "#E6E9EC", chip: "#E6E9EC", paper: "#F4F5F6", swatch: "#6B757E" },
+] as const satisfies readonly CardTheme[];
+
+export type CardThemeId = (typeof CARD_THEMES)[number]["id"];
+
+/** 不認得的（舊資料、沒跑 SQL）就用預設 */
+export function cardTheme(id: unknown): (typeof CARD_THEMES)[number] {
+  return CARD_THEMES.find((t) => t.id === id) ?? CARD_THEMES[0];
+}
+
+/** 直式：照片在上面置中（原本的樣子）；橫式：像紙本名片，照片在左、字在右 */
+export const CARD_LAYOUTS = [
+  { id: "vertical", label: "直式", desc: "照片在上面" },
+  { id: "horizontal", label: "橫式", desc: "像紙本名片" },
+] as const;
+
+export type CardLayoutId = (typeof CARD_LAYOUTS)[number]["id"];
+
+export function cardLayout(id: unknown): CardLayoutId {
+  return CARD_LAYOUTS.find((l) => l.id === id)?.id ?? CARD_LAYOUTS[0].id;
+}
 
 export type CardWorkKind = "video" | "story";
 export interface CardWorkRef {
@@ -44,6 +93,8 @@ export interface CardFields {
   show_line: boolean;
   show_email: boolean;
   works: CardWorkRef[];
+  theme: CardThemeId;
+  layout: CardLayoutId;
 }
 
 /** 長輩自己看到的名片（含沒公開的聯絡方式） */
@@ -66,11 +117,14 @@ export interface PublicBusinessCard {
   line_id: string | null;
   email: string | null;
   works: CardWork[];
+  theme: CardThemeId;
+  layout: CardLayoutId;
 }
 
 export const EMPTY_CARD_FIELDS: CardFields = {
   display_name: "", nickname: "", intro: "", interests: "", phone: "", line_id: "", email: "",
   show_phone: false, show_line: false, show_email: false, works: [],
+  theme: CARD_THEMES[0].id, layout: CARD_LAYOUTS[0].id,
 };
 
 export class CardInputError extends Error {}
@@ -133,6 +187,8 @@ export function normalizeCardInput(raw: unknown): CardFields {
     show_line: r.show_line === true && Boolean(line_id),
     show_email: r.show_email === true && Boolean(email),
     works,
+    theme: cardTheme(r.theme).id,
+    layout: cardLayout(r.layout),
   };
 }
 
@@ -196,6 +252,8 @@ export function toPublicCard(card: BusinessCard, works: CardWork[]): PublicBusin
     line_id: card.show_line && card.line_id ? card.line_id : null,
     email: card.show_email && card.email ? card.email : null,
     works,
+    theme: cardTheme(card.theme).id,
+    layout: cardLayout(card.layout),
   };
 }
 
