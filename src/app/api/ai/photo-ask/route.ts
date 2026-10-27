@@ -143,6 +143,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "今日 AI 辨識次數已達上限，請明天再試或升級方案" }, { status: 429 });
     }
     console.error("[api] 拍照問暖暖失敗:", msg);
-    return NextResponse.json({ error: "暖暖這次沒看清楚，換一張清楚一點的再問問看" }, { status: 500 });
+    return NextResponse.json({ error: "暖暖這次沒有看成功，請再按一次；一直不行的話稍後再試" }, { status: 500 });
   }
 }

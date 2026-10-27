@@ -113,6 +113,9 @@ and Stripe. Capacitor/Android is only a packaging target and is not needed for w
   the app calls (gem-3.8-flash, gem-3.5-flash-lite, gem-3.1-tts, speech-2.8, suno-v4.5, minimax-h3) — a model with
   no groups returns 403. minimax-h3 must use a group that supports 首尾帧 (`mode=shouweizhen`); MC-H3特价 does not.
   Check with the free `GET /v1/skills/models/{model}/pricing` (`key_channel_strategy`, `in_key_whitelist`).
+  **Some channels (AM-cli for gem-3.8-flash) return the model's thinking as an extra `thought: true` part** —
+  `response.text()` glues it in front of the answer and JSON parsing fails (every photo failed on 2026-10-27).
+  Always read model output with `modelText(result.response)` from `src/lib/ai/gemini.ts`, never `.text()`.
 
 - **Database privileges** (`supabase/fix-privilege-escalation.sql`, needs `add-stripe-customer.sql` first): the anon
   key is public, so anything enforced only in an API route can be bypassed with PostgREST + the user's own JWT.

@@ -1,5 +1,5 @@
 // 看診小幫手：整理看診小卡（文字模型）、看懂檢驗報告（看圖模型）
-import { getGeminiModel, parseModelJson, type GeminiProvider } from "./gemini";
+import { getGeminiModel, parseModelJson, type GeminiProvider, modelText } from "./gemini";
 import { normalizeClinicCard, normalizeLabReport, type ClinicCard, type ClinicPrepInput, type LabReport } from "@/lib/clinic";
 
 type Usage = { inputTokens: number; outputTokens: number; model: string; provider: GeminiProvider };
@@ -37,7 +37,7 @@ export async function writeClinicCard(
   const res = await model.generateContent(buildClinicCardPrompt(input, ctx));
   let card: ClinicCard;
   try {
-    card = normalizeClinicCard(parseModelJson<unknown>(res.response.text()), input);
+    card = normalizeClinicCard(parseModelJson<unknown>(modelText(res.response)), input);
   } catch {
     throw new Error("clinic card 回傳格式錯誤");
   }
@@ -74,7 +74,7 @@ export async function readLabReport(image: { base64: string; mimeType: string })
   const res = await model.generateContent([{ text: buildLabReportPrompt() }, { inlineData: { data: image.base64, mimeType: image.mimeType } }]);
   let report: LabReport;
   try {
-    report = normalizeLabReport(parseModelJson<unknown>(res.response.text()));
+    report = normalizeLabReport(parseModelJson<unknown>(modelText(res.response)));
   } catch {
     // 不把模型原文寫進錯誤（可能有個人檢驗數值）
     throw new Error("lab report 回傳格式錯誤");

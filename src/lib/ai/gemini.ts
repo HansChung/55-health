@@ -74,11 +74,36 @@ export function getGeminiModel(
   return { model, config };
 }
 
-/** 解析模型回的 JSON；容錯偶爾包在 ```json 區塊裡的情況 */
+/**
+ * 模型真正的回答：只取不是「思考過程」的段落
+ * 有些通道（例如 lk888 的 AM-cli）會把思考摘要當成第一段 part（thought: true）一起回；
+ * SDK 的 response.text() 會把它也接進去 → 前面多一大段英文，JSON 解析失敗（2026-10-27 拍照全部失敗就是這個）
+ */
+export function modelText(response: { candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[]; text: () => string }): string {
+  const parts = response.candidates?.[0]?.content?.parts;
+  if (!parts) return response.text();
+  return parts
+    .filter((p) => !p.thought && typeof p.text === "string")
+    .map((p) => p.text)
+    .join("");
+}
+
+/** 解析模型回的 JSON；容錯包在 ```json 區塊裡、或前後多了說明文字的情況 */
 export function parseModelJson<T>(text: string): T {
   const trimmed = text.trim();
   const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
-  return JSON.parse(fenced ? fenced[1] : trimmed) as T;
+  const body = fenced ? fenced[1] : trimmed;
+  try {
+    return JSON.parse(body) as T;
+  } catch (e) {
+    // 前面混了別的字：取最後一個 ```json 區塊，或第一個 { / [ 到最後一個 } / ] 之間
+    const blocks = [...trimmed.matchAll(/```(?:json)?\s*([\s\S]*?)\s*```/gi)];
+    if (blocks.length > 0) return JSON.parse(blocks[blocks.length - 1][1]) as T;
+    const start = body.search(/[{[]/);
+    const end = Math.max(body.lastIndexOf("}"), body.lastIndexOf("]"));
+    if (start >= 0 && end > start) return JSON.parse(body.slice(start, end + 1)) as T;
+    throw e;
+  }
 }
 
 const FOOD_ANALYSIS_PROMPT = `你是專業的台灣營養師，請分析這張照片裡的食物。
@@ -137,7 +162,7 @@ export async function analyzeFoodImage(
     { inlineData: { data: imageBase64, mimeType } },
   ]);
 
-  const text = result.response.text();
+  const text = modelText(result.response);
   let parsed: FoodAnalysisResult;
   try {
     parsed = parseModelJson<FoodAnalysisResult>(text);

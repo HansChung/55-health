@@ -1,5 +1,5 @@
 // 拍照問暖暖：看圖模型（lk888 gem-3.8-flash，或 Google 直連）
-import { getGeminiModel, parseModelJson, type GeminiProvider } from "./gemini";
+import { getGeminiModel, parseModelJson, type GeminiProvider, modelText } from "./gemini";
 import { normalizePhotoAskResult, type PhotoAskResult } from "@/lib/photo-ask";
 
 export function buildPhotoAskPrompt(opts: { question: string; place?: string }): string {
@@ -56,7 +56,7 @@ export async function askAboutPhoto(
     { text: buildPhotoAskPrompt(opts) },
     { inlineData: { data: imageBase64, mimeType } },
   ]);
-  const text = response.response.text();
+  const text = modelText(response.response);
   let result: PhotoAskResult;
   try {
     result = normalizePhotoAskResult(parseModelJson<unknown>(text));

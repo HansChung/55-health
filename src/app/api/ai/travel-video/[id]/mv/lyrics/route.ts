@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server";
 import { checkUserQuota, countMonthlyEndpointUsage, trackAiUsage } from "@/lib/ai/usage-tracker";
-import { getGeminiModel, isGeminiConfigured, parseModelJson, resolveGeminiConfig } from "@/lib/ai/gemini";
+import { getGeminiModel, isGeminiConfigured, parseModelJson, resolveGeminiConfig, modelText } from "@/lib/ai/gemini";
 import { loadMvSource } from "@/lib/ai/travel-mv-source";
 import {
   MV_LANGUAGE_IDS,
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
         lines: source.montage!.photos.map((p) => p.line),
       })
     );
-    const raw = parseModelJson<{ title?: unknown; lyrics?: unknown }>(result.response.text());
+    const raw = parseModelJson<{ title?: unknown; lyrics?: unknown }>(modelText(result.response));
     const title = sanitizeMvTitle(typeof raw.title === "string" ? raw.title : "");
     const lyrics = sanitizeMvLyrics(typeof raw.lyrics === "string" ? raw.lyrics.replace(/\\n/g, "\n") : "");
     const usage = result.response.usageMetadata;

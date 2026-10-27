@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { getGeminiModel, isGeminiConfigured, parseModelJson } from "@/lib/ai/gemini";
+import { getGeminiModel, isGeminiConfigured, parseModelJson, modelText } from "@/lib/ai/gemini";
 import { ASK_ENDPOINT, loadAsker } from "@/lib/ai/ask-quota-server";
 import { finishReservedUsage, releaseReservedUsage, reserveDailySlot, trackAiUsage } from "@/lib/ai/usage-tracker";
 import { taipeiDayStartIso } from "@/lib/ask";
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
       { task: "text", googleModel: "gemini-2.5-flash-lite" }
     );
     const result = await model.generateContent(buildStoryWritePrompt(messages, { displayName: profile?.display_name }));
-    const draft = normalizeStoryDraft(parseModelJson<unknown>(result.response.text()));
+    const draft = normalizeStoryDraft(parseModelJson<unknown>(modelText(result.response)));
     const meta = result.response.usageMetadata;
     const usage = {
       model: config.model,

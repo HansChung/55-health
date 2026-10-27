@@ -1,5 +1,5 @@
 // 說話變文字（伺服器聽寫）：一句 mp3 → lk888 的 Gemini 逐字聽寫成繁體中文
-import { getGeminiModel, type GeminiProvider } from "./gemini";
+import { getGeminiModel, type GeminiProvider, modelText } from "./gemini";
 import { cleanTranscript } from "@/lib/dictation";
 
 export const TRANSCRIBE_PROMPT = [
@@ -18,7 +18,7 @@ export async function transcribeSpeech(
   });
   const meta = res.response.usageMetadata;
   return {
-    text: cleanTranscript(res.response.text()),
+    text: cleanTranscript(modelText(res.response)),
     usage: { inputTokens: meta?.promptTokenCount ?? 0, outputTokens: meta?.candidatesTokenCount ?? 0, model: config.model, provider: config.provider },
   };
 }
