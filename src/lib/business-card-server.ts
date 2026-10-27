@@ -138,7 +138,8 @@ export async function replaceCardPhoto(admin: Admin, userId: string, buffer: Buf
     if (buffer.length > CARD_PHOTO_MAX_BYTES) throw new CardPhotoError("照片太大了，請換一張");
     const ext = type === "image/png" ? "png" : type === "image/webp" ? "webp" : "jpg";
     path = `${userId}/${randomUUID()}.${ext}`;
-    const { error } = await admin.storage.from(CARD_PHOTO_BUCKET).upload(path, buffer, { contentType: type, upsert: false, cacheControl: "31536000" });
+    // CDN 只快取 1 小時：換掉或拿掉照片後，舊照片的網址最多一小時就打不開（設太長會一直留在快取裡）
+    const { error } = await admin.storage.from(CARD_PHOTO_BUCKET).upload(path, buffer, { contentType: type, upsert: false, cacheControl: "3600" });
     if (error) throw new Error(`upload card photo failed: ${error.message}`);
   }
   const { data, error } = await admin
