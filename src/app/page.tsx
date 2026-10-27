@@ -478,15 +478,11 @@ export default function Page() {
     }
   };
 
-  const handleTakeMedication = async (medication: ProfileMedication) => {
+  const handleTakeMedication = async (medication: ProfileMedication, time: string) => {
     if (!profile) return;
-    const next = (profile.medications ?? []).map((med) =>
-      med.name === medication.name && med.added_at === medication.added_at
-        ? { ...med, taken_today: true, last_taken_at: new Date().toISOString() }
-        : med
-    );
     try {
-      const { profile: updated } = await api.updateProfile({ medications: next });
+      // 只標記這一次（一天三次的藥，吃了早上那顆，中午、晚上的提醒還在）；伺服器拿最新清單改
+      const { profile: updated } = await api.takeMedication(medication, time);
       setProfileDirectly(updated as AppProfile);
     } catch (e) {
       console.error("更新用藥狀態失敗:", e);
@@ -601,6 +597,15 @@ export default function Page() {
     if (!user) return;
     loadSuggestion();
   }, [user]);
+
+  // 這台裝置的推播訂閱綁到現在登入的人（同一支手機換人登入時，通知跟著人走）
+  const userId = user?.id;
+  useEffect(() => {
+    if (!userId) return;
+    import("@/lib/push/client")
+      .then((m) => m.syncWebPushSubscription())
+      .catch((e) => console.warn("[push] sync:", e));
+  }, [userId]);
 
   // 「我的」按連結 LINE 回來：成功或失敗都提示，切到「我的」（沒登入時由登入畫面顯示原因）
   useEffect(() => {
@@ -798,7 +803,8 @@ export default function Page() {
     blueprint: () => setSubpage("blueprint"),
     book: () => { window.location.href = "/smart/guide"; },
     // 只有真的在關心長輩的人才有「家人狀況」（長輩自己看是空的）
-    caregiver: careElderCount > 0 ? () => setSubpage("caregiver") : undefined,
+    // 一直顯示：還沒連上長輩的家人要從這裡輸入邀請碼
+    caregiver: () => setSubpage("caregiver"),
     scam_check: featureEnabled("scam_check") ? () => requireFeature("scam_check", () => setSubpage("scam-check")) : undefined,
     iot: () => setSubpage("iot"),
     family: () => setSubpage("family"),

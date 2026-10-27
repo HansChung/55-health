@@ -9,7 +9,8 @@ import { LockedFeatureCard } from "@/components/locked-feature-card";
 import { api, type AlertThresholdSettings, type ProfileMedication } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import { hasFeature, type SubscriptionTier } from "@/lib/feature-gates";
-import { inferMedicationReminderTimes, isTakenToday } from "@/lib/medication-utils";
+import { inferMedicationReminderTimes, isTakenToday, markDoseTaken } from "@/lib/medication-utils";
+import { useAuth, type AppProfile } from "@/hooks/use-auth";
 import {
   chronicSuggestedThresholds,
   resolveAlertThresholds,
@@ -34,6 +35,8 @@ const CONDITIONS = [
 
 export function ChronicDiseaseScreen({ onBack, onScanPrescription, tier }: ChronicDiseaseScreenProps) {
   const toast = useToast();
+  // 存好後把最新的資料交給首頁（不然首頁的用藥提醒、拍藥袋還拿著舊清單，按「已吃」會把舊的蓋回去）
+  const { setProfileDirectly } = useAuth();
   const [selected, setSelected] = useState<string[]>([]);
   const [meds, setMeds] = useState<ProfileMedication[]>([]);
   const [thresholds, setThresholds] = useState<AlertThresholdSettings>({});
@@ -95,7 +98,8 @@ export function ChronicDiseaseScreen({ onBack, onScanPrescription, tier }: Chron
     const next = meds.map((m, i) => i === idx ? { ...m, ...patch } : m);
     setMeds(next);
     try {
-      await api.updateProfile({ medications: next });
+      const { profile } = await api.updateProfile({ medications: next });
+      setProfileDirectly(profile as AppProfile);
     } catch (e) {
       console.error("儲存用藥提醒失敗:", e);
       toast.error("用藥提醒沒存成功，請再試一次。");
@@ -124,11 +128,12 @@ export function ChronicDiseaseScreen({ onBack, onScanPrescription, tier }: Chron
   const save = async () => {
     setSaving(true);
     try {
-      await api.updateProfile({
+      const { profile } = await api.updateProfile({
         chronic_conditions: selected,
         medications: meds,
         alert_thresholds: thresholds,
       });
+      setProfileDirectly(profile as AppProfile);
       onBack();
     } catch (e) {
       console.error("儲存慢性病設定失敗:", e);
@@ -338,18 +343,15 @@ export function ChronicDiseaseScreen({ onBack, onScanPrescription, tier }: Chron
                   </div>
 
                   {m.reminder_enabled !== false && (
+                    <ReminderTimes
+                      times={m.reminder_times ?? []}
+                      onChange={(times) => updateMed(i, { reminder_times: times })}
+                    />
+                  )}
+                  {m.reminder_enabled !== false && (
                     <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 10 }}>
-                      <input
-                        type="time"
-                        value={m.reminder_times?.[0] ?? "08:00"}
-                        onChange={(e) => updateMed(i, { reminder_times: [e.target.value] })}
-                        style={{ ...miniInput, width: 120, margin: 0 }}
-                      />
                       <button
-                        onClick={() => updateMed(i, {
-                          taken_today: true,
-                          last_taken_at: new Date().toISOString(),
-                        })}
+                        onClick={() => updateMed(i, markDoseTaken(m, null))}
                         style={{
                           flex: 1, padding: "10px 12px", borderRadius: 10,
                           background: isTakenToday(m) ? "var(--sage-soft)" : "var(--primary-soft)",
@@ -442,6 +444,49 @@ const miniInput: React.CSSProperties = {
   borderRadius: 8, fontSize: "var(--fs-sm)",
   outline: "none", fontFamily: "inherit",
 };
+
+/** 一天吃幾次就有幾個時間；可以改、加、刪（至少留一個） */
+function ReminderTimes({ times, onChange }: { times: string[]; onChange: (times: string[]) => void }) {
+  const list = times.length > 0 ? times : ["08:00"];
+  const set = (idx: number, value: string) => {
+    if (!value) return;
+    onChange(Array.from(new Set(list.map((t, i) => (i === idx ? value : t)))).sort());
+  };
+  const add = () => {
+    const next = ["08:00", "13:00", "19:00", "21:30"].find((t) => !list.includes(t)) ?? "12:00";
+    onChange(Array.from(new Set([...list, next])).sort());
+  };
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginTop: 10 }}>
+      {list.map((t, idx) => (
+        <div key={`${t}-${idx}`} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <input
+            type="time"
+            aria-label={`第 ${idx + 1} 次吃藥時間`}
+            value={t}
+            onChange={(e) => set(idx, e.target.value)}
+            style={{ ...miniInput, width: 120, margin: 0 }}
+          />
+          {list.length > 1 && (
+            <button
+              type="button"
+              aria-label={`刪掉 ${t} 這一次`}
+              onClick={() => onChange(list.filter((_, i) => i !== idx))}
+              style={{ minWidth: 44, minHeight: 44, borderRadius: 10, border: "1px solid var(--line)", background: "var(--surface)", fontSize: "var(--fs-base)" }}
+            >×</button>
+          )}
+        </div>
+      ))}
+      {list.length < 6 && (
+        <button
+          type="button"
+          onClick={add}
+          style={{ minHeight: 44, padding: "0 12px", borderRadius: 10, border: "1px dashed var(--line-strong)", background: "transparent", fontSize: "var(--fs-sm)", fontWeight: 700 }}
+        >＋ 加一個時間</button>
+      )}
+    </div>
+  );
+}
 
 function normalizeMedication(med: ProfileMedication): ProfileMedication {
   const reminderText = [med.time, med.dose].filter(Boolean).join(" ");

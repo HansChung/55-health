@@ -33,7 +33,7 @@ interface HomeScreenProps {
   repeatMeals?: Partial<Record<MealType, MealRecord>>;
   onRepeatMeal?: (mealType: MealType) => void;
   medicationReminders?: { med: ProfileMedication; time: string }[];
-  onTakeMedication?: (medication: ProfileMedication) => void;
+  onTakeMedication?: (medication: ProfileMedication, time: string) => void;
   healthAlerts?: HealthAlert[];
   onAlertsCenter?: () => void;
   favoriteMeals?: FavoriteMeal[];
@@ -211,7 +211,7 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
                     {med.dose && <div style={{ fontSize: "var(--fs-xs)", color: "var(--ink-2)" }}>{med.dose}</div>}
                   </div>
                   <button
-                    onClick={() => onTakeMedication?.(med)}
+                    onClick={() => onTakeMedication?.(med, time)}
                     style={{
                       padding: "8px 10px", borderRadius: 999,
                       background: "var(--sage-soft)", color: "#4F7A4E",

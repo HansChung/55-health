@@ -9,14 +9,11 @@ import { createSupabaseServer, createSupabaseAdmin } from "@/lib/supabase/server
 import { checkinSetting, checkinState } from "@/lib/daily-checkin";
 import { todayCheckin } from "@/lib/daily-checkin-server";
 import { nextFamilyAppointment } from "@/lib/clinic-appointments-server";
+import { isTakenToday } from "@/lib/medication-utils";
+import type { ProfileMedication } from "@/lib/api-client";
 
 export const dynamic = "force-dynamic";
 
-interface Medication {
-  name?: string;
-  reminder_enabled?: boolean;
-  taken_today?: boolean;
-}
 
 // 台灣今天 00:00 的 UTC ISO
 function startOfTaipeiTodayISO(): string {
@@ -118,10 +115,11 @@ export async function GET() {
       let shi: number | null = null;
 
       if (canHealth) {
-        const medsArr = (profile?.medications ?? []) as Medication[];
-        const reminder = medsArr.filter((m) => m?.reminder_enabled);
+        // 和長輩首頁同一套：有開提醒的藥，今天（台北日期）每一次都吃了才算（taken_today 旗標不會隔天重設，不能用）
+        const medsArr = (Array.isArray(profile?.medications) ? profile.medications : []) as ProfileMedication[];
+        const reminder = medsArr.filter((m) => m && m.reminder_enabled !== false && (m.reminder_times?.length ?? 0) > 0);
         if (reminder.length > 0) {
-          meds = { total: reminder.length, taken: reminder.filter((m) => m.taken_today).length };
+          meds = { total: reminder.length, taken: reminder.filter((m) => isTakenToday(m)).length };
         }
 
         if (bpRows?.[0]?.systolic != null) {

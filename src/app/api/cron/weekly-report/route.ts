@@ -86,7 +86,13 @@ export async function GET(req: NextRequest) {
 
     for (const link of (links ?? []) as FamilyLinkRow[]) {
       if (!link.family_user_id) continue;
-      if (!link.permissions?.diary && !link.permissions?.alerts) continue;
+      // 只寄長輩願意分享的部分：飲食日記／今日卡路里／健康警示 各自分開（都沒開就不寄）
+      const share = {
+        diary: Boolean(link.permissions?.diary),
+        calories: Boolean(link.permissions?.calories),
+        health: Boolean(link.permissions?.alerts),
+      };
+      if (!share.diary && !share.calories && !share.health) continue;
       const { data: famUser } = await supabase.auth.admin.getUserById(link.family_user_id);
       const famEmail = famUser?.user?.email;
       if (!famEmail) continue;
@@ -97,6 +103,7 @@ export async function GET(req: NextRequest) {
           recipientName: link.family_name,
           elderName,
           forFamily: true,
+          share,
           report,
         }),
       });

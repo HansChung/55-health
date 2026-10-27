@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServer } from "@/lib/supabase/server";
+import { createSupabaseAdmin, createSupabaseServer } from "@/lib/supabase/server";
 import { z } from "zod";
 
+/** 推播服務一定是 https 的公開網址（伺服器會 POST 過去，不能讓人填內網位址） */
+const PushEndpoint = z.string().url().max(2000).refine((u) => {
+  try {
+    const { protocol, hostname } = new URL(u);
+    return protocol === "https:" && hostname.includes(".") && !/^[\d.]+$/.test(hostname) && !hostname.includes(":") && hostname !== "localhost";
+  } catch {
+    return false;
+  }
+});
+
 const PostSchema = z.object({
-  endpoint: z.string().url().max(2000),
+  endpoint: PushEndpoint,
   keys: z.object({
     p256dh: z.string().min(1).max(500),
     auth: z.string().min(1).max(200),
@@ -29,8 +39,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "送出的資料格式有誤" }, { status: 400 });
   }
 
+  // 用 service role 寫：同一支手機換人登入時，這台裝置的訂閱要改綁到現在登入的人
+  // （用使用者身分 upsert 會卡在別人那一筆的 RLS → 新登入的人收不到、前一個人的通知還一直跳在這支手機）
   const now = new Date().toISOString();
-  const { error } = await supabase.from("push_subscriptions").upsert(
+  const { error } = await createSupabaseAdmin().from("push_subscriptions").upsert(
     {
       user_id: user.id,
       endpoint: body.endpoint,

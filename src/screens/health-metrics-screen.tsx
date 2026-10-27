@@ -6,7 +6,7 @@ import { SubPage } from "@/components/sub-page";
 import { api, type HealthMetric } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import { HealthTrends } from "@/components/health-trends";
-import { splitPeriods, type TrendRange } from "@/lib/health-trends";
+import { bpLevel, glucoseLevel, splitPeriods, type GlucoseContext, type Level, type TrendRange } from "@/lib/health-trends";
 
 interface HealthMetricsScreenProps {
   onBack: () => void;
@@ -464,27 +464,29 @@ const GLUCOSE_CONTEXT_LABEL: Record<string, string> = {
   bedtime: "睡前",
 };
 
+/** 分級沿用 health-trends（趨勢圖、家人看到的同一套）：血糖任何時候低於 70 都算偏低 */
 function getStatus(tab: TabType, m: HealthMetric): { label: string; color: string } | null {
   if (tab === "blood_pressure" && m.systolic && m.diastolic) {
-    if (m.systolic >= 140 || m.diastolic >= 90) return { label: "⚠️ 偏高", color: "#C95B6E" };
-    if (m.systolic >= 130 || m.diastolic >= 85) return { label: "⚠️ 偏高警戒", color: "#D9A441" };
-    if (m.systolic < 90 || m.diastolic < 60) return { label: "⚠️ 偏低", color: "#5BA0C9" };
-    return { label: "✅ 正常", color: "#7AA779" };
+    return STATUS_LABEL.bp[bpLevel(m.systolic, m.diastolic)];
   }
   if (tab === "blood_glucose" && m.glucose_mg_dl) {
-    const ctx = m.glucose_context;
-    const g = m.glucose_mg_dl;
-    if (ctx === "fasting" || ctx === "before_meal") {
-      if (g >= 126) return { label: "⚠️ 偏高（糖尿病範圍）", color: "#C95B6E" };
-      if (g >= 100) return { label: "⚠️ 偏高警戒", color: "#D9A441" };
-      if (g < 70) return { label: "⚠️ 偏低", color: "#5BA0C9" };
-      return { label: "✅ 正常", color: "#7AA779" };
-    }
-    if (ctx === "after_meal") {
-      if (g >= 200) return { label: "⚠️ 偏高（糖尿病範圍）", color: "#C95B6E" };
-      if (g >= 140) return { label: "⚠️ 偏高警戒", color: "#D9A441" };
-      return { label: "✅ 正常", color: "#7AA779" };
-    }
+    const level = glucoseLevel(m.glucose_mg_dl, (m.glucose_context ?? null) as GlucoseContext | null);
+    return level ? STATUS_LABEL.glucose[level] : null;
   }
   return null;
 }
+
+const STATUS_LABEL: Record<"bp" | "glucose", Record<Level, { label: string; color: string }>> = {
+  bp: {
+    high: { label: "⚠️ 偏高", color: "#C95B6E" },
+    warn: { label: "⚠️ 偏高警戒", color: "#D9A441" },
+    low: { label: "⚠️ 偏低", color: "#5BA0C9" },
+    normal: { label: "✅ 正常", color: "#7AA779" },
+  },
+  glucose: {
+    high: { label: "⚠️ 偏高（糖尿病範圍）", color: "#C95B6E" },
+    warn: { label: "⚠️ 偏高警戒", color: "#D9A441" },
+    low: { label: "⚠️ 偏低，先吃點糖或果汁", color: "#5BA0C9" },
+    normal: { label: "✅ 正常", color: "#7AA779" },
+  },
+};

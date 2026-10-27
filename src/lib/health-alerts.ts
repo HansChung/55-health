@@ -1,5 +1,6 @@
 import type { HealthMetric, MealRecord, ProfileMedication } from "./api-client";
 import { getPendingMedicationReminders, isSameLocalDay } from "./medication-utils";
+import { bpLevel } from "./health-trends";
 
 export interface HealthAlert {
   id: string;
@@ -23,7 +24,8 @@ export function generateHealthAlerts(input: {
   const alerts: HealthAlert[] = [];
 
   if (latestBloodPressure?.systolic && latestBloodPressure?.diastolic) {
-    if (latestBloodPressure.systolic >= 140 || latestBloodPressure.diastolic >= 90) {
+    const level = bpLevel(latestBloodPressure.systolic, latestBloodPressure.diastolic);
+    if (level === "high") {
       alerts.push({
         id: "blood_pressure_high",
         level: "warning",
@@ -31,7 +33,26 @@ export function generateHealthAlerts(input: {
         message: "今天飲食可以清淡一點，也記得按時量血壓。",
         action: "查看健康紀錄",
       });
+    } else if (level === "low") {
+      alerts.push({
+        id: "blood_pressure_low",
+        level: "warning",
+        title: "血壓偏低",
+        message: "起身慢一點，頭暈就先坐下休息；常常偏低請告訴醫師。",
+        action: "查看健康紀錄",
+      });
     }
+  }
+
+  // 低血糖比高血糖急（頭暈、冒冷汗、跌倒），排在前面
+  if (latestBloodGlucose?.glucose_mg_dl && latestBloodGlucose.glucose_mg_dl < 70) {
+    alerts.push({
+      id: "blood_glucose_low",
+      level: "warning",
+      title: "血糖偏低",
+      message: "先吃一顆糖或喝半杯果汁，15 分鐘後再量一次；常常偏低請告訴醫師。",
+      action: "查看健康紀錄",
+    });
   }
 
   if (latestBloodGlucose?.glucose_mg_dl && latestBloodGlucose.glucose_mg_dl >= 180) {

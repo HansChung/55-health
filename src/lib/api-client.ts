@@ -487,6 +487,10 @@ export const api = {
       };
     }>("/api/chapter-drafts", { method: "PUT", json: input }),
 
+  /** 家人輸入長輩給的邀請碼 */
+  acceptFamilyInvite: (code: string) =>
+    apiFetch<{ elderName: string }>("/api/family/accept", { method: "POST", json: { code } }),
+
   // 子女／家人儀表板
   familyOverview: () =>
     apiFetch<{ elders: ElderOverview[] }>("/api/family/overview"),
@@ -557,6 +561,16 @@ export const api = {
 
   updateProfile: (patch: Partial<ProfileData>) =>
     apiFetch<{ profile: ProfileData }>("/api/profile", { method: "PATCH", json: patch }),
+
+  /** 標記吃了一次藥（time 不給＝今天全部）；伺服器拿最新的清單改，不會蓋掉別處剛改的 */
+  takeMedication: (med: { name: string; added_at?: string }, time?: string) =>
+    apiFetch<{ profile: ProfileData }>("/api/profile/medications", {
+      method: "POST", json: { action: "take", name: med.name, added_at: med.added_at, time },
+    }),
+
+  /** 把新的藥接在清單後面（拍藥袋） */
+  addMedications: (medications: ProfileMedication[]) =>
+    apiFetch<{ profile: ProfileData }>("/api/profile/medications", { method: "POST", json: { action: "add", medications } }),
 
   dailyWeatherStatus: () => apiFetch<{ available: boolean }>("/api/daily-weather"),
 
@@ -856,6 +870,8 @@ export interface ProfileMedication {
   reminder_times?: string[];
   taken_today?: boolean;
   last_taken_at?: string;
+  /** 今天（台北日期）吃過哪幾個時間 */
+  taken_times?: { day: string; times: string[] };
 }
 
 /** 給看圖 API 的照片：直傳 Supabase 後只帶路徑；直傳失敗才帶 base64（見 lib/direct-upload.ts） */

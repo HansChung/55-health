@@ -92,11 +92,14 @@ interface BuildWeeklyEmailParams {
   elderName: string;
   /** 收件者是否為家人（決定用「家人摘要」還是「給長者的提醒」） */
   forFamily: boolean;
+  /** 寄給家人時：長輩在「家人共享」開了哪些（沒開的內容不放進信裡） */
+  share?: { diary: boolean; calories: boolean; health: boolean };
   report: {
     meals: { days_logged: number; meals_count: number; avg_calories: number };
     exercise: { minutes: number };
     tips: string[];
     family_summary: string[];
+    family_summary_by_kind?: { diary: string[]; health: string[] };
   };
 }
 
@@ -104,9 +107,22 @@ export function buildWeeklyReportEmail({
   recipientName,
   elderName,
   forFamily,
+  share,
   report,
 }: BuildWeeklyEmailParams): string {
-  const points = forFamily ? report.family_summary : report.tips;
+  // 長輩自己：全部；家人：只放長輩願意分享的（沒給 share 當作全部都沒開，寧可少寄）
+  const allow = forFamily ? share ?? { diary: false, calories: false, health: false } : { diary: true, calories: true, health: true };
+  const byKind = report.family_summary_by_kind;
+  const points = !forFamily
+    ? report.tips
+    : byKind
+      ? [...(allow.diary ? byKind.diary : []), ...(allow.health ? byKind.health : [])]
+      : allow.diary && allow.health ? report.family_summary : [];
+  const stats = [
+    allow.diary ? `📋 飲食記錄：<strong>${report.meals.days_logged}</strong> 天、共 <strong>${report.meals.meals_count}</strong> 餐` : null,
+    allow.calories ? `🔥 平均每天約 <strong>${report.meals.avg_calories}</strong> 大卡` : null,
+    allow.diary ? `🚶 運動累積 <strong>${report.exercise.minutes}</strong> 分鐘` : null,
+  ].filter(Boolean).join("<br>");
   const intro = forFamily
     ? `這是 <strong style="color:#3D2E20;">${escapeHtml(elderName)}</strong> 這週的健康摘要：`
     : `這是您這週的健康回顧：`;
@@ -131,13 +147,11 @@ export function buildWeeklyReportEmail({
         <tr><td style="padding:28px;">
           <p style="margin:0 0 6px;font-size:16px;">${escapeHtml(recipientName)} 您好，</p>
           <p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#6B5848;">${intro}</p>
-          <table role="presentation" width="100%" style="background:#FFF8EE;border-radius:14px;margin:0 0 18px;">
+          ${stats ? `<table role="presentation" width="100%" style="background:#FFF8EE;border-radius:14px;margin:0 0 18px;">
             <tr><td style="padding:16px 18px;font-size:15px;color:#3D2E20;line-height:1.8;">
-              📋 飲食記錄：<strong>${report.meals.days_logged}</strong> 天、共 <strong>${report.meals.meals_count}</strong> 餐<br>
-              🔥 平均每天約 <strong>${report.meals.avg_calories}</strong> 大卡<br>
-              🚶 運動累積 <strong>${report.exercise.minutes}</strong> 分鐘
+              ${stats}
             </td></tr>
-          </table>
+          </table>` : ""}
           <ul style="margin:0 0 8px;padding-left:20px;">${listItems}</ul>
         </td></tr>
         <tr><td style="padding:16px 28px 28px;border-top:1px solid #ECDFC8;">

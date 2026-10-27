@@ -59,8 +59,7 @@ export function PrescriptionScanScreen({ onBack }: PrescriptionScanScreenProps) 
         photoUrl = await uploadMealPhoto(user.id, photoDataUrl);
       }
 
-      // 合併到現有藥物清單
-      const existing = profile?.medications ?? [];
+      // 接到現有藥物清單後面（由伺服器拿最新的清單接，不用手機上可能過期的那份）
       const newMeds = analysis.medications.map((m) => ({
         name: m.name,
         dose: m.dose ?? "",
@@ -77,9 +76,7 @@ export function PrescriptionScanScreen({ onBack }: PrescriptionScanScreenProps) 
         taken_today: false,
       }));
 
-      await api.updateProfile({
-        medications: [...existing, ...newMeds] as { name: string; dose?: string; time?: string }[],
-      });
+      await api.addMedications(newMeds);
       await refreshProfile();
       toast.success(`已加入 ${newMeds.length} 種藥物到您的用藥清單。`);
       onBack();
