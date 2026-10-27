@@ -1,6 +1,4 @@
 import type { ChapterOpening } from "./chapter-opening";
-
-const CH12_ACCENT = "linear-gradient(180deg, #EAF0F4 0%, #FFF8EE 55%)";
 const CH12_DISCLAIMER =
   "作品先由自己看見；私人版本也是完整成果；展示副本與私人主檔分開，分享距離可前進、可停留、也可返回。Google 與人工智慧工具只協助整理、建館、檢查與排練，不替您定義作品，也不替您發布。";
 
@@ -11,7 +9,6 @@ export const CHAPTER_1200: ChapterOpening = {
   subtitle: "第十二章｜章節開篇",
   layout: "stage-start",
   headerEmoji: "🌍",
-  accentGradient: CH12_ACCENT,
   quote: "世界舞台不是把自己推到人群中央，而是讓值得留下的成果，在合適的距離被看見。",
   atAGlance:
     "本章路線：找回散落的生命資產、點亮數位故事館、回望 SMART 成長、選擇分享距離，完成一次線上與現場的相遇，並留下九十日續航的小步。" +
@@ -88,7 +85,6 @@ export const CHAPTER_1201: ChapterOpening = {
   subtitle: "第十二章",
   layout: "life-assets",
   headerEmoji: "🗺",
-  accentGradient: CH12_ACCENT,
   quote: "散落的檔案重新回到生活脈絡，就成為一張屬於自己的生命資產地圖。",
   atAGlance:
     "一次只找三至五件，分進「好好生活」「走向更大的世界」「留下生命的光」三區，再圈出最想先進館的一至三件。" +
@@ -135,7 +131,6 @@ export const CHAPTER_1202: ChapterOpening = {
   subtitle: "第十二章",
   layout: "story-gallery",
   headerEmoji: "🏛",
-  accentGradient: CH12_ACCENT,
   quote: "一個館名、一句本人導覽、三個空展區，已經點亮第一座故事館。",
   atAGlance:
     "第一座數位故事館只需要一頁首頁：館名、一句導覽、三個展區，以及能安全回來修改的私人入口。新展館先維持私人或未發布。" +
@@ -180,7 +175,6 @@ export const CHAPTER_1203: ChapterOpening = {
   subtitle: "第十二章",
   layout: "work-enter",
   headerEmoji: "🖼",
-  accentGradient: CH12_ACCENT,
   quote: "少而清楚的代表作，在同一個入口裡會彼此照亮。",
   atAGlance:
     "挑一至三件代表作安排展區與導覽；原始檔另建展示副本，從受邀者角度實測權限。" +
@@ -225,7 +219,6 @@ export const CHAPTER_1204: ChapterOpening = {
   subtitle: "第十二章",
   layout: "smart-before-after",
   headerEmoji: "🔁",
-  accentGradient: CH12_ACCENT,
   quote: "從以前、證據到現在，成長不再只是模糊感覺。",
   atAGlance:
     "SMART 成長回望不從分數開始，而從作品與生活證據開始。每一維只回答：以前常怎麼做、現在多了什麼選擇、哪件作品能證明。" +
@@ -272,7 +265,6 @@ export const CHAPTER_1205: ChapterOpening = {
   subtitle: "第十二章",
   layout: "smart-curve",
   headerEmoji: "🕸",
-  accentGradient: CH12_ACCENT,
   quote: "五個方向同樣重要；輪廓幫助回望，不提供總分，也不把人生排成名次。",
   atAGlance:
     "把前後證據畫成 SMART RADAR 或五張成長卡。每一維可自選：起步、正在形成、已能運用、願意帶人。數字只是位置，真正支撐的是生活證據。" +
@@ -317,7 +309,6 @@ export const CHAPTER_1206: ChapterOpening = {
   subtitle: "第十二章",
   layout: "growth-story",
   headerEmoji: "🎙",
-  accentGradient: CH12_ACCENT,
   quote: "一件作品、一個轉折、一個現在與一個下一步，讓成長回到本人聲音。",
   atAGlance:
     "選一件代表作，依「從哪裡開始／途中學會／現在更能／接下來想」口述六十至九十秒，整理成仍像自己的導覽詞。" +
@@ -364,7 +355,6 @@ export const CHAPTER_1207: ChapterOpening = {
   subtitle: "第十二章",
   layout: "five-distance",
   headerEmoji: "📏",
-  accentGradient: CH12_ACCENT,
   quote: "五種距離同樣完整，可以前進、停留，也可以返回。",
   atAGlance:
     "分享有五種可切換距離：D1 只給自己、D2 親近家人、D3 同行夥伴、D4 社區舞台、D5 公共世界。先問願意給誰看，再處理權限，並準備返回的路。" +
@@ -409,7 +399,6 @@ export const CHAPTER_1208: ChapterOpening = {
   subtitle: "第十二章",
   layout: "invite-peer",
   headerEmoji: "🤝",
-  accentGradient: CH12_ACCENT,
   quote: "邀請從合適的人與合適距離開始；人不必多，心意要說清楚。",
   atAGlance:
     "選一至五位合適對象，寫清楚為何想到他、希望一起看什麼、分享距離與不轉傳提醒；最後由本人決定是否發送。" +
@@ -454,7 +443,6 @@ export const CHAPTER_1209: ChapterOpening = {
   subtitle: "第十二章",
   layout: "omo-waltz",
   headerEmoji: "💃",
-  accentGradient: CH12_ACCENT,
   quote: "技術退到邊緣，作品、本人的聲音與真實相遇留在中央。",
   atAGlance:
     "線上入口與現場相遇彼此補充。準備三至五分鐘導覽：一件作品、一項成長、一個希望，並備好 Plan B；結束後只邀請一項簡單回應。" +
@@ -499,7 +487,6 @@ export const CHAPTER_1210: ChapterOpening = {
   subtitle: "第十二章",
   layout: "lighthouse",
   headerEmoji: "🕯️",
-  accentGradient: CH12_ACCENT,
   quote: "燈塔不必照得最遠；小而持續的光，也能陪自己與他人走得更穩。",
   atAGlance:
     "寫下燈塔宣言與九十天內能完成的一件小事，並準備備案。下一個黃金十年，已從一件真實作品、一段溫暖連結與一個穩穩的小步開始。" +

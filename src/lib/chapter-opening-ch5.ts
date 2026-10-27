@@ -1,7 +1,5 @@
 import type { ChapterOpening } from "./chapter-opening";
 
-const CH5_ACCENT = "linear-gradient(180deg, #E8F0FA 0%, #FFF8EE 55%)";
-
 export const CHAPTER_0500: ChapterOpening = {
   id: "0500",
   qrCode: "0500",
@@ -9,7 +7,6 @@ export const CHAPTER_0500: ChapterOpening = {
   subtitle: "第五章｜章節開篇",
   layout: "routes",
   headerEmoji: "🛡",
-  accentGradient: CH5_ACCENT,
   quote: "防詐不是把世界關起來，而是讓信任有根據。",
   atAGlance:
     "本章練習優雅過濾：先暫停，後查證；先驗證，再信任。AI 是冷靜參謀，不是投資顧問，也不是身分驗證工具。",
@@ -50,7 +47,6 @@ export const CHAPTER_0501: ChapterOpening = {
   subtitle: "第五章",
   layout: "verify-first",
   headerEmoji: "🕊",
-  accentGradient: CH5_ACCENT,
   quote: "防詐不是不信任世界，而是先驗證，再信任。",
   atAGlance:
     "更成熟的信任方式，不是立刻相信，也不是懷疑一切，而是先驗證，再信任。慢一秒是把主導權拿回來。",
@@ -93,7 +89,6 @@ export const CHAPTER_0502: ChapterOpening = {
   subtitle: "第五章",
   layout: "pause-reflex",
   headerEmoji: "✋",
-  accentGradient: CH5_ACCENT,
   quote: "防詐第一步不是判斷真假，而是先暫停。",
   atAGlance:
     "可疑訊息出現時：先不要點、不要回、不要輸入帳密或驗證碼。真正的機會不怕查證。",
@@ -141,7 +136,6 @@ export const CHAPTER_0503: ChapterOpening = {
   subtitle: "第五章",
   layout: "rock-check",
   headerEmoji: "🚦",
-  accentGradient: CH5_ACCENT,
   quote: "當貪婪來敲門，先讓理性替您踩煞車。",
   atAGlance:
     "保證獲利、帶單、內線、限時布局都是高風險字眼。AI 可列疑點，不能提供個人投資建議。",
@@ -188,7 +182,6 @@ export const CHAPTER_0504: ChapterOpening = {
   subtitle: "第五章",
   layout: "rock-check",
   headerEmoji: "🕯",
-  accentGradient: CH5_ACCENT,
   quote: "恐懼會催促立刻行動；韌性，是先停下來。",
   atAGlance:
     "假親友、假官方、假客服常用急迫恐懼劇本。親友求助打原本電話；要求驗證碼或帳密，立刻停止。",
@@ -235,7 +228,6 @@ export const CHAPTER_0505: ChapterOpening = {
   subtitle: "第五章",
   layout: "muscle-record",
   headerEmoji: "💪",
-  accentGradient: CH5_ACCENT,
   quote: "AI 是陪練教練；真正要長出的是自己的判斷力。",
   atAGlance:
     "貪婪劇本與恐懼劇本都有相似模式。每一次沒有急著點擊、加入或匯款，都是主導權的累積。",
@@ -279,7 +271,6 @@ export const CHAPTER_0506: ChapterOpening = {
   subtitle: "第五章",
   layout: "trust-lists",
   headerEmoji: "🗂",
-  accentGradient: CH5_ACCENT,
   quote: "防詐靠清單；信任靠驗證。",
   atAGlance:
     "黑名單記可疑話術與風險特徵；白名單記親自確認過的官方電話與可信管道。不要記錄密碼、驗證碼或完整金融帳號。",
@@ -323,7 +314,6 @@ export const CHAPTER_0507: ChapterOpening = {
   subtitle: "第五章",
   layout: "list-entry",
   headerEmoji: "🚫",
-  accentGradient: CH5_ACCENT,
   quote: "記下騙術模式，讓一次查證變成下一次的免疫力。",
   atAGlance:
     "黑名單記錄劇本類型、可疑特徵與安全動作，不是危險連結或完整個資。提醒家人時只分享風險特徵。",
@@ -369,7 +359,6 @@ export const CHAPTER_0508: ChapterOpening = {
   subtitle: "第五章",
   layout: "list-entry",
   headerEmoji: "✅",
-  accentGradient: CH5_ACCENT,
   quote: "對方自稱不算；您驗證過，才算。",
   atAGlance:
     "白名單保存親自確認過的路：親友原本電話、銀行官方客服、正式網站。可疑來電先掛斷，再用白名單主動查證。",
@@ -415,7 +404,6 @@ export const CHAPTER_0509: ChapterOpening = {
   subtitle: "第五章",
   layout: "family-weekly",
   headerEmoji: "☂",
-  accentGradient: CH5_ACCENT,
   quote: "防詐可以成為家族之間的互信與照顧。",
   atAGlance:
     "週末只回看三件事：新騙術、更新的安全紀錄、想提醒家人的一句話。不放電話、帳號、網址、金額或個資。",
@@ -461,7 +449,6 @@ export const CHAPTER_0510: ChapterOpening = {
   subtitle: "第五章",
   layout: "tr-light",
   headerEmoji: "💡",
-  accentGradient: CH5_ACCENT,
   quote: "守住信任，不是把世界關起來，而是安全地走出去。",
   atAGlance:
     "T 的光是先驗證再信任；R 的光是風險來時能停下來，回到可信任管道。AI 始終只是冷靜參謀。",

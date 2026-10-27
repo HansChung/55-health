@@ -1,6 +1,4 @@
 import type { ChapterOpening } from "./chapter-opening";
-
-const CH8_ACCENT = "linear-gradient(180deg, #F3EEE4 0%, #FFF8EE 55%)";
 const CH8_DISCLAIMER =
   "本章提供一般性資訊整理與決策學習，不構成投資、法律、稅務或其他專業建議；不推薦商品、不預測報酬。";
 
@@ -11,7 +9,6 @@ export const CHAPTER_0800: ChapterOpening = {
   subtitle: "第八章｜章節開篇",
   layout: "decision-start",
   headerEmoji: "🧭",
-  accentGradient: CH8_ACCENT,
   quote: "資訊可以由人工智慧整理；生活的答案，不能外包。",
   atAGlance:
     "本章路線：從真正問題、可信來源與生活底線出發，經過比較、壓力測試與專業確認，最後留下一頁可以重看的決策備忘錄。" +
@@ -88,7 +85,6 @@ export const CHAPTER_0801: ChapterOpening = {
   subtitle: "第八章",
   layout: "decision-seat",
   headerEmoji: "🪑",
-  accentGradient: CH8_ACCENT,
   quote: "真正的主導權，從重新說出自己的問題開始。",
   atAGlance:
     "先別急著問哪個最好；先說清楚，這個決定要替生活守住什麼。先分開已知／未知與期待／擔心，再用自己的語言改寫問題。" +
@@ -138,7 +134,6 @@ export const CHAPTER_0802: ChapterOpening = {
   subtitle: "第八章",
   layout: "source-ladder",
   headerEmoji: "🪜",
-  accentGradient: CH8_ACCENT,
   quote: "先看誰寫、為何寫、何時更新，再看它說了什麼。",
   atAGlance:
     "四層來源：官方／原始文件 → 提供者說明 → 有作者依據的解讀 → 找不到完整出處的轉述。找不到時標示「待補查」。" +
@@ -186,7 +181,6 @@ export const CHAPTER_0803: ChapterOpening = {
   subtitle: "第八章",
   layout: "clause-translate",
   headerEmoji: "🔎",
-  accentGradient: CH8_ACCENT,
   quote: "好的白話摘要，不只容易懂，也知道每一句從哪裡來。",
   atAGlance:
     "只選一小段條款，翻成四個生活問題：要付什麼、何時受限制、生活可能受到什麼影響、還有哪些未知。每一句都要能回到原文。" +
@@ -232,7 +226,6 @@ export const CHAPTER_0804: ChapterOpening = {
   subtitle: "第八章",
   layout: "life-baselines",
   headerEmoji: "🧭",
-  accentGradient: CH8_ACCENT,
   quote: "看懂方案不等於適合生活；底線要在比較與推薦之前先被看見。",
   atAGlance:
     "安全底線、生活底線、關係底線——表格告訴您有哪些路；三項生活底線，提醒哪些方向不能偏離。" +
@@ -277,7 +270,6 @@ export const CHAPTER_0805: ChapterOpening = {
   subtitle: "第八章",
   layout: "six-hats",
   headerEmoji: "🎩",
-  accentGradient: CH8_ACCENT,
   quote: "成熟的決定，不讓最大聲的意見勝出，而讓重要角度各自說完。",
   atAGlance:
     "白帽事實、紅帽感受、黃帽價值、黑帽風險、綠帽替代、藍帽下一步。您是主持人；AI 只是會議整理者，不投票、不打分。" +
@@ -325,7 +317,6 @@ export const CHAPTER_0806: ChapterOpening = {
   subtitle: "第八章",
   layout: "same-scale",
   headerEmoji: "📏",
-  accentGradient: CH8_ACCENT,
   quote: "不打分、不加總、不推薦；先讓每條路的代價與未知清楚出現。",
   atAGlance:
     "把方案 A、方案 B 與維持現況放在一起。共同尺度：費用、彈性、最不利生活影響、目前未知。不足處標示待補查，不排名。" +
@@ -371,7 +362,6 @@ export const CHAPTER_0807: ChapterOpening = {
   subtitle: "第八章",
   layout: "stress-test",
   headerEmoji: "🌉",
-  accentGradient: CH8_ACCENT,
   quote: "韌性不是相信不會出事，而是在決定前看見承重、出口與求助。",
   atAGlance:
     "承重：最不利時生活能承受到什麼程度？出口：出現哪些訊號就暫停？求助：哪些未知必須交給合格專業人士確認？" +
@@ -417,7 +407,6 @@ export const CHAPTER_0808: ChapterOpening = {
   subtitle: "第八章",
   layout: "third-path",
   headerEmoji: "🚪",
-  accentGradient: CH8_ACCENT,
   quote: "成熟的選擇，不只接受現成答案；也可以重新設計下一步。",
   atAGlance:
     "做與不做之間，往往還有一條可以重新設計的路。五個旋鈕：時間、範圍、條件、資料、目標。" +
@@ -463,7 +452,6 @@ export const CHAPTER_0809: ChapterOpening = {
   subtitle: "第八章",
   layout: "pro-confirm",
   headerEmoji: "🖊",
-  accentGradient: CH8_ACCENT,
   quote: "專業確認要把事實問清楚，而不是把決定交出去。",
   atAGlance:
     "帶三個問題去確認：依據在哪、限制與例外、屬於事實／判斷／假設以及是否有利益關係。會後分成：已確認、待確認、不同觀點、利益揭露。" +
@@ -509,7 +497,6 @@ export const CHAPTER_0810: ChapterOpening = {
   subtitle: "第八章",
   layout: "decision-memo",
   headerEmoji: "📝",
-  accentGradient: CH8_ACCENT,
   quote: "決定可以改變；清楚留下理由，讓未來的自己有路可回。",
   atAGlance:
     "目前狀態可以是：繼續查證、暫停、停止、設定重看日，或條件清楚後執行。真正值得簽下的，是理由、底線、未知與重新選擇的權利。" +

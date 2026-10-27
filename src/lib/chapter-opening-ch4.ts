@@ -1,7 +1,5 @@
 import type { ChapterOpening } from "./chapter-opening";
 
-const CH4_ACCENT = "linear-gradient(180deg, #F7EDE3 0%, #FFF8EE 55%)";
-
 export const CHAPTER_0400: ChapterOpening = {
   id: "0400",
   qrCode: "0400",
@@ -9,7 +7,6 @@ export const CHAPTER_0400: ChapterOpening = {
   subtitle: "第四章｜章節開篇",
   layout: "routes",
   headerEmoji: "🍽",
-  accentGradient: CH4_ACCENT,
   quote: "吃得更自主，也知道偏離後如何回到平衡。",
   atAGlance:
     "把 SMART RADAR 帶到餐桌。本章不是飲食管制，也不把 AI 當成營養裁判；練習知道身體有底線，同時保有生活滋味。",
@@ -49,7 +46,6 @@ export const CHAPTER_0401: ChapterOpening = {
   subtitle: "第四章",
   layout: "boundary-choose",
   headerEmoji: "🕊",
-  accentGradient: CH4_ACCENT,
   quote: "真正的養生不是苦行，而是有底線的自由。",
   atAGlance:
     "自主不是什麼都吃，也不是什麼都不吃，而是知道自己正在選什麼、為什麼選，以及享受後如何回來。",
@@ -92,7 +88,6 @@ export const CHAPTER_0402: ChapterOpening = {
   subtitle: "第四章",
   layout: "curiosity-ask",
   headerEmoji: "🌾",
-  accentGradient: CH4_ACCENT,
   quote: "真正陪伴人生的飲食文化，藏在每天的一杯與一餐。",
   atAGlance:
     "飲食文化不只存在於名店與旅行。每天那杯茶、那碗飯、那趟市場與家常菜，才是最長久的修煉場。",
@@ -136,7 +131,6 @@ export const CHAPTER_0403: ChapterOpening = {
   subtitle: "第四章",
   layout: "smart-flow",
   headerEmoji: "☕",
-  accentGradient: CH4_ACCENT,
   quote: "AI 說明風味；真正的味道，仍由自己的感官確認。",
   atAGlance:
     "拍下公開包裝或菜單，請 AI 整理陌生詞語與可能風味；再寫下自己的真實感受。咖啡因與成分以正式標示為準。",
@@ -181,7 +175,6 @@ export const CHAPTER_0404: ChapterOpening = {
   subtitle: "第四章",
   layout: "vision-identify",
   headerEmoji: "🛒",
-  accentGradient: CH4_ACCENT,
   quote: "AI 提出可能答案；現場標示、攤商與實物完成確認。",
   atAGlance:
     "看到陌生食材，可先拍照請 AI 提出可能名稱與一般做法；最可靠的 Ground Truth 在現場：標示、攤商與實物。",
@@ -237,7 +230,6 @@ export const CHAPTER_0405: ChapterOpening = {
   subtitle: "第四章",
   layout: "plan-b",
   headerEmoji: "⚖️",
-  accentGradient: CH4_ACCENT,
   quote: "韌性不是永不偏離，而是偏離後知道如何回來。",
   atAGlance:
     "參加之前決定一項底線與一項想享受的事；結束後不以罪惡感懲罰自己，而是回到可持續的節奏。",
@@ -281,7 +273,6 @@ export const CHAPTER_0406: ChapterOpening = {
   subtitle: "第四章",
   layout: "dual-track",
   headerEmoji: "📘",
-  accentGradient: CH4_ACCENT,
   quote: "身體有底線，靈魂有故事；指南讓兩條路一起被看見。",
   atAGlance:
     "身體軌記錄醫囑、過敏、明確禁忌；靈魂軌記錄喜歡的味道、文化記憶與想保留的享受。不是醫療處方。",
@@ -324,7 +315,6 @@ export const CHAPTER_0407: ChapterOpening = {
   subtitle: "第四章",
   layout: "curiosity-ask",
   headerEmoji: "✨",
-  accentGradient: CH4_ACCENT,
   quote: "一句自然開場，讓身體底線與生活滋味同時被看見。",
   atAGlance:
     "用一句簡單開場請 AI 提供身體軌與靈魂軌兩種建議。兩軌並列，不讓健康吞沒生活，也不讓享受忽略安全。",
@@ -371,7 +361,6 @@ export const CHAPTER_0408: ChapterOpening = {
   subtitle: "第四章",
   layout: "organize-decide",
   headerEmoji: "🛠",
-  accentGradient: CH4_ACCENT,
   quote: "工具失準不等於我失敗；停、補、查、換，就是 Plan B。",
   atAGlance:
     "AI 偶爾會答非所問或認錯食材。先停一下，再補背景、要求說明不確定處；仍不可靠就改用正式標示或詢問專業。",
@@ -420,7 +409,6 @@ export const CHAPTER_0409: ChapterOpening = {
   subtitle: "第四章",
   layout: "taste-journal",
   headerEmoji: "🗒",
-  accentGradient: CH4_ACCENT,
   quote: "品味週記不評分；只看見一週的滋味、底線與回歸。",
   atAGlance:
     "回看：我看懂了什麼、享受了什麼、守住哪一條底線、偏離後如何回來。再選一個下週想保留的小做法。",
@@ -468,7 +456,6 @@ export const CHAPTER_0410: ChapterOpening = {
   subtitle: "第四章",
   layout: "ar-light",
   headerEmoji: "💡",
-  accentGradient: CH4_ACCENT,
   quote: "自主讓我知道怎麼選；韌性讓我知道如何回來。",
   atAGlance:
     "A 的光是我開始知道自己怎麼選；R 的光是變數發生後仍能回來。各寫下一個可重複的生活小動作即可。",

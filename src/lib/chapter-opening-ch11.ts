@@ -1,6 +1,4 @@
 import type { ChapterOpening } from "./chapter-opening";
-
-const CH11_ACCENT = "linear-gradient(180deg, #F2EDE6 0%, #FFF8EE 55%)";
 const CH11_DISCLAIMER =
   "作品由本人核可；共同記憶、姓名、照片與聲音需另行確認；私人版本也是完整成果。人工智慧可協助口述轉寫、整理與比較版本，不補造記憶，也不替任何人同意或公開。";
 
@@ -11,7 +9,6 @@ export const CHAPTER_P4_OPEN: ChapterOpening = {
   subtitle: "第四部｜部開篇｜實踐頁",
   layout: "part4-start",
   headerEmoji: "✨",
-  accentGradient: CH11_ACCENT,
   quote: "圓夢不是把自己推向更大的舞台，而是完成一件真正的作品，讓生命智慧在合適的距離繼續流動。",
   atAGlance:
     "第四部〈圓夢〉：把一路累積的經驗、選擇與智慧，完成為一件屬於自己的作品。作品不必公開才算完成；由自己決定保存、分享與前進的距離。" +
@@ -89,7 +86,6 @@ export const CHAPTER_1100: ChapterOpening = {
   subtitle: "第十一章｜章節開篇",
   layout: "story-start",
   headerEmoji: "📖",
-  accentGradient: CH11_ACCENT,
   quote: "故事的價值，不在於多完整，而在於是否留下了只有自己能說出的眼光。",
   atAGlance:
     "本章路線：從主題與界線、三件線索、三色核可、故事核心與原聲開始，選擇一種能完成的形式，經過共編與同意，完成「數位傳家寶五件套」和「作品分享護照」。" +
@@ -166,7 +162,6 @@ export const CHAPTER_1101: ChapterOpening = {
   subtitle: "第十一章",
   layout: "theme-boundary",
   headerEmoji: "🚪",
-  accentGradient: CH11_ACCENT,
   quote: "故事的門把一直在自己手中；開始、暫停與改變方向都可以。",
   atAGlance:
     "先把主題分成三區：「想留下」「只供自己珍藏」「暫時不碰」。今天的選擇不是永久承諾，以後可以修改。決定不留下什麼，也是一種創作主權。" +
@@ -212,7 +207,6 @@ export const CHAPTER_1102: ChapterOpening = {
   subtitle: "第十一章",
   layout: "three-clues",
   headerEmoji: "🗺",
-  accentGradient: CH11_ACCENT,
   quote: "三件找得到、說得出意義的線索，已足以讓故事開始。",
   atAGlance:
     "先選三件線索就好。對每件回答：它是什麼？為什麼今天仍重要？放在哪裡？還需要問誰？不必立刻搬移或上傳。" +
@@ -257,7 +251,6 @@ export const CHAPTER_1103: ChapterOpening = {
   subtitle: "第十一章",
   layout: "three-color-check",
   headerEmoji: "🚦",
-  accentGradient: CH11_ACCENT,
   quote: "先查紅、再問黃、保留綠；不確定可以誠實留下。",
   atAGlance:
     "三色核可不是打分：紅標查證或標記不確定；黃標確認共同記憶是否尊重；綠標保留自己的原話與語調。" +
@@ -302,7 +295,6 @@ export const CHAPTER_1104: ChapterOpening = {
   subtitle: "第十一章",
   layout: "story-core",
   headerEmoji: "◎",
-  accentGradient: CH11_ACCENT,
   quote: "零散記憶聚成一句自己的話，作品就開始有了方向。",
   atAGlance:
     "用一句話找核心：「那時我面對……，我選擇……，今天我想留下的是……。」故事核心不在事件有多大，而在自己當時如何回應。" +
@@ -349,7 +341,6 @@ export const CHAPTER_1105: ChapterOpening = {
   subtitle: "第十一章",
   layout: "voice-draft",
   headerEmoji: "🎙",
-  accentGradient: CH11_ACCENT,
   quote: "原聲、停頓與節奏，都由本人決定保留多少。",
   atAGlance:
     "先用手機錄音三分鐘：事情怎麼開始？哪一刻改變了？今天想留下什麼？轉寫稿不是最終故事；不要急著把口語全部磨平。" +
@@ -395,7 +386,6 @@ export const CHAPTER_1106: ChapterOpening = {
   subtitle: "第十一章",
   layout: "form-blueprint",
   headerEmoji: "🎨",
-  accentGradient: CH11_ACCENT,
   quote: "只選一種能完成的形式，先讓作品真正誕生。",
   atAGlance:
     "故事卡、圖文小冊、聲音故事或微影音，都能成為完整作品。先定義最小完成版：一張卡、四頁小冊、三分鐘音檔或六十秒影片。" +
@@ -440,7 +430,6 @@ export const CHAPTER_1107: ChapterOpening = {
   subtitle: "第十一章",
   layout: "coedit-truth",
   headerEmoji: "🤝",
-  accentGradient: CH11_ACCENT,
   quote: "同一份稿，查紅、問黃、留綠，最後由本人朗讀核可。",
   atAGlance:
     "真正的共編不是比較多層稿件，而是回到同一份草稿，以三色核可守住作者聲音。工具退到後方，作品的意義與作者聲音回到前景。" +
@@ -485,7 +474,6 @@ export const CHAPTER_1108: ChapterOpening = {
   subtitle: "第十一章",
   layout: "shared-memory",
   headerEmoji: "💛",
-  accentGradient: CH11_ACCENT,
   quote: "每個人都能控制自己的呈現方式，也能日後調整或撤回。",
   atAGlance:
     "相關人物可以接受、調整、暫不談，也可以日後改變心意。同意可以很細：願意放進家庭群組，不代表願意公開網路。" +
@@ -530,7 +518,6 @@ export const CHAPTER_1109: ChapterOpening = {
   subtitle: "第十一章",
   layout: "heirloom-kit",
   headerEmoji: "🎁",
-  accentGradient: CH11_ACCENT,
   quote: "五件套讓作品有內容、有來路、有界線，也能被未來的人理解。",
   atAGlance:
     "主作品加上來源註記、分享說明、可及性（字幕／逐字稿／圖說）與兩地備份，構成「數位傳家寶五件套」。最後用另一台裝置真正打開一次。" +
@@ -575,7 +562,6 @@ export const CHAPTER_1110: ChapterOpening = {
   subtitle: "第十一章",
   layout: "share-passport",
   headerEmoji: "🛂",
-  accentGradient: CH11_ACCENT,
   quote: "先欣賞成果，再由自己決定作品要停留在哪一個距離。",
   atAGlance:
     "私人、指定分享與公開沒有高低，也可以隨時改變。《作品分享護照》記錄作者、作品心意、素材來源、相關人物意願、目前分享方式與日後調整方法。" +

@@ -5,6 +5,13 @@ import { ChapterBlocks } from "@/components/chapter-blocks";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SubPage } from "@/components/sub-page";
+import {
+  BOOK_CHAPTER_NAMES,
+  bookChapterLabel,
+  bookChapterNumber,
+  bookPaletteForChapterId,
+  bookThemeCss,
+} from "@/lib/book-palette";
 import { Icon } from "@/components/icons";
 import {
   canSpeakGuide,
@@ -4625,8 +4632,13 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
       ? `聽／讀 ${chapter.guideDuration}章首導讀`
       : "章首導讀");
 
+  // 照書本配色：一部一色（第一部藍、第二部青綠、第三部紫、第四部紫紅）
+  const bookPalette = bookPaletteForChapterId(chapter.id);
+  const bookChapter = bookChapterNumber(chapter.id);
+
   return (
     <>
+      {bookPalette && <style>{bookThemeCss(".book-theme", bookPalette)}</style>}
       <style>{`
         @media print {
           body * { visibility: hidden; }
@@ -4639,14 +4651,14 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
         }
       `}</style>
 
-      <div className="no-print" style={{
+      <div className="no-print book-theme" style={{
         minHeight: "100dvh", maxWidth: 480, margin: "0 auto",
         background: "var(--bg, #FAF5EC)", position: "relative",
       }}>
         <SubPage
           title={chapter.subtitle}
           onBack={() => router.push("/")}
-          accent={chapter.accentGradient ?? "linear-gradient(180deg, #E8F4FA 0%, transparent 55%)"}
+          accent={`linear-gradient(180deg, ${bookPalette?.soft ?? "var(--book-soft, #E8F4FA)"} 0%, transparent 70%)`}
           footer={
             <button
               className="btn-primary"
@@ -4657,22 +4669,52 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
             </button>
           }
         >
+          {bookPalette && bookChapter && (
+            // 跟書的內頁頁眉一樣：［第二部］第三章｜優雅導航 …… 0301
+            <div style={{
+              display: "flex", alignItems: "center", gap: 8,
+              paddingBottom: 6, marginBottom: 16,
+              borderBottom: "2px solid var(--book)",
+              fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--book-deep)",
+            }}>
+              <span style={{
+                padding: "2px 10px", borderRadius: 4,
+                background: "var(--book-deep)", color: "#fff", flexShrink: 0,
+              }}>
+                {bookPalette.partLabel}
+              </span>
+              <span>{bookChapterLabel(bookChapter)}｜{BOOK_CHAPTER_NAMES[bookChapter]}</span>
+              <span style={{ marginLeft: "auto", color: "var(--ink-3)", flexShrink: 0 }}>
+                {chapter.qrCode}
+              </span>
+            </div>
+          )}
+
           <div style={{ textAlign: "center", marginBottom: 20 }}>
             <div style={{ fontSize: 40, marginBottom: 8 }}>
               {chapter.headerEmoji ?? "⛵"}
             </div>
-            <div style={{
-              fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
-              letterSpacing: "0.08em", marginBottom: 6,
-            }}>
-              {chapter.subtitle}｜QR {chapter.qrCode}
-            </div>
+            {!bookPalette && (
+              <div style={{
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--ink-3)",
+                letterSpacing: "0.08em", marginBottom: 6,
+              }}>
+                {chapter.subtitle}｜QR {chapter.qrCode}
+              </div>
+            )}
             <h1 style={{
               fontSize: "var(--fs-2xl)", fontWeight: 800, margin: "0 0 12px",
-              lineHeight: 1.25,
+              lineHeight: 1.25, color: bookPalette ? "var(--book-deep)" : undefined,
             }}>
               {chapter.title}
             </h1>
+            {bookPalette && (
+              // 書裡的金色線條
+              <div aria-hidden style={{
+                width: 56, height: 3, margin: "0 auto", borderRadius: 2,
+                background: "var(--book-gold)",
+              }} />
+            )}
           </div>
 
           {chapter.heroImageUrl && (
@@ -4687,14 +4729,14 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
           {chapter.quote && (
             <blockquote style={{
               margin: "0 0 24px", padding: "18px 20px",
-              background: "linear-gradient(135deg, #E8F4FA 0%, #FFF8EE 100%)",
+              background: "linear-gradient(135deg, var(--book-soft, #E8F4FA) 0%, #FFF8EE 100%)",
               borderRadius: "var(--r-lg)",
-              borderLeft: "4px solid #5BA0C9",
+              borderLeft: "4px solid var(--book-gold, #5BA0C9)",
               fontSize: "var(--fs-base)", fontWeight: 700, lineHeight: 1.65,
               color: "var(--ink-1)",
             }}>
               <div style={{
-                fontSize: "var(--fs-xs)", fontWeight: 800, color: "#5BA0C9",
+                fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--book-deep, #5BA0C9)",
                 marginBottom: 8,
               }}>
                 先帶走這一句
@@ -5097,8 +5139,8 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                   onClick={() => setVisionTrust("enjoy")}
                   style={{
                     padding: "14px 10px", borderRadius: 12, cursor: "pointer",
-                    border: `2px solid ${trustLevel === "enjoy" ? "#5BA0C9" : "var(--line-strong)"}`,
-                    background: trustLevel === "enjoy" ? "#E8F4FA" : "var(--surface)",
+                    border: `2px solid ${trustLevel === "enjoy" ? "var(--book, #5BA0C9)" : "var(--line-strong)"}`,
+                    background: trustLevel === "enjoy" ? "var(--book-soft, #E8F4FA)" : "var(--surface)",
                     fontWeight: 800, fontSize: "var(--fs-sm)", color: "var(--ink-1)",
                   }}
                 >
@@ -5156,10 +5198,10 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                       }}
                       style={{
                         padding: "8px 14px", borderRadius: "var(--r-pill)",
-                        border: `2px solid ${searchKeyword === word ? "#9B7AD4" : "var(--line-strong)"}`,
-                        background: searchKeyword === word ? "#F5EEF8" : "var(--surface)",
+                        border: `2px solid ${searchKeyword === word ? "var(--book, #9B7AD4)" : "var(--line-strong)"}`,
+                        background: searchKeyword === word ? "var(--book-soft, #F5EEF8)" : "var(--surface)",
                         fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
-                        color: searchKeyword === word ? "#7B5BB8" : "var(--ink-2)",
+                        color: searchKeyword === word ? "var(--book-deep, #7B5BB8)" : "var(--ink-2)",
                       }}
                     >
                       {word}
@@ -8833,7 +8875,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                     }}>
                       <div style={{
                         fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8,
-                        color: "#5BA0C9",
+                        color: "var(--book-deep, #5BA0C9)",
                       }}>
                         {demo.label}
                       </div>
@@ -8845,7 +8887,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                       </p>
                       <p style={{
                         fontSize: "var(--fs-xs)", margin: "0 0 6px",
-                        color: demo.trustLevel === "enjoy" ? "#5BA0C9" : "#C45A2A",
+                        color: demo.trustLevel === "enjoy" ? "var(--book-deep, #5BA0C9)" : "#C45A2A",
                         fontWeight: 700,
                       }}>
                         {demo.trustLevel === "enjoy" ? "🌸 可直接欣賞" : "🔍 需要查證"}
@@ -8858,8 +8900,8 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                         onClick={() => applyVisionDemo(demo)}
                         style={{
                           padding: "8px 14px", borderRadius: "var(--r-pill)",
-                          border: "1px solid #5BA0C9", background: "var(--surface)",
-                          color: "#5BA0C9", fontWeight: 700,
+                          border: "1px solid var(--book, #5BA0C9)", background: "var(--surface)",
+                          color: "var(--book-deep, #5BA0C9)", fontWeight: 700,
                           fontSize: "var(--fs-xs)", cursor: "pointer",
                         }}
                       >
@@ -8877,7 +8919,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                       background: "var(--surface-warm)", border: "1px solid var(--line)",
                     }}>
                       <div style={{
-                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "#E8845A",
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--book-deep, #E8845A)",
                       }}>
                         {demo.label}
                       </div>
@@ -8898,8 +8940,8 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                         onClick={() => applyMenuDemo(demo)}
                         style={{
                           padding: "8px 14px", borderRadius: "var(--r-pill)",
-                          border: "1px solid #E8845A", background: "var(--surface)",
-                          color: "#C45A2A", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                          border: "1px solid var(--book, #E8845A)", background: "var(--surface)",
+                          color: "var(--book-deep, #C45A2A)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
                         }}
                       >
                         帶入這則案例
@@ -8963,7 +9005,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                       background: "var(--surface-warm)", border: "1px solid var(--line)",
                     }}>
                       <div style={{
-                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "#5BA0C9",
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--book-deep, #5BA0C9)",
                       }}>
                         {demo.label}
                       </div>
@@ -8981,8 +9023,8 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                         onClick={() => applyCuriosityDemo(demo)}
                         style={{
                           padding: "8px 14px", borderRadius: "var(--r-pill)",
-                          border: "1px solid #5BA0C9", background: "var(--surface)",
-                          color: "#5BA0C9", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                          border: "1px solid var(--book, #5BA0C9)", background: "var(--surface)",
+                          color: "var(--book-deep, #5BA0C9)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
                         }}
                       >
                         帶入這則案例
@@ -9074,7 +9116,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                       background: "var(--surface-warm)", border: "1px solid var(--line)",
                     }}>
                       <div style={{
-                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "#5BA0C9",
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--book-deep, #5BA0C9)",
                       }}>
                         {demo.label}
                       </div>
@@ -9097,8 +9139,8 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                         onClick={() => applyPhotoCurateDemo(demo)}
                         style={{
                           padding: "8px 14px", borderRadius: "var(--r-pill)",
-                          border: "1px solid #5BA0C9", background: "var(--surface)",
-                          color: "#5BA0C9", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                          border: "1px solid var(--book, #5BA0C9)", background: "var(--surface)",
+                          color: "var(--book-deep, #5BA0C9)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
                         }}
                       >
                         帶入這則案例
@@ -9154,7 +9196,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                       background: "var(--surface-warm)", border: "1px solid var(--line)",
                     }}>
                       <div style={{
-                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "#9B7AD4",
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--book-deep, #9B7AD4)",
                       }}>
                         {demo.label}
                       </div>
@@ -9172,8 +9214,8 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                         onClick={() => applyPhotoSearchDemo(demo)}
                         style={{
                           padding: "8px 14px", borderRadius: "var(--r-pill)",
-                          border: "1px solid #9B7AD4", background: "var(--surface)",
-                          color: "#7B5BB8", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                          border: "1px solid var(--book, #9B7AD4)", background: "var(--surface)",
+                          color: "var(--book-deep, #7B5BB8)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
                         }}
                       >
                         帶入這則案例
@@ -9226,7 +9268,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                       background: "var(--surface-warm)", border: "1px solid var(--line)",
                     }}>
                       <div style={{
-                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "#5BA0C9",
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--book-deep, #5BA0C9)",
                       }}>
                         {demo.label}
                       </div>
@@ -9250,8 +9292,8 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                         onClick={() => applySmartFlowDemo(demo)}
                         style={{
                           padding: "8px 14px", borderRadius: "var(--r-pill)",
-                          border: "1px solid #5BA0C9", background: "var(--surface)",
-                          color: "#5BA0C9", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                          border: "1px solid var(--book, #5BA0C9)", background: "var(--surface)",
+                          color: "var(--book-deep, #5BA0C9)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
                         }}
                       >
                         帶入這則案例
@@ -9915,7 +9957,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                       background: "var(--surface-warm)", border: "1px solid var(--line)",
                     }}>
                       <div style={{
-                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "#5BA0C9",
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--book-deep, #5BA0C9)",
                       }}>
                         {demo.label}
                       </div>
@@ -9927,8 +9969,8 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                       <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
                       <button type="button" onClick={() => applyLifeMatchDemo(demo)} style={{
                         padding: "8px 14px", borderRadius: "var(--r-pill)",
-                        border: "1px solid #5BA0C9", background: "var(--surface)",
-                        color: "#5BA0C9", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                        border: "1px solid var(--book, #5BA0C9)", background: "var(--surface)",
+                        color: "var(--book-deep, #5BA0C9)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
                       }}>帶入這則案例</button>
                     </div>
                   ))}
@@ -9999,7 +10041,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                       background: "var(--surface-warm)", border: "1px solid var(--line)",
                     }}>
                       <div style={{
-                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "#E8845A",
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--book-deep, #E8845A)",
                       }}>
                         {demo.label}
                       </div>
@@ -10009,8 +10051,8 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                       <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
                       <button type="button" onClick={() => applyMeaningSeedDemo(demo)} style={{
                         padding: "8px 14px", borderRadius: "var(--r-pill)",
-                        border: "1px solid #E8845A", background: "var(--surface)",
-                        color: "#E8845A", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                        border: "1px solid var(--book, #E8845A)", background: "var(--surface)",
+                        color: "var(--book-deep, #E8845A)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
                       }}>帶入這則案例</button>
                     </div>
                   ))}
@@ -10024,7 +10066,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                       background: "var(--surface-warm)", border: "1px solid var(--line)",
                     }}>
                       <div style={{
-                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "#5BA0C9",
+                        fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--book-deep, #5BA0C9)",
                       }}>
                         {demo.label}
                       </div>
@@ -10034,8 +10076,8 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                       <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
                       <button type="button" onClick={() => applyShareIntentDemo(demo)} style={{
                         padding: "8px 14px", borderRadius: "var(--r-pill)",
-                        border: "1px solid #5BA0C9", background: "var(--surface)",
-                        color: "#5BA0C9", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                        border: "1px solid var(--book, #5BA0C9)", background: "var(--surface)",
+                        color: "var(--book-deep, #5BA0C9)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
                       }}>帶入這則案例</button>
                     </div>
                   ))}
@@ -10095,7 +10137,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                       padding: 14, borderRadius: 12,
                       background: "var(--surface-warm)", border: "1px solid var(--line)",
                     }}>
-                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "#E8845A" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--book-deep, #E8845A)" }}>
                         {demo.label}
                       </div>
                       <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>場景：</strong>{demo.scene}</p>
@@ -10104,8 +10146,8 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                       <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
                       <button type="button" onClick={() => applyPlanBDemo(demo)} style={{
                         padding: "8px 14px", borderRadius: "var(--r-pill)",
-                        border: "1px solid #E8845A", background: "var(--surface)",
-                        color: "#E8845A", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                        border: "1px solid var(--book, #E8845A)", background: "var(--surface)",
+                        color: "var(--book-deep, #E8845A)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
                       }}>帶入這則案例</button>
                     </div>
                   ))}
@@ -10140,7 +10182,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                       padding: 14, borderRadius: 12,
                       background: "var(--surface-warm)", border: "1px solid var(--line)",
                     }}>
-                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "#5BA0C9" }}>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--book-deep, #5BA0C9)" }}>
                         {demo.label}
                       </div>
                       <ol style={{ margin: "0 0 8px", paddingLeft: 20, fontSize: "var(--fs-xs)", color: "var(--ink-2)" }}>
@@ -10150,8 +10192,8 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                       <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
                       <button type="button" onClick={() => applyTasteJournalDemo(demo)} style={{
                         padding: "8px 14px", borderRadius: "var(--r-pill)",
-                        border: "1px solid #5BA0C9", background: "var(--surface)",
-                        color: "#5BA0C9", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
+                        border: "1px solid var(--book, #5BA0C9)", background: "var(--surface)",
+                        color: "var(--book-deep, #5BA0C9)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer",
                       }}>帶入這則案例</button>
                     </div>
                   ))}
@@ -10208,12 +10250,12 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
                 <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
                   {chapter.rockCheckDemos.map((demo) => (
                     <div key={demo.id} style={{ padding: 14, borderRadius: 12, background: "var(--surface-warm)", border: "1px solid var(--line)" }}>
-                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "#E8845A" }}>{demo.label}</div>
+                      <div style={{ fontWeight: 800, fontSize: "var(--fs-sm)", marginBottom: 8, color: "var(--book-deep, #E8845A)" }}>{demo.label}</div>
                       <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>模擬：</strong>{demo.scenario}</p>
                       <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>疑點：</strong>{demo.flags.join("；")}</p>
                       <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 4px" }}><strong>安全：</strong>{demo.safeAction}</p>
                       <p style={{ fontSize: "var(--fs-xs)", margin: "0 0 10px", color: "var(--ink-2)" }}>{demo.reflectNote}</p>
-                      <button type="button" onClick={() => applyRockCheckDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid #E8845A", background: "var(--surface)", color: "#E8845A", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
+                      <button type="button" onClick={() => applyRockCheckDemo(demo)} style={{ padding: "8px 14px", borderRadius: "var(--r-pill)", border: "1px solid var(--book, #E8845A)", background: "var(--surface)", color: "var(--book-deep, #E8845A)", fontWeight: 700, fontSize: "var(--fs-xs)", cursor: "pointer" }}>帶入這則案例</button>
                     </div>
                   ))}
                 </div>
@@ -10485,7 +10527,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
               marginBottom: 12, padding: "12px 14px", borderRadius: 12,
               background:
                 chapter.practiceWhere === "phone"
-                  ? "#F5EEF8"
+                  ? "var(--book-soft, #F5EEF8)"
                   : chapter.practiceWhere === "paper"
                     ? "var(--surface-warm)"
                     : "var(--primary-soft)",
@@ -10537,7 +10579,7 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
 
           <div style={{
             padding: 16, borderRadius: "var(--r-lg)",
-            background: "linear-gradient(135deg, #FBE6D4 0%, #FFF8EE 100%)",
+            background: "linear-gradient(135deg, var(--primary-soft) 0%, #FFF8EE 100%)",
             border: "2px solid var(--primary)",
             marginBottom: 16,
           }}>
