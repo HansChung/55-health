@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  CARD_LAYOUTS,
+  CARD_THEMES,
   CardInputError,
+  cardLayout,
+  cardTheme,
   SLUG_LENGTH,
   buildVCard,
   cardShareMeta,
@@ -89,6 +93,8 @@ const card: BusinessCard = {
   show_line: true,
   show_email: false,
   works: [],
+  theme: "teal",
+  layout: "horizontal",
   photo_url: null,
   is_public: true,
   updated_at: "",
@@ -119,5 +125,45 @@ describe("public card", () => {
     expect(v).not.toContain("TEL");
     expect(v).not.toContain("EMAIL");
     expect(v.startsWith("BEGIN:VCARD\r\n")).toBe(true);
+  });
+});
+
+/** WCAG 對比：相對亮度 */
+function luminance(hex: string): number {
+  const [r, g, b] = [1, 3, 5].map((i) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+function contrast(a: string, b: string): number {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+describe("名片樣子", () => {
+  it("unknown or missing theme / layout falls back to the original look", () => {
+    expect(normalizeCardInput({}).theme).toBe("warm");
+    expect(normalizeCardInput({}).layout).toBe("vertical");
+    expect(normalizeCardInput({ theme: "hacker", layout: "diagonal" })).toMatchObject({ theme: "warm", layout: "vertical" });
+    expect(normalizeCardInput({ theme: "festive", layout: "horizontal" })).toMatchObject({ theme: "festive", layout: "horizontal" });
+    expect(cardTheme(undefined).id).toBe(CARD_THEMES[0].id);
+    expect(cardLayout(null)).toBe(CARD_LAYOUTS[0].id);
+  });
+
+  it("the share page gets the chosen look", () => {
+    expect(toPublicCard(card, [])).toMatchObject({ theme: "teal", layout: "horizontal" });
+    expect(toPublicCard({ ...card, theme: "nope" as never }, []).theme).toBe("warm");
+  });
+
+  it("every theme has unique ids and readable text colors", () => {
+    expect(new Set(CARD_THEMES.map((t) => t.id)).size).toBe(CARD_THEMES.length);
+    for (const t of CARD_THEMES) {
+      // 稱呼、標題用 deep：白底、照片底色、紙張底色上都要看得清楚
+      expect(contrast(t.deep, "#FFFFFF"), t.id).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(t.deep, t.paper), t.id).toBeGreaterThanOrEqual(4.5);
+      // 興趣標籤是深色字（--ink-1 #3D2E20）在 chip 底色上
+      expect(contrast("#3D2E20", t.chip), t.id).toBeGreaterThanOrEqual(7);
+    }
   });
 });

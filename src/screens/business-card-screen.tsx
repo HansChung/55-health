@@ -11,7 +11,7 @@ import QRCode from "qrcode";
 import { SubPage } from "@/components/sub-page";
 import { Mascot } from "@/components/mascot";
 import { DictationButton } from "@/components/dictation-button";
-import { BusinessCardView } from "@/components/business-card-view";
+import { BusinessCardFace, BusinessCardView } from "@/components/business-card-view";
 import { api, ApiError } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/lib/telemetry";
@@ -20,7 +20,9 @@ import { photoPayload } from "@/lib/direct-upload";
 import { appendDictation } from "@/lib/dictation";
 import { publicAppOrigin } from "@/lib/study-tours";
 import {
+  CARD_LAYOUTS,
   CARD_LIMITS,
+  CARD_THEMES,
   CARD_WORKS_MAX,
   EMPTY_CARD_FIELDS,
   cardSharePath,
@@ -31,6 +33,7 @@ import {
   type CardWork,
   type CardWorkChoice,
   type CardWorkRef,
+  type PublicBusinessCard,
 } from "@/lib/business-card";
 
 type View = "card" | "edit";
@@ -44,8 +47,8 @@ const label: React.CSSProperties = { fontSize: "var(--fs-sm)", fontWeight: 700, 
 const note: React.CSSProperties = { fontSize: "var(--fs-sm)", color: "var(--ink-3)", lineHeight: 1.6, marginTop: 6 };
 
 function fieldsOf(card: BusinessCard): CardFields {
-  const { display_name, nickname, intro, interests, phone, line_id, email, show_phone, show_line, show_email, works } = card;
-  return { display_name, nickname, intro, interests, phone, line_id, email, show_phone, show_line, show_email, works };
+  const { display_name, nickname, intro, interests, phone, line_id, email, show_phone, show_line, show_email, works, theme, layout } = card;
+  return { display_name, nickname, intro, interests, phone, line_id, email, show_phone, show_line, show_email, works, theme, layout };
 }
 
 function shareUrl(slug: string): string {
@@ -67,10 +70,14 @@ export function BusinessCardScreen({ onBack }: { onBack: () => void }) {
   const [qrSvg, setQrSvg] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
+  const designRef = useRef<HTMLDivElement>(null);
+  const jumpToDesign = useRef(false);
 
-  // 看名片／改名片切換時回到最上面（子頁的捲動位置不會自己歸零）
+  // 看名片／改名片切換時回到最上面（子頁的捲動位置不會自己歸零）；按「換名片樣子」就直接到樣子那一段
   useEffect(() => {
-    topRef.current?.scrollIntoView({ block: "start" });
+    const target = jumpToDesign.current ? designRef.current : topRef.current;
+    jumpToDesign.current = false;
+    target?.scrollIntoView({ block: "start" });
   }, [view]);
 
   useEffect(() => {
@@ -299,7 +306,10 @@ export function BusinessCardScreen({ onBack }: { onBack: () => void }) {
                 <button className="btn-primary" disabled={shareBusy} onClick={() => sharing("share")}>📤 開始分享我的名片</button>
               </div>
             )}
-            <button className="btn-ghost" onClick={() => setView("edit")}>✏️ 改名片內容</button>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <button className="btn-ghost" style={{ padding: "12px 8px" }} onClick={() => setView("edit")}>✏️ 改內容</button>
+              <button className="btn-ghost" style={{ padding: "12px 8px" }} onClick={() => { jumpToDesign.current = true; setView("edit"); }}>🎨 換樣子</button>
+            </div>
             {card.is_public && (
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <button className="btn-ghost" style={{ fontSize: "var(--fs-sm)", padding: "12px 8px" }} disabled={shareBusy} onClick={() => sharing("unshare")}>🙈 停止分享</button>
@@ -322,6 +332,8 @@ export function BusinessCardScreen({ onBack }: { onBack: () => void }) {
           choices={choices}
           onToggleWork={toggleWork}
           disabled={saving}
+          preview={preview}
+          designRef={designRef}
         />
       )}
 
@@ -341,7 +353,7 @@ export function BusinessCardScreen({ onBack }: { onBack: () => void }) {
 }
 
 function EditForm({
-  draft, set, photoUrl, photoBusy, onPickPhoto, onRemovePhoto, choices, onToggleWork, disabled,
+  draft, set, photoUrl, photoBusy, onPickPhoto, onRemovePhoto, choices, onToggleWork, disabled, preview, designRef,
 }: {
   draft: CardFields;
   set: <K extends keyof CardFields>(key: K, value: CardFields[K]) => void;
@@ -352,6 +364,8 @@ function EditForm({
   choices: CardWorkChoice[];
   onToggleWork: (ref: CardWorkRef) => void;
   disabled: boolean;
+  preview: PublicBusinessCard;
+  designRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const picked = (c: CardWorkRef) => draft.works.some((w) => w.kind === c.kind && w.id === c.id);
   const pickedPrivate = choices.some((c) => c.private && picked(c));
@@ -442,8 +456,60 @@ function EditForm({
       {pickedPrivate && (
         <div style={{ ...note, color: "var(--berry)", fontWeight: 700 }}>選了「原本只有自己看」的故事：放上名片後，拿到名片的人都看得到全文。</div>
       )}
+
+      <div ref={designRef} style={{ ...sectionTitle, scrollMarginTop: 12 }}>⑥ 名片樣子</div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} role="radiogroup" aria-label="排法">
+        {CARD_LAYOUTS.map((l) => {
+          const on = draft.layout === l.id;
+          return (
+            <button key={l.id} type="button" role="radio" aria-checked={on} disabled={disabled} onClick={() => set("layout", l.id)} style={choiceStyle(on)}>
+              <LayoutSketch layout={l.id} />
+              <span style={{ fontSize: "var(--fs-base)", fontWeight: 800 }}>{l.label}</span>
+              <span style={{ fontSize: "var(--fs-sm)", fontWeight: 600, color: "var(--ink-3)" }}>{l.desc}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div style={label}>顏色</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))", gap: 10 }} role="radiogroup" aria-label="顏色">
+        {CARD_THEMES.map((t) => {
+          const on = draft.theme === t.id;
+          return (
+            <button key={t.id} type="button" role="radio" aria-checked={on} disabled={disabled} onClick={() => set("theme", t.id)} style={choiceStyle(on)}>
+              <span aria-hidden="true" style={{ width: 40, height: 40, borderRadius: "50%", background: t.band, border: `3px solid ${t.swatch}` }} />
+              <span style={{ fontSize: "var(--fs-base)", fontWeight: 800 }}>{t.label}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div style={label}>看起來會像這樣：</div>
+      <BusinessCardFace card={preview} />
       <div style={{ height: 12 }} />
     </div>
+  );
+}
+
+function choiceStyle(on: boolean): React.CSSProperties {
+  return {
+    display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "12px 8px", minHeight: 52,
+    borderRadius: "var(--r-md)", cursor: "pointer", fontFamily: "inherit", color: "var(--ink-1)",
+    border: `3px solid ${on ? "var(--primary)" : "var(--line)"}`, background: on ? "var(--primary-soft)" : "var(--surface)",
+  };
+}
+
+/** 直式／橫式的小示意圖 */
+function LayoutSketch({ layout }: { layout: string }) {
+  const bar = (w: number) => <span style={{ display: "block", width: w, height: 5, borderRadius: 3, background: "var(--line-strong)" }} />;
+  return layout === "horizontal" ? (
+    <span aria-hidden="true" style={{ width: 84, height: 50, borderRadius: 6, border: "2px solid var(--line-strong)", background: "var(--surface)", display: "flex", gap: 6, padding: 6, boxSizing: "border-box" }}>
+      <span style={{ width: 24, height: 24, borderRadius: 5, background: "var(--primary-soft)", flexShrink: 0 }} />
+      <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>{bar(36)}{bar(28)}{bar(32)}</span>
+    </span>
+  ) : (
+    <span aria-hidden="true" style={{ width: 50, height: 64, borderRadius: 6, border: "2px solid var(--line-strong)", background: "var(--surface)", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: 6, boxSizing: "border-box" }}>
+      <span style={{ width: 20, height: 20, borderRadius: "50%", background: "var(--primary-soft)" }} />
+      {bar(30)}{bar(22)}
+    </span>
   );
 }
 

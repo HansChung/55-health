@@ -9,6 +9,8 @@ import { toClientVideo, type TravelVideoRow } from "@/lib/ai/travel-video-server
 import { videoShareMeta, videoSharePath } from "@/lib/travel-video";
 import { sniffImageType } from "@/lib/admin-media";
 import {
+  cardLayout,
+  cardTheme,
   isCardSlug,
   slugFromBytes,
   type BusinessCard,
@@ -39,6 +41,40 @@ interface CardRow extends CardFields {
 const COLUMNS =
   "user_id, slug, display_name, nickname, intro, interests, photo_path, phone, line_id, email, show_phone, show_line, show_email, works, is_public, updated_at";
 
+// 名片樣子（theme、layout）要 add-business-card-design.sql：還沒跑就不讀不寫這兩欄，名片照樣用預設樣子
+// 發現欄位不在，5 分鐘內都不再試（跑完 SQL 最多 5 分鐘就生效）
+const DESIGN_RETRY_MS = 5 * 60_000;
+let designMissingUntil = 0;
+
+type PgError = { code?: string; message?: string } | null;
+
+function isMissingDesign(error: PgError): boolean {
+  return Boolean(error && (error.code === "42703" || error.code === "PGRST204") && /theme|layout/.test(error.message ?? ""));
+}
+
+function columns(design: boolean): string {
+  return design ? `${COLUMNS}, theme, layout` : COLUMNS;
+}
+
+/** 名片欄位：沒有 theme／layout 欄位時拿掉這兩項 */
+function writable(fields: CardFields, design: boolean): Partial<CardFields> {
+  if (design) return fields;
+  const { theme: _theme, layout: _layout, ...rest } = fields;
+  return rest;
+}
+
+/** 先帶 theme／layout 試；欄位不存在就記下來，不帶再做一次 */
+type Result = { data: unknown; error: PgError };
+
+async function withDesign(run: (design: boolean) => PromiseLike<Result>): Promise<Result> {
+  const design = Date.now() >= designMissingUntil;
+  const first = await run(design);
+  if (!design || !isMissingDesign(first.error)) return first;
+  console.warn("[business-card] 沒有 theme／layout 欄位（add-business-card-design.sql 跑了嗎？）：", first.error?.message);
+  designMissingUntil = Date.now() + DESIGN_RETRY_MS;
+  return run(false);
+}
+
 /** 資料表不存在（42P01）或 PostgREST 找不到表（PGRST205） */
 function isMissingTable(error: { code?: string; message?: string } | null): boolean {
   return Boolean(error && (error.code === "42P01" || error.code === "PGRST205" || /business_cards/.test(error.message ?? "") && /exist|schema cache/.test(error.message ?? "")));
@@ -66,6 +102,8 @@ function toCard(admin: Admin, row: CardRow): BusinessCard {
     show_line: row.show_line,
     show_email: row.show_email,
     works: Array.isArray(row.works) ? row.works : [],
+    theme: cardTheme(row.theme).id,
+    layout: cardLayout(row.layout),
     photo_url: photoUrl(admin, row.photo_path),
     is_public: row.is_public,
     updated_at: row.updated_at,
@@ -73,7 +111,7 @@ function toCard(admin: Admin, row: CardRow): BusinessCard {
 }
 
 async function loadRow(admin: Admin, userId: string): Promise<CardRow | null> {
-  const { data, error } = await admin.from("business_cards").select(COLUMNS).eq("user_id", userId).maybeSingle();
+  const { data, error } = await withDesign((d) => admin.from("business_cards").select(columns(d)).eq("user_id", userId).maybeSingle());
   if (error) {
     if (isMissingTable(error)) throw new CardTableMissing(error.message);
     throw new Error(`load business card failed: ${error.message}`);
@@ -91,20 +129,25 @@ export async function saveCardFields(admin: Admin, userId: string, fields: CardF
   const now = new Date().toISOString();
   const existing = await loadRow(admin, userId);
   if (existing) {
-    const { data, error } = await admin.from("business_cards").update({ ...fields, updated_at: now }).eq("user_id", userId).select(COLUMNS).single();
+    const { data, error } = await withDesign((d) =>
+      admin.from("business_cards").update({ ...writable(fields, d), updated_at: now }).eq("user_id", userId).select(columns(d)).single()
+    );
     if (error || !data) throw new Error(`update business card failed: ${error?.message}`);
     return toCard(admin, data as CardRow);
   }
   for (let attempt = 0; attempt < 3; attempt++) {
-    const { data, error } = await admin
-      .from("business_cards")
-      .insert({ user_id: userId, slug: newCardSlug(), ...fields, updated_at: now })
-      .select(COLUMNS)
-      .single();
+    const slug = newCardSlug();
+    const { data, error } = await withDesign((d) =>
+      admin
+        .from("business_cards")
+        .insert({ user_id: userId, slug, ...writable(fields, d), updated_at: now })
+        .select(columns(d))
+        .single()
+    );
     if (!error && data) return toCard(admin, data as CardRow);
     if (error?.code !== "23505") throw new Error(`insert business card failed: ${error?.message}`);
     // 同時按了兩次儲存：另一個請求已經建好了 → 改成更新
-    if (/business_cards_pkey/.test(error.message)) return saveCardFields(admin, userId, fields);
+    if (/business_cards_pkey/.test(error.message ?? "")) return saveCardFields(admin, userId, fields);
   }
   throw new Error("insert business card failed: slug collisions");
 }
@@ -117,12 +160,14 @@ export async function updateCardSharing(
 ): Promise<BusinessCard | null> {
   const patch =
     action === "share" ? { is_public: true } : action === "unshare" ? { is_public: false } : { slug: newCardSlug() };
-  const { data, error } = await admin
-    .from("business_cards")
-    .update({ ...patch, updated_at: new Date().toISOString() })
-    .eq("user_id", userId)
-    .select(COLUMNS)
-    .maybeSingle();
+  const { data, error } = await withDesign((d) =>
+    admin
+      .from("business_cards")
+      .update({ ...patch, updated_at: new Date().toISOString() })
+      .eq("user_id", userId)
+      .select(columns(d))
+      .maybeSingle()
+  );
   if (error) throw new Error(`update business card sharing failed: ${error.message}`);
   return data ? toCard(admin, data as CardRow) : null;
 }
@@ -142,12 +187,14 @@ export async function replaceCardPhoto(admin: Admin, userId: string, buffer: Buf
     const { error } = await admin.storage.from(CARD_PHOTO_BUCKET).upload(path, buffer, { contentType: type, upsert: false, cacheControl: "3600" });
     if (error) throw new Error(`upload card photo failed: ${error.message}`);
   }
-  const { data, error } = await admin
-    .from("business_cards")
-    .update({ photo_path: path, updated_at: new Date().toISOString() })
-    .eq("user_id", userId)
-    .select(COLUMNS)
-    .single();
+  const { data, error } = await withDesign((d) =>
+    admin
+      .from("business_cards")
+      .update({ photo_path: path, updated_at: new Date().toISOString() })
+      .eq("user_id", userId)
+      .select(columns(d))
+      .single()
+  );
   if (error || !data) {
     if (path) await admin.storage.from(CARD_PHOTO_BUCKET).remove([path]);
     throw new Error(`update card photo failed: ${error?.message}`);
@@ -260,7 +307,9 @@ export async function ownedWorkRefs(admin: Admin, userId: string, refs: CardWork
 export async function loadPublicCard(slug: string): Promise<PublicBusinessCard | null> {
   if (!isCardSlug(slug)) return null;
   const admin = createSupabaseAdmin();
-  const { data, error } = await admin.from("business_cards").select(COLUMNS).eq("slug", slug).eq("is_public", true).maybeSingle();
+  const { data, error } = await withDesign((d) =>
+    admin.from("business_cards").select(columns(d)).eq("slug", slug).eq("is_public", true).maybeSingle()
+  );
   if (error) {
     console.warn("[business-card] load public card:", error.message);
     return null;
