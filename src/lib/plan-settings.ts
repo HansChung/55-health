@@ -64,6 +64,7 @@ type Triple = Record<SubscriptionTier, number>;
 
 export const LIMIT_DEFS = [
   { key: "ask_daily", label: "問暖暖題數", period: "每天", feature: "ask", defaults: { free: 20, basic: 50, pro: 100 }, note: "打字、語音、故事訪談、看診整理共用" },
+  { key: "suggest_daily", label: "首頁 AI 建議", period: "每天", feature: "ask", defaults: { free: 20, basic: 20, pro: 20 }, note: "記餐、改資料、按「換一個建議」重新產生都算；超過就顯示今天最後一則" },
   { key: "photo_monthly", label: "拍照次數", period: "每月", feature: "ai_photo", defaults: { free: 100, basic: 500, pro: 2000 }, note: "拍照記餐、藥袋、檢驗報告、拍照問暖暖（標準版以上）共用" },
   { key: "photo_ask_free_daily", label: "拍照問暖暖（免費版）", period: "每天", feature: "photo_ask", defaults: { free: 5, basic: 5, pro: 5 }, note: "只有免費版用這個；標準版以上用每月拍照次數" },
   { key: "clinic_report_free_daily", label: "看懂檢驗報告（免費版）", period: "每天", feature: "clinic", defaults: { free: 3, basic: 3, pro: 3 }, note: "只有免費版用這個；標準版以上用每月拍照次數" },
