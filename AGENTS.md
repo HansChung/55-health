@@ -131,6 +131,11 @@ and Stripe. Capacitor/Android is only a packaging target and is not needed for w
   「已吃」 and 拍藥袋 go through `POST /api/profile/medications` (`take` / `add`), which edits the latest list on the
   server instead of PATCHing a possibly stale copy. The medication zod schema lives in `src/lib/medication-schema.ts`
   (fields missing there are silently dropped). Family 「今天已服用」 is computed with `isTakenToday`, never `taken_today`.
+- **Session refresh happens in the browser, early** (`src/lib/auth-refresh.ts`, effect in `use-auth.tsx`): every minute
+  and on focus/visibility the app refreshes the Supabase session once it has <10 min left. Otherwise a server route
+  that sees a token in its last 90 s rotates the refresh token itself; the new cookie only arrives with that response,
+  so a slow AI/video request (or an aborted one) leaves the phone holding the old token, its own refresh >10 s later
+  hits 「Already Used」 and Supabase revokes the whole session → the elder is logged out (reported 2026-10-29).
 - **Push on a shared phone**: `/api/push/subscribe` upserts with the service role so the device's endpoint moves to
   whoever is logged in; the app re-posts the existing subscription on login (`syncWebPushSubscription`) and
   `signOut` deletes it first (`releaseWebPushSubscription`). Endpoints must be public https URLs.
