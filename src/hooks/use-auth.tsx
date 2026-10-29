@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
+import { EARLY_REFRESH_CHECK_MS, sessionNeedsEarlyRefresh } from "@/lib/auth-refresh";
 import type { ProfileMedication, EmergencyContact, NotificationSettings } from "@/lib/api-client";
 
 export interface AppProfile {
@@ -130,6 +131,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe();
     };
   }, [supabase, fetchProfile]);
+
+  // 登入憑證提早在手機換新（原因見 auth-refresh.ts）：每分鐘、回到 App 時檢查一次
+  const userId = user?.id;
+  useEffect(() => {
+    if (!userId) return;
+    let busy = false;
+    const check = async () => {
+      if (busy || document.visibilityState !== "visible") return;
+      busy = true;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && sessionNeedsEarlyRefresh(session, Date.now())) {
+          const { error } = await supabase.auth.refreshSession();
+          if (error) console.warn("[auth] early refresh failed:", error.message);
+        }
+      } catch (e) {
+        console.warn("[auth] early refresh threw:", e);
+      } finally {
+        busy = false;
+      }
+    };
+    void check();
+    const timer = setInterval(check, EARLY_REFRESH_CHECK_MS);
+    document.addEventListener("visibilitychange", check);
+    window.addEventListener("focus", check);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", check);
+      window.removeEventListener("focus", check);
+    };
+  }, [supabase, userId]);
 
   const signOut = async () => {
     // 打字問暖暖的對話、書本帶來的問題只放在這個分頁：登出就清掉（同一支手機換人用時看不到）
