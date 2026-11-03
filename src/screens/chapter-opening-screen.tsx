@@ -1,6 +1,6 @@
 "use client";
 
-import { youtubeEmbedUrl } from "@/lib/chapter-content";
+import { youtubeEmbedUrl, type ChapterBlock, type MoreContentMode } from "@/lib/chapter-content";
 import { ChapterBlocks } from "@/components/chapter-blocks";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -284,11 +284,16 @@ import {
 
 interface ChapterOpeningScreenProps {
   chapter: ChapterOpening;
-  /** 後台把進階內容設成「顯示全部」：一打開就攤開（讀者還是可以收起來） */
-  moreInitiallyOpen?: boolean;
+  /**
+   * 後台設定的進階內容：collapsed＝收在「想多了解這一節」；expanded＝一打開就攤開（讀者還是可以收起來）；
+   * hidden＝不顯示（沒有「想多了解」、也沒有底部導讀按鈕）
+   */
+  moreMode?: MoreContentMode;
+  /** 影片（影片示範＋YouTube 區塊）一直顯示在「一步完成」下面，不跟著進階內容收起來 */
+  videosAlwaysShown?: boolean;
 }
 
-export function ChapterOpeningScreen({ chapter, moreInitiallyOpen = false }: ChapterOpeningScreenProps) {
+export function ChapterOpeningScreen({ chapter, moreMode = "collapsed", videosAlwaysShown = false }: ChapterOpeningScreenProps) {
   const router = useRouter();
   const toast = useToast();
   const { user, loading: authLoading } = useAuth();
@@ -302,7 +307,8 @@ export function ChapterOpeningScreen({ chapter, moreInitiallyOpen = false }: Cha
   const [reflectNote, setReflectNote] = useState("");
   const [guideOpen, setGuideOpen] = useState(false);
   // 原本的長篇說明預設收起來，最上面只放「一步完成」（看示範時也會打開）；後台可改成一開始就全部顯示
-  const [moreOpen, setMoreOpen] = useState(moreInitiallyOpen);
+  const [moreOpen, setMoreOpen] = useState(moreMode === "expanded");
+  const moreHidden = moreMode === "hidden";
   const [guideSpeaking, setGuideSpeaking] = useState(false);
   const [cloudSaving, setCloudSaving] = useState(false);
   const [cloudHasDraft, setCloudHasDraft] = useState(false);
@@ -4641,6 +4647,39 @@ export function ChapterOpeningScreen({ chapter, moreInitiallyOpen = false }: Cha
   const bookPalette = bookPaletteForChapterId(chapter.id);
   const bookChapter = bookChapterNumber(chapter.id);
 
+  // 影片：後台可設成一直顯示（放在「一步完成」下面），否則跟著進階內容
+  const videoBlocks = (chapter.blocks ?? []).filter((b) => b.type === "video");
+  const otherBlocks = (chapter.blocks ?? []).filter((b) => b.type !== "video");
+  const chapterVideoSection = chapterVideo && (
+    <div style={{ marginBottom: 24 }}>
+      <SectionLabel>影片示範</SectionLabel>
+      <div style={{ position: "relative", paddingTop: "56.25%", borderRadius: "var(--r-lg)", overflow: "hidden", background: "#000" }}>
+        <iframe
+          src={chapterVideo}
+          title="章節影片"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0 }}
+        />
+      </div>
+    </div>
+  );
+  const renderBlocks = (blocks: ChapterBlock[]) => blocks.length > 0 && (
+    <ChapterBlocks
+      blocks={blocks}
+      onCopy={async (text) => {
+        try {
+          await navigator.clipboard.writeText(text);
+          toast.success("已複製，可以貼到暖暖的打字對話裡。");
+        } catch {
+          toast.info("請長按文字，手動複製。");
+        }
+      }}
+      onTryAsk={(text) => tryAskNuannuan(text, "找不到練習範例。")}
+      onTryVoice={tryInNuannuan}
+    />
+  );
+
   return (
     <>
       {bookPalette && <style>{bookThemeCss(".book-theme", bookPalette)}</style>}
@@ -4664,7 +4703,7 @@ export function ChapterOpeningScreen({ chapter, moreInitiallyOpen = false }: Cha
           title={chapter.subtitle}
           onBack={() => router.push("/smart/guide")}
           accent={`linear-gradient(180deg, ${bookPalette?.soft ?? "#E8F4FA"} 0%, transparent 70%)`}
-          footer={
+          footer={moreHidden ? undefined : (
             <button
               // 主要的按鈕是上面的「一步完成」；這顆看示範的改成淡一點
               className="btn-ghost"
@@ -4676,7 +4715,7 @@ export function ChapterOpeningScreen({ chapter, moreInitiallyOpen = false }: Cha
             >
               {guideOpen ? "收合示範" : guideBtnLabel}
             </button>
-          }
+          )}
         >
           {bookPalette && bookChapter && (
             // 跟書的內頁頁眉一樣：［第二部］第三章｜優雅導航 …… 0301
@@ -4741,9 +4780,15 @@ export function ChapterOpeningScreen({ chapter, moreInitiallyOpen = false }: Cha
             onAsk={(prompt, guided) => tryAskNuannuan(prompt, "找不到要問的話。", { guided })}
             onPhotoAsk={(question) => tryPhotoAskNuannuan(question)}
             onOpen={(href) => router.push(href)}
-          />
+            showMoreToggle={!moreHidden}
+          >
+            {videosAlwaysShown && (chapterVideo || videoBlocks.length > 0) && (<>
+              {chapterVideoSection}
+              {renderBlocks(videoBlocks)}
+            </>)}
+          </ChapterQuickCard>
 
-          {moreOpen && (<>
+          {moreOpen && !moreHidden && (<>
           {chapter.heroImageUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -4784,36 +4829,9 @@ export function ChapterOpeningScreen({ chapter, moreInitiallyOpen = false }: Cha
             </>
           )}
 
-          {chapterVideo && (
-            <div style={{ marginBottom: 24 }}>
-              <SectionLabel>影片示範</SectionLabel>
-              <div style={{ position: "relative", paddingTop: "56.25%", borderRadius: "var(--r-lg)", overflow: "hidden", background: "#000" }}>
-                <iframe
-                  src={chapterVideo}
-                  title="章節影片"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0 }}
-                />
-              </div>
-            </div>
-          )}
+          {!videosAlwaysShown && chapterVideoSection}
 
-          {chapter.blocks && chapter.blocks.length > 0 && (
-            <ChapterBlocks
-              blocks={chapter.blocks}
-              onCopy={async (text) => {
-                try {
-                  await navigator.clipboard.writeText(text);
-                  toast.success("已複製，可以貼到暖暖的打字對話裡。");
-                } catch {
-                  toast.info("請長按文字，手動複製。");
-                }
-              }}
-              onTryAsk={(text) => tryAskNuannuan(text, "找不到練習範例。")}
-              onTryVoice={tryInNuannuan}
-            />
-          )}
+          {renderBlocks(videosAlwaysShown ? otherBlocks : chapter.blocks ?? [])}
 
           {askSummary && (
             <div style={{

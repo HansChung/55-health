@@ -14,6 +14,7 @@ import {
   DEFAULT_BOOK_SETTINGS,
   normalizeBookSettings,
   resolveMoreContent,
+  resolveVideoDisplay,
   type ChapterBlock,
 } from "./chapter-content";
 import { getChapterOpening, getBookGuideSections } from "./chapter-opening";
@@ -259,28 +260,38 @@ describe("書本目錄合併後台資料", () => {
   });
 });
 
-describe("進階內容：隱藏或顯示全部", () => {
-  it("全部章節預設收起來；看不懂的值也當成收起來", () => {
-    expect(DEFAULT_BOOK_SETTINGS.moreContent).toBe("collapsed");
-    expect(normalizeBookSettings(null).moreContent).toBe("collapsed");
-    expect(normalizeBookSettings({ moreContent: "open" }).moreContent).toBe("collapsed");
-    expect(normalizeBookSettings({ moreContent: "expanded" }).moreContent).toBe("expanded");
+describe("進階內容：收起來、顯示全部或不顯示", () => {
+  it("全部章節預設收起來、影片跟著進階內容；看不懂的值也用預設", () => {
+    expect(DEFAULT_BOOK_SETTINGS).toEqual({ moreContent: "collapsed", videoDisplay: "inside" });
+    expect(normalizeBookSettings(null)).toEqual(DEFAULT_BOOK_SETTINGS);
+    expect(normalizeBookSettings({ moreContent: "open", videoDisplay: "top" })).toEqual(DEFAULT_BOOK_SETTINGS);
+    expect(normalizeBookSettings({ moreContent: "hidden", videoDisplay: "always" })).toEqual({ moreContent: "hidden", videoDisplay: "always" });
+    // 舊的設定只有 moreContent：影片用預設
+    expect(normalizeBookSettings({ moreContent: "expanded" })).toEqual({ moreContent: "expanded", videoDisplay: "inside" });
   });
 
   it("章節沒設定就跟著全部章節；有設定就用章節自己的", () => {
-    const all = normalizeBookSettings({ moreContent: "expanded" });
-    expect(resolveMoreContent(base, all)).toBe("expanded");
+    const all = normalizeBookSettings({ moreContent: "hidden", videoDisplay: "always" });
+    expect(resolveMoreContent(base, all)).toBe("hidden");
+    expect(resolveVideoDisplay(base, all)).toBe("always");
     expect(resolveMoreContent(base, DEFAULT_BOOK_SETTINGS)).toBe("collapsed");
+    expect(resolveVideoDisplay(base, DEFAULT_BOOK_SETTINGS)).toBe("inside");
 
-    const hidden = applyChapterOverrides(base, { moreContent: "collapsed" });
-    expect(resolveMoreContent(hidden, all)).toBe("collapsed");
-    const shown = applyChapterOverrides(base, { moreContent: "expanded" });
-    expect(resolveMoreContent(shown, DEFAULT_BOOK_SETTINGS)).toBe("expanded");
+    const own = applyChapterOverrides(base, { moreContent: "expanded", videoDisplay: "inside" });
+    expect(resolveMoreContent(own, all)).toBe("expanded");
+    expect(resolveVideoDisplay(own, all)).toBe("inside");
+    const hidden = applyChapterOverrides(base, { moreContent: "hidden", videoDisplay: "always" });
+    expect(resolveMoreContent(hidden, DEFAULT_BOOK_SETTINGS)).toBe("hidden");
+    expect(resolveVideoDisplay(hidden, DEFAULT_BOOK_SETTINGS)).toBe("always");
   });
 
-  it("後台只接受兩種值", () => {
-    expect(chapterOverridesSchema.safeParse({ moreContent: "expanded" }).success).toBe(true);
-    expect(chapterOverridesSchema.safeParse({ moreContent: "hidden" }).success).toBe(false);
-    expect(normalizeOverrides({ moreContent: "expanded" })).toEqual({ moreContent: "expanded" });
+  it("後台只接受列出來的值", () => {
+    for (const moreContent of ["collapsed", "expanded", "hidden"]) {
+      expect(chapterOverridesSchema.safeParse({ moreContent }).success).toBe(true);
+    }
+    expect(chapterOverridesSchema.safeParse({ moreContent: "none" }).success).toBe(false);
+    expect(chapterOverridesSchema.safeParse({ videoDisplay: "always" }).success).toBe(true);
+    expect(chapterOverridesSchema.safeParse({ videoDisplay: true }).success).toBe(false);
+    expect(normalizeOverrides({ moreContent: "hidden", videoDisplay: "always" })).toEqual({ moreContent: "hidden", videoDisplay: "always" });
   });
 });

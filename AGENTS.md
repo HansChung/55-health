@@ -556,11 +556,14 @@ stack works well for auth + meal/diary CRUD:
   `record`, `scam`, `clinic`, `metrics`, `brain`, `video`, `greeting`, `tours`, `voice`). Phone-app chapters (相簿搜尋、
   備忘錄、修圖、行事曆、Wallet、Maps) map to what 暖暖 can do (故事集、回診提醒、拍照問暖暖、一題一題帶). Admin-added
   chapters fall back to `defaultQuick` (guided). When adding a built-in chapter, add its quick step too.
-  **進階內容 隱藏／顯示全部** (2026-11-03): /admin/chapters has a 「全部章節」 switch (`app_settings` key `book` =
-  `{ moreContent: collapsed|expanded }`, `GET/PUT /api/admin/book-settings`, read on every chapter load by
-  `loadBookSettings`) and a per-chapter override (`overrides.moreContent`; empty = follow the global one,
-  `resolveMoreContent`). `expanded` only makes 「想多了解這一節」 start open — readers can still collapse it; the
-  quick card stays on top either way. No setting / no `app_settings` table → collapsed (the old behaviour).
+  **進階內容與影片** (2026-11-03): /admin/chapters has 「全部章節」 switches (`app_settings` key `book` =
+  `{ moreContent: collapsed|expanded|hidden, videoDisplay: inside|always }`, `GET/PUT /api/admin/book-settings`, read
+  on every chapter load by `loadBookSettings`) and per-chapter overrides (`overrides.moreContent` / `videoDisplay`;
+  empty = follow the global one, `resolveMoreContent` / `resolveVideoDisplay`). `expanded` only makes 「想多了解這一節」
+  start open (readers can still collapse it); `hidden` removes that button, everything under it **and** the footer
+  guide button (the guide lives inside the section) — only the quick card is left. `videoDisplay: always` pulls the
+  影片示範 + YouTube blocks out of the section and shows them under the quick card (`ChapterQuickCard` children), so
+  they appear once whatever the mode. No setting / no `app_settings` table → collapsed + inside (the old behaviour).
 - Optional save: 「把這句話點成光點」→ `/smart/spark?source=chapterXXXX` (sessionStorage seed).
 - Home 「書本練習」→ `/smart/guide`. Deep links `/?open=voice|camera&from=chapterXXXX` show intent tips.
 - Production DB may need `supabase/add-chapter-opening-sources.sql` if the old source check is still in place.

@@ -12,12 +12,15 @@ import {
   MORE_CONTENT_LABELS,
   MORE_CONTENT_MODES,
   MULTILINE_FIELDS,
+  VIDEO_DISPLAY_LABELS,
+  VIDEO_DISPLAY_MODES,
   youtubeEmbedUrl,
   type BookSettings,
   type ChapterBlock,
   type ChapterBlockType,
   type ChapterOverrides,
   type MoreContentMode,
+  type VideoDisplayMode,
 } from "@/lib/chapter-content";
 
 type Entry = NonNullable<ChapterOverrides["entries"]>[number];
@@ -37,6 +40,10 @@ const btn = (bg: string, color = "#fff") =>
 const smallBtn = { ...btn("#334155"), padding: "6px 10px", fontSize: 13 } as const;
 const badge = (bg: string, color = "#0f172a") =>
   ({ fontSize: 10, background: bg, color, padding: "1px 6px", borderRadius: 6, fontWeight: 700, whiteSpace: "nowrap" }) as const;
+
+/** 「跟著全部章節的設定（目前：…）」用的短名稱 */
+const MORE_SHORT: Record<MoreContentMode, string> = { collapsed: "收起來", expanded: "顯示全部", hidden: "不顯示" };
+const VIDEO_SHORT: Record<VideoDisplayMode, string> = { inside: "跟著進階內容", always: "一直顯示" };
 
 const newId = () => `b${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
@@ -79,13 +86,14 @@ export default function ChaptersAdminPage() {
       .catch(console.error);
   }, []);
 
-  const saveBookMore = async (mode: MoreContentMode) => {
-    if (!book || mode === book.moreContent) return;
+  const saveBook = async (patch: Partial<BookSettings>) => {
+    if (!book) return;
     const prev = book;
-    setBook({ ...book, moreContent: mode });
+    const next = { ...book, ...patch };
+    setBook(next);
     setBookMsg("");
     try {
-      const r = await api.adminSaveBookSettings({ ...book, moreContent: mode });
+      const r = await api.adminSaveBookSettings(next);
       setBook(r.settings);
       setBookMsg("✓ 已儲存，所有章節立即生效");
     } catch (e) {
@@ -212,26 +220,35 @@ export default function ChaptersAdminPage() {
 
       {/* 全部章節共用設定 */}
       <div style={{ ...card, marginBottom: 18 }}>
-        <div style={{ ...panelTitle, marginBottom: 6 }}>📖 進階內容（「想多了解這一節」裡的說明、練習範例）— 全部章節</div>
+        <div style={{ ...panelTitle, marginBottom: 6 }}>📖 進階內容與影片 — 全部章節</div>
         <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 10, lineHeight: 1.6 }}>
-          章節最上面一定是「⭐ 這一節只要做一件事」。下面的長篇說明要先收起來，還是一打開就全部顯示？個別章節可以在編輯區另外設定。
+          章節最上面一定是「⭐ 這一節只要做一件事」。下面「想多了解這一節」裡的說明、練習範例要怎麼顯示？影片要不要另外拉出來一直顯示？個別章節可以在編輯區另外設定。
         </div>
         {!book ? (
           <div style={{ color: "#64748b", fontSize: 13 }}>載入中…</div>
         ) : (
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-            {MORE_CONTENT_MODES.map((m) => (
-              <label key={m} style={{
-                ...panel, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8, cursor: bookReady ? "pointer" : "not-allowed",
-                borderColor: book.moreContent === m ? "#38bdf8" : "#334155", opacity: bookReady ? 1 : 0.6,
-              }}>
-                <input type="radio" name="book-more" checked={book.moreContent === m} disabled={!bookReady} onChange={() => saveBookMore(m)} />
-                <span style={{ fontSize: 14, color: "#e2e8f0" }}>{MORE_CONTENT_LABELS[m]}</span>
-              </label>
-            ))}
-            {!bookReady && <span style={{ fontSize: 13, color: "#fbbf24" }}>請先在 Supabase 跑 add-plan-settings.sql 才能儲存</span>}
-            {bookMsg && <span style={{ fontSize: 13, color: bookMsg.startsWith("✓") ? "#4ade80" : "#f87171" }}>{bookMsg}</span>}
-          </div>
+          <>
+            <div style={{ ...label, marginTop: 4 }}>進階內容</div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+              {MORE_CONTENT_MODES.map((m) => (
+                <BookChoice key={m} name="book-more" checked={book.moreContent === m} disabled={!bookReady}
+                  label={MORE_CONTENT_LABELS[m]} onPick={() => saveBook({ moreContent: m })} />
+              ))}
+            </div>
+            <div style={{ ...label, marginTop: 12 }}>影片（影片示範、YouTube 區塊）</div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+              {VIDEO_DISPLAY_MODES.map((m) => (
+                <BookChoice key={m} name="book-video" checked={book.videoDisplay === m} disabled={!bookReady}
+                  label={VIDEO_DISPLAY_LABELS[m]} onPick={() => saveBook({ videoDisplay: m })} />
+              ))}
+            </div>
+            {(!bookReady || bookMsg) && (
+              <div style={{ marginTop: 10 }}>
+                {!bookReady && <span style={{ fontSize: 13, color: "#fbbf24" }}>請先在 Supabase 跑 add-plan-settings.sql 才能儲存</span>}
+                {bookMsg && <span style={{ fontSize: 13, color: bookMsg.startsWith("✓") ? "#4ade80" : "#f87171" }}>{bookMsg}</span>}
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -302,17 +319,33 @@ export default function ChaptersAdminPage() {
                 </label>
               )}
 
-              {/* 這一章的進階內容 */}
+              {/* 這一章的進階內容與影片 */}
               <div style={{ ...panel, marginBottom: 16 }}>
-                <label style={{ ...panelTitle, display: "block", marginBottom: 8 }}>📖 這一章的進階內容（「想多了解這一節」）</label>
-                <select
-                  style={input}
-                  value={form.moreContent ?? ""}
-                  onChange={(e) => set("moreContent", (e.target.value || undefined) as MoreContentMode | undefined)}
-                >
-                  <option value="">跟著全部章節的設定{book ? `（目前：${book.moreContent === "expanded" ? "顯示全部" : "隱藏"}）` : ""}</option>
-                  {MORE_CONTENT_MODES.map((m) => <option key={m} value={m}>{MORE_CONTENT_LABELS[m]}</option>)}
-                </select>
+                <div style={{ ...panelTitle, marginBottom: 8 }}>📖 這一章的進階內容與影片</div>
+                <div className="adm-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div>
+                    <label style={label}>進階內容（「想多了解這一節」）</label>
+                    <select
+                      style={input}
+                      value={form.moreContent ?? ""}
+                      onChange={(e) => set("moreContent", (e.target.value || undefined) as MoreContentMode | undefined)}
+                    >
+                      <option value="">跟著全部章節的設定{book ? `（目前：${MORE_SHORT[book.moreContent]}）` : ""}</option>
+                      {MORE_CONTENT_MODES.map((m) => <option key={m} value={m}>{MORE_CONTENT_LABELS[m]}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={label}>影片（影片示範、YouTube 區塊）</label>
+                    <select
+                      style={input}
+                      value={form.videoDisplay ?? ""}
+                      onChange={(e) => set("videoDisplay", (e.target.value || undefined) as VideoDisplayMode | undefined)}
+                    >
+                      <option value="">跟著全部章節的設定{book ? `（目前：${VIDEO_SHORT[book.videoDisplay]}）` : ""}</option>
+                      {VIDEO_DISPLAY_MODES.map((m) => <option key={m} value={m}>{VIDEO_DISPLAY_LABELS[m]}</option>)}
+                    </select>
+                  </div>
+                </div>
               </div>
 
               {/* 章首圖片 / 影片 */}
@@ -430,6 +463,21 @@ export default function ChaptersAdminPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+/** 全部章節設定的單選按鈕 */
+function BookChoice({ name, checked, disabled, label: text, onPick }: {
+  name: string; checked: boolean; disabled: boolean; label: string; onPick: () => void;
+}) {
+  return (
+    <label style={{
+      ...panel, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8, cursor: disabled ? "not-allowed" : "pointer",
+      borderColor: checked ? "#38bdf8" : "#334155", opacity: disabled ? 0.6 : 1,
+    }}>
+      <input type="radio" name={name} checked={checked} disabled={disabled} onChange={onPick} />
+      <span style={{ fontSize: 14, color: "#e2e8f0" }}>{text}</span>
+    </label>
   );
 }
 

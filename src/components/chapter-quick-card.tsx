@@ -2,8 +2,10 @@
 
 // ────────────────────────────────────────────────
 // 書本章節最上面的「一步完成」：一句話＋一個大按鈕，直接用暖暖做完；原本的長篇內容收在「想多了解這一節」
+// （後台可設成不顯示：連「想多了解」按鈕都不出現；影片可設成一直顯示，放在 children）
 // ────────────────────────────────────────────────
 
+import type { ReactNode } from "react";
 import { QUICK_BUTTON, chapterQuick, quickHref, quickPrompt } from "@/lib/chapter-quick";
 import { trackEvent } from "@/lib/telemetry";
 
@@ -15,6 +17,8 @@ export function ChapterQuickCard({
   onAsk,
   onPhotoAsk,
   onOpen,
+  showMoreToggle = true,
+  children,
 }: {
   chapterId: string;
   title: string;
@@ -24,6 +28,10 @@ export function ChapterQuickCard({
   onAsk: (prompt: string, guided: boolean) => void;
   onPhotoAsk: (question: string) => void;
   onOpen: (href: string) => void;
+  /** 後台把進階內容設成「不顯示」時是 false */
+  showMoreToggle?: boolean;
+  /** 卡片和「想多了解」按鈕之間（後台設成一直顯示的影片） */
+  children?: ReactNode;
 }) {
   const q = chapterQuick(chapterId, title);
   const prompt = quickPrompt(q);
@@ -37,11 +45,13 @@ export function ChapterQuickCard({
     if (href) onOpen(href);
   };
 
+  // 進階內容不顯示時，下面沒有說明，就不提「不用先讀完下面的說明」
+  const skipMore = showMoreToggle ? "，不用先讀完下面的說明" : "";
   const hint =
-    q.action === "guided" ? "暖暖會一次問一題，你回答就好，不用先讀完下面的說明"
+    q.action === "guided" ? `暖暖會一次問一題，你回答就好${skipMore}`
     : q.action === "ask" ? (fillIn ? "問題開頭幫你寫好了，補上你想問的，再按「送出」" : "問題幫你寫好了，按「送出」就好")
     : q.action === "photo" ? "拍一張照片，問題幫你寫好了"
-    : "點一下就打開，不用先讀完下面的說明";
+    : `點一下就打開${skipMore}`;
 
   return (
     <section aria-label="一步完成" style={{ marginBottom: 20 }}>
@@ -67,7 +77,8 @@ export function ChapterQuickCard({
           {hint}
         </div>
       </div>
-      <button
+      {children && <div style={{ marginTop: 20 }}>{children}</div>}
+      {showMoreToggle && <button
         type="button"
         onClick={onToggleMore}
         aria-expanded={moreOpen}
@@ -75,7 +86,7 @@ export function ChapterQuickCard({
         style={{ width: "100%", marginTop: 12, minHeight: 52 }}
       >
         {moreOpen ? "收起這一節的說明 ▲" : "想多了解這一節 ▼"}
-      </button>
+      </button>}
     </section>
   );
 }
