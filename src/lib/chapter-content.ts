@@ -134,31 +134,49 @@ export function isBlockFilled(b: ChapterBlock): boolean {
   }
 }
 
-// ── 「想多了解這一節」的進階內容：收起來或整段攤開 ──────
-/** collapsed＝隱藏（收在「想多了解這一節」，點了才打開）；expanded＝一打開章節就全部顯示 */
-export const MORE_CONTENT_MODES = ["collapsed", "expanded"] as const;
+// ── 「想多了解這一節」的進階內容：收起來、整段攤開，或完全不顯示 ──────
+/**
+ * collapsed＝收起來（按「想多了解這一節」才打開）；expanded＝一打開章節就全部顯示；
+ * hidden＝不顯示（連「想多了解這一節」和底部的導讀按鈕都沒有，只剩「一步完成」）
+ */
+export const MORE_CONTENT_MODES = ["collapsed", "expanded", "hidden"] as const;
 export type MoreContentMode = (typeof MORE_CONTENT_MODES)[number];
 export const MORE_CONTENT_LABELS: Record<MoreContentMode, string> = {
-  collapsed: "隱藏（收在「想多了解這一節」，點了才打開）",
+  collapsed: "收起來（按「想多了解這一節」才打開）",
   expanded: "顯示全部（一打開章節就看得到）",
+  hidden: "不顯示（連「想多了解這一節」都不出現）",
+};
+
+/** 章節影片（影片示範＋YouTube 區塊）：跟著進階內容，或一直顯示在「一步完成」下面 */
+export const VIDEO_DISPLAY_MODES = ["inside", "always"] as const;
+export type VideoDisplayMode = (typeof VIDEO_DISPLAY_MODES)[number];
+export const VIDEO_DISPLAY_LABELS: Record<VideoDisplayMode, string> = {
+  inside: "跟著進階內容（收起來或不顯示時就看不到）",
+  always: "一直顯示（放在「一步完成」下面）",
 };
 
 /** 全部章節共用的設定（app_settings key='book'） */
 export interface BookSettings {
   moreContent: MoreContentMode;
+  videoDisplay: VideoDisplayMode;
 }
-export const DEFAULT_BOOK_SETTINGS: BookSettings = { moreContent: "collapsed" };
+export const DEFAULT_BOOK_SETTINGS: BookSettings = { moreContent: "collapsed", videoDisplay: "inside" };
 
 /** DB 裡的值可能是舊的／壞的：看不懂就用預設 */
 export function normalizeBookSettings(value: unknown): BookSettings {
-  const v = (value && typeof value === "object" ? value : {}) as { moreContent?: unknown };
-  const mode = MORE_CONTENT_MODES.find((m) => m === v.moreContent);
-  return { moreContent: mode ?? DEFAULT_BOOK_SETTINGS.moreContent };
+  const v = (value && typeof value === "object" ? value : {}) as { moreContent?: unknown; videoDisplay?: unknown };
+  return {
+    moreContent: MORE_CONTENT_MODES.find((m) => m === v.moreContent) ?? DEFAULT_BOOK_SETTINGS.moreContent,
+    videoDisplay: VIDEO_DISPLAY_MODES.find((m) => m === v.videoDisplay) ?? DEFAULT_BOOK_SETTINGS.videoDisplay,
+  };
 }
 
 /** 章節自己有設定就用章節的，沒有就跟著全部章節的設定 */
 export function resolveMoreContent(chapter: Pick<ChapterOpening, "moreContent">, settings: BookSettings): MoreContentMode {
   return chapter.moreContent ?? settings.moreContent;
+}
+export function resolveVideoDisplay(chapter: Pick<ChapterOpening, "videoDisplay">, settings: BookSettings): VideoDisplayMode {
+  return chapter.videoDisplay ?? settings.videoDisplay;
 }
 
 /** 後台送來的覆蓋內容；所有欄位選填，留空＝用預設 */
@@ -192,6 +210,7 @@ export const chapterOverridesSchema = z
     blocks: z.array(chapterBlockSchema).max(30).optional(),
     /** 沒填＝跟著全部章節的設定 */
     moreContent: z.enum(MORE_CONTENT_MODES).optional(),
+    videoDisplay: z.enum(VIDEO_DISPLAY_MODES).optional(),
   })
   .strict();
 
@@ -247,6 +266,7 @@ export function applyChapterOverrides(
   if (clean.videoUrl) merged.videoUrl = clean.videoUrl;
   if (clean.blocks?.length) merged.blocks = clean.blocks;
   if (clean.moreContent) merged.moreContent = clean.moreContent;
+  if (clean.videoDisplay) merged.videoDisplay = clean.videoDisplay;
 
   return merged;
 }

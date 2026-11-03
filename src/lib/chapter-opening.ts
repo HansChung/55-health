@@ -1248,6 +1248,8 @@ export interface ChapterOpening {
   blocks?: import("./chapter-content").ChapterBlock[];
   /** 後台可設定：「想多了解這一節」的內容要收起來還是全部顯示（沒設＝跟著全部章節的設定） */
   moreContent?: import("./chapter-content").MoreContentMode;
+  /** 後台可設定：影片跟著進階內容，或一直顯示（沒設＝跟著全部章節的設定） */
+  videoDisplay?: import("./chapter-content").VideoDisplayMode;
   title: string;
   subtitle: string;
   layout?: ChapterLayout;

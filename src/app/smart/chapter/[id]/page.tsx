@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { loadBookSettings, loadChapter } from "@/lib/chapter-content-server";
-import { resolveMoreContent } from "@/lib/chapter-content";
+import { resolveMoreContent, resolveVideoDisplay } from "@/lib/chapter-content";
 import { requireAdmin } from "@/lib/admin-guard";
 import { ChapterOpeningScreen } from "@/screens/chapter-opening-screen";
 
@@ -35,5 +35,11 @@ export default async function ChapterOpeningPage({ params, searchParams }: Props
     loadBookSettings(),
   ]);
   if (!chapter) notFound();
-  return <ChapterOpeningScreen chapter={chapter} moreInitiallyOpen={resolveMoreContent(chapter, settings) === "expanded"} />;
+  return (
+    <ChapterOpeningScreen
+      chapter={chapter}
+      moreMode={resolveMoreContent(chapter, settings)}
+      videosAlwaysShown={resolveVideoDisplay(chapter, settings) === "always"}
+    />
+  );
 }
