@@ -333,13 +333,23 @@ stack works well for auth + meal/diary CRUD:
 - Bottom nav = 首頁／日記／📷／**功能**／我的 (the old 「對話」 tab is gone: voice chat is 「跟暖暖聊聊」 on the home
   screen and in 功能 → 問暖暖; book chapter 0102 says so).
 - **Every feature entry lives in one registry**: `src/lib/feature-menu.ts` (`MenuId`, `MENU_ITEMS` label/emoji/desc,
-  `MENU_GROUPS` = 健康照顧／問暖暖／回憶與影片／出門走走／家人與安心／動動腦). `page.tsx` builds `menuActions`
+  `MENU_GROUPS` = 健康照顧／問暖暖／回憶與影片／出門走走／家人與安心／動動腦, `COMPASS_DIRECTIONS`). `page.tsx` builds `menuActions`
   (`MenuActions`, one function per id; **undefined = hidden**, e.g. feature switched off in /admin/plans or 家人狀況 for
   someone who cares for nobody; tier-gated items stay visible and `requireFeature` shows the upgrade prompt).
-  `FeaturesScreen` (tab `features`) renders the groups; the home screen only shows `FavoriteFeatures`: 4 tiles chosen by
+  The home screen only shows `FavoriteFeatures`: 4 tiles chosen by
   `pickFavorites` from per-device usage in localStorage (`recordMenuUse`; defaults 問暖暖／拍照問暖暖／可疑訊息／看診小幫手
-  get +1.5 so a feature needs 2 uses to replace one; shown in menu order so tiles don't jump around).
-- **Adding a feature**: add a `MenuId` + `MENU_ITEMS` entry, put it in a group, add its action in `menuActions`. Don't
+  get +1.5 so a feature needs 2 uses to replace one; shown in `MENU_GROUPS` order so tiles don't jump around).
+- **功能分頁 = 生活羅盤** (2026-11-03, owner: 「透過生活羅盤的方式來呈現，讓長輩更好找功能」): `FeaturesScreen` reuses the
+  book's 生活羅盤 = chapter 3's SMART RADAR five directions (colors + S/M/A/R/T names from `BLUEPRINT_DIMENSIONS` in
+  `smart-blueprint.ts`), but each direction's big label is plain words: S 家人朋友／M 回憶故事／A 出門運動／R 健康平安／
+  T 學新東西 (`COMPASS_DIRECTIONS`); 暖暖 in the middle opens `COMPASS_CENTER` (問暖暖／跟暖暖聊聊／拍照問暖暖). Tapping a
+  direction expands its big `FeatureTile`s under the compass (last pick kept in sessionStorage). Directions with no
+  available item are dropped and the rest are spaced evenly round the circle (no horizontal scroll at 375 px, buttons
+  ≥ 64 px). Above it, 「🔎 找功能」 (typed or 🗣️ dictated) uses `searchMenu`: matches label/desc/`keywords`, **or** a
+  label/keyword inside the query, so a spoken 「我想量血壓」 still finds 血壓血糖; nothing found → 「問暖暖」. Below it,
+  「📋 全部功能」 lists every group (`MENU_GROUPS`) for people who don't like the compass.
+- **Adding a feature**: add a `MenuId` + `MENU_ITEMS` entry (+ `keywords` people might say), put it in a group **and** a
+  compass direction (a test checks every item is in exactly one of each), add its action in `menuActions`. Don't
   add another `NavCard` to the home screen and don't add feature rows to 我的 (它只放資料和設定).
 - Home order: greeting → 報平安 → today/tomorrow appointment → calorie ring + 暖暖的建議 → 天氣 offer → 家人狀況 (if
   caring) → 常用 → medicines / alerts → meals → 跟暖暖聊聊・記錄運動.
