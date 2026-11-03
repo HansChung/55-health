@@ -284,9 +284,11 @@ import {
 
 interface ChapterOpeningScreenProps {
   chapter: ChapterOpening;
+  /** 後台把進階內容設成「顯示全部」：一打開就攤開（讀者還是可以收起來） */
+  moreInitiallyOpen?: boolean;
 }
 
-export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
+export function ChapterOpeningScreen({ chapter, moreInitiallyOpen = false }: ChapterOpeningScreenProps) {
   const router = useRouter();
   const toast = useToast();
   const { user, loading: authLoading } = useAuth();
@@ -299,8 +301,8 @@ export function ChapterOpeningScreen({ chapter }: ChapterOpeningScreenProps) {
   const [picked, setPicked] = useState<string | null>(null);
   const [reflectNote, setReflectNote] = useState("");
   const [guideOpen, setGuideOpen] = useState(false);
-  // 原本的長篇說明預設收起來，最上面只放「一步完成」（看示範時也會打開）
-  const [moreOpen, setMoreOpen] = useState(false);
+  // 原本的長篇說明預設收起來，最上面只放「一步完成」（看示範時也會打開）；後台可改成一開始就全部顯示
+  const [moreOpen, setMoreOpen] = useState(moreInitiallyOpen);
   const [guideSpeaking, setGuideSpeaking] = useState(false);
   const [cloudSaving, setCloudSaving] = useState(false);
   const [cloudHasDraft, setCloudHasDraft] = useState(false);

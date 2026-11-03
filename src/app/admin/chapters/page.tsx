@@ -9,11 +9,15 @@ import {
   CUSTOM_CHAPTER_ID_RE,
   EDITABLE_TEXT_FIELDS,
   FIELD_LABELS,
+  MORE_CONTENT_LABELS,
+  MORE_CONTENT_MODES,
   MULTILINE_FIELDS,
   youtubeEmbedUrl,
+  type BookSettings,
   type ChapterBlock,
   type ChapterBlockType,
   type ChapterOverrides,
+  type MoreContentMode,
 } from "@/lib/chapter-content";
 
 type Entry = NonNullable<ChapterOverrides["entries"]>[number];
@@ -62,8 +66,33 @@ export default function ChaptersAdminPage() {
   const [newTitle, setNewTitle] = useState("");
   const [createMsg, setCreateMsg] = useState("");
 
+  // 全部章節共用：「想多了解這一節」的進階內容要隱藏還是全部顯示
+  const [book, setBook] = useState<BookSettings | null>(null);
+  const [bookReady, setBookReady] = useState(true);
+  const [bookMsg, setBookMsg] = useState("");
+
   const reloadList = () => api.adminListChapters().then((d) => setList(d.chapters)).catch(console.error);
-  useEffect(() => { reloadList(); }, []);
+  useEffect(() => {
+    reloadList();
+    api.adminGetBookSettings()
+      .then((d) => { setBook(d.settings); setBookReady(d.ready); })
+      .catch(console.error);
+  }, []);
+
+  const saveBookMore = async (mode: MoreContentMode) => {
+    if (!book || mode === book.moreContent) return;
+    const prev = book;
+    setBook({ ...book, moreContent: mode });
+    setBookMsg("");
+    try {
+      const r = await api.adminSaveBookSettings({ ...book, moreContent: mode });
+      setBook(r.settings);
+      setBookMsg("✓ 已儲存，所有章節立即生效");
+    } catch (e) {
+      setBook(prev);
+      setBookMsg("儲存失敗：" + (e as Error).message);
+    }
+  };
 
   const editorRef = useRef<HTMLDivElement>(null);
 
@@ -181,6 +210,31 @@ export default function ChaptersAdminPage() {
         欄位留空＝使用預設（灰字）。儲存後不用重新部署，立即生效。
       </p>
 
+      {/* 全部章節共用設定 */}
+      <div style={{ ...card, marginBottom: 18 }}>
+        <div style={{ ...panelTitle, marginBottom: 6 }}>📖 進階內容（「想多了解這一節」裡的說明、練習範例）— 全部章節</div>
+        <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 10, lineHeight: 1.6 }}>
+          章節最上面一定是「⭐ 這一節只要做一件事」。下面的長篇說明要先收起來，還是一打開就全部顯示？個別章節可以在編輯區另外設定。
+        </div>
+        {!book ? (
+          <div style={{ color: "#64748b", fontSize: 13 }}>載入中…</div>
+        ) : (
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+            {MORE_CONTENT_MODES.map((m) => (
+              <label key={m} style={{
+                ...panel, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8, cursor: bookReady ? "pointer" : "not-allowed",
+                borderColor: book.moreContent === m ? "#38bdf8" : "#334155", opacity: bookReady ? 1 : 0.6,
+              }}>
+                <input type="radio" name="book-more" checked={book.moreContent === m} disabled={!bookReady} onChange={() => saveBookMore(m)} />
+                <span style={{ fontSize: 14, color: "#e2e8f0" }}>{MORE_CONTENT_LABELS[m]}</span>
+              </label>
+            ))}
+            {!bookReady && <span style={{ fontSize: 13, color: "#fbbf24" }}>請先在 Supabase 跑 add-plan-settings.sql 才能儲存</span>}
+            {bookMsg && <span style={{ fontSize: 13, color: bookMsg.startsWith("✓") ? "#4ade80" : "#f87171" }}>{bookMsg}</span>}
+          </div>
+        )}
+      </div>
+
       <div className="adm-split" style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 18, alignItems: "start" }}>
         {/* 章節清單 */}
         <div style={card}>
@@ -247,6 +301,19 @@ export default function ChaptersAdminPage() {
                   </span>
                 </label>
               )}
+
+              {/* 這一章的進階內容 */}
+              <div style={{ ...panel, marginBottom: 16 }}>
+                <label style={{ ...panelTitle, display: "block", marginBottom: 8 }}>📖 這一章的進階內容（「想多了解這一節」）</label>
+                <select
+                  style={input}
+                  value={form.moreContent ?? ""}
+                  onChange={(e) => set("moreContent", (e.target.value || undefined) as MoreContentMode | undefined)}
+                >
+                  <option value="">跟著全部章節的設定{book ? `（目前：${book.moreContent === "expanded" ? "顯示全部" : "隱藏"}）` : ""}</option>
+                  {MORE_CONTENT_MODES.map((m) => <option key={m} value={m}>{MORE_CONTENT_LABELS[m]}</option>)}
+                </select>
+              </div>
 
               {/* 章首圖片 / 影片 */}
               <div style={{ ...panel, marginBottom: 16 }}>

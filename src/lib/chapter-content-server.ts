@@ -11,6 +11,9 @@ import {
   applyChapterOverrides,
   customChapterBase,
   CUSTOM_CHAPTER_ID_RE,
+  DEFAULT_BOOK_SETTINGS,
+  normalizeBookSettings,
+  type BookSettings,
   type ChapterOverrides,
 } from "./chapter-content";
 
@@ -77,6 +80,22 @@ export async function loadChapter(chapterId: string, opts: { preview?: boolean }
   if (!row?.is_custom) return null;
   if (!row.published && !opts.preview) return null;
   return applyChapterOverrides(customChapterBase(chapterId), row.overrides);
+}
+
+/**
+ * 全部章節共用的設定（app_settings key='book'，只有 service role 讀得到）。
+ * 還沒跑 add-plan-settings.sql、沒存過或讀不到 → 預設（進階內容收起來）。
+ */
+export async function loadBookSettings(): Promise<BookSettings> {
+  const supabase = serviceClient();
+  if (!supabase) return DEFAULT_BOOK_SETTINGS;
+  try {
+    const { data, error } = await supabase.from("app_settings").select("value").eq("key", "book").maybeSingle();
+    if (error || !data) return DEFAULT_BOOK_SETTINGS;
+    return normalizeBookSettings((data as { value: unknown }).value);
+  } catch {
+    return DEFAULT_BOOK_SETTINGS;
+  }
 }
 
 /** 書本目錄用：已發布的新章節＋被後台改過的標題 */

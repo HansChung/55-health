@@ -1246,6 +1246,8 @@ export interface ChapterOpening {
   videoUrl?: string;
   /** 後台可新增：自訂內容區塊（文字／圖片／影片／練習範例／連結） */
   blocks?: import("./chapter-content").ChapterBlock[];
+  /** 後台可設定：「想多了解這一節」的內容要收起來還是全部顯示（沒設＝跟著全部章節的設定） */
+  moreContent?: import("./chapter-content").MoreContentMode;
   title: string;
   subtitle: string;
   layout?: ChapterLayout;

@@ -3,7 +3,7 @@
  * 在 Capacitor 環境用 NEXT_PUBLIC_API_URL 指向後端
  */
 
-import type { ChapterOverrides } from "./chapter-content";
+import type { BookSettings, ChapterOverrides } from "./chapter-content";
 import type { VideoCommentsView, VideoReaction } from "./video-comments";
 import type {
   MontageMusicId,
@@ -645,6 +645,10 @@ export const api = {
     }),
   adminResetChapter: (id: string) =>
     apiFetch<{ ok: true }>(`/api/admin/chapters/${id}`, { method: "DELETE" }),
+  adminGetBookSettings: () =>
+    apiFetch<{ settings: BookSettings; ready: boolean }>("/api/admin/book-settings"),
+  adminSaveBookSettings: (settings: BookSettings) =>
+    apiFetch<{ settings: BookSettings }>("/api/admin/book-settings", { method: "PUT", json: { settings } }),
 
   // 書本目錄（公開）：已發布的新章節＋改過的標題
   chapterCatalog: () =>

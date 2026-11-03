@@ -134,6 +134,33 @@ export function isBlockFilled(b: ChapterBlock): boolean {
   }
 }
 
+// ── 「想多了解這一節」的進階內容：收起來或整段攤開 ──────
+/** collapsed＝隱藏（收在「想多了解這一節」，點了才打開）；expanded＝一打開章節就全部顯示 */
+export const MORE_CONTENT_MODES = ["collapsed", "expanded"] as const;
+export type MoreContentMode = (typeof MORE_CONTENT_MODES)[number];
+export const MORE_CONTENT_LABELS: Record<MoreContentMode, string> = {
+  collapsed: "隱藏（收在「想多了解這一節」，點了才打開）",
+  expanded: "顯示全部（一打開章節就看得到）",
+};
+
+/** 全部章節共用的設定（app_settings key='book'） */
+export interface BookSettings {
+  moreContent: MoreContentMode;
+}
+export const DEFAULT_BOOK_SETTINGS: BookSettings = { moreContent: "collapsed" };
+
+/** DB 裡的值可能是舊的／壞的：看不懂就用預設 */
+export function normalizeBookSettings(value: unknown): BookSettings {
+  const v = (value && typeof value === "object" ? value : {}) as { moreContent?: unknown };
+  const mode = MORE_CONTENT_MODES.find((m) => m === v.moreContent);
+  return { moreContent: mode ?? DEFAULT_BOOK_SETTINGS.moreContent };
+}
+
+/** 章節自己有設定就用章節的，沒有就跟著全部章節的設定 */
+export function resolveMoreContent(chapter: Pick<ChapterOpening, "moreContent">, settings: BookSettings): MoreContentMode {
+  return chapter.moreContent ?? settings.moreContent;
+}
+
 /** 後台送來的覆蓋內容；所有欄位選填，留空＝用預設 */
 export const chapterOverridesSchema = z
   .object({
@@ -163,6 +190,8 @@ export const chapterOverridesSchema = z
       .union([z.literal(""), z.string().max(500).refine((v) => youtubeEmbedUrl(v) !== null, "目前只支援 YouTube 影片網址")])
       .optional(),
     blocks: z.array(chapterBlockSchema).max(30).optional(),
+    /** 沒填＝跟著全部章節的設定 */
+    moreContent: z.enum(MORE_CONTENT_MODES).optional(),
   })
   .strict();
 
@@ -217,6 +246,7 @@ export function applyChapterOverrides(
   if (clean.heroImageUrl) merged.heroImageUrl = clean.heroImageUrl;
   if (clean.videoUrl) merged.videoUrl = clean.videoUrl;
   if (clean.blocks?.length) merged.blocks = clean.blocks;
+  if (clean.moreContent) merged.moreContent = clean.moreContent;
 
   return merged;
 }

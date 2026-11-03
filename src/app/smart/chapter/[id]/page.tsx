@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { loadChapter } from "@/lib/chapter-content-server";
+import { loadBookSettings, loadChapter } from "@/lib/chapter-content-server";
+import { resolveMoreContent } from "@/lib/chapter-content";
 import { requireAdmin } from "@/lib/admin-guard";
 import { ChapterOpeningScreen } from "@/screens/chapter-opening-screen";
 
@@ -29,7 +30,10 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 /** QR 0100：章節開篇｜風起了，調整風帆（內建章節＋後台新增的章節共用） */
 export default async function ChapterOpeningPage({ params, searchParams }: Props) {
   const { id } = await params;
-  const chapter = await loadChapter(id, { preview: await isPreview(searchParams) });
+  const [chapter, settings] = await Promise.all([
+    loadChapter(id, { preview: await isPreview(searchParams) }),
+    loadBookSettings(),
+  ]);
   if (!chapter) notFound();
-  return <ChapterOpeningScreen chapter={chapter} />;
+  return <ChapterOpeningScreen chapter={chapter} moreInitiallyOpen={resolveMoreContent(chapter, settings) === "expanded"} />;
 }

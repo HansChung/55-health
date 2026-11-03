@@ -11,6 +11,9 @@ import {
   isSafeHref,
   isBlockFilled,
   CUSTOM_CHAPTER_ID_RE,
+  DEFAULT_BOOK_SETTINGS,
+  normalizeBookSettings,
+  resolveMoreContent,
   type ChapterBlock,
 } from "./chapter-content";
 import { getChapterOpening, getBookGuideSections } from "./chapter-opening";
@@ -253,5 +256,31 @@ describe("書本目錄合併後台資料", () => {
 
   it("沒有後台資料時與原本完全一樣", () => {
     expect(getBookGuideSections({})).toEqual(getBookGuideSections());
+  });
+});
+
+describe("進階內容：隱藏或顯示全部", () => {
+  it("全部章節預設收起來；看不懂的值也當成收起來", () => {
+    expect(DEFAULT_BOOK_SETTINGS.moreContent).toBe("collapsed");
+    expect(normalizeBookSettings(null).moreContent).toBe("collapsed");
+    expect(normalizeBookSettings({ moreContent: "open" }).moreContent).toBe("collapsed");
+    expect(normalizeBookSettings({ moreContent: "expanded" }).moreContent).toBe("expanded");
+  });
+
+  it("章節沒設定就跟著全部章節；有設定就用章節自己的", () => {
+    const all = normalizeBookSettings({ moreContent: "expanded" });
+    expect(resolveMoreContent(base, all)).toBe("expanded");
+    expect(resolveMoreContent(base, DEFAULT_BOOK_SETTINGS)).toBe("collapsed");
+
+    const hidden = applyChapterOverrides(base, { moreContent: "collapsed" });
+    expect(resolveMoreContent(hidden, all)).toBe("collapsed");
+    const shown = applyChapterOverrides(base, { moreContent: "expanded" });
+    expect(resolveMoreContent(shown, DEFAULT_BOOK_SETTINGS)).toBe("expanded");
+  });
+
+  it("後台只接受兩種值", () => {
+    expect(chapterOverridesSchema.safeParse({ moreContent: "expanded" }).success).toBe(true);
+    expect(chapterOverridesSchema.safeParse({ moreContent: "hidden" }).success).toBe(false);
+    expect(normalizeOverrides({ moreContent: "expanded" })).toEqual({ moreContent: "expanded" });
   });
 });
