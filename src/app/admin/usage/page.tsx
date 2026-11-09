@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api, type AdminUsageSummary } from "@/lib/api-client";
+import { formatNtd, formatPoints } from "@/lib/admin-costs";
 
 export default function UsagePage() {
   const [days, setDays] = useState(30);
@@ -33,10 +34,10 @@ export default function UsagePage() {
           }}>
             <div style={{ fontSize: 14, color: "#94a3b8" }}>區間總成本</div>
             <div style={{ fontSize: 48, fontWeight: 800, color: "#10b981", marginTop: 8 }}>
-              ${data.totalCostUsd.toFixed(2)}
+              {formatNtd(data.totalPoints * data.pointNtd)}
             </div>
             <div style={{ fontSize: 12, color: "#64748b" }}>
-              ≈ NT$ {(data.totalCostUsd * 32).toFixed(0)}（匯率 1:32）
+              {formatPoints(data.totalPoints)} 算力（1 算力 = NT$ {data.pointNtd}，在「每月成本」設定；token 計費的是照 lk888 單價估的）
             </div>
           </div>
 
@@ -50,7 +51,7 @@ export default function UsagePage() {
                 <tr style={{ borderBottom: "1px solid #334155", color: "#94a3b8", fontSize: 12, textAlign: "left" }}>
                   <th style={{ padding: "8px 0" }}>日期</th>
                   <th>呼叫</th>
-                  <th style={{ textAlign: "right" }}>成本 USD</th>
+                  <th style={{ textAlign: "right" }}>成本</th>
                 </tr>
               </thead>
               <tbody>
@@ -58,7 +59,10 @@ export default function UsagePage() {
                   <tr key={d.date} style={{ borderBottom: "1px solid #1e293b", fontSize: 14 }}>
                     <td style={{ padding: "10px 0", color: "#e2e8f0" }}>{d.date}</td>
                     <td style={{ color: "#94a3b8" }}>{d.count}</td>
-                    <td style={{ textAlign: "right", color: "#10b981" }}>${d.cost.toFixed(4)}</td>
+                    <td style={{ textAlign: "right", color: "#10b981" }}>
+                      {formatNtd(d.points * data.pointNtd)}
+                      <span style={{ color: "#64748b", fontSize: 12, marginLeft: 6 }}>{formatPoints(d.points)} 算力</span>
+                    </td>
                   </tr>
                 ))}
               </tbody>

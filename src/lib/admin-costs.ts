@@ -73,6 +73,10 @@ export const FEATURE_LABELS: Record<string, string> = {
   "/api/stories/voice": "用我的聲音念故事",
 };
 
+// 後台顯示金額：小金額也看得出差別（一次拍照才幾分錢）
+export const formatNtd = (n: number) => (Math.abs(n) >= 100 ? `NT$ ${Math.round(n).toLocaleString()}` : `NT$ ${n.toFixed(Math.abs(n) >= 1 ? 1 : 2)}`);
+export const formatPoints = (n: number) => (n >= 10 ? n.toFixed(1) : n >= 0.1 ? n.toFixed(2) : n.toFixed(4));
+
 export function featureLabel(endpoint: string | null | undefined): string {
   if (!endpoint) return "其他";
   return FEATURE_LABELS[endpoint] ?? endpoint;

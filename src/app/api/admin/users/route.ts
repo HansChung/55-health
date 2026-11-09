@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-guard";
 import { createSupabaseAdmin } from "@/lib/supabase/server";
+import { loadPricedUsage } from "@/lib/admin-costs-server";
 
 export async function GET() {
   const admin = await requireAdmin();
@@ -10,18 +11,16 @@ export async function GET() {
   const { data: { users } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
   const { data: profiles } = await supabase.from("profiles").select("*");
 
-  // 過去 30 天 AI 成本
+  // 過去 30 天 AI 成本（算力，算法同「每月成本」）
   const since = new Date();
   since.setDate(since.getDate() - 30);
-  const { data: usage } = await supabase
-    .from("ai_usage")
-    .select("user_id, cost_usd")
-    .gte("created_at", since.toISOString());
+  const priced = await loadPricedUsage(supabase, since.toISOString());
+  if (!priced) return NextResponse.json({ error: "讀取用量失敗" }, { status: 500 });
 
-  const costMap = new Map<string, number>();
-  for (const u of usage ?? []) {
+  const pointsMap = new Map<string, number>();
+  for (const u of priced.rows) {
     if (!u.user_id) continue;
-    costMap.set(u.user_id, (costMap.get(u.user_id) ?? 0) + Number(u.cost_usd || 0));
+    pointsMap.set(u.user_id, (pointsMap.get(u.user_id) ?? 0) + u.points);
   }
 
   // 餐點數
@@ -47,9 +46,9 @@ export async function GET() {
       is_admin: (p.is_admin as boolean) ?? false,
       created_at: u.created_at,
       meals_count: mealCountMap.get(u.id) ?? 0,
-      ai_cost_30d: costMap.get(u.id) ?? 0,
+      ai_points_30d: pointsMap.get(u.id) ?? 0,
     };
   });
 
-  return NextResponse.json({ users: merged });
+  return NextResponse.json({ users: merged, pointNtd: priced.settings.pointNtd });
 }

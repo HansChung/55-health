@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api, type AdminUsageSummary } from "@/lib/api-client";
+import { formatNtd, formatPoints } from "@/lib/admin-costs";
 
 export default function AdminDashboard() {
   const [data, setData] = useState<AdminUsageSummary | null>(null);
@@ -16,7 +17,6 @@ export default function AdminDashboard() {
   if (error) return <ErrorBlock msg={error} />;
   if (!data) return <div>載入中…</div>;
 
-  const monthCost = data.totalCostUsd;
   const monthCount = data.byService.reduce((s, x) => s + x.count, 0);
   const monthTokens = data.byService.reduce((s, x) => s + x.tokens, 0);
 
@@ -27,10 +27,10 @@ export default function AdminDashboard() {
       </h1>
 
       <div className="adm-stats" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 32 }}>
-        <StatCard label="本月 AI 成本" value={`$${monthCost.toFixed(4)}`} sub="USD" color="#10b981" />
+        <StatCard label="30 天 AI 成本" value={formatNtd(data.totalPoints * data.pointNtd)} sub={`${formatPoints(data.totalPoints)} 算力`} color="#10b981" />
         <StatCard label="呼叫次數" value={monthCount.toString()} sub="次" color="#3b82f6" />
         <StatCard label="總 token 量" value={monthTokens.toLocaleString()} sub="tokens" color="#f59e0b" />
-        <StatCard label="使用人數" value={data.topUsers.length.toString()} sub="人" color="#a855f7" />
+        <StatCard label="使用人數" value={data.users.toString()} sub="人" color="#a855f7" />
       </div>
 
       <div className="adm-split" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
@@ -50,7 +50,7 @@ export default function AdminDashboard() {
                   <td style={{ padding: "12px 0", color: "#e2e8f0" }}>{labelService(s.service)}</td>
                   <td style={{ color: "#94a3b8" }}>{s.count}</td>
                   <td style={{ color: "#94a3b8" }}>{s.tokens.toLocaleString()}</td>
-                  <td style={{ textAlign: "right", color: "#10b981" }}>${s.cost.toFixed(4)}</td>
+                  <td style={{ textAlign: "right", color: "#10b981" }}>{formatNtd(s.points * data.pointNtd)}</td>
                 </tr>
               ))}
             </tbody>
@@ -58,7 +58,7 @@ export default function AdminDashboard() {
         </Card>
 
         <Card title="每日成本趨勢">
-          <DailyChart data={data.daily} />
+          <DailyChart data={data.daily} pointNtd={data.pointNtd} />
         </Card>
       </div>
 
@@ -76,7 +76,7 @@ export default function AdminDashboard() {
               <tr key={u.user_id} style={{ borderBottom: "1px solid #1e293b", fontSize: 14 }}>
                 <td style={{ padding: "12px 0", color: "#e2e8f0" }}>{u.email ?? u.user_id.substring(0, 8)}</td>
                 <td style={{ color: "#94a3b8" }}>{u.count}</td>
-                <td style={{ textAlign: "right", color: "#10b981" }}>${u.cost.toFixed(4)}</td>
+                <td style={{ textAlign: "right", color: "#10b981" }}>{formatNtd(u.points * data.pointNtd)}</td>
               </tr>
             ))}
           </tbody>
@@ -112,16 +112,16 @@ function Card({ title, children, style }: { title: string; children: React.React
   );
 }
 
-function DailyChart({ data }: { data: { date: string; cost: number; count: number }[] }) {
+function DailyChart({ data, pointNtd }: { data: { date: string; points: number; count: number }[]; pointNtd: number }) {
   if (data.length === 0) return <div style={{ color: "#64748b", padding: 20, textAlign: "center" }}>尚無資料</div>;
-  const max = Math.max(...data.map((d) => d.cost), 0.0001);
+  const max = Math.max(...data.map((d) => d.points), 0.0001);
   return (
     <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 160 }}>
       {data.map((d) => (
         <div key={d.date} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-          <div title={`${d.date}: $${d.cost.toFixed(4)}`} style={{
+          <div title={`${d.date}: ${formatNtd(d.points * pointNtd)}（${formatPoints(d.points)} 算力）`} style={{
             width: "100%",
-            height: `${(d.cost / max) * 130}px`,
+            height: `${(d.points / max) * 130}px`,
             background: "linear-gradient(180deg, #10b981, #059669)",
             borderRadius: "4px 4px 0 0",
             minHeight: 2,

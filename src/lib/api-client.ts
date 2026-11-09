@@ -718,7 +718,7 @@ export const api = {
     apiFetch<{ ok: true }>(`/api/admin/feature-grants?id=${encodeURIComponent(id)}`, { method: "DELETE" }),
 
   adminListUsers: () =>
-    apiFetch<{ users: AdminUserRow[] }>("/api/admin/users"),
+    apiFetch<{ users: AdminUserRow[]; pointNtd: number }>("/api/admin/users"),
 
   adminUpdateUser: (userId: string, patch: Partial<AdminUserRow>) =>
     apiFetch<{ user: AdminUserRow }>(`/api/admin/users/${userId}`, {
@@ -1182,11 +1182,14 @@ export interface ExerciseRecord {
   performed_at: string;
 }
 
+/** points＝算力（算法同「每月成本」），pointNtd＝1 算力幾台幣 */
 export interface AdminUsageSummary {
-  totalCostUsd: number;
-  byService: { service: string; count: number; cost: number; tokens: number }[];
-  daily: { date: string; cost: number; count: number }[];
-  topUsers: { user_id: string; email: string | null; cost: number; count: number }[];
+  totalPoints: number;
+  pointNtd: number;
+  users: number;
+  byService: { service: string; count: number; points: number; tokens: number }[];
+  daily: { date: string; points: number; count: number }[];
+  topUsers: { user_id: string; email: string | null; points: number; count: number }[];
 }
 
 export interface AdminFeatureGrant {
@@ -1211,7 +1214,8 @@ export interface AdminUserRow {
   is_admin: boolean;
   created_at: string;
   meals_count?: number;
-  ai_cost_30d?: number;
+  /** 過去 30 天 AI 花了幾算力 */
+  ai_points_30d?: number;
 }
 
 export interface AdminConversationSession {
