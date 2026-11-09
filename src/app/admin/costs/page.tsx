@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from "react";
 import { api, type AdminCostsResponse } from "@/lib/api-client";
-import type { CostSettings } from "@/lib/admin-costs";
+import { formatNtd, formatPoints, type CostSettings } from "@/lib/admin-costs";
 
 const card: React.CSSProperties = { background: "#1e293b", borderRadius: 12, padding: 20, border: "1px solid #334155" };
 const label: React.CSSProperties = { fontSize: 13, color: "#94a3b8" };
@@ -17,9 +17,8 @@ const input: React.CSSProperties = { background: "#0f172a", color: "#fff", borde
 const th: React.CSSProperties = { textAlign: "left", padding: "8px 10px", color: "#94a3b8", fontWeight: 600, fontSize: 13, borderBottom: "1px solid #334155", whiteSpace: "nowrap" };
 const td: React.CSSProperties = { padding: "8px 10px", borderBottom: "1px solid #1e293b", fontSize: 14, color: "#e2e8f0" };
 
-// 小金額看得出差別（一次拍照才幾分錢）
-const ntd = (n: number) => (Math.abs(n) >= 100 ? `NT$ ${Math.round(n).toLocaleString()}` : `NT$ ${n.toFixed(Math.abs(n) >= 1 ? 1 : 2)}`);
-const pts = (n: number) => (n >= 10 ? n.toFixed(1) : n >= 0.1 ? n.toFixed(2) : n.toFixed(4));
+const ntd = formatNtd;
+const pts = formatPoints;
 
 export default function CostsPage() {
   const [month, setMonth] = useState<string | null>(null);

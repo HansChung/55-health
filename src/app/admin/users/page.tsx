@@ -2,17 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { api, type AdminUserRow } from "@/lib/api-client";
+import { formatNtd, formatPoints } from "@/lib/admin-costs";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<AdminUserRow[]>([]);
+  const [pointNtd, setPointNtd] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   const load = async () => {
     setLoading(true);
     try {
-      const { users } = await api.adminListUsers();
+      const { users, pointNtd } = await api.adminListUsers();
       setUsers(users);
+      setPointNtd(pointNtd);
     } catch (e) {
       console.error(e);
     }
@@ -94,7 +97,10 @@ export default function UsersPage() {
                     </select>
                   </td>
                   <td style={{ color: "#94a3b8" }}>{u.meals_count}</td>
-                  <td style={{ color: "#10b981" }}>${(u.ai_cost_30d ?? 0).toFixed(4)}</td>
+                  <td style={{ color: "#10b981" }}>
+                    {formatNtd((u.ai_points_30d ?? 0) * pointNtd)}
+                    <div style={{ fontSize: 11, color: "#64748b" }}>{formatPoints(u.ai_points_30d ?? 0)} 算力</div>
+                  </td>
                   <td style={{ color: "#64748b", fontSize: 12 }}>{new Date(u.created_at).toLocaleDateString("zh-TW")}</td>
                   <td style={{ textAlign: "right", paddingRight: 16 }}>
                     <button onClick={() => toggleAdmin(u.id, u.is_admin)} style={{

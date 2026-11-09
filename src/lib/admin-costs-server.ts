@@ -9,9 +9,11 @@ import {
   DEFAULT_COST_SETTINGS,
   normalizeCostSettings,
   rateFromPricing,
+  rowPoints,
   taipeiDay,
   type CostSettings,
   type TokenRate,
+  type UsageRow,
   type UsageSnapshot,
 } from "@/lib/admin-costs";
 
@@ -110,4 +112,41 @@ export async function loadRevenue(admin: Admin): Promise<{ basic: number; pro: n
   const price = (id: string, fallback: number) =>
     Number(((plans ?? []) as { id: string; price_monthly_twd: number | null }[]).find((p) => p.id === id)?.price_monthly_twd) || fallback;
   return { basic: basic ?? 0, pro: pro ?? 0, prices: { basic: price("basic", 199), pro: price("pro", 399) } };
+}
+
+export interface PricedUsageRow extends UsageRow {
+  service: string | null;
+  /** 這一筆花了幾算力（算法同「每月成本」：實際扣點 → 固定價 → lk888 單價 × token → Google 直連用美元換算） */
+  points: number;
+}
+
+const USAGE_PAGE = 1000;
+const USAGE_MAX_ROWS = 100_000;
+
+/**
+ * 某個時間之後的 AI 紀錄，每筆算好算力（後台總覽、Token 用量、會員管理共用）。
+ * ai_usage.cost_usd 只照 Google 官方價算，走 lk888 的呼叫一律是 0，不能拿來當成本。
+ * 先佔位還沒用的（reserved）不算一筆。讀取失敗回 null。
+ */
+export async function loadPricedUsage(admin: Admin, sinceIso: string): Promise<{ rows: PricedUsageRow[]; settings: CostSettings } | null> {
+  const raw: (UsageRow & { service: string | null })[] = [];
+  for (let from = 0; from < USAGE_MAX_ROWS; from += USAGE_PAGE) {
+    const { data, error } = await admin
+      .from("ai_usage")
+      .select("user_id, service, endpoint, model, input_tokens, output_tokens, success, metadata, cost_usd, created_at")
+      .gte("created_at", sinceIso)
+      .order("created_at", { ascending: true })
+      .range(from, from + USAGE_PAGE - 1);
+    if (error) {
+      console.error("[costs] load usage:", error);
+      return null;
+    }
+    raw.push(...((data ?? []) as (UsageRow & { service: string | null })[]));
+    if ((data ?? []).length < USAGE_PAGE) break;
+  }
+  const rows = raw.filter((r) => r.metadata?.reserved !== true);
+  const tokenModels = rows.filter((r) => typeof r.metadata?.platform_cost !== "number" && (r.input_tokens || r.output_tokens) && r.model).map((r) => r.model!);
+  const [rates, settings] = await Promise.all([fetchTokenRates(tokenModels), loadCostSettings(admin)]);
+  const usdToPoints = settings.usdNtd / settings.pointNtd;
+  return { rows: rows.map((r) => ({ ...r, points: rowPoints(r, rates, usdToPoints).points })), settings };
 }
