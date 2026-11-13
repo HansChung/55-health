@@ -59,6 +59,32 @@ export function isGeminiConfigured(): boolean {
   return Boolean(resolveGeminiConfig().apiKey);
 }
 
+/**
+ * 看圖模型的備援：主模型在邁笙的線路全掛時改用這個再試一次
+ * 2026-11-12 gem-3.8-flash 勾選的兩條線路（AM-cli、ZG-Anti-GEM-1）同時「臨時下線」→ 拍照記餐、拍照問暖暖整天都失敗；
+ * gem-3.5-flash-lite 也看得懂照片（實測約 2 秒、JSON 正常），平常就給文字用，線路是另一組。
+ * LK888_VISION_FALLBACK_MODEL 可改；設成 none 就關掉。只有走邁笙的看圖任務才有。
+ */
+export function visionFallbackModel(
+  env: Record<string, string | undefined>,
+  task: GeminiTask,
+  config: GeminiConfig
+): string | null {
+  if (config.provider !== "lk888" || task !== "vision") return null;
+  const raw = env.LK888_VISION_FALLBACK_MODEL?.trim();
+  if (raw && raw.toLowerCase() === "none") return null;
+  const model = raw || LK888_DEFAULT_MODEL.text;
+  return model === config.model ? null : model;
+}
+
+/** 線路下線（403）、限流（429）、逾時、上游 5xx、連不上 → 換模型可能會好；400／401 換了也一樣，不換 */
+export function shouldFallBack(e: unknown): boolean {
+  if (e instanceof Error && e.name === "AbortError") return false;
+  const status = (e as { status?: unknown } | null)?.status;
+  if (typeof status !== "number") return true;
+  return status === 403 || status === 408 || status === 429 || status >= 500;
+}
+
 export function getGeminiModel(
   generationConfig: GenerationConfig,
   opts: { task?: GeminiTask; googleModel?: string } = {}
@@ -67,10 +93,29 @@ export function getGeminiModel(
   if (!config.apiKey) {
     throw new Error(`${config.provider === "lk888" ? "LK888_API_KEY" : "GEMINI_API_KEY"} not configured`);
   }
-  const model = new GoogleGenerativeAI(config.apiKey).getGenerativeModel(
-    { model: config.model, generationConfig },
-    config.baseUrl ? { baseUrl: config.baseUrl, timeout: 60_000 } : undefined
-  );
+  const build = (name: string) =>
+    new GoogleGenerativeAI(config.apiKey!).getGenerativeModel(
+      { model: name, generationConfig },
+      config.baseUrl ? { baseUrl: config.baseUrl, timeout: 60_000 } : undefined
+    );
+  const model = build(config.model);
+
+  const fallback = visionFallbackModel(process.env, opts.task ?? "vision", config);
+  if (fallback) {
+    const primary = model.generateContent.bind(model);
+    model.generateContent = async (...args) => {
+      try {
+        return await primary(...args);
+      } catch (e) {
+        if (!shouldFallBack(e)) throw e;
+        console.warn(`[gemini] ${config.model} failed, retrying with ${fallback}:`, e instanceof Error ? e.message.slice(0, 200) : e);
+        const result = await build(fallback).generateContent(...args);
+        // 呼叫端用 config.model 記用量／算成本：記成真的回答的那個模型
+        config.model = fallback;
+        return result;
+      }
+    };
+  }
   return { model, config };
 }
 

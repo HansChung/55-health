@@ -86,10 +86,12 @@ export async function POST(req: NextRequest) {
   }
   const styleLabel = TRAVEL_VIDEO_STYLES.find((s) => s.id === body.style)?.label ?? "";
 
-  const config = resolveGeminiConfig();
+  // 看圖備援時 getGeminiModel 會換成真的回答的模型（記用量用）
+  let config = resolveGeminiConfig();
   let tracked = false;
   try {
-    const { model } = getGeminiModel({ responseMimeType: "application/json", temperature: 0.8 });
+    const { model, config: used } = getGeminiModel({ responseMimeType: "application/json", temperature: 0.8 });
+    config = used;
     const result = await model.generateContent([
       { text: buildScriptPrompt(sanitizePlace(body.place), styleLabel) },
       { inlineData: { data: b64, mimeType: `image/${mime}` } },

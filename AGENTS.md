@@ -116,6 +116,12 @@ and Stripe. Capacitor/Android is only a packaging target and is not needed for w
   **Some channels (AM-cli for gem-3.8-flash) return the model's thinking as an extra `thought: true` part** —
   `response.text()` glues it in front of the answer and JSON parsing fails (every photo failed on 2026-10-27).
   Always read model output with `modelText(result.response)` from `src/lib/ai/gemini.ts`, never `.text()`.
+  **Vision fallback** (2026-11-12: both groups ticked for gem-3.8-flash went 「临时下线」 → 403 on every photo for a
+  day): `getGeminiModel` retries a failed lk888 **vision** call once with `LK888_VISION_FALLBACK_MODEL` (default
+  `gem-3.5-flash-lite`, which reads photos fine — tested ~2 s, valid JSON; `none` disables) on 403/408/429/5xx/network
+  errors (`shouldFallBack`; not 400/401), and sets `config.model` to the model that answered — so callers must record
+  usage from the `config` returned by `getGeminiModel`, not a separate `resolveGeminiConfig()`. Text tasks have no
+  fallback. Still tick a second group for gem-3.8-flash in the lk888 console; the fallback is only a safety net.
 
 - **Database privileges** (`supabase/fix-privilege-escalation.sql`, needs `add-stripe-customer.sql` first): the anon
   key is public, so anything enforced only in an API route can be bypassed with PostgREST + the user's own JWT.

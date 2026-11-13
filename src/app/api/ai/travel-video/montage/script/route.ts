@@ -74,11 +74,13 @@ export async function POST(req: NextRequest) {
     images = body.images!.map((img) => ({ data: img.match(IMAGE_DATA_URL)![1], mimeType: "image/jpeg" }));
   }
 
-  const config = resolveGeminiConfig();
+  // 看圖備援時 getGeminiModel 會換成真的回答的模型（記用量用）
+  let config = resolveGeminiConfig();
   const count = images.length;
   let tracked = false;
   try {
-    const { model } = getGeminiModel({ responseMimeType: "application/json", temperature: 0.8 });
+    const { model, config: used } = getGeminiModel({ responseMimeType: "application/json", temperature: 0.8 });
+    config = used;
     const result = await model.generateContent([
       { text: buildMontageScriptPrompt(count, sanitizePlace(body.place)) },
       ...images.map((img) => ({ inlineData: img })),

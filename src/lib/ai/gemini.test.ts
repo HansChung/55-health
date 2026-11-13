@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { analyzeFoodImage, getGeminiModel, modelText, parseModelJson, resolveGeminiConfig } from "./gemini";
+import { analyzeFoodImage, getGeminiModel, modelText, parseModelJson, resolveGeminiConfig, shouldFallBack, visionFallbackModel } from "./gemini";
 
 describe("resolveGeminiConfig", () => {
   it("有 LK888_API_KEY → 走邁笙，預設 gem-3.8-flash", () => {
@@ -178,5 +178,105 @@ describe("parseModelJson：前後多了文字也拿得到 JSON", () => {
   });
   it("真的不是 JSON 還是丟錯", () => {
     expect(() => parseModelJson("看不懂")).toThrow();
+  });
+});
+
+describe("看圖模型備援（2026-11-12 gem-3.8-flash 的線路全部臨時下線）", () => {
+  const lk = resolveGeminiConfig({ LK888_API_KEY: "sk" });
+
+  it("走邁笙的看圖任務才有備援，預設 gem-3.5-flash-lite，可改、可關", () => {
+    expect(visionFallbackModel({}, "vision", lk)).toBe("gem-3.5-flash-lite");
+    expect(visionFallbackModel({ LK888_VISION_FALLBACK_MODEL: "gem-3.5-flash" }, "vision", lk)).toBe("gem-3.5-flash");
+    expect(visionFallbackModel({ LK888_VISION_FALLBACK_MODEL: "none" }, "vision", lk)).toBeNull();
+    expect(visionFallbackModel({}, "text", lk)).toBeNull();
+    expect(visionFallbackModel({}, "vision", { ...lk, model: "gem-3.5-flash-lite" })).toBeNull();
+    expect(visionFallbackModel({}, "vision", resolveGeminiConfig({ GEMINI_API_KEY: "g" }))).toBeNull();
+  });
+
+  it("線路下線、限流、5xx、連不上才換；請求本身錯了不換", () => {
+    expect(shouldFallBack({ status: 403 })).toBe(true);
+    expect(shouldFallBack({ status: 429 })).toBe(true);
+    expect(shouldFallBack({ status: 502 })).toBe(true);
+    expect(shouldFallBack(new TypeError("fetch failed"))).toBe(true);
+    expect(shouldFallBack({ status: 400 })).toBe(false);
+    expect(shouldFallBack({ status: 401 })).toBe(false);
+    const abort = new Error("aborted");
+    abort.name = "AbortError";
+    expect(shouldFallBack(abort)).toBe(false);
+  });
+
+  const ok = (text: string) =>
+    new Response(
+      JSON.stringify({
+        candidates: [{ content: { role: "model", parts: [{ text }] }, finishReason: "STOP" }],
+        usageMetadata: { promptTokenCount: 7, candidatesTokenCount: 8 },
+      }),
+      { status: 200, headers: { "content-type": "application/json" } }
+    );
+  const fail = (status: number) =>
+    new Response(JSON.stringify({ error: { code: status, message: "你为该模型勾选的渠道分组均无法处理本次请求" } }), {
+      status,
+      headers: { "content-type": "application/json" },
+    });
+
+  async function withFetch(responses: Response[], run: (urls: string[]) => Promise<void>) {
+    vi.stubEnv("LK888_API_KEY", "sk-test-lk888");
+    vi.stubEnv("GEMINI_PROVIDER", "");
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const urls: string[] = [];
+    vi.stubGlobal("fetch", async (url: string) => {
+      urls.push(String(url));
+      return responses.shift()!;
+    });
+    try {
+      await run(urls);
+    } finally {
+      vi.unstubAllEnvs();
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    }
+  }
+
+  it("gem-3.8-flash 回 403 → 改用 gem-3.5-flash-lite，用量記成真的回答的模型", async () => {
+    await withFetch([fail(403), ok('{"items":[],"total":{"cal":50,"protein":1,"carb":2,"fat":3},"tip":"好"}')], async (urls) => {
+      const { result, usage } = await analyzeFoodImage("AAAA", "image/jpeg");
+      expect(urls).toEqual([
+        "https://api.lk888.ai/v1beta/models/gem-3.8-flash:generateContent",
+        "https://api.lk888.ai/v1beta/models/gem-3.5-flash-lite:generateContent",
+      ]);
+      expect(result.total.cal).toBe(50);
+      expect(usage.model).toBe("gem-3.5-flash-lite");
+    });
+  });
+
+  it("400 不換模型，照樣丟錯", async () => {
+    await withFetch([fail(400)], async (urls) => {
+      await expect(analyzeFoodImage("AAAA")).rejects.toThrow();
+      expect(urls).toHaveLength(1);
+    });
+  });
+
+  it("備援也失敗 → 丟出備援的錯誤", async () => {
+    await withFetch([fail(403), fail(503)], async (urls) => {
+      await expect(analyzeFoodImage("AAAA")).rejects.toThrow(/503/);
+      expect(urls).toHaveLength(2);
+    });
+  });
+
+  it("文字任務不備援", async () => {
+    await withFetch([fail(403)], async (urls) => {
+      const { model } = getGeminiModel({}, { task: "text" });
+      await expect(model.generateContent("hi")).rejects.toThrow();
+      expect(urls).toHaveLength(1);
+    });
+  });
+
+  it("主模型正常時只打一次、模型不變", async () => {
+    await withFetch([ok("嗨")], async (urls) => {
+      const { model, config } = getGeminiModel({});
+      await model.generateContent("hi");
+      expect(urls).toHaveLength(1);
+      expect(config.model).toBe("gem-3.8-flash");
+    });
   });
 });

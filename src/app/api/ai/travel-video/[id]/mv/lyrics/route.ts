@@ -49,10 +49,12 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   const source = await loadMvSource(createSupabaseAdmin(), user.id, id);
   if (!source) return NextResponse.json({ error: "找不到這支遊記" }, { status: 404 });
 
-  const config = resolveGeminiConfig();
+  // 看圖備援時 getGeminiModel 會換成真的回答的模型（記用量用）
+  let config = resolveGeminiConfig();
   let tracked = false;
   try {
-    const { model } = getGeminiModel({ responseMimeType: "application/json", temperature: 0.9 });
+    const { model, config: used } = getGeminiModel({ responseMimeType: "application/json", temperature: 0.9 });
+    config = used;
     const result = await model.generateContent(
       buildMvLyricsPrompt({
         language: parsed.data.language,
