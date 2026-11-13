@@ -88,17 +88,18 @@ export async function POST(req: NextRequest) {
   }
 
   // 走 Google 直連時用 flash 就夠；走邁笙時用 LK888_VISION_MODEL
-  const vision = resolveGeminiConfig(process.env, { googleModel: "gemini-2.5-flash" });
-  const model = vision.model;
+  // 看圖備援時 getGeminiModel 會換成真的回答的模型（記用量用）
+  let vision = resolveGeminiConfig(process.env, { googleModel: "gemini-2.5-flash" });
 
   try {
-    const { model: generativeModel } = getGeminiModel(
+    const { model: generativeModel, config: used } = getGeminiModel(
       {
         responseMimeType: "application/json",
         temperature: 0.3, // 用藥資訊要更精準
       },
       { googleModel: "gemini-2.5-flash" }
     );
+    vision = used;
 
     const result = await generativeModel.generateContent([
       { text: PROMPT },
@@ -121,7 +122,7 @@ export async function POST(req: NextRequest) {
     await trackAiUsage({
       userId: user.id,
       service: "gemini_vision",
-      model,
+      model: vision.model,
       inputTokens: usage?.promptTokenCount ?? 0,
       outputTokens: usage?.candidatesTokenCount ?? 0,
       endpoint: "/api/ai/analyze-prescription",
@@ -135,7 +136,7 @@ export async function POST(req: NextRequest) {
     await trackAiUsage({
       userId: user.id,
       service: "gemini_vision",
-      model,
+      model: vision.model,
       endpoint: "/api/ai/analyze-prescription",
       success: false,
       errorMessage: msg,
