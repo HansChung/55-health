@@ -938,7 +938,8 @@ export interface AdminCostsResponse {
   summary: Omit<import("./admin-costs").CostSummary, "topUsers"> & { topUsers: { user_id: string; points: number; calls: number; email: string | null }[] };
   rates: Record<string, import("./admin-costs").TokenRate>;
   lk888: { balance: number | null; monthUsed: { used: number; since: string } | null; daysLeft: number | null };
-  revenue: { basic: number; pro: number; prices: { basic: number; pro: number } };
+  /** basic／pro = Stripe 付款的人；granted = 後台手動開通、不算收入 */
+  revenue: { basic: number; pro: number; granted?: { basic: number; pro: number }; prices: { basic: number; pro: number } };
 }
 
 /** 動動腦的統計（/api/brain） */

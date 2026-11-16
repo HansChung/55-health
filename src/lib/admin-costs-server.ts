@@ -102,16 +102,39 @@ export async function loadCostSettings(admin: Admin): Promise<CostSettings> {
   return normalizeCostSettings((data as { value: unknown }).value);
 }
 
-/** 付費會員數（不含管理員）和月費 → 訂閱收入估算 */
-export async function loadRevenue(admin: Admin): Promise<{ basic: number; pro: number; prices: { basic: number; pro: number } }> {
-  const [{ count: basic }, { count: pro }, { data: plans }] = await Promise.all([
-    admin.from("profiles").select("id", { count: "exact", head: true }).eq("subscription_tier", "basic").or("is_admin.is.null,is_admin.eq.false"),
-    admin.from("profiles").select("id", { count: "exact", head: true }).eq("subscription_tier", "pro").or("is_admin.is.null,is_admin.eq.false"),
+export interface RevenueCounts {
+  /** 透過 Stripe 付款的會員（有 stripe_customer_id），只有這些算收入 */
+  basic: number;
+  pro: number;
+  /** 後台手動開通、沒付款的（不算收入，只顯示人數） */
+  granted: { basic: number; pro: number };
+  prices: { basic: number; pro: number };
+}
+
+/**
+ * 付費會員數（不含管理員）和月費 → 訂閱收入估算
+ * 只算 Stripe 結帳過的人：後台手動改成標準版／專業版的沒有付錢（2026-11 正式站 14 人全是手動開通，收入卻顯示 NT$4,186）
+ */
+export async function loadRevenue(admin: Admin): Promise<RevenueCounts> {
+  const count = (tier: string, paid: boolean) => {
+    const q = admin.from("profiles").select("id", { count: "exact", head: true }).eq("subscription_tier", tier).or("is_admin.is.null,is_admin.eq.false");
+    return paid ? q.not("stripe_customer_id", "is", null) : q.is("stripe_customer_id", null);
+  };
+  const [{ count: basic }, { count: pro }, { count: grantedBasic }, { count: grantedPro }, { data: plans }] = await Promise.all([
+    count("basic", true),
+    count("pro", true),
+    count("basic", false),
+    count("pro", false),
     admin.from("subscription_plans").select("id, price_monthly_twd"),
   ]);
   const price = (id: string, fallback: number) =>
     Number(((plans ?? []) as { id: string; price_monthly_twd: number | null }[]).find((p) => p.id === id)?.price_monthly_twd) || fallback;
-  return { basic: basic ?? 0, pro: pro ?? 0, prices: { basic: price("basic", 199), pro: price("pro", 399) } };
+  return {
+    basic: basic ?? 0,
+    pro: pro ?? 0,
+    granted: { basic: grantedBasic ?? 0, pro: grantedPro ?? 0 },
+    prices: { basic: price("basic", 199), pro: price("pro", 399) },
+  };
 }
 
 export interface PricedUsageRow extends UsageRow {

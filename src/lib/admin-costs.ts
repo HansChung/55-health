@@ -26,9 +26,10 @@ export const DEFAULT_COST_SETTINGS: CostSettings = {
   pointNtd: 4.8,
   usdNtd: 32,
   feePct: 3.5,
+  // 2026-11 正式站還在免費方案（Vercel Hobby、Supabase Free）；升級後在頁面下方改成 20／25
   fixed: [
-    { name: "Vercel Pro", usd: 20 },
-    { name: "Supabase Pro", usd: 25 },
+    { name: "Vercel Hobby（免費）", usd: 0 },
+    { name: "Supabase Free（免費）", usd: 0 },
   ],
 };
 
