@@ -17,6 +17,12 @@ const row = (over: Partial<UsageRow>): UsageRow => ({
 });
 
 describe("settings", () => {
+  it("default fixed costs are the free plans production is on (no phantom monthly fee)", () => {
+    const s = normalizeCostSettings(null);
+    expect(s.fixed.reduce((n, f) => n + f.usd, 0)).toBe(0);
+    expect(s.fixed.map((f) => f.name).join()).toMatch(/Vercel.*Supabase/);
+  });
+
   it("falls back to defaults and drops bad fixed costs", () => {
     expect(normalizeCostSettings(null)).toEqual(DEFAULT_COST_SETTINGS);
     const s = normalizeCostSettings({ pointNtd: 5, usdNtd: -1, feePct: 2, fixed: [{ name: " Vercel ", usd: 20 }, { name: "", usd: 3 }, { name: "x", usd: "a" }] });

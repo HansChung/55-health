@@ -416,8 +416,10 @@ stack works well for auth + meal/diary CRUD:
   in-month row (or live now) − the previous month's last row; null if any value in that window decreases (key rotated). The page uses that for the AI total when it covers the whole month, otherwise the itemized sum, and
   shows both as 對帳. `daysLeft` = balance ÷ last-7-day average.
 - Settings in `app_settings` key `costs` (`normalizeCostSettings`): 1 算力 = NT$ (default 4.8 = NT$96／20 點), USD→NT$,
-  金流手續費 %, fixed monthly costs (default Vercel Pro 20 + Supabase Pro 25 USD). Revenue = paying profiles (not admins)
-  × `subscription_plans.price_monthly_twd` — an estimate (admin-granted tiers count too).
+  金流手續費 %, fixed monthly costs (default Vercel Hobby 0 + Supabase Free 0 — production is on both free plans as of
+  2026-11; change to 20 / 25 USD in the page after upgrading). Revenue = basic/pro profiles (not admins) **with a
+  `stripe_customer_id`** × `subscription_plans.price_monthly_twd` — an estimate; admin-granted tiers (no Stripe id) are
+  shown as a separate count and never counted as income (`loadRevenue`).
 
 ### 研學團（study tours）
 - Home 「研學團」/ 我的 → 「研學護照」→ subpages `study-tours` / `study-passport` (free for all tiers).

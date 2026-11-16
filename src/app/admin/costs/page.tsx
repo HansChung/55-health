@@ -91,7 +91,15 @@ export default function CostsPage() {
         <div style={card}>
           <div style={label}>估算收入／毛利</div>
           <div style={{ ...big, color: income - total >= 0 ? "#10b981" : "#f87171" }}>{ntd(income - total)}</div>
-          <div style={small}>收入 {ntd(income)}（標準版 {revenue.basic} 人、專業版 {revenue.pro} 人，不含管理員）</div>
+          <div style={small}>
+            收入 {ntd(income)}（Stripe 付款：標準版 {revenue.basic} 人、專業版 {revenue.pro} 人，不含管理員）
+            {revenue.granted && revenue.granted.basic + revenue.granted.pro > 0 && (
+              <>
+                <br />
+                後台手動開通、沒付款的不算收入：標準版 {revenue.granted.basic} 人、專業版 {revenue.granted.pro} 人
+              </>
+            )}
+          </div>
         </div>
         <div style={card}>
           <div style={label}>lk888 剩餘算力</div>
