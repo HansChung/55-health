@@ -67,7 +67,9 @@ export async function PATCH(req: NextRequest) {
   const patch: Record<string, unknown> = { ...body };
   if (body.emergency_contact !== undefined) {
     // 舊版程式只送 { name, phone }：只換第一位聯絡人，血型、過敏照舊（要先讀現在的）
-    const { data: current } = await supabase.from("profiles").select("emergency_contact").eq("id", user.id).maybeSingle();
+    const { data: current, error: readError } = await supabase.from("profiles").select("emergency_contact").eq("id", user.id).maybeSingle();
+    // 讀不到就不存：把「讀失敗」當成「原本是空的」會把血型、過敏洗掉
+    if (readError) { console.error("[api] DB error:", readError); return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 }); }
     patch.emergency_contact = mergeEmergencyPatch(current?.emergency_contact ?? null, body.emergency_contact);
   }
 
