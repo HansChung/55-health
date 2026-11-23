@@ -28,6 +28,7 @@ export const FEATURE_DEFS = [
   { key: "clinic", label: "看診小幫手", group: "ai", minTier: "free" },
   { key: "brain_game", label: "動動腦（每日一題）", group: "app", minTier: "free", note: "不花算力" },
   { key: "business_card", label: "數位名片", group: "app", minTier: "free", note: "不花算力" },
+  { key: "emergency_card", label: "緊急聯絡卡", group: "app", minTier: "free", note: "不花算力" },
   { key: "weather", label: "今天天氣", group: "app", minTier: "free", note: "不花算力；要先設氣象署金鑰 CWA_API_KEY" },
   { key: "life_stories", label: "我的故事集（AI 訪談、整理文章）", group: "ai", minTier: "free" },
   { key: "dictation", label: "用說的打字（App 裡、沒有內建語音辨識的瀏覽器）", group: "ai", minTier: "free", note: "每句約 0.001 算力；手機瀏覽器內建的語音辨識免費、不算次數" },

@@ -27,6 +27,7 @@ import { FeaturesScreen, type MenuActions } from "@/screens/features-screen";
 import { BrainGameScreen } from "@/screens/brain-game-screen";
 import { BusinessCardScreen } from "@/screens/business-card-screen";
 import { WeatherScreen } from "@/screens/weather-screen";
+import { EmergencyCardScreen } from "@/screens/emergency-card-screen";
 import { PrescriptionScanScreen } from "@/screens/prescription-scan-screen";
 import { WeeklyReportScreen } from "@/screens/weekly-report-screen";
 import { AlertsCenterScreen } from "@/screens/alerts-center-screen";
@@ -140,7 +141,7 @@ export default function Page() {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     const open = url.searchParams.get("open");
-    if (open && ["voice", "camera", "photo", "travel-video", "study-tours", "photo-ask", "caregiver", "ask", "stories", "scam-check", "clinic", "health-metrics", "brain", "business-card", "weather"].includes(open)) {
+    if (open && ["voice", "camera", "photo", "travel-video", "study-tours", "photo-ask", "caregiver", "ask", "stories", "scam-check", "clinic", "health-metrics", "brain", "business-card", "weather", "emergency-card"].includes(open)) {
       pendingOpenRef.current = open;
     }
     // 研學團站點 QR：/?stamp=代碼 → 先記下來（還沒登入的話登入後再蓋），網址上的代碼馬上拿掉
@@ -204,6 +205,10 @@ export default function Page() {
     // 動動腦（每日一題）：後台關掉就不開，方案不夠就說要升級
     else if (open === "brain") {
       if (featureEnabled("brain_game")) requireFeature("brain_game", () => setSubpage("brain"));
+    }
+    // 緊急聯絡卡
+    else if (open === "emergency-card") {
+      if (featureEnabled("emergency_card")) requireFeature("emergency_card", () => setSubpage("emergency-card"));
     }
     // 今天天氣（沒設氣象署金鑰的話畫面會說還在準備中）
     else if (open === "weather") {
@@ -820,6 +825,7 @@ export default function Page() {
     // 一直顯示：還沒連上長輩的家人要從這裡輸入邀請碼
     caregiver: () => setSubpage("caregiver"),
     scam_check: featureEnabled("scam_check") ? () => requireFeature("scam_check", () => setSubpage("scam-check")) : undefined,
+    emergency_card: featureEnabled("emergency_card") ? () => requireFeature("emergency_card", () => setSubpage("emergency-card")) : undefined,
     iot: () => setSubpage("iot"),
     family: () => setSubpage("family"),
     business_card: featureEnabled("business_card") ? () => requireFeature("business_card", () => setSubpage("business-card")) : undefined,
@@ -883,7 +889,9 @@ export default function Page() {
         )}
       </div>
 
-      {tab === "home" && !modal && !subpage && <SosButton />}
+      {tab === "home" && !modal && !subpage && (
+        <SosButton onOpenCard={menuActions.emergency_card} />
+      )}
 
       {stampSheet && (
         <StampResultSheet
@@ -924,6 +932,14 @@ export default function Page() {
       {subpage === "health-metrics" && <HealthMetricsScreen onBack={() => setSubpage(null)} />}
       {subpage === "brain" && <BrainGameScreen onBack={() => setSubpage(null)} />}
       {subpage === "business-card" && <BusinessCardScreen onBack={() => setSubpage(null)} />}
+      {subpage === "emergency-card" && (
+        <EmergencyCardScreen
+          onBack={() => setSubpage(null)}
+          profile={profile}
+          onProfileUpdated={(updated) => setProfileDirectly(updated as AppProfile)}
+          onEditHealth={() => setSubpage("chronic")}
+        />
+      )}
       {subpage === "weather" && (
         <WeatherScreen
           onBack={() => setSubpage(null)}

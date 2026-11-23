@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { z } from "zod";
 import { MedicationListSchema } from "@/lib/medication-schema";
+import { mergeEmergencyPatch } from "@/lib/emergency-card";
 
 const PatchSchema = z.object({
   display_name: z.string().min(1).max(50).optional(),
@@ -31,10 +32,9 @@ const PatchSchema = z.object({
     })
     .partial()
     .optional(),
-  emergency_contact: z.object({
-    name: z.string().min(1).max(50),
-    phone: z.string().min(3).max(30),
-  }).nullable().optional(),
+  // 緊急聯絡卡（聯絡人、血型、過敏、備註）：形狀和長度在 mergeEmergencyPatch 整理，這裡只擋太大的
+  emergency_contact: z.record(z.string(), z.unknown()).nullable().optional()
+    .refine((v) => v == null || JSON.stringify(v).length <= 2000, "太長了"),
 });
 
 export async function GET() {
@@ -64,9 +64,18 @@ export async function PATCH(req: NextRequest) {
     console.error("[api] 格式錯誤:", e); return NextResponse.json({ error: "送出的資料格式有誤" }, { status: 400 });
   }
 
+  const patch: Record<string, unknown> = { ...body };
+  if (body.emergency_contact !== undefined) {
+    // 舊版程式只送 { name, phone }：只換第一位聯絡人，血型、過敏照舊（要先讀現在的）
+    const { data: current, error: readError } = await supabase.from("profiles").select("emergency_contact").eq("id", user.id).maybeSingle();
+    // 讀不到就不存：把「讀失敗」當成「原本是空的」會把血型、過敏洗掉
+    if (readError) { console.error("[api] DB error:", readError); return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 }); }
+    patch.emergency_contact = mergeEmergencyPatch(current?.emergency_contact ?? null, body.emergency_contact);
+  }
+
   const { data, error } = await supabase
     .from("profiles")
-    .update({ ...body, updated_at: new Date().toISOString() })
+    .update({ ...patch, updated_at: new Date().toISOString() })
     .eq("id", user.id)
     .select()
     .single();

@@ -368,6 +368,24 @@ stack works well for auth + meal/diary CRUD:
 - Home order: greeting → 報平安 → today/tomorrow appointment → calorie ring + 暖暖的建議 → 天氣 offer → 家人狀況 (if
   caring) → 常用 → medicines / alerts → meals → 跟暖暖聊聊・記錄運動.
 
+### 緊急聯絡卡（`subpage "emergency-card"`, no SQL, no AI）
+- 功能 → 健康平安 → 緊急聯絡卡 (deep link `/?open=emergency-card`, feature `emergency_card`, free); also 「我的緊急聯絡卡」 in the
+  home 「求助」 sheet (`SosButton onOpenCard`). A red card for rescuers: name/age, 血型 (+ Rh 陰性), 過敏, 慢性病 and 目前用藥
+  (read from `chronic_conditions` / `medications` — edited in 慢性病用藥, not here), 注意 (free text), up to 3 聯絡人, each with
+  a `tel:` button, plus 119. 「🖨️ 印成小卡」 prints only `.emergency-print` at 9 cm wide with a dashed cut line
+  (`body.printing-emergency`). The card is private: no share link, family can't see it.
+- **Stored in the existing `profiles.emergency_contact` jsonb** (the column the SOS button already used):
+  `{ name, phone, contacts: [{name, phone}], blood_type, rh_negative, allergies, note }`. `name`／`phone` always mirror the
+  first contact (may be `""` when only medical info is filled). All rules are in `src/lib/emergency-card.ts`
+  (`normalizeEmergencyInfo` reads old `{name, phone}` rows too; `toStoredEmergency`; limits in `EMERGENCY_LIMITS`; phones
+  keep only digits `+ - #` and `telHref` needs ≥ 3 digits).
+- `PATCH /api/profile` runs `mergeEmergencyPatch(existing, incoming)`: a payload **without `contacts`** is the old client
+  shape (a stale tab, the old SOS sheet) → only the first contact is replaced, blood type / allergies / other contacts
+  are kept; unknown keys are dropped. The SOS sheet saves with `withPrimaryContact` for the same reason — never PATCH
+  a bare `{ name, phone }` from new code.
+- The screen waits for `profile` before mounting the form (an empty form saved over real data otherwise). Rows wrap
+  under their label when the value column is < 150 px (320 px + large font), phone numbers never break mid-number.
+
 ### 今天天氣（`subpage "weather"`, needs `CWA_API_KEY`; no SQL, no AI）
 - 功能 → 出門運動 → 今天天氣 (deep link `/?open=weather`, feature `weather`, free). `GET /api/weather?county=` →
   `buildTodayWeather` (`src/lib/today-weather.ts`, pure + tested): the current 12-hour period big on top, the later
