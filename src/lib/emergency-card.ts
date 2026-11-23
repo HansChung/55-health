@@ -44,10 +44,10 @@ function text(v: unknown, max: number): string {
   return v.replace(/\s+/g, " ").trim().slice(0, max);
 }
 
-/** 電話只留數字和 + - # 空格（分機寫 #）；其他字拿掉 */
+/** 電話只留數字和 + - # 空格（分機寫 #）；其他字拿掉。全形數字（注音輸入法打的「０９１２」）先轉半形 */
 export function cleanPhone(v: unknown): string {
   if (typeof v !== "string" && typeof v !== "number") return "";
-  return String(v).replace(/[^\d+\-# ]/g, "").replace(/\s+/g, " ").trim().slice(0, EMERGENCY_LIMITS.phone);
+  return String(v).normalize("NFKC").replace(/[^\d+\-# ]/g, "").replace(/\s+/g, " ").trim().slice(0, EMERGENCY_LIMITS.phone);
 }
 
 /** 撥號用：至少 3 個數字才給（110、119 也算）；+ 只能在最前面 */

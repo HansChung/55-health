@@ -28,7 +28,10 @@ const FULL = {
 describe("電話", () => {
   it("只留數字和 + - # 空格", () => {
     expect(cleanPhone(" 0912-345-678 ")).toBe("0912-345-678");
-    expect(cleanPhone("０９１２<script>")).toBe("");
+    expect(cleanPhone("<script>abc")).toBe("");
+    // 全形數字（中文輸入法）轉成半形，不會整支電話不見
+    expect(cleanPhone("０９１２－３４５－６７８")).toBe("0912-345-678");
+    expect(normalizeEmergencyInfo({ name: "女兒", phone: "０９１２３４５６７８" }).contacts).toEqual([{ name: "女兒", phone: "0912345678" }]);
     expect(cleanPhone("+886 912 345 678")).toBe("+886 912 345 678");
     expect(cleanPhone(null)).toBe("");
   });
