@@ -56,6 +56,12 @@ function has(conditions: string[], kind: keyof typeof CONDITION_WORDS): boolean 
   return conditions.some((c) => CONDITION_WORDS[kind].some((w) => c.toLowerCase().includes(w)));
 }
 
+/** 天氣那一句提醒；腎臟病常要限水 →「多喝水」那句換掉（健康提醒會說照醫師交代的量） */
+export function weatherAdviceFor(p: ForecastPeriod, conditions: string[] = []): string | null {
+  const advice = weatherAdvice(p);
+  return advice?.includes("多喝水") && has(conditions, "kidney") ? "天氣熱，戴帽子、擦防曬" : advice;
+}
+
 /**
  * 跟天氣有關的健康提醒（只講一件，跟天氣那句不重複）：
  * 冷＋高血壓 > 早晚溫差大（早上涼） > 熱＋腎臟病（喝水照醫師交代） > 熱＋糖尿病 > 熱 > 冷 > 下雨在家動一動 > 天氣好去走走
@@ -94,9 +100,7 @@ export function buildDailyWeatherPush(opts: {
   if (today.minT != null && today.maxT != null) facts.push(`${today.minT}～${today.maxT} 度`);
   if (today.pop != null) facts.push(`降雨機率 ${today.pop}%`);
   const conditions = opts.conditions ?? [];
-  let advice = weatherAdvice(today);
-  // 腎臟病：天氣那句的「多喝水」拿掉（健康提醒會說照醫師交代的量）
-  if (advice?.includes("多喝水") && has(conditions, "kidney")) advice = "天氣熱，戴帽子、擦防曬";
+  const advice = weatherAdviceFor(today, conditions);
   // 空氣不好：講空氣那句，健康提醒那句不講（它可能叫人出去走走）
   const airTip = opts.air ? airQualityTip(opts.air, conditions) : null;
   const sentences = [facts.join("，"), airTip, advice, airTip ? null : weatherHealthTip(today, tonight, conditions)].filter(Boolean);

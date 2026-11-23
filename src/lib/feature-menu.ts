@@ -11,7 +11,7 @@ export type MenuId =
   | "clinic" | "health_metrics" | "chronic" | "exercise" | "weekly_report"
   | "ask" | "voice" | "photo_ask"
   | "travel_video" | "greeting_video" | "stories"
-  | "study_tours" | "study_passport" | "blueprint" | "book"
+  | "weather" | "study_tours" | "study_passport" | "blueprint" | "book"
   | "caregiver" | "scam_check" | "iot" | "family" | "business_card"
   | "brain_game" | "achievements" | "smart";
 
@@ -36,6 +36,7 @@ export const MENU_ITEMS: Record<MenuId, MenuItem> = {
   travel_video: { label: "出遊影片", emoji: "🎬", desc: "照片變影片、遊記", keywords: ["影片", "遊記", "MV", "年度回憶", "出遊"] },
   greeting_video: { label: "祝福影片", emoji: "🎁", desc: "生日、過年送家人", keywords: ["生日", "過年", "祝福", "卡片"] },
   stories: { label: "我的故事集", emoji: "📖", desc: "回憶錄、有聲書", keywords: ["回憶", "回憶錄", "故事", "錄音", "有聲書"] },
+  weather: { label: "今天天氣", emoji: "🌤️", desc: "幾度、下雨、穿什麼", keywords: ["天氣", "下雨", "氣溫", "溫度", "帶傘", "空氣", "穿什麼", "冷不冷", "熱不熱"] },
   study_tours: { label: "研學團", emoji: "🧭", desc: "報名、集章", keywords: ["旅遊", "報名", "出遊", "參加活動"] },
   study_passport: { label: "研學護照", emoji: "🏮", desc: "章和結業證書", keywords: ["集章", "證書", "護照"] },
   blueprint: { label: "圓夢藍圖", emoji: "✨", desc: "點亮 SMART 光點", keywords: ["光點", "SMART", "目標"] },
@@ -60,7 +61,7 @@ export const MENU_GROUPS: MenuGroup[] = [
   { id: "health", label: "🩺 健康照顧", items: ["clinic", "health_metrics", "chronic", "exercise", "weekly_report"] },
   { id: "ask", label: "💬 問暖暖", items: ["ask", "voice", "photo_ask"] },
   { id: "memory", label: "🎬 回憶與影片", items: ["travel_video", "greeting_video", "stories"] },
-  { id: "outing", label: "🧭 出門走走", items: ["study_tours", "study_passport", "blueprint", "book"] },
+  { id: "outing", label: "🧭 出門走走", items: ["weather", "study_tours", "study_passport", "blueprint", "book"] },
   { id: "family", label: "👨‍👩‍👧 家人與安心", items: ["caregiver", "scam_check", "iot", "family", "business_card"] },
   { id: "brain", label: "🧠 動動腦", items: ["brain_game", "smart", "achievements"] },
 ];
@@ -93,7 +94,7 @@ const direction = (key: SmartDimension, emoji: string, label: string, desc: stri
 export const COMPASS_DIRECTIONS: CompassDirection[] = [
   direction("S", "💞", "家人朋友", "跟家人朋友聯絡、分享", ["caregiver", "family", "greeting_video", "business_card"]),
   direction("M", "🎞️", "回憶故事", "留下故事、照片和影片", ["stories", "travel_video", "blueprint", "smart"]),
-  direction("A", "👟", "出門運動", "自己安排、走出門", ["study_tours", "study_passport", "exercise", "achievements"]),
+  direction("A", "👟", "出門運動", "自己安排、走出門", ["weather", "study_tours", "study_passport", "exercise", "achievements"]),
   direction("R", "❤️", "健康平安", "顧身體、防詐騙", ["clinic", "health_metrics", "chronic", "weekly_report", "scam_check", "iot"]),
   direction("T", "💡", "學新東西", "練習用手機、動動腦", ["book", "brain_game"]),
 ];
