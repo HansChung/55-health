@@ -74,6 +74,8 @@ export interface CompassDirection {
   label: string;
   /** 書本的 SMART 名稱（小字），例如「S・連結」 */
   smartLabel: string;
+  /** 羅盤按鈕上的圖示（跟功能自己的圖示不重複） */
+  emoji: string;
   color: string;
   desc: string;
   items: MenuId[];
@@ -82,19 +84,62 @@ export interface CompassDirection {
 /** 羅盤中間的暖暖：直接問暖暖 */
 export const COMPASS_CENTER: MenuId[] = ["ask", "voice", "photo_ask"];
 
-const direction = (key: SmartDimension, label: string, desc: string, items: MenuId[]): CompassDirection => {
+const direction = (key: SmartDimension, emoji: string, label: string, desc: string, items: MenuId[]): CompassDirection => {
   const dim = blueprintDim(key);
-  return { key, label, smartLabel: `${key}・${dim.label}`, color: dim.color, desc, items };
+  return { key, label, smartLabel: `${key}・${dim.label}`, emoji, color: dim.color, desc, items };
 };
 
 /** 順時針排：從上面開始 */
 export const COMPASS_DIRECTIONS: CompassDirection[] = [
-  direction("S", "家人朋友", "跟家人朋友聯絡、分享", ["caregiver", "family", "greeting_video", "business_card"]),
-  direction("M", "回憶故事", "留下故事、照片和影片", ["stories", "travel_video", "blueprint", "smart"]),
-  direction("A", "出門運動", "自己安排、走出門", ["study_tours", "study_passport", "exercise", "achievements"]),
-  direction("R", "健康平安", "顧身體、防詐騙", ["clinic", "health_metrics", "chronic", "weekly_report", "scam_check", "iot"]),
-  direction("T", "學新東西", "練習用手機、動動腦", ["book", "brain_game"]),
+  direction("S", "💞", "家人朋友", "跟家人朋友聯絡、分享", ["caregiver", "family", "greeting_video", "business_card"]),
+  direction("M", "🎞️", "回憶故事", "留下故事、照片和影片", ["stories", "travel_video", "blueprint", "smart"]),
+  direction("A", "👟", "出門運動", "自己安排、走出門", ["study_tours", "study_passport", "exercise", "achievements"]),
+  direction("R", "❤️", "健康平安", "顧身體、防詐騙", ["clinic", "health_metrics", "chronic", "weekly_report", "scam_check", "iot"]),
+  direction("T", "💡", "學新東西", "練習用手機、動動腦", ["book", "brain_game"]),
 ];
+
+// ── 羅盤的版面（純計算）：單位是「羅盤寬度的 %」，高度照方向數量算，上下留白一樣多 ──
+
+/** 方向按鈕中心離羅盤中心多遠 */
+export const COMPASS_RADIUS = 34.5;
+/** 方向按鈕的寬、高；中間暖暖的直徑 */
+export const COMPASS_BUTTON = { width: 30, height: 23 };
+export const COMPASS_CENTER_SIZE = 31;
+const COMPASS_MARGIN = 1.5;
+
+export interface CompassLayout {
+  /** 羅盤高度（寬度是 100） */
+  height: number;
+  /** 圓心 */
+  cx: number;
+  cy: number;
+  /** 每個方向按鈕的中心，照 COMPASS_DIRECTIONS 的順序（從正上方順時針平均排） */
+  spots: { x: number; y: number }[];
+}
+
+/**
+ * 方向按鈕平均排在同一個圓環上（每顆的中心都在環上，大小一樣）。
+ * 五個方向是五邊形，上下不對稱，所以高度和圓心照實際佔的範圍算：按鈕不會超出羅盤，上下留白也一樣。
+ * 取到小數兩位：伺服器和瀏覽器算出來的最後一位會不一樣（hydration 對不上）
+ */
+export function compassLayout(count: number): CompassLayout {
+  const at = (v: number) => Math.round(v * 100) / 100;
+  const n = Math.max(0, Math.floor(count));
+  const rel = Array.from({ length: n }, (_, i) => {
+    const angle = (i / n) * 2 * Math.PI;
+    return { x: COMPASS_RADIUS * Math.sin(angle), y: -COMPASS_RADIUS * Math.cos(angle) };
+  });
+  const half = COMPASS_BUTTON.height / 2;
+  const top = Math.min(-COMPASS_RADIUS, ...rel.map((p) => p.y - half));
+  const bottom = Math.max(COMPASS_RADIUS, ...rel.map((p) => p.y + half));
+  const cy = COMPASS_MARGIN - top;
+  return {
+    height: at(bottom - top + COMPASS_MARGIN * 2),
+    cx: 50,
+    cy: at(cy),
+    spots: rel.map((p) => ({ x: at(50 + p.x), y: at(cy + p.y) })),
+  };
+}
 
 /** 找功能時比對用：去掉空白和標點、英文轉小寫 */
 function normalizeSearch(text: string): string {

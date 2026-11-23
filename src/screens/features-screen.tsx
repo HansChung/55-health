@@ -7,13 +7,17 @@
 // 沒給動作的功能（後台關掉）不顯示；方向／整類都沒有就不顯示
 // ────────────────────────────────────────────────
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DictationButton } from "@/components/dictation-button";
-import { FeatureTile } from "@/components/feature-tile";
+import { FeatureTileGrid } from "@/components/feature-tile";
 import { Mascot } from "@/components/mascot";
 import {
+  COMPASS_BUTTON,
   COMPASS_CENTER,
+  COMPASS_CENTER_SIZE,
   COMPASS_DIRECTIONS,
+  COMPASS_RADIUS,
+  compassLayout,
   MENU_GROUPS,
   recordMenuUse,
   searchMenu,
@@ -30,6 +34,7 @@ const PICK_KEY = "nuannuan_compass_pick";
 const CENTER = {
   label: "問暖暖",
   smartLabel: "羅盤中間・暖暖",
+  emoji: "🍊",
   color: "var(--primary)",
   desc: "不知道在哪裡？直接問暖暖",
 };
@@ -41,8 +46,6 @@ function readPick(): CompassPick | null {
   } catch { /* 私密瀏覽 */ }
   return null;
 }
-
-const tileGrid: CSSProperties = { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 };
 
 export function FeaturesScreen({ actions }: { actions: MenuActions }) {
   const [pick, setPick] = useState<CompassPick | null>(null);
@@ -116,9 +119,7 @@ export function FeaturesScreen({ actions }: { actions: MenuActions }) {
           {results.length > 0 ? (
             <>
               <h2 style={{ fontSize: "var(--fs-lg)", fontWeight: 800, margin: "0 0 12px" }}>找到 {results.length} 個</h2>
-              <div style={tileGrid}>
-                {results.map((id) => <FeatureTile key={id} id={id} onClick={() => open(id)} />)}
-              </div>
+              <FeatureTileGrid ids={results} onOpen={open} />
             </>
           ) : (
             <div className="card" style={{ border: "1px solid var(--line)", textAlign: "center" }}>
@@ -142,14 +143,27 @@ export function FeaturesScreen({ actions }: { actions: MenuActions }) {
           />
           <section ref={panelRef} aria-label={picked ? picked.label : "怎麼用羅盤"} aria-live="polite" style={{ padding: "8px 24px 0", scrollMarginBottom: 120 }}>
             {picked ? (
-              <div style={{ borderLeft: `6px solid ${picked.color}`, paddingLeft: 14 }}>
-                <h2 style={{ fontSize: "var(--fs-xl)", fontWeight: 800, margin: 0 }}>{picked.label}</h2>
-                <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", margin: "4px 0 14px", lineHeight: 1.5 }}>
-                  {picked.desc}（{picked.smartLabel}）
+              // 不縮排：這裡的大按鈕跟下面「全部功能」的左右邊對齊
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      flexShrink: 0, width: 52, height: 52, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 28, lineHeight: 1, background: "var(--surface)", border: `3px solid ${picked.color}`,
+                    }}
+                  >
+                    {picked.emoji}
+                  </span>
+                  <div style={{ minWidth: 0 }}>
+                    <h2 style={{ fontSize: "var(--fs-xl)", fontWeight: 800, margin: 0, lineHeight: 1.2 }}>{picked.label}</h2>
+                    <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", marginTop: 2, lineHeight: 1.4 }}>
+                      {picked.desc}（{picked.smartLabel}）
+                    </div>
+                  </div>
                 </div>
-                <div style={tileGrid}>
-                  {picked.items.map((id) => <FeatureTile key={id} id={id} onClick={() => open(id)} />)}
-                </div>
+                <div aria-hidden="true" style={{ height: 5, borderRadius: 3, background: picked.color, margin: "12px 0 14px" }} />
+                <FeatureTileGrid ids={picked.items} onOpen={open} />
               </div>
             ) : (
               <div className="card" style={{ border: "1px dashed var(--line-strong)", textAlign: "center", fontSize: "var(--fs-sm)", color: "var(--ink-2)", lineHeight: 1.6 }}>
@@ -170,9 +184,7 @@ export function FeaturesScreen({ actions }: { actions: MenuActions }) {
         return (
           <section key={g.id} aria-label={g.label} style={{ padding: "20px 24px 0" }}>
             <h3 style={{ fontSize: "var(--fs-lg)", fontWeight: 800, margin: "0 0 12px" }}>{g.label}</h3>
-            <div style={tileGrid}>
-              {items.map((id) => <FeatureTile key={id} id={id} onClick={() => open(id)} />)}
-            </div>
+            <FeatureTileGrid ids={items} onOpen={open} />
           </section>
         );
       })}
@@ -180,10 +192,18 @@ export function FeaturesScreen({ actions }: { actions: MenuActions }) {
   );
 }
 
-// ── 羅盤：方向照數量平均排一圈（從正上方順時針），中間是暖暖 ──
+// ── 羅盤：方向照數量平均排在同一個圓環上（從正上方順時針），中間是暖暖 ──
+// 位置、高度都在 compassLayout 算（單位＝羅盤寬度的 %）：每顆方向按鈕一樣大、中心都在環上，不會超出羅盤
 
-/** 方向按鈕中心離羅盤中心多遠（羅盤寬度的 %） */
-const RADIUS = 35.5;
+/** 羅盤最寬幾 px；左右各留 24 */
+const COMPASS_MAX = 380;
+const COMPASS_GUTTER = 24;
+/**
+ * 羅盤裡的字：最大就是 max，窄螢幕（320）或開大字時跟著羅盤寬度縮，四個字才不會被按鈕切掉。
+ * 用視窗寬度算羅盤寬度（min／calc 舊手機也支援；容器查詢單位 cqi 在舊的 Android WebView 沒有）
+ */
+const fit = (ratio: number, max: string) =>
+  `min(${max}, calc((min(100vw, ${COMPASS_MAX + COMPASS_GUTTER * 2}px) - ${COMPASS_GUTTER * 2}px) * ${ratio}))`;
 
 function Compass({
   directions,
@@ -196,20 +216,17 @@ function Compass({
   pick: CompassPick | null;
   onPick: (p: CompassPick) => void;
 }) {
-  const spots = directions.map((d, i) => {
-    const angle = (i / directions.length) * 2 * Math.PI;
-    // 取到小數兩位：伺服器和瀏覽器算出來的最後一位會不一樣（hydration 對不上）
-    const at = (v: number) => Math.round(v * 100) / 100;
-    return { d, x: at(50 + RADIUS * Math.sin(angle)), y: at(50 - RADIUS * Math.cos(angle)) };
-  });
+  const layout = compassLayout(directions.length);
+  /** 直的位置：compassLayout 的 y 是寬度的 %，CSS 的 top 要換成高度的 % */
+  const top = (y: number) => `${Math.round((y / layout.height) * 10000) / 100}%`;
+  const spots = directions.map((d, i) => ({ d, ...layout.spots[i] }));
   return (
-    <section aria-label="生活羅盤" style={{ padding: "20px 16px 0" }}>
-      <div style={{ position: "relative", width: "100%", maxWidth: 380, margin: "0 auto", aspectRatio: "1 / 1" }}>
-        <svg viewBox="0 0 100 100" aria-hidden="true" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
-          <circle cx="50" cy="50" r="47" fill="var(--surface-warm)" stroke="var(--line-strong)" strokeWidth="0.8" />
-          <circle cx="50" cy="50" r={RADIUS} fill="none" stroke="var(--line)" strokeWidth="0.6" strokeDasharray="1.5 1.5" />
+    <section aria-label="生活羅盤" style={{ padding: `20px ${COMPASS_GUTTER}px 0` }}>
+      <div style={{ position: "relative", width: "100%", maxWidth: COMPASS_MAX, margin: "0 auto", aspectRatio: `100 / ${layout.height}` }}>
+        <svg viewBox={`0 0 100 ${layout.height}`} aria-hidden="true" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
+          <circle cx={layout.cx} cy={layout.cy} r={COMPASS_RADIUS} fill="var(--surface-warm)" stroke="var(--line-strong)" strokeWidth="1" />
           {spots.map(({ d, x, y }) => (
-            <line key={d.key} x1="50" y1="50" x2={x} y2={y} stroke={d.color} strokeWidth={pick === d.key ? 2.2 : 1.2} strokeLinecap="round" />
+            <line key={d.key} x1={layout.cx} y1={layout.cy} x2={x} y2={y} stroke={d.color} strokeWidth={pick === d.key ? 2.2 : 1.2} strokeLinecap="round" />
           ))}
         </svg>
 
@@ -220,8 +237,8 @@ function Compass({
           aria-pressed={pick === "center"}
           aria-label={centerEnabled ? "暖暖：問暖暖" : "暖暖"}
           style={{
-            position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)",
-            width: "31%", aspectRatio: "1 / 1", borderRadius: "50%", padding: 4,
+            position: "absolute", left: `${layout.cx}%`, top: top(layout.cy), transform: "translate(-50%, -50%)",
+            width: `${COMPASS_CENTER_SIZE}%`, aspectRatio: "1 / 1", borderRadius: "50%", padding: 4,
             display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
             background: pick === "center" ? "var(--primary-soft)" : "var(--surface)",
             border: `3px solid ${pick === "center" ? "var(--primary-deep)" : "var(--primary)"}`,
@@ -229,8 +246,8 @@ function Compass({
             cursor: centerEnabled ? "pointer" : "default", fontFamily: "inherit",
           }}
         >
-          <Mascot size={48} mood="happy" />
-          <span style={{ fontSize: "var(--fs-sm)", fontWeight: 800, color: "var(--ink-1)", lineHeight: 1.2 }}>
+          <Mascot size={44} mood="happy" />
+          <span style={{ fontSize: fit(0.056, "var(--fs-sm)"), fontWeight: 800, color: "var(--ink-1)", lineHeight: 1.2, whiteSpace: "nowrap" }}>
             {centerEnabled ? "問暖暖" : "暖暖"}
           </span>
         </button>
@@ -245,8 +262,9 @@ function Compass({
               aria-pressed={on}
               aria-label={`${d.label}（${d.smartLabel}）`}
               style={{
-                position: "absolute", left: `${x}%`, top: `${y}%`, transform: "translate(-50%, -50%)",
-                width: "31%", minHeight: 64, padding: "8px 4px", borderRadius: 18,
+                position: "absolute", left: `${x}%`, top: top(y), transform: "translate(-50%, -50%)",
+                width: `${COMPASS_BUTTON.width}%`, aspectRatio: `${COMPASS_BUTTON.width} / ${COMPASS_BUTTON.height}`, minHeight: 64,
+                padding: "4px 2px", borderRadius: 18,
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
                 // 選到的方向：底色淡淡的方向色（color 都是 #RRGGBB；疊在白底上，後面的線才不會透出來）
                 background: on ? `linear-gradient(${d.color}40, ${d.color}40) var(--surface)` : "var(--surface)",
@@ -255,8 +273,21 @@ function Compass({
                 cursor: "pointer", fontFamily: "inherit", textAlign: "center",
               }}
             >
-              <span style={{ fontSize: "var(--fs-sm)", fontWeight: 800, color: "var(--ink-1)", lineHeight: 1.25 }}>{d.label}</span>
-              <span style={{ fontSize: 15, fontWeight: 700, color: "var(--ink-2)", lineHeight: 1.2 }}>{d.smartLabel}</span>
+              {/* 書本的 SMART 字母：小圓章釘在上面朝外的那個角（不會壓到中間的暖暖，也不會蓋到下面的字）；完整名稱在 aria-label 和展開的標題 */}
+              <span
+                aria-hidden="true"
+                style={{
+                  position: "absolute", top: -11, width: 26, height: 26, borderRadius: "50%",
+                  ...(x > layout.cx ? { right: -7 } : { left: -7 }),
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 14, fontWeight: 800, lineHeight: 1, color: "var(--ink-1)",
+                  background: "var(--surface)", border: `2px solid ${d.color}`,
+                }}
+              >
+                {d.key}
+              </span>
+              <span style={{ fontSize: fit(0.075, "26px"), lineHeight: 1.1 }} aria-hidden="true">{d.emoji}</span>
+              <span style={{ fontSize: fit(0.056, "var(--fs-sm)"), fontWeight: 800, color: "var(--ink-1)", lineHeight: 1.25, whiteSpace: "nowrap" }}>{d.label}</span>
             </button>
           );
         })}
