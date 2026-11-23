@@ -15,6 +15,16 @@ const PLANS: { id: SubscriptionTier; name: string; price: number; color: string;
 export default function PricingPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [settings, setSettings] = useState<PlanSettings>(defaultPlanSettings);
+  // 現在的方案、有沒有在 Stripe 付款訂閱（有的話改方案、取消都到 Stripe 的訂閱管理頁）
+  const [me, setMe] = useState<{ tier: SubscriptionTier; paying: boolean } | null>(null);
+  useEffect(() => {
+    fetch("/api/profile", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { profile?: { subscription_tier?: SubscriptionTier; stripe_subscription_id?: string | null } } | null) => {
+        if (d?.profile) setMe({ tier: d.profile.subscription_tier ?? "free", paying: Boolean(d.profile.stripe_subscription_id) });
+      })
+      .catch(() => undefined);
+  }, []);
   useEffect(() => {
     fetch("/api/plan-settings", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
@@ -23,6 +33,19 @@ export default function PricingPage() {
   }, []);
   const supabase = createSupabaseBrowser();
   const toast = useToast();
+
+  const openPortal = async () => {
+    setLoading("portal");
+    try {
+      const res = await fetch("/api/stripe/portal", { method: "POST" });
+      const { url, error } = await res.json();
+      if (error) throw new Error(error);
+      window.location.href = url;
+    } catch (e) {
+      toast.error(e instanceof Error && e.message ? e.message : "訂閱管理頁暫時打不開，請稍後再試。");
+      setLoading(null);
+    }
+  };
 
   const subscribe = async (plan: string) => {
     setLoading(plan);
@@ -60,6 +83,20 @@ export default function PricingPage() {
         <p style={{ fontSize: 18, color: "#6B5848", marginTop: 12 }}>
           隨時可以升級或取消，無綁約
         </p>
+        {me?.paying && (
+          <button
+            type="button"
+            onClick={openPortal}
+            disabled={loading === "portal"}
+            style={{
+              marginTop: 16, padding: "14px 28px", minHeight: 52, borderRadius: 999,
+              background: "#fff", color: "#3D2E20", border: "2px solid #E8845A",
+              fontSize: 17, fontWeight: 700, cursor: "pointer",
+            }}
+          >
+            {loading === "portal" ? "打開中…" : "管理我的訂閱（改方案、取消、換信用卡）"}
+          </button>
+        )}
 
         <div style={{
           display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
@@ -94,21 +131,32 @@ export default function PricingPage() {
                   </li>
                 ))}
               </ul>
-              <button
-                onClick={() => p.id !== "free" && subscribe(p.id)}
-                disabled={p.id === "free" || loading === p.id}
-                style={{
-                  width: "100%", marginTop: 32, padding: "16px",
-                  background: p.id === "free" ? "#E8DCC8" : p.color,
-                  color: p.id === "free" ? "#6B5848" : "#fff",
-                  border: "none", borderRadius: 999,
-                  fontSize: 16, fontWeight: 700,
-                  cursor: p.id === "free" ? "default" : "pointer",
-                  opacity: loading === p.id ? 0.6 : 1,
-                }}
-              >
-                {p.id === "free" ? "目前方案" : loading === p.id ? "處理中…" : "立即訂閱"}
-              </button>
+              {(() => {
+                const current = (me?.tier ?? "free") === p.id;
+                // 已經在付款訂閱：換方案、改回免費都到 Stripe 訂閱管理頁（不會多開一份重複扣款）
+                const action = current ? null : me?.paying ? openPortal : p.id === "free" ? null : () => subscribe(p.id);
+                const label = current ? "目前方案"
+                  : loading === p.id || (me?.paying && loading === "portal") ? "處理中…"
+                  : me?.paying ? (p.id === "free" ? "取消訂閱" : "改成這個方案")
+                  : p.id === "free" ? "免費使用" : "立即訂閱";
+                return (
+                  <button
+                    onClick={() => action?.()}
+                    disabled={!action || loading !== null}
+                    style={{
+                      width: "100%", marginTop: 32, padding: "16px", minHeight: 52,
+                      background: !action ? "#E8DCC8" : p.color,
+                      color: !action ? "#6B5848" : "#fff",
+                      border: "none", borderRadius: 999,
+                      fontSize: 16, fontWeight: 700,
+                      cursor: !action ? "default" : "pointer",
+                      opacity: loading === p.id ? 0.6 : 1,
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })()}
             </div>
           ))}
         </div>

@@ -1,6 +1,13 @@
+// ────────────────────────────────────────────────
+// 訂閱結帳
+// 已經有訂閱的人 → 不再開新的（以前升級會多一份訂閱、兩份一起扣），改送去 Stripe 的訂閱管理頁換方案
+// 新訂閱 → 沿用同一個 Stripe 客戶；訂閱上記 user_id，webhook 才找得到人
+// ────────────────────────────────────────────────
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { createSupabaseServer } from "@/lib/supabase/server";
+import { createSupabaseAdmin, createSupabaseServer } from "@/lib/supabase/server";
+import { appUrl, findLiveSubscription, portalUrl } from "@/lib/stripe-portal-server";
+import { syncSubscription } from "@/lib/stripe-subscription-server";
 
 const PLAN_PRICE: Record<string, string | undefined> = {
   basic: process.env.STRIPE_PRICE_BASIC,
@@ -24,18 +31,37 @@ export async function POST(req: NextRequest) {
 
   const stripeKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeKey) return NextResponse.json({ error: "Stripe 未設定" }, { status: 500 });
-
   const stripe = new Stripe(stripeKey);
 
+  const { data: profile, error: profileErr } = await supabase
+    .from("profiles")
+    .select("stripe_customer_id, stripe_subscription_id")
+    .eq("id", user.id)
+    .single();
+  if (profileErr) {
+    console.error("[api] Stripe checkout 讀會員失敗:", profileErr);
+    return NextResponse.json({ error: "伺服器忙線中，請稍後再試" }, { status: 500 });
+  }
+  const customerId = (profile?.stripe_customer_id as string | null) ?? null;
+  const subscriptionId = (profile?.stripe_subscription_id as string | null) ?? null;
+
   try {
+    // 已經在訂閱（包含這次改版前訂閱、資料庫沒記到的人）→ 補記到資料庫，送去訂閱管理頁換方案
+    const live = await findLiveSubscription(stripe, { subscriptionId, customerId, email: user.email });
+    if (live) {
+      const liveCustomer = typeof live.customer === "string" ? live.customer : live.customer.id;
+      await syncSubscription(stripe, createSupabaseAdmin(), live.id, user.id);
+      return NextResponse.json({ url: await portalUrl(stripe, liveCustomer), portal: true });
+    }
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
-      customer_email: user.email,
+      ...(customerId ? { customer: customerId } : { customer_email: user.email }),
       client_reference_id: user.id,
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/?subscribed=1`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing`,
+      subscription_data: { metadata: { user_id: user.id, plan } },
+      success_url: appUrl("/?subscribed=1"),
+      cancel_url: appUrl("/pricing"),
       metadata: { user_id: user.id, plan },
     });
     return NextResponse.json({ url: session.url });
