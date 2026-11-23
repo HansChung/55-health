@@ -351,6 +351,8 @@ export const api = {
       settings: import("./plan-settings").PlanSettings;
       grants: import("./plan-settings").FeatureGrant[];
       tier: import("./plan-settings").SubscriptionTier | "admin";
+      /** 要外部金鑰的功能有沒有設好（沒設好入口就不顯示） */
+      services?: { weather?: boolean };
     }>("/api/plan-settings"),
   // 轉檔＋送去平台複製約 10～30 秒
   createMyVoice: (input: ({ audioPath: string } | { audio: string }) & { consent: true }) =>
@@ -573,6 +575,13 @@ export const api = {
     apiFetch<{ profile: ProfileData }>("/api/profile/medications", { method: "POST", json: { action: "add", medications } }),
 
   dailyWeatherStatus: () => apiFetch<{ available: boolean }>("/api/daily-weather"),
+  /** 今天天氣；weather 是 null＝還不知道縣市，請他選 */
+  todayWeather: (county?: string | null) =>
+    apiFetch<{ weather: import("./today-weather").TodayWeather | null }>(
+      `/api/weather${county ? `?county=${encodeURIComponent(county)}` : ""}`,
+      // 拿不到的結果伺服器會記 5 分鐘，馬上重試也一樣
+      { retries: 0 }
+    ),
 
   // 每日平安打卡
   checkinToday: () => apiFetch<{ checkedAt: string | null }>("/api/checkin"),

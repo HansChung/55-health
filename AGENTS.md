@@ -368,6 +368,25 @@ stack works well for auth + meal/diary CRUD:
 - Home order: greeting → 報平安 → today/tomorrow appointment → calorie ring + 暖暖的建議 → 天氣 offer → 家人狀況 (if
   caring) → 常用 → medicines / alerts → meals → 跟暖暖聊聊・記錄運動.
 
+### 今天天氣（`subpage "weather"`, needs `CWA_API_KEY`; no SQL, no AI）
+- 功能 → 出門運動 → 今天天氣 (deep link `/?open=weather`, feature `weather`, free). `GET /api/weather?county=` →
+  `buildTodayWeather` (`src/lib/today-weather.ts`, pure + tested): the current 12-hour period big on top, the later
+  periods (`periodLabel`: 今天白天／今天晚上／半夜到清晨／明天白天), 「適不適合出門」 (`outingVerdict`: 空氣 > 雨 > 熱 > 冷 →
+  good／care／stay; it talks about **the next daytime period**, so opened at night it says 「明天…」, and the live AQI is
+  only counted when that period is the current one), 穿什麼 (`clothingAdvice`), the same weather health tip as the
+  morning push (`weatherHealthTip`, kidney → never 「多喝水」 via `weatherAdviceFor`) and an AQI card when
+  `MOENV_API_KEY` is set (plain labels `AIR_PLAIN_LABEL`, not 「對敏感族群不健康」). 「🔊 念給我聽」 = speechSynthesis.
+- County: the screen remembers it per device (`localStorage nuannuan_weather_county`); with none the server falls back
+  to the county saved for the morning push; with neither it answers `{ weather: null }` and the screen shows the
+  22-county picker. Data is the same cached source as the push (30 min per county per instance), so it costs nothing.
+- **The entry is hidden until the server has `CWA_API_KEY`**: `/api/plan-settings` returns `services.weather`
+  (`isWeatherConfigured()`), `page.tsx` keeps it in `weatherReady` and leaves `menuActions.weather` undefined
+  otherwise. Production had no `CWA_API_KEY` on 2026-11-24 (`GET /api/daily-weather` → `available: false`, nobody was
+  ever asked for a county), so both this screen and the morning weather push only start once the key is added in
+  Vercel. The screen also offers 「🔔 每天早上 7 點告訴我」 (`saveDailyWeather`) when the push isn't on yet.
+- Small screen + large font: every text chunk in the forecast rows is `nowrap` inside a wrapping flex row, and the big
+  temperature uses `min(var(--fs-2xl), 10.5vw)` — checked at 320 px with `data-fs="lg"`.
+
 ### 數位名片（`subpage "business-card"`, needs `supabase/add-business-cards.sql`）
 - 功能 → 家人與安心 → 數位名片 (deep link `/?open=business-card`, feature `business_card`, free, no AI). One card per user in
   `business_cards` (server-only RLS): 名字／稱呼／一句介紹（≤100, dictation）／興趣（「、」separated → chips）, a photo in the

@@ -26,6 +26,7 @@ import { HealthMetricsScreen } from "@/screens/health-metrics-screen";
 import { FeaturesScreen, type MenuActions } from "@/screens/features-screen";
 import { BrainGameScreen } from "@/screens/brain-game-screen";
 import { BusinessCardScreen } from "@/screens/business-card-screen";
+import { WeatherScreen } from "@/screens/weather-screen";
 import { PrescriptionScanScreen } from "@/screens/prescription-scan-screen";
 import { WeeklyReportScreen } from "@/screens/weekly-report-screen";
 import { AlertsCenterScreen } from "@/screens/alerts-center-screen";
@@ -139,7 +140,7 @@ export default function Page() {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     const open = url.searchParams.get("open");
-    if (open && ["voice", "camera", "photo", "travel-video", "study-tours", "photo-ask", "caregiver", "ask", "stories", "scam-check", "clinic", "health-metrics", "brain", "business-card"].includes(open)) {
+    if (open && ["voice", "camera", "photo", "travel-video", "study-tours", "photo-ask", "caregiver", "ask", "stories", "scam-check", "clinic", "health-metrics", "brain", "business-card", "weather"].includes(open)) {
       pendingOpenRef.current = open;
     }
     // 研學團站點 QR：/?stamp=代碼 → 先記下來（還沒登入的話登入後再蓋），網址上的代碼馬上拿掉
@@ -203,6 +204,10 @@ export default function Page() {
     // 動動腦（每日一題）：後台關掉就不開，方案不夠就說要升級
     else if (open === "brain") {
       if (featureEnabled("brain_game")) requireFeature("brain_game", () => setSubpage("brain"));
+    }
+    // 今天天氣（沒設氣象署金鑰的話畫面會說還在準備中）
+    else if (open === "weather") {
+      if (featureEnabled("weather")) requireFeature("weather", () => setSubpage("weather"));
     }
     // 數位名片（別人名片分享頁上的「我也想做一張」）
     else if (open === "business-card") {
@@ -269,6 +274,8 @@ export default function Page() {
   // 後台「方案與次數」：登入後載入一次（功能開關、最低方案、自己的個別開通）；planTier 是 "admin" 時全部可用
   const [planTier, setPlanTier] = useState<SubscriptionTier | "admin" | null>(null);
   const [planVersion, setPlanVersion] = useState(0);
+  // 今天天氣要氣象署金鑰：伺服器說有設才顯示入口
+  const [weatherReady, setWeatherReady] = useState(false);
   const [travelVideoMode, setTravelVideoMode] = useState<"montage" | "mv" | "yearly" | "greeting" | null>(null);
   useEffect(() => {
     if (!user) return;
@@ -278,6 +285,7 @@ export default function Page() {
         if (!alive) return;
         applyPlanSettings(r.settings, r.grants);
         setPlanTier(r.tier);
+        setWeatherReady(Boolean(r.services?.weather));
         setPlanVersion((v) => v + 1);
       })
       .catch(() => undefined); // 載不到就用預設規則（伺服器仍會把關）
@@ -799,6 +807,7 @@ export default function Page() {
       ? () => requireFeature("greeting_video", () => { setTravelVideoMode("greeting"); setSubpage("travel-video"); })
       : undefined,
     stories: featureEnabled("life_stories") ? () => requireFeature("life_stories", () => { setStoriesAudio(false); setSubpage("stories"); }) : undefined,
+    weather: weatherReady && featureEnabled("weather") ? () => requireFeature("weather", () => setSubpage("weather")) : undefined,
     study_tours: () => {
       setStudyTourId(null);
       setStudyToursKey((k) => k + 1);
@@ -915,6 +924,13 @@ export default function Page() {
       {subpage === "health-metrics" && <HealthMetricsScreen onBack={() => setSubpage(null)} />}
       {subpage === "brain" && <BrainGameScreen onBack={() => setSubpage(null)} />}
       {subpage === "business-card" && <BusinessCardScreen onBack={() => setSubpage(null)} />}
+      {subpage === "weather" && (
+        <WeatherScreen
+          onBack={() => setSubpage(null)}
+          settings={profile?.notification_settings}
+          onProfileUpdated={(updated) => setProfileDirectly(updated as AppProfile)}
+        />
+      )}
       {subpage === "weekly-report" && <WeeklyReportScreen tier={tier} onBack={() => setSubpage(null)} />}
       {subpage === "alerts-center" && (
         <AlertsCenterScreen
