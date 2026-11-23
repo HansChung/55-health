@@ -12,7 +12,7 @@ export type MenuId =
   | "ask" | "voice" | "photo_ask"
   | "travel_video" | "greeting_video" | "stories"
   | "weather" | "study_tours" | "study_passport" | "blueprint" | "book"
-  | "caregiver" | "scam_check" | "iot" | "family" | "business_card"
+  | "caregiver" | "scam_check" | "emergency_card" | "iot" | "family" | "business_card"
   | "brain_game" | "achievements" | "smart";
 
 export interface MenuItem {
@@ -43,6 +43,7 @@ export const MENU_ITEMS: Record<MenuId, MenuItem> = {
   book: { label: "書本練習", emoji: "📚", desc: "一拍、二問、三記下", keywords: ["書", "上課", "練習", "學"] },
   caregiver: { label: "家人狀況", emoji: "👨‍👩‍👧", desc: "看長輩、輸入邀請碼", keywords: ["邀請碼", "看爸媽", "長輩"] },
   scam_check: { label: "可疑訊息", emoji: "🛡️", desc: "截圖給暖暖看", keywords: ["詐騙", "防詐", "簡訊", "LINE", "假訊息", "165"] },
+  emergency_card: { label: "緊急聯絡卡", emoji: "🆘", desc: "血型、過敏、打給家人", keywords: ["緊急", "求救", "求助", "救護車", "119", "血型", "過敏", "聯絡人", "SOS", "昏倒", "小卡"] },
   iot: { label: "居家守護", emoji: "🏠", desc: "感測器通知家人", keywords: ["感測器", "跌倒", "居家"] },
   family: { label: "家人共享", emoji: "🤝", desc: "邀請家人", keywords: ["邀請家人", "分享", "家人"] },
   business_card: { label: "數位名片", emoji: "📇", desc: "掃一下就認識我", keywords: ["名片", "QR", "自我介紹"] },
@@ -62,7 +63,7 @@ export const MENU_GROUPS: MenuGroup[] = [
   { id: "ask", label: "💬 問暖暖", items: ["ask", "voice", "photo_ask"] },
   { id: "memory", label: "🎬 回憶與影片", items: ["travel_video", "greeting_video", "stories"] },
   { id: "outing", label: "🧭 出門走走", items: ["weather", "study_tours", "study_passport", "blueprint", "book"] },
-  { id: "family", label: "👨‍👩‍👧 家人與安心", items: ["caregiver", "scam_check", "iot", "family", "business_card"] },
+  { id: "family", label: "👨‍👩‍👧 家人與安心", items: ["caregiver", "scam_check", "emergency_card", "iot", "family", "business_card"] },
   { id: "brain", label: "🧠 動動腦", items: ["brain_game", "smart", "achievements"] },
 ];
 
@@ -95,7 +96,7 @@ export const COMPASS_DIRECTIONS: CompassDirection[] = [
   direction("S", "💞", "家人朋友", "跟家人朋友聯絡、分享", ["caregiver", "family", "greeting_video", "business_card"]),
   direction("M", "🎞️", "回憶故事", "留下故事、照片和影片", ["stories", "travel_video", "blueprint", "smart"]),
   direction("A", "👟", "出門運動", "自己安排、走出門", ["weather", "study_tours", "study_passport", "exercise", "achievements"]),
-  direction("R", "❤️", "健康平安", "顧身體、防詐騙", ["clinic", "health_metrics", "chronic", "weekly_report", "scam_check", "iot"]),
+  direction("R", "❤️", "健康平安", "顧身體、防詐騙", ["clinic", "health_metrics", "chronic", "emergency_card", "weekly_report", "scam_check", "iot"]),
   direction("T", "💡", "學新東西", "練習用手機、動動腦", ["book", "brain_game"]),
 ];
 

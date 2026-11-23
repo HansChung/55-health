@@ -880,10 +880,8 @@ export interface ProfileData {
   is_admin: boolean;
 }
 
-export interface EmergencyContact {
-  name: string;
-  phone: string;
-}
+/** profiles.emergency_contact：第一位聯絡人（name／phone）＋緊急聯絡卡的其他資料，見 emergency-card.ts */
+export type EmergencyContact = import("./emergency-card").StoredEmergency;
 
 export interface ProfileMedication {
   name: string;

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Icon } from "@/components/icons";
 import { useAuth } from "@/hooks/use-auth";
 import { api, type EmergencyContact } from "@/lib/api-client";
+import { emergencyFormError, normalizeEmergencyInfo, telHref, toStoredEmergency, withPrimaryContact } from "@/lib/emergency-card";
 
 /**
  * 緊急求助（SOS）浮動按鈕。
@@ -11,8 +12,9 @@ import { api, type EmergencyContact } from "@/lib/api-client";
  * - 點一下開啟求助視窗：撥打緊急聯絡人 / 用 LINE 傳訊息 / 撥打 119。
  * - 第一次使用會先請用戶設定緊急聯絡人（姓名 + 電話）。
  * 直接讀 AuthContext（符合專案「共用 auth context」規範）。
+ * 聯絡人跟「緊急聯絡卡」是同一份資料（profiles.emergency_contact）：這裡只改第一位，血型、過敏那些照舊。
  */
-export function SosButton() {
+export function SosButton({ onOpenCard }: { onOpenCard?: () => void }) {
   const { profile, setProfileDirectly } = useAuth();
   const [open, setOpen] = useState(false);
 
@@ -50,6 +52,7 @@ export function SosButton() {
         <SosSheet
           profile={profile}
           onClose={() => setOpen(false)}
+          onOpenCard={onOpenCard ? () => { setOpen(false); onOpenCard(); } : undefined}
           onContactSaved={(contact) =>
             setProfileDirectly({ ...profile, emergency_contact: contact })
           }
@@ -62,13 +65,17 @@ export function SosButton() {
 function SosSheet({
   profile,
   onClose,
+  onOpenCard,
   onContactSaved,
 }: {
   profile: NonNullable<ReturnType<typeof useAuth>["profile"]>;
   onClose: () => void;
+  onOpenCard?: () => void;
   onContactSaved: (contact: EmergencyContact) => void;
 }) {
-  const contact = profile.emergency_contact ?? null;
+  // 只填了血型、沒有聯絡人的時候 name／phone 是空的 → 當作還沒設定
+  const info = normalizeEmergencyInfo(profile.emergency_contact);
+  const contact = info.contacts[0] ?? null;
   const [editing, setEditing] = useState(!contact);
   const [name, setName] = useState(contact?.name ?? "");
   const [phone, setPhone] = useState(contact?.phone ?? "");
@@ -78,7 +85,7 @@ function SosSheet({
   const myName = profile.display_name || "長輩";
 
   const callPhone = (num: string) => {
-    window.location.href = `tel:${num.replace(/\s/g, "")}`;
+    window.location.href = telHref(num) ?? `tel:${num.replace(/\s/g, "")}`;
   };
 
   const sendLine = () => {
@@ -91,18 +98,21 @@ function SosSheet({
   };
 
   const saveContact = async () => {
-    const cleanName = name.trim();
-    const cleanPhone = phone.trim();
-    if (!cleanName || cleanPhone.length < 3) {
+    if (!name.trim() || !phone.trim() || emergencyFormError([{ name, phone }])) {
+      setError("請填寫聯絡人姓名與電話");
+      return;
+    }
+    // 只換第一位聯絡人；卡片上的其他聯絡人、血型、過敏照舊
+    const next = toStoredEmergency(withPrimaryContact(info, { name, phone }));
+    if (!next) {
       setError("請填寫聯絡人姓名與電話");
       return;
     }
     setSaving(true);
     setError("");
     try {
-      const next: EmergencyContact = { name: cleanName, phone: cleanPhone };
-      await api.updateProfile({ emergency_contact: next });
-      onContactSaved(next);
+      const { profile: updated } = await api.updateProfile({ emergency_contact: next });
+      onContactSaved(updated.emergency_contact ?? next);
       setEditing(false);
     } catch (e) {
       setError((e as Error).message || "儲存失敗，請再試一次");
@@ -170,6 +180,18 @@ function SosSheet({
                 </span>
               </span>
             </button>
+
+            {onOpenCard && (
+              <button onClick={onOpenCard} style={{ ...bigBtn("var(--surface)"), color: "var(--ink-1)", border: "2px solid var(--line-strong)" }}>
+                <span style={{ fontSize: 28, lineHeight: 1 }} aria-hidden="true">🆘</span>
+                <span>
+                  我的緊急聯絡卡
+                  <span style={{ display: "block", fontSize: "var(--fs-sm)", fontWeight: 600, color: "var(--ink-2)" }}>
+                    血型、過敏、用藥，給救護人員看
+                  </span>
+                </span>
+              </button>
+            )}
 
             <button
               onClick={() => setEditing(true)}
