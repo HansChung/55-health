@@ -166,6 +166,15 @@ export function WeatherScreen({
           <>
             <div style={{ fontSize: "var(--fs-lg)", fontWeight: 800, lineHeight: 1.3 }}>你住哪個縣市？</div>
             <div style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", marginTop: -8 }}>點一下，下次就記得了</div>
+            {/* 選了縣市但拿不到資料：要在這裡說，不然看起來像按了沒反應 */}
+            {error && !loading && (
+              <div role="alert" style={{ padding: 14, background: "var(--berry-soft)", borderRadius: "var(--r-md)", color: "#9B2F44", fontSize: "var(--fs-base)", fontWeight: 700, lineHeight: 1.45 }}>
+                {unavailable ? "天氣還在準備中，過幾天再來看看" : `${error}（可以再點一次縣市）`}
+              </div>
+            )}
+            {loading && (
+              <div role="status" style={{ fontSize: "var(--fs-base)", fontWeight: 700, color: "var(--ink-2)" }}>🌤️ 正在看天氣…</div>
+            )}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
               {TAIWAN_COUNTIES.map((c) => (
                 <button
