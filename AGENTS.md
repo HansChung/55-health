@@ -351,7 +351,15 @@ stack works well for auth + meal/diary CRUD:
   T 學新東西 (`COMPASS_DIRECTIONS`); 暖暖 in the middle opens `COMPASS_CENTER` (問暖暖／跟暖暖聊聊／拍照問暖暖). Tapping a
   direction expands its big `FeatureTile`s under the compass (last pick kept in sessionStorage). Directions with no
   available item are dropped and the rest are spaced evenly round the circle (no horizontal scroll at 375 px, buttons
-  ≥ 64 px). Above it, 「🔎 找功能」 (typed or 🗣️ dictated) uses `searchMenu`: matches label/desc/`keywords`, **or** a
+  ≥ 64 px). **Alignment (2026-11-24, owner: 「讓功能可以對齊」)**: positions come from `compassLayout(n)` in
+  `feature-menu.ts` (units = % of the compass width; tested): every direction button is the same size with its centre
+  **on** the ring, nothing sticks out, and the height/centre are computed so the gap above and below is equal (a
+  pentagon isn't vertically symmetric). Buttons show an icon (`CompassDirection.emoji`, never the same as a feature
+  icon) + the plain label; the SMART letter is a small badge on the top outer corner (full name stays in `aria-label`
+  and the expanded heading). Compass text shrinks with the compass on narrow screens / large-font mode (`fit()` — uses
+  `100vw`, not container-query units, for old Android WebViews). Tiles go through `FeatureTileGrid`: the expanded panel
+  is not indented, so its tiles line up with 「全部功能」 below; tile content starts from the top (a two-line desc doesn't
+  push the icon/label out of line with its neighbour) and an odd last tile is a full-width horizontal tile (`wide`). Above it, 「🔎 找功能」 (typed or 🗣️ dictated) uses `searchMenu`: matches label/desc/`keywords`, **or** a
   label/keyword inside the query, so a spoken 「我想量血壓」 still finds 血壓血糖; nothing found → 「問暖暖」. Below it,
   「📋 全部功能」 lists every group (`MENU_GROUPS`) for people who don't like the compass.
 - **Adding a feature**: add a `MenuId` + `MENU_ITEMS` entry (+ `keywords` people might say), put it in a group **and** a
