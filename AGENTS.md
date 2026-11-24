@@ -399,9 +399,10 @@ stack works well for auth + meal/diary CRUD:
   22-county picker. Data is the same cached source as the push (30 min per county per instance), so it costs nothing.
 - **The entry is hidden until the server has `CWA_API_KEY`**: `/api/plan-settings` returns `services.weather`
   (`isWeatherConfigured()`), `page.tsx` keeps it in `weatherReady` and leaves `menuActions.weather` undefined
-  otherwise. Production had no `CWA_API_KEY` on 2026-11-24 (`GET /api/daily-weather` → `available: false`, nobody was
-  ever asked for a county), so both this screen and the morning weather push only start once the key is added in
-  Vercel. The screen also offers 「🔔 每天早上 7 點告訴我」 (`saveDailyWeather`) when the push isn't on yet.
+  otherwise. Production got its `CWA_API_KEY` on 2026-11-24 (Vercel project `55-health`, Production only, sensitive — Preview
+  deployments have none, so the entry stays hidden there); before that `GET /api/daily-weather` answered
+  `available: false` and nobody had ever been asked for a county, i.e. the morning weather push had never run either.
+  `MOENV_API_KEY` is still not set (no air card, no air line in the push). Env changes need a redeploy. The screen also offers 「🔔 每天早上 7 點告訴我」 (`saveDailyWeather`) when the push isn't on yet.
 - Small screen + large font: every text chunk in the forecast rows is `nowrap` inside a wrapping flex row, and the big
   temperature uses `min(var(--fs-2xl), 10.5vw)` — checked at 320 px with `data-fs="lg"`.
 
