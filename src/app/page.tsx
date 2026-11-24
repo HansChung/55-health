@@ -28,6 +28,8 @@ import { BrainGameScreen } from "@/screens/brain-game-screen";
 import { BusinessCardScreen } from "@/screens/business-card-screen";
 import { WeatherScreen } from "@/screens/weather-screen";
 import { EmergencyCardScreen } from "@/screens/emergency-card-screen";
+import { BirthdaysScreen } from "@/screens/birthdays-screen";
+import { saveGreetingSeed } from "@/lib/greeting-video";
 import { PrescriptionScanScreen } from "@/screens/prescription-scan-screen";
 import { WeeklyReportScreen } from "@/screens/weekly-report-screen";
 import { AlertsCenterScreen } from "@/screens/alerts-center-screen";
@@ -141,7 +143,7 @@ export default function Page() {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     const open = url.searchParams.get("open");
-    if (open && ["voice", "camera", "photo", "travel-video", "study-tours", "photo-ask", "caregiver", "ask", "stories", "scam-check", "clinic", "health-metrics", "brain", "business-card", "weather", "emergency-card"].includes(open)) {
+    if (open && ["voice", "camera", "photo", "travel-video", "study-tours", "photo-ask", "caregiver", "ask", "stories", "scam-check", "clinic", "health-metrics", "brain", "business-card", "weather", "emergency-card", "birthdays"].includes(open)) {
       pendingOpenRef.current = open;
     }
     // 研學團站點 QR：/?stamp=代碼 → 先記下來（還沒登入的話登入後再蓋），網址上的代碼馬上拿掉
@@ -205,6 +207,10 @@ export default function Page() {
     // 動動腦（每日一題）：後台關掉就不開，方案不夠就說要升級
     else if (open === "brain") {
       if (featureEnabled("brain_game")) requireFeature("brain_game", () => setSubpage("brain"));
+    }
+    // 家人生日（生日提醒的推播點進來）
+    else if (open === "birthdays") {
+      if (featureEnabled("birthday_reminder")) requireFeature("birthday_reminder", () => setSubpage("birthdays"));
     }
     // 緊急聯絡卡
     else if (open === "emergency-card") {
@@ -826,6 +832,7 @@ export default function Page() {
     caregiver: () => setSubpage("caregiver"),
     scam_check: featureEnabled("scam_check") ? () => requireFeature("scam_check", () => setSubpage("scam-check")) : undefined,
     emergency_card: featureEnabled("emergency_card") ? () => requireFeature("emergency_card", () => setSubpage("emergency-card")) : undefined,
+    birthdays: featureEnabled("birthday_reminder") ? () => requireFeature("birthday_reminder", () => setSubpage("birthdays")) : undefined,
     iot: () => setSubpage("iot"),
     family: () => setSubpage("family"),
     business_card: featureEnabled("business_card") ? () => requireFeature("business_card", () => setSubpage("business-card")) : undefined,
@@ -872,6 +879,7 @@ export default function Page() {
             menuActions={menuActions}
             onAllFeatures={() => setTab("features")}
             onClinic={openClinic}
+            onBirthdays={menuActions.birthdays}
             caregiver={careElderCount > 0 ? { count: careElderCount, needsAttention: careNeedsAttention } : null}
             onCaregiver={() => setSubpage("caregiver")}
           />
@@ -932,6 +940,12 @@ export default function Page() {
       {subpage === "health-metrics" && <HealthMetricsScreen onBack={() => setSubpage(null)} />}
       {subpage === "brain" && <BrainGameScreen onBack={() => setSubpage(null)} />}
       {subpage === "business-card" && <BusinessCardScreen onBack={() => setSubpage(null)} />}
+      {subpage === "birthdays" && (
+        <BirthdaysScreen
+          onBack={() => setSubpage(null)}
+          onMakeGreeting={menuActions.greeting_video ? (name) => { saveGreetingSeed(name); menuActions.greeting_video?.(); } : undefined}
+        />
+      )}
       {subpage === "emergency-card" && (
         <EmergencyCardScreen
           onBack={() => setSubpage(null)}

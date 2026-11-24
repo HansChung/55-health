@@ -386,6 +386,29 @@ stack works well for auth + meal/diary CRUD:
 - The screen waits for `profile` before mounting the form (an empty form saved over real data otherwise). Rows wrap
   under their label when the value column is < 150 px (320 px + large font), phone numbers never break mid-number.
 
+### 家人生日提醒（`subpage "birthdays"`, needs `supabase/add-family-birthdays.sql` + VAPID + `CRON_SECRET`; no AI）
+- 功能 → 家人朋友 → 家人生日 (deep link `/?open=birthdays`, feature `birthday_reminder`, free). The elder records name, 是你的誰
+  (chips or free text), 國曆 or **農曆** month/day, optional 民國 birth year (stored as `birth_year` AD → 「46 歲生日」) and
+  whether to remind. ≤ 50 per user (`family_birthdays`, server-only RLS; `GET/POST /api/birthdays`,
+  `PUT/DELETE /api/birthdays/[id]`). Rules + texts are in `src/lib/birthdays.ts` (pure, tested); the server sends each row with
+  `next = { date, days, age }` (`nextBirthday`), so screens never do calendar maths. Without the SQL the GET answers 503 and
+  the screen says 「還在準備中」; the home card just stays hidden.
+- **Lunar dates come from a table, not `Intl`** (`src/lib/lunar-calendar.ts`, 2024–2100): ICU's `chinese` calendar is off
+  by a day in months whose new moon falls near midnight — Node 24 puts 春節 2027 on 2/7 and 2030 on 2/2 (really 2/6, 2/3),
+  which would shift every 正月 birthday. The table was generated once (2026-11) with `lunar-javascript` 1.7.8 and compared
+  day by day with ICU (only those months differ); the package is **not** a dependency. Rules: a leap month never counts
+  (閏六月初一 is nobody's birthday), 三十 in a 29-day month is kept on 廿九, 國曆 2/29 is kept on 2/28 in common years.
+  Past 2100 `next` is null and the row sorts last.
+- Cron `/api/cron/birthday-reminders` (`0 23 * * *` = the 07:00 Taipei hour): for today (`day`) and today + 3
+  (`ahead`, `BIRTHDAY_AHEAD_DAYS`) it asks `birthdayKeysFor(date)` which calendar/month/day values to look up (a test
+  checks it agrees with `nextBirthday` for every day of two years), claims `reminded_day_on` / `reminded_ahead_on` = today
+  (conditional update, so reruns don't double-send; date claims need no yearly reset) and pushes only the person who
+  recorded it (`birthdayPush`, `/?open=birthdays`). Editing the date or turning 提醒 back on clears both claims.
+- Home shows `UpcomingBirthdayCard` for birthdays within 3 days (`homeBirthdays`; one extra `GET /api/birthdays` per home
+  load, like the appointment card). The screen offers 「打開通知」 when this device has no push subscription, and
+  「🎁 做祝福影片」 on birthdays within 7 days → `saveGreetingSeed(name)` (sessionStorage) pre-fills 給誰 in
+  `GreetingComposer` (read in the state initialiser, cleared in an effect — React dev mode runs initialisers twice).
+
 ### 今天天氣（`subpage "weather"`, needs `CWA_API_KEY`; no SQL, no AI）
 - 功能 → 出門運動 → 今天天氣 (deep link `/?open=weather`, feature `weather`, free). `GET /api/weather?county=` →
   `buildTodayWeather` (`src/lib/today-weather.ts`, pure + tested): the current 12-hour period big on top, the later

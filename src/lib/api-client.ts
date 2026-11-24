@@ -696,6 +696,14 @@ export const api = {
     apiFetch<{ card: import("./business-card").BusinessCard }>("/api/business-card/photo", { method: "POST", json: photo, timeoutMs: 30000 }),
   removeBusinessCardPhoto: () =>
     apiFetch<{ card: import("./business-card").BusinessCard | null }>("/api/business-card/photo", { method: "DELETE" }),
+  // 家人生日提醒
+  /** 首頁卡片用 retries: 0（沒跑 SQL 時是 503，不要每次開首頁都重試兩次） */
+  listBirthdays: (opts: { retries?: number } = {}) => apiFetch<{ birthdays: import("./birthdays").Birthday[] }>("/api/birthdays", opts),
+  createBirthday: (input: import("./birthdays").BirthdayInput) =>
+    apiFetch<{ birthday: import("./birthdays").Birthday }>("/api/birthdays", { method: "POST", json: input }),
+  updateBirthday: (id: string, input: import("./birthdays").BirthdayInput) =>
+    apiFetch<{ birthday: import("./birthdays").Birthday }>(`/api/birthdays/${id}`, { method: "PUT", json: input }),
+  deleteBirthday: (id: string) => apiFetch<{ ok: true }>(`/api/birthdays/${id}`, { method: "DELETE" }),
   // 回診提醒
   listAppointments: () => apiFetch<{ appointments: import("./clinic-appointments").ClinicAppointment[] }>("/api/clinic/appointments"),
   createAppointment: (input: import("./clinic-appointments").AppointmentInput) =>
