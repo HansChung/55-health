@@ -13,6 +13,7 @@ import { NavCard } from "@/components/nav-card";
 import { DailyWeatherCard } from "@/components/daily-weather-card";
 import { DailyCheckinCard } from "@/components/daily-checkin-card";
 import { UpcomingAppointmentCard } from "@/components/upcoming-appointment-card";
+import { UpcomingBirthdayCard } from "@/components/upcoming-birthday-card";
 import { hasFeature, type SubscriptionTier } from "@/lib/feature-gates";
 import { FavoriteFeatures } from "@/components/favorite-features";
 import type { MenuActions } from "@/screens/features-screen";
@@ -45,6 +46,8 @@ interface HomeScreenProps {
   onAllFeatures: () => void;
   /** 今天、明天有回診時的卡片點下去 */
   onClinic?: () => void;
+  /** 3 天內有家人生日時的卡片點下去 */
+  onBirthdays?: () => void;
   caregiver?: { count: number; needsAttention: boolean } | null;
   onCaregiver?: () => void;
   /** 每天早上天氣：還沒設定過就在首頁問縣市 */
@@ -66,7 +69,7 @@ function getDateLabel(): string {
   return `${d.getMonth() + 1}月${d.getDate()}日　星期${WEEKDAYS[d.getDay()]}`;
 }
 
-export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, menuActions, onAllFeatures, onClinic, caregiver = null, onCaregiver, notificationSettings, onProfileUpdated }: HomeScreenProps) {
+export function HomeScreen({ meals, calories, calorieGoal, displayName, suggestion, suggestionLoading, subscriptionTier, onCamera, onVoice, onMeal, onSuggestion, onExercise, repeatMeals = {}, onRepeatMeal, medicationReminders = [], onTakeMedication, healthAlerts = [], onAlertsCenter, favoriteMeals = [], onPickFavorite, partnerCampaigns = [], onPartnerClick, menuActions, onAllFeatures, onClinic, onBirthdays, caregiver = null, onCaregiver, notificationSettings, onProfileUpdated }: HomeScreenProps) {
   // 從餐點計算今日營養
   const totals = meals.reduce(
     (s, m) => {
@@ -112,9 +115,10 @@ export function HomeScreen({ meals, calories, calorieGoal, displayName, suggesti
         </div>
       </div>
 
-      {/* 今天最要緊的：報平安、今天明天的回診（有才出現） */}
+      {/* 今天最要緊的：報平安、今天明天的回診、3 天內的家人生日（有才出現） */}
       {onProfileUpdated && <DailyCheckinCard settings={notificationSettings} onSaved={onProfileUpdated} />}
       {onClinic && <UpcomingAppointmentCard onOpen={onClinic} />}
+      {onBirthdays && <UpcomingBirthdayCard onOpen={onBirthdays} />}
 
       <div style={{ padding: "20px 24px 0" }}>
         <div className="card" style={{ padding: 24, background: "linear-gradient(180deg, #FFF9EF 0%, #FFFFFF 100%)" }}>

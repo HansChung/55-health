@@ -81,3 +81,28 @@ export function greetingSegments(title: string, captions: string[], closing: str
 export function greetingSeconds(photos: number, withClosing: boolean): number {
   return GREETING_TITLE_SECONDS + photos * GREETING_PHOTO_SECONDS + (withClosing ? GREETING_CLOSING_SECONDS : 0);
 }
+
+// ── 從別的畫面帶「要給誰」過來（家人生日 → 做祝福影片）──
+
+const GREETING_SEED_KEY = "nuannuan_greeting_seed";
+
+export function saveGreetingSeed(to: string): void {
+  try {
+    sessionStorage.setItem(GREETING_SEED_KEY, sanitizeGreetingName(to));
+  } catch { /* 無痕模式存不了：就不帶 */ }
+}
+
+/** 只讀不清（React 開發模式會呼叫兩次）；用完請呼叫 clearGreetingSeed */
+export function readGreetingSeed(): string {
+  try {
+    return sanitizeGreetingName(sessionStorage.getItem(GREETING_SEED_KEY));
+  } catch {
+    return "";
+  }
+}
+
+export function clearGreetingSeed(): void {
+  try {
+    sessionStorage.removeItem(GREETING_SEED_KEY);
+  } catch { /* ignore */ }
+}

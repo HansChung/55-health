@@ -17,11 +17,13 @@ import {
   GREETING_MIN_PHOTOS,
   GREETING_NAME_MAX,
   GREETING_OCCASIONS,
+  clearGreetingSeed,
   defaultGreetingLine,
   greetingClosing,
   greetingOccasion,
   greetingSeconds,
   greetingTitle,
+  readGreetingSeed,
   type GreetingOccasion,
 } from "@/lib/greeting-video";
 
@@ -73,7 +75,8 @@ export function GreetingComposer({
   onCreated: (video: TravelVideo, quota: TravelVideoQuota) => void;
 }) {
   const [occasion, setOccasion] = useState<GreetingOccasion>("birthday");
-  const [to, setTo] = useState("");
+  // 從「家人生日」過來：先幫他填好要給誰
+  const [to, setTo] = useState(() => readGreetingSeed());
   const [from, setFrom] = useState("");
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [music, setMusic] = useState<MontageMusicId>(greetingOccasion("birthday").music);
@@ -87,6 +90,7 @@ export function GreetingComposer({
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
+    clearGreetingSeed();
     api.greetingQuota().then((r) => setQuota(r.quota)).catch(() => undefined);
     return () => {
       previewRef.current?.pause();
